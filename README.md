@@ -1,226 +1,298 @@
-# Bank System — Microservices Banking Platform
+# System Bank
 
-Portfolio-grade internet banking + back-office: **Spring Boot / Cloud · Kafka · Angular · Docker**.
+Microservices platform for **internet banking** (customer) and **back-office operations** (admin).
 
-| Layer | Status |
-|-------|--------|
-| Design docs + UI mockups | ✅ |
-| **Phase 1** — infra, discovery, gateway, common-lib | ✅ |
-| **Phase 2** — auth-service (JWT, MFA, refresh) | ✅ |
-| **Phase 3** — customer + account | ✅ |
-| **Phase 4** — transaction Saga + Outbox | ✅ |
-| **Phase 5** — notification-service (Kafka consumer) | ✅ |
-| **Phase 6** — Angular FE (customer + admin) | ✅ |
-| **Phase 7** — observability, CI, harden | ✅ |
-| **Phase 8** — demo / interview pack | ✅ |
+Built as a portfolio-grade distributed system: service isolation, transactional transfer saga, event-driven notifications, JWT/MFA security, and dual Angular portals.
 
 ---
 
-## Portfolio quick links
+## Architecture overview
 
-| Doc | Purpose |
-|-----|---------|
-| [`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md) | **15′ live demo** |
-| [`docs/INTERVIEW_TALKING_POINTS.md`](docs/INTERVIEW_TALKING_POINTS.md) | Interview Q&A |
-| [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md) | Honest scope gaps |
-| [`docs/01-architecture/architecture-diagram.md`](docs/01-architecture/architecture-diagram.md) | Mermaid diagrams |
-| [`docs/00-overview/PROVIDE_LATER.md`](docs/00-overview/PROVIDE_LATER.md) | Real keys/providers later |
-
----
-
-## Sample users
-
-| Username | Password | Portal | Notes |
-|----------|----------|--------|-------|
-| `admin` | `Admin123!` | http://localhost:4200/admin/login | Seeded ADMIN (`ADMIN_*` env) |
-| *(self-register)* | min strong e.g. `Test1234!` | http://localhost:4200/auth/login | ROLE_CUSTOMER |
-
-Internal debug key (dev only): `X-Internal-Api-Key: dev-internal-api-key-change-me`
-
----
-
-## Clean-machine runbook
-
-> **RAM note:** Full `docker compose … --build` needs a machine with enough memory (≈16GB+ recommended). On 8GB: develop/compile only (`mvn compile`, `npm run lint`); run stack on a stronger PC.
-
-### 1) Prerequisites
-
-- Docker + Docker Compose v2  
-- (Optional) JDK 21, Maven 3.9+, Node 20+
-
-### 2) Configure secrets (required)
-
-```bash
-cp infra/.env.example infra/.env
-# REQUIRED: replace every change-me-* value (JWT, AES, pepper, DB, admin, internal key)
-# Generate:
-#   openssl rand -base64 32   # AES_SECRET_KEY
-#   openssl rand -hex 32      # PASSWORD_PEPPER / INTERNAL_API_KEY
+```
+Browser (Angular) ──► API Gateway (JWT · CORS · rate limit)
+                            │
+        ┌───────────────────┼───────────────────┐
+        ▼         ▼         ▼         ▼         ▼
+      Auth    Customer   Account  Transaction  (admin routes)
+        │         │         ▲         │
+        │         │         │ Feign   │ Outbox → Kafka
+        │         │         └─────────┘              │
+        │         │                                  ▼
+        └─────────┴────────── Eureka ◄────── Notification
+                    │
+         PostgreSQL (DB per service) · Redis · Zipkin · Prometheus
 ```
 
-| File | Git |
-|------|-----|
-| `infra/.env.example` | ✅ commit (template) |
-| `infra/.env` | ❌ **gitignored** — real secrets |
-| Root `.env.example` | ✅ pointer only |
+| Service | Responsibility |
+|---------|----------------|
+| **api-gateway** | Edge routing, JWT validation, rate limiting |
+| **discovery-server** | Netflix Eureka service registry |
+| **auth-service** | Register/login, JWT, refresh, MFA TOTP, admin seed |
+| **customer-service** | Profile, KYC status, encrypted PII |
+| **account-service** | Accounts, balances, ledger, freeze/unfreeze |
+| **transaction-service** | Internal transfer, saga orchestration, outbox, audit |
+| **notification-service** | Kafka consumers, mock email/SMS delivery log |
 
-Full catalog: **`docs/06-infra/ENV_AND_SECRETS.md`**.  
-Secrets in `application.yml` / compose use `${VAR}` **without** hardcoded secret defaults.
+**Data isolation:** logical database-per-service (`bank_auth`, `bank_customer`, `bank_account`, `bank_transaction`, `bank_notification`) on one Postgres instance.
 
-### 3) Start full backend stack
+---
+
+## Tech stack
+
+| Layer | Technology |
+|-------|------------|
+| Backend | Java 21, Spring Boot 3.3, Spring Cloud 2023.0 |
+| Communication | OpenFeign, Resilience4j, Apache Kafka |
+| Data | PostgreSQL 16, Flyway, Redis 7 |
+| Security | JWT (HS256), BCrypt + pepper-bound password, AES-GCM (PII/MFA) |
+| Frontend | Angular 19, NgRx, Angular Material, ngx-translate (vi/en) |
+| Ops | Docker Compose, Eureka, Zipkin, Prometheus, Grafana |
+| CI | GitHub Actions (`mvn verify`, Angular build) |
+
+---
+
+## Features
+
+### Customer (Internet Banking)
+- Register / login / optional MFA (TOTP)
+- Profile management
+- Open accounts, view balances
+- Internal transfer with **Idempotency-Key**
+- Transfer history
+
+### Admin (Back Office)
+- Staff login (bootstrap admin from env)
+- Customer list & KYC update
+- Account freeze / unfreeze
+- Transaction monitor & audit log
+
+### Platform patterns
+- **Saga** transfer: debit → credit; credit failure → compensate (refund)
+- **Transactional outbox** → Kafka → notification consumer (idempotent)
+- Gateway **rate limit** (login + global) via Redis
+- Distributed **tracing** (Micrometer → Zipkin) and **metrics** (Prometheus)
+
+---
+
+## Prerequisites
+
+- Docker & Docker Compose v2  
+- Optional (local builds only): JDK 21, Maven 3.9+, Node.js 20+  
+- Recommended **≥ 16 GB RAM** for full `docker compose --build`
+
+---
+
+## Quick start
+
+### 1. Clone and configure environment
 
 ```bash
-# From repo root
+git clone https://github.com/phi1235/system-bank.git
+cd system-bank
+
+cp infra/.env.example infra/.env
+```
+
+Edit `infra/.env` and replace every `change-me-*` value. Generate secrets:
+
+```bash
+openssl rand -base64 32   # AES_SECRET_KEY (32 bytes, base64)
+openssl rand -hex 32      # PASSWORD_PEPPER / INTERNAL_API_KEY
+openssl rand -base64 48   # JWT_SECRET (≥ 32 chars after decode or use as-is long string)
+```
+
+| File | Purpose | Version control |
+|------|---------|-----------------|
+| `infra/.env.example` | Template | Committed |
+| `infra/.env` | Real secrets | **Never commit** (gitignored) |
+
+See [docs/06-infra/ENV_AND_SECRETS.md](docs/06-infra/ENV_AND_SECRETS.md) for the full variable catalog.
+
+### 2. Start infrastructure and services
+
+```bash
 docker compose -f infra/docker-compose.yml --env-file infra/.env up -d --build
 ```
 
-First build can take several minutes.
+On first Postgres boot (empty volume), databases are created automatically via  
+`infra/postgres/init-databases.sql`.  
+Schemas are applied by **Flyway** when each service starts.
 
-**Databases:** on **first** Postgres start (empty volume), Compose auto-runs  
-`infra/postgres/init-databases.sql` → creates `bank_auth`, `bank_customer`, `bank_account`, `bank_transaction`, `bank_notification`.  
-Tables = **Flyway** per service on boot.
-
-If volume already exists / need re-create DBs only:
+If databases are missing on an existing volume:
 
 ```bash
-docker compose -f infra/docker-compose.yml --env-file infra/.env up -d postgres
-./infra/scripts/init-databases.sh          # prefers bank-postgres container
-# or: ./infra/scripts/init-databases.sh --host localhost --port 5433 --user bank --password bank
+./infra/scripts/init-databases.sh
 ```
 
-### 4) URLs
+### 3. Run the frontend
 
-| Service | URL |
-|---------|-----|
-| Eureka | http://localhost:8761 |
+```bash
+cd frontend/bank-angular-app
+npm install
+npm start
+```
+
+| Portal | URL |
+|--------|-----|
+| Customer (Internet Banking) | http://localhost:4200/auth/login |
+| Admin (Back Office) | http://localhost:4200/admin/login |
+
+### 4. Verify
+
+```bash
+curl -s http://localhost:8761/actuator/health
+curl -s http://localhost:8080/actuator/health
+curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/api/v1/customers/me   # expect 401
+```
+
+---
+
+## Service endpoints
+
+| Component | URL |
+|-----------|-----|
+| Eureka Dashboard | http://localhost:8761 |
 | API Gateway | http://localhost:8080 |
 | Auth (direct) | http://localhost:18081 |
 | Customer | http://localhost:18082 |
 | Account | http://localhost:18083 |
 | Transaction | http://localhost:18084 |
 | Notification | http://localhost:18085 |
-| **Zipkin** | http://localhost:9411 |
-| **Prometheus** | http://localhost:9090 |
-| **Grafana** | http://localhost:3000 (admin/admin) |
-| Postgres (host) | `localhost:5433` |
-| Redis | localhost:6379 |
-| Kafka | localhost:9092 |
+| Zipkin | http://localhost:9411 |
+| Prometheus | http://localhost:9090 |
+| Grafana | http://localhost:3000 |
+| PostgreSQL (host) | `localhost:5433` |
+| Redis | `localhost:6379` |
+| Kafka | `localhost:9092` |
 
-### 5) Health checks
+Gateway public API base path: `/api/v1/...`
 
-```bash
-curl -s http://localhost:8761/actuator/health
-curl -s http://localhost:8080/actuator/health
-curl -s http://localhost:18084/actuator/prometheus | head
-curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/api/v1/customers/me   # 401
+---
+
+## Default accounts
+
+Credentials come from `infra/.env` (not hardcoded in application code).
+
+| Role | How to obtain | Portal |
+|------|----------------|--------|
+| **Admin** | Seeded on first start from `ADMIN_USERNAME` / `ADMIN_PASSWORD` | `/admin/login` |
+| **Customer** | Self-register via UI or `POST /api/v1/auth/register` | `/auth/login` |
+
+Set `ADMIN_SEED_ENABLED=false` after bootstrap if you no longer want auto-seed.
+
+Internal debug APIs require header:
+
+```http
+X-Internal-Api-Key: <INTERNAL_API_KEY from .env>
 ```
 
-### 6) Frontend
+---
 
-```bash
-cd frontend/bank-angular-app && npm install && npm start
-# Customer IB:  http://localhost:4200/auth/login
-# Admin BO:     http://localhost:4200/admin/login
-```
+## Common operations
 
-### 7) Demo highlights
+### Transfer happy path (UI)
 
-Follow **`docs/DEMO_SCRIPT.md`**. Short version:
+1. Register and log in as customer  
+2. Create profile (if prompted)  
+3. Open two accounts  
+4. Transfer from A → B using destination **account number**  
+5. Check history and balances  
 
-1. Register/login customer → open 2 accounts → transfer  
-2. Zipkin trace + `docker logs bank-notification \| grep MOCK_EMAIL`  
-3. Admin freeze account → transfer blocked  
-4. Optional: `SAGA_FAIL_CREDIT=true` → COMPENSATED  
-
-### 8) Notifications
+### Notifications
 
 ```bash
 curl -s http://localhost:18085/internal/notifications \
-  -H "X-Internal-Api-Key: dev-internal-api-key-change-me"
+  -H "X-Internal-Api-Key: $INTERNAL_API_KEY"
+
+docker logs bank-notification 2>&1 | grep MOCK_EMAIL | tail
 ```
 
-### 9) Rate limit
-
-```bash
-for i in $(seq 1 8); do
-  curl -s -o /dev/null -w "$i %{http_code}\n" -X POST http://localhost:8080/api/v1/auth/login \
-    -H 'Content-Type: application/json' \
-    -d '{"username":"nope","password":"bad"}'
-done
-# expect 429 RATE_LIMITED after several attempts
-```
-
-### 10) Saga compensate
+### Saga compensation demo
 
 ```bash
 SAGA_FAIL_CREDIT=true docker compose -f infra/docker-compose.yml --env-file infra/.env \
   up -d --force-recreate --no-deps transaction-service
-# transfer → COMPENSATED
+# perform a transfer → status COMPENSATED, source balance restored
+
 SAGA_FAIL_CREDIT=false docker compose -f infra/docker-compose.yml --env-file infra/.env \
   up -d --force-recreate --no-deps transaction-service
 ```
 
-### Local compile (low RAM — no Docker image build)
+### Login rate limit
+
+```bash
+for i in $(seq 1 8); do
+  curl -s -o /dev/null -w "$i %{http_code}\n" \
+    -X POST http://localhost:8080/api/v1/auth/login \
+    -H 'Content-Type: application/json' \
+    -d '{"username":"nope","password":"bad"}'
+done
+# expect HTTP 429 after repeated failures
+```
+
+### Local compile only (no Docker images)
 
 ```bash
 cd backend && mvn -T 1C compile -DskipTests
 cd frontend/bank-angular-app && npm run lint
 ```
 
-### CI
+---
 
-`.github/workflows/ci.yml` — backend `mvn verify`, FE lint+build, refuse committed `.env`.
+## Project structure
 
-### Push to GitHub (this laptop → main PC)
-
-```bash
-# 1) Confirm secrets not staged
-git status
-git check-ignore -v infra/.env   # must say ignored
-
-# 2) Never: git add infra/.env
-# 3) Push framework
-git add .
-git status   # re-check: no .env
-git commit -m "Bank system framework: phases 1-8 + env externalization"
-git remote add origin <your-github-url>   # first time
-git push -u origin main
 ```
-
-On main PC:
-
-```bash
-git clone <url> && cd bank-system
-cp infra/.env.example infra/.env   # fill secrets
-docker compose -f infra/docker-compose.yml --env-file infra/.env up -d --build
+system-bank/
+├── backend/                 # Maven multi-module Spring services
+│   ├── common-lib/
+│   ├── discovery-server/
+│   ├── api-gateway/
+│   ├── auth-service/
+│   ├── customer-service/
+│   ├── account-service/
+│   ├── transaction-service/
+│   └── notification-service/
+├── frontend/
+│   ├── bank-angular-app/    # Angular 19 (customer + admin portals)
+│   └── ui-mockups/          # Static design reference
+├── infra/
+│   ├── docker-compose.yml
+│   ├── .env.example
+│   ├── postgres/
+│   ├── prometheus/
+│   ├── grafana/
+│   └── scripts/init-databases.sh
+├── docs/                    # Architecture, API, security, ADRs
+└── .github/workflows/ci.yml
 ```
 
 ---
 
-## Docs
+## Documentation
 
-| Path | Content |
-|------|---------|
-| `docs/00-overview/` | Scope, roadmap, PROVIDE_LATER |
-| `docs/01-architecture/` | Architecture, saga, security, diagrams |
-| `docs/02-data/` | DB-per-service, ER |
-| `docs/03-api/` | API contracts |
-| `docs/05-frontend/` | Portals, IA, RBAC |
-| `docs/06-infra/` | Compose, env secrets, observability |
-| `docs/07-devops/` | CI |
-| `docs/99-decisions/` | ADRs |
-| `docs/DEMO_SCRIPT.md` | Live demo 15′ |
-| `docs/INTERVIEW_TALKING_POINTS.md` | Interview |
-| `docs/KNOWN_LIMITATIONS.md` | Gaps |
+| Document | Description |
+|----------|-------------|
+| [Architecture](docs/01-architecture/architecture.md) | System design |
+| [Saga transfer](docs/01-architecture/saga-transfer.md) | Transfer orchestration |
+| [Security](docs/01-architecture/security.md) | AuthN/Z, crypto, rate limit |
+| [Environment & secrets](docs/06-infra/ENV_AND_SECRETS.md) | Env variable reference |
+| [API contracts](docs/03-api/contracts/) | Service APIs |
+| [Demo script](docs/DEMO_SCRIPT.md) | End-to-end walkthrough |
+| [Known limitations](docs/KNOWN_LIMITATIONS.md) | Scope boundaries |
+| [ADRs](docs/99-decisions/) | Architecture decisions |
 
-## Roadmap (done)
+---
 
-Infra → Auth → Customer/Account → Saga → Notification → Angular → Ops/CI → Demo pack ✅
+## Security notes
 
-## Stack
+- Passwords are stored as **one-way hashes** (HMAC with server pepper + username, then BCrypt)—never plaintext.  
+- Secrets load only from environment variables; YAML does not embed production defaults for secrets.  
+- MFA TOTP secrets and national ID are encrypted at rest (AES-GCM).  
+- Do not commit `infra/.env`. Rotate keys if they were ever exposed.
 
-Java 21 · Spring Boot 3.3 · Spring Cloud 2023.0 · PostgreSQL · Redis · Kafka · Eureka · Gateway · Micrometer/Zipkin · Prometheus · Grafana · Angular 19 · NgRx · Material
+---
 
-## Known limitations
+## License
 
-See **[`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md)** — demo balances, mock notify, HS256, single-node infra, etc.
+This project is provided for educational and portfolio demonstration purposes.
+Use and modify at your own risk; it is **not** a production core-banking system.
