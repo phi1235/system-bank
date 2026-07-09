@@ -239,6 +239,26 @@ cd frontend/bank-angular-app && npm run lint
 
 ---
 
+## Branching
+
+| Branch | Environment | Purpose |
+|--------|-------------|---------|
+| **`main`** | **STG** | Staging / stable integration |
+| **`uat/v1.0.0`** | **UAT** | Release line for v1.0.0 |
+
+**Workflow:** `feat/*` or `fix/*` → MR into `uat/v1.0.0` → (when ready) MR into `main` (STG).
+
+Details: [docs/07-devops/BRANCHING.md](docs/07-devops/BRANCHING.md)
+
+```bash
+git fetch origin
+git checkout uat/v1.0.0 && git pull
+git checkout -b feat/your-feature
+# ... work, push, open MR → uat/v1.0.0
+```
+
+---
+
 ## Project structure
 
 ```
