@@ -1,0 +1,61 @@
+# =============================================================================
+# Secrets & local env (NEVER push)
+# =============================================================================
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+infra/.env
+infra/.env.local
+infra/.env.*.local
+
+# Spring Boot local overrides (optional)
+**/application-local.yml
+**/application-local.yaml
+**/application-*.local.yml
+
+# Frontend local env
+frontend/**/.env
+frontend/**/.env.local
+frontend/**/environment.local.ts
+
+# =============================================================================
+# Build artifacts
+# =============================================================================
+**/target/
+**/node_modules/
+**/dist/
+**/.angular/
+**/.turbo/
+*.class
+*.jar
+!**/mvnw
+!**/mvnw.cmd
+
+# =============================================================================
+# IDE / OS
+# =============================================================================
+.idea/
+*.iml
+.vscode/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+
+# =============================================================================
+# Logs / temp
+# =============================================================================
+*.log
+logs/
+tmp/
+.temp/
+coverage/
+*.lcov
+
+# =============================================================================
+# Maven wrapper jar (optional binary)
+# =============================================================================
+.mvn/wrapper/maven-wrapper.jar

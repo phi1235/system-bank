@@ -1,0 +1,49 @@
+import { Component, OnInit, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { MatTableModule } from '@angular/material/table';
+import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { BankApiService } from '../../../core/services/bank-api.service';
+import { ToastService } from '../../../core/services/toast.service';
+import { CustomerProfile } from '../../../core/models/domain.model';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
+
+@Component({
+  selector: 'app-admin-customers',
+  standalone: true,
+  imports: [CommonModule, FormsModule, MatCardModule, MatTableModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule, PageHeaderComponent,
+    TranslateModule,
+  ],
+  templateUrl: './customers.component.html',
+  styleUrl: './customers.component.scss',
+})
+export class AdminCustomersComponent implements OnInit {
+  private readonly api = inject(BankApiService);
+  private readonly toast = inject(ToastService);
+  private readonly i18n = inject(TranslateService);
+  rows: CustomerProfile[] = [];
+  q = '';
+  cols = ['fullName', 'email', 'phone', 'kycStatus', 'actions'];
+
+  ngOnInit(): void { this.load(); }
+
+  load(): void {
+    this.api.listCustomers(0, 50, this.q || undefined).subscribe({
+      next: (p) => (this.rows = p.items || []),
+    });
+  }
+
+  setKyc(c: CustomerProfile, kycStatus: string): void {
+    this.api.updateKyc(c.id, kycStatus).subscribe({
+      next: (u) => {
+        this.rows = this.rows.map((x) => (x.id === u.id ? u : x));
+        this.toast.success(this.i18n.instant('ADMIN.KYC_OK', { status: kycStatus }));
+      },
+    });
+  }
+}

@@ -1,0 +1,34 @@
+<app-page-header
+  [title]="'ADMIN.AUDIT_TITLE' | translate"
+  [subtitle]="'ADMIN.AUDIT_SUB' | translate"
+/>
+<mat-card>
+  <table mat-table [dataSource]="rows" class="full">
+    <ng-container matColumnDef="createdAt">
+      <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.TIME' | translate }}</th>
+      <td mat-cell *matCellDef="let a">{{ a.createdAt | date:'short' }}</td>
+    </ng-container>
+    <ng-container matColumnDef="action">
+      <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.ACTION' | translate }}</th>
+      <td mat-cell *matCellDef="let a"><strong>{{ a.action }}</strong></td>
+    </ng-container>
+    <ng-container matColumnDef="actorUserId">
+      <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.ACTOR' | translate }}</th>
+      <td mat-cell *matCellDef="let a"><code>{{ a.actorUserId ? (a.actorUserId | slice:0:8) : '—' }}</code></td>
+    </ng-container>
+    <ng-container matColumnDef="resourceType">
+      <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.TYPE' | translate }}</th>
+      <td mat-cell *matCellDef="let a">{{ a.resourceType }}</td>
+    </ng-container>
+    <ng-container matColumnDef="resourceId">
+      <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.RESOURCE' | translate }}</th>
+      <td mat-cell *matCellDef="let a"><code>{{ a.resourceId | slice:0:8 }}…</code></td>
+    </ng-container>
+    <ng-container matColumnDef="ip">
+      <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.IP' | translate }}</th>
+      <td mat-cell *matCellDef="let a">{{ a.ip || '—' }}</td>
+    </ng-container>
+    <tr mat-header-row *matHeaderRowDef="cols"></tr>
+    <tr mat-row *matRowDef="let row; columns: cols"></tr>
+  </table>
+</mat-card>

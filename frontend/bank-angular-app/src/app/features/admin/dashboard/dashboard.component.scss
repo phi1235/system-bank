@@ -1,0 +1,7 @@
+
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+.k { font-size: 0.8rem; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
+.v { font-size: 2rem; font-weight: 800; margin: 0.35rem 0 0.75rem; }
+a { font-size: 0.85rem; font-weight: 600; color: #b45309; text-decoration: none; }
+.cta { display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-start; }
+@media (max-width: 1000px) { .kpis { grid-template-columns: 1fr 1fr; } }

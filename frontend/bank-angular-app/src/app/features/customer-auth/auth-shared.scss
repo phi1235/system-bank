@@ -1,0 +1,38 @@
+.auth-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: linear-gradient(145deg, #0a1628 0%, #143a5c 55%, #0f2744 100%);
+}
+.auth-card {
+  width: min(420px, 100%);
+  padding: 1.75rem 1.5rem 1.5rem !important;
+  border-radius: 16px !important;
+}
+.brand {
+  font-weight: 800; color: #0a1628; margin-bottom: 0.75rem;
+  span { display: block; font-size: 0.75rem; font-weight: 600; color: #00b4a6; letter-spacing: 0.04em; text-transform: uppercase; }
+}
+h1 { margin: 0 0 0.25rem; font-size: 1.5rem; }
+.hint { margin: 0 0 1.25rem; color: #64748b; font-size: 0.9rem; }
+.full { width: 100%; }
+.submit {
+  width: 100%; height: 44px; margin-top: 0.25rem;
+  background: #00b4a6 !important; color: #042 !important; font-weight: 700;
+}
+.err { color: #dc2626; font-size: 0.85rem; margin: 0 0 0.75rem; }
+.links {
+  display: flex; justify-content: space-between; margin-top: 1.25rem; font-size: 0.875rem;
+  a { color: #1a4d7a; text-decoration: none; font-weight: 600; }
+}
+.lang-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.75rem;
+}
+.admin-theme {
+  background: linear-gradient(145deg, #111827 0%, #374151 100%);
+  .brand span { color: #f59e0b; }
+  .submit { background: #f59e0b !important; color: #111 !important; }
+}

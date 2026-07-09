@@ -1,0 +1,30 @@
+<div class="auth-page admin-theme portal-admin" data-portal="admin">
+  <mat-card class="auth-card">
+    <div class="brand">
+      {{ 'COMMON.APP_NAME' | translate }}
+      <span>{{ 'AUTH.BO_BRAND' | translate }}</span>
+    </div>
+    <h1>{{ 'AUTH.LOGIN_TITLE' | translate }}</h1>
+    <p class="hint">{{ 'AUTH.LOGIN_HINT_ADMIN' | translate }}</p>
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>{{ 'AUTH.USERNAME' | translate }}</mat-label>
+        <input matInput formControlName="username" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>{{ 'AUTH.PASSWORD' | translate }}</mat-label>
+        <input matInput type="password" formControlName="password" />
+      </mat-form-field>
+      @if (error$ | async; as err) {
+        <div class="err">{{ err }}</div>
+      }
+      <button mat-flat-button class="submit" type="submit" [disabled]="loading$ | async">
+        {{ 'AUTH.SUBMIT_ADMIN' | translate }}
+      </button>
+    </form>
+    <div class="links">
+      <a routerLink="/auth/login">{{ 'AUTH.IB_LINK' | translate }}</a>
+    </div>
+    <div class="lang-row"><app-lang-switcher /></div>
+  </mat-card>
+</div>

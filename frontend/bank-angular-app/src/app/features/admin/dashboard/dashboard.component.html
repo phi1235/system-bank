@@ -1,0 +1,26 @@
+<app-page-header
+  [title]="'ADMIN.DASH_TITLE' | translate"
+  [subtitle]="'ADMIN.DASH_SUB' | translate"
+/>
+<div class="kpis">
+  <mat-card>
+    <div class="k">{{ 'ADMIN.KPI_CUSTOMERS' | translate }}</div>
+    <div class="v">{{ customers }}</div>
+    <a routerLink="/admin/customers">{{ 'ADMIN.OPEN_MODULE' | translate }}</a>
+  </mat-card>
+  <mat-card>
+    <div class="k">{{ 'ADMIN.KPI_TRANSFERS' | translate }}</div>
+    <div class="v">{{ transfers }}</div>
+    <a routerLink="/admin/transactions">{{ 'ADMIN.MONITOR' | translate }}</a>
+  </mat-card>
+  <mat-card>
+    <div class="k">{{ 'ADMIN.KPI_AUDIT' | translate }}</div>
+    <div class="v">{{ audits }}</div>
+    <a routerLink="/admin/audit">{{ 'ADMIN.VIEW_LOG' | translate }}</a>
+  </mat-card>
+  <mat-card class="cta">
+    <div class="k">{{ 'ADMIN.QUICK' | translate }}</div>
+    <a mat-stroked-button routerLink="/admin/accounts">{{ 'ADMIN.FREEZE_LINK' | translate }}</a>
+    <a mat-stroked-button routerLink="/admin/rbac">{{ 'ADMIN.RBAC_LINK' | translate }}</a>
+  </mat-card>
+</div>

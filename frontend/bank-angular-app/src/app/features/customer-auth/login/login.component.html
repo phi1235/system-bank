@@ -1,0 +1,37 @@
+<div class="auth-page portal-customer" data-portal="customer">
+  <mat-card class="auth-card">
+    <div class="brand">
+      {{ 'COMMON.APP_NAME' | translate }}
+      <span>{{ 'AUTH.IB_BRAND' | translate }}</span>
+    </div>
+    <h1>{{ 'AUTH.LOGIN_TITLE' | translate }}</h1>
+    <p class="hint">{{ 'AUTH.LOGIN_HINT_CUSTOMER' | translate }}</p>
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>{{ 'AUTH.USERNAME' | translate }}</mat-label>
+        <input matInput formControlName="username" autocomplete="username" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>{{ 'AUTH.PASSWORD' | translate }}</mat-label>
+        <input matInput type="password" formControlName="password" autocomplete="current-password" />
+      </mat-form-field>
+      @if (error$ | async; as err) {
+        <div class="err">{{ err }}</div>
+      }
+      <button mat-flat-button class="submit" type="submit" [disabled]="loading$ | async">
+        @if (loading$ | async) {
+          <mat-spinner diameter="20"></mat-spinner>
+        } @else {
+          {{ 'AUTH.SUBMIT_LOGIN' | translate }}
+        }
+      </button>
+    </form>
+    <div class="links">
+      <a routerLink="/auth/register">{{ 'AUTH.REGISTER_LINK' | translate }}</a>
+      <a routerLink="/admin/login">{{ 'AUTH.BO_LINK' | translate }}</a>
+    </div>
+    <div class="lang-row">
+      <app-lang-switcher />
+    </div>
+  </mat-card>
+</div>

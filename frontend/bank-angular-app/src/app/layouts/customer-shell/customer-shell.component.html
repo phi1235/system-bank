@@ -1,0 +1,55 @@
+<div class="portal-customer ib-shell" data-portal="customer">
+  <header class="ib-header">
+    <div class="brand" routerLink="/customer/home">
+      <span class="logo-mark">BS</span>
+      <span class="logo-text">{{ 'COMMON.APP_NAME' | translate }}</span>
+      <span class="badge-env">IB</span>
+    </div>
+    <nav class="primary-nav">
+      <a routerLink="/customer/home" routerLinkActive="active">{{ 'NAV.HOME' | translate }}</a>
+      <a routerLink="/customer/accounts" routerLinkActive="active">{{ 'NAV.ACCOUNTS' | translate }}</a>
+      <a routerLink="/customer/payments/transfer" routerLinkActive="active">{{ 'NAV.TRANSFER' | translate }}</a>
+      <a routerLink="/customer/cards" routerLinkActive="active">{{ 'NAV.CARDS' | translate }}</a>
+      <a routerLink="/customer/wealth" routerLinkActive="active">{{ 'NAV.WEALTH' | translate }}</a>
+      <a routerLink="/customer/support" routerLinkActive="active">{{ 'NAV.SUPPORT' | translate }}</a>
+    </nav>
+    <div class="header-actions">
+      <app-lang-switcher />
+      <a mat-flat-button color="primary" class="cta" routerLink="/customer/payments/transfer">
+        {{ 'NAV.TRANSFER' | translate }}
+      </a>
+      <button mat-button type="button" [matMenuTriggerFor]="userMenu">
+        <mat-icon>account_circle</mat-icon>
+        {{ username$ | async }}
+      </button>
+      <mat-menu #userMenu="matMenu">
+        <a mat-menu-item routerLink="/customer/profile">{{ 'NAV.PROFILE' | translate }}</a>
+        <a mat-menu-item routerLink="/customer/history">{{ 'NAV.HISTORY' | translate }}</a>
+        <button mat-menu-item type="button" (click)="logout()">{{ 'COMMON.LOGOUT' | translate }}</button>
+      </mat-menu>
+    </div>
+  </header>
+  <main class="ib-main">
+    <router-outlet />
+  </main>
+  <footer class="ib-footer">
+    <div class="cols">
+      <div>
+        <strong>{{ 'CUSTOMER.FOOTER_PRODUCTS' | translate }}</strong>
+        <p>{{ 'CUSTOMER.FOOTER_PRODUCTS_BODY' | translate }}</p>
+      </div>
+      <div>
+        <strong>{{ 'CUSTOMER.FOOTER_SUPPORT' | translate }}</strong>
+        <p>{{ 'CUSTOMER.FOOTER_SUPPORT_BODY' | translate }}</p>
+      </div>
+      <div>
+        <strong>{{ 'CUSTOMER.FOOTER_LEGAL' | translate }}</strong>
+        <p>{{ 'CUSTOMER.FOOTER_LEGAL_BODY' | translate }}</p>
+      </div>
+    </div>
+    <div class="copy">
+      {{ 'CUSTOMER.FOOTER_COPY' | translate }} ·
+      <span class="dev">{{ 'COMMON.DEV' | translate }}</span>
+    </div>
+  </footer>
+</div>

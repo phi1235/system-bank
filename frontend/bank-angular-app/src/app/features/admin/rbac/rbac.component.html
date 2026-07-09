@@ -1,0 +1,22 @@
+<app-page-header
+  [title]="'ADMIN.RBAC_TITLE' | translate"
+  [subtitle]="'ADMIN.RBAC_SUB' | translate"
+/>
+<mat-card>
+  <table mat-table [dataSource]="rows" class="full">
+    <ng-container matColumnDef="role">
+      <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.ROLE' | translate }}</th>
+      <td mat-cell *matCellDef="let r"><strong>{{ r.role }}</strong></td>
+    </ng-container>
+    <ng-container matColumnDef="desc">
+      <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.DESC' | translate }}</th>
+      <td mat-cell *matCellDef="let r">{{ r.desc }}</td>
+    </ng-container>
+    <ng-container matColumnDef="perms">
+      <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.PERMS' | translate }}</th>
+      <td mat-cell *matCellDef="let r"><code>{{ r.perms }}</code></td>
+    </ng-container>
+    <tr mat-header-row *matHeaderRowDef="cols"></tr>
+    <tr mat-row *matRowDef="let row; columns: cols"></tr>
+  </table>
+</mat-card>

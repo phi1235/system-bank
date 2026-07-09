@@ -1,0 +1,37 @@
+<app-page-header
+  [title]="'CUSTOMER.HISTORY_TITLE' | translate"
+  [subtitle]="'CUSTOMER.HISTORY_SUB' | translate"
+/>
+@if (loading$ | async) { <app-loading /> }
+<mat-card>
+  <table mat-table [dataSource]="(rows$ | async) || []" class="full">
+    <ng-container matColumnDef="createdAt">
+      <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.TIME' | translate }}</th>
+      <td mat-cell *matCellDef="let t">{{ t.createdAt | date:'short' }}</td>
+    </ng-container>
+    <ng-container matColumnDef="description">
+      <th mat-header-cell *matHeaderCellDef>{{ 'CUSTOMER.HISTORY_DESC' | translate }}</th>
+      <td mat-cell *matCellDef="let t">{{ t.description || '—' }}</td>
+    </ng-container>
+    <ng-container matColumnDef="amount">
+      <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.AMOUNT' | translate }}</th>
+      <td mat-cell *matCellDef="let t">{{ t.amount | moneyVnd:t.currency }}</td>
+    </ng-container>
+    <ng-container matColumnDef="status">
+      <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.STATUS' | translate }}</th>
+      <td mat-cell *matCellDef="let t">{{ t.status }}</td>
+    </ng-container>
+    <ng-container matColumnDef="transactionId">
+      <th mat-header-cell *matHeaderCellDef>{{ 'CUSTOMER.HISTORY_CODE' | translate }}</th>
+      <td mat-cell *matCellDef="let t"><code>{{ t.transactionId | slice:0:8 }}…</code></td>
+    </ng-container>
+    <tr mat-header-row *matHeaderRowDef="cols"></tr>
+    <tr mat-row *matRowDef="let row; columns: cols"></tr>
+  </table>
+  <mat-paginator
+    [length]="(meta$ | async)?.totalElements || 0"
+    [pageSize]="10"
+    [pageSizeOptions]="[10, 20, 50]"
+    (page)="page($event)"
+  />
+</mat-card>

@@ -1,0 +1,67 @@
+<app-page-header
+  [title]="'CUSTOMER.PROFILE_TITLE' | translate"
+  [subtitle]="'CUSTOMER.PROFILE_SUB' | translate"
+/>
+
+<div class="grid">
+  <mat-card>
+    <h3>{{ needsCreate ? ('CUSTOMER.PROFILE_CREATE' | translate) : ('CUSTOMER.PROFILE_UPDATE' | translate) }}</h3>
+    @if (profile) {
+      <p class="meta">{{ 'CUSTOMER.KYC' | translate }}: <strong>{{ profile.kycStatus }}</strong>
+        @if (profile.nationalIdMasked) {
+          · {{ 'CUSTOMER.NATIONAL_ID' | translate }}: {{ profile.nationalIdMasked }}
+        }
+      </p>
+    }
+    <form [formGroup]="form" (ngSubmit)="save()">
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>{{ 'AUTH.FULL_NAME' | translate }}</mat-label>
+        <input matInput formControlName="fullName" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>{{ 'CUSTOMER.PHONE' | translate }}</mat-label>
+        <input matInput formControlName="phone" />
+      </mat-form-field>
+      @if (needsCreate) {
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>{{ 'AUTH.EMAIL' | translate }}</mat-label>
+          <input matInput formControlName="email" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>{{ 'CUSTOMER.NATIONAL_ID' | translate }}</mat-label>
+          <input matInput formControlName="nationalId" />
+        </mat-form-field>
+      }
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>{{ 'CUSTOMER.ADDRESS' | translate }}</mat-label>
+        <input matInput formControlName="address" />
+      </mat-form-field>
+      <button mat-flat-button color="primary" type="submit">{{ 'COMMON.SAVE' | translate }}</button>
+    </form>
+  </mat-card>
+
+  <mat-card>
+    <h3>{{ 'CUSTOMER.SECURITY_MFA' | translate }}</h3>
+    @if (user$ | async; as u) {
+      <p>
+        {{ 'CUSTOMER.USER' | translate }}: <strong>{{ u.username }}</strong> ·
+        {{ 'CUSTOMER.MFA' | translate }}:
+        <strong>{{ u.mfaEnabled ? ('CUSTOMER.MFA_ON' | translate) : ('CUSTOMER.MFA_OFF' | translate) }}</strong>
+      </p>
+    }
+    <button mat-stroked-button type="button" (click)="startMfa()">{{ 'CUSTOMER.MFA_SETUP' | translate }}</button>
+    @if (mfaSetup) {
+      <div class="mfa-box">
+        <p>{{ 'CUSTOMER.MFA_SECRET_DEV' | translate }}: <code>{{ mfaSetup.secret }}</code></p>
+        <p class="uri">{{ mfaSetup.otpauthUri }}</p>
+        <form [formGroup]="mfaForm" (ngSubmit)="enableMfa()">
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>{{ 'AUTH.MFA_CODE' | translate }}</mat-label>
+            <input matInput formControlName="code" maxlength="6" />
+          </mat-form-field>
+          <button mat-flat-button color="primary" type="submit">{{ 'CUSTOMER.MFA_ENABLE' | translate }}</button>
+        </form>
+      </div>
+    }
+  </mat-card>
+</div>

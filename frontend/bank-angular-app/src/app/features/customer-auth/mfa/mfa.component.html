@@ -1,0 +1,28 @@
+<div class="auth-page portal-customer" data-portal="customer">
+  <mat-card class="auth-card">
+    <div class="brand">
+      {{ 'COMMON.APP_NAME' | translate }}
+      <span>{{ 'AUTH.MFA_BRAND' | translate }}</span>
+    </div>
+    <h1>{{ 'AUTH.MFA_TITLE' | translate }}</h1>
+    <p class="hint">{{ 'AUTH.MFA_HINT' | translate }}</p>
+    @if (mfaToken$ | async; as token) {
+      <form [formGroup]="form" (ngSubmit)="submit(token)">
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>{{ 'AUTH.MFA_CODE' | translate }}</mat-label>
+          <input matInput formControlName="code" maxlength="6" inputmode="numeric" />
+        </mat-form-field>
+        @if (error$ | async; as err) {
+          <div class="err">{{ err }}</div>
+        }
+        <button mat-flat-button class="submit" type="submit" [disabled]="loading$ | async">
+          {{ 'AUTH.MFA_CONFIRM' | translate }}
+        </button>
+      </form>
+    } @else {
+      <p class="err">{{ 'AUTH.MFA_EXPIRED' | translate }}</p>
+      <a routerLink="/auth/login">{{ 'AUTH.BACK_LOGIN' | translate }}</a>
+    }
+    <div class="lang-row"><app-lang-switcher /></div>
+  </mat-card>
+</div>

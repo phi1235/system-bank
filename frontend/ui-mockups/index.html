@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bank System — IB Header/Footer · BO + RBAC</title>
+  <link rel="stylesheet" href="css/app.css" />
+</head>
+<body>
+
+<!-- GALLERY -->
+<section id="screen-gallery" class="screen active">
+  <div class="gallery">
+    <h1>Bank System — Product UI Spec</h1>
+    <p class="text-secondary" style="max-width:58ch">
+      <strong>Customer</strong>: header + footer (Internet Banking, mở rộng sản phẩm).
+      <strong>Admin</strong>: ops console + RBAC (nhiều module, phân quyền staff).
+      Không gộp chung shell.
+    </p>
+    <div class="alert alert-info" style="max-width:640px;margin-top:14px">
+      Docs: <code>INFORMATION_ARCHITECTURE.md</code> · <code>PORTALS.md</code> · <code>RBAC.md</code>
+    </div>
+    <div class="portal-split">
+      <div class="portal-panel customer">
+        <div class="badge-portal">Portal A · Internet Banking</div>
+        <h2>Khách hàng — Header & Footer</h2>
+        <p class="portal-desc">Nav ngang + CTA + footer sản phẩm. Sẵn chỗ Thẻ, Tiết kiệm, Hỗ trợ…</p>
+        <div class="gallery-list">
+          <button data-go="login"><strong>C1 Login</strong><span>Auth IB</span></button>
+          <button data-go="register"><strong>C2 Register</strong><span>Mở TK khách</span></button>
+          <button data-go="mfa"><strong>C3 MFA</strong><span>TOTP</span></button>
+          <button data-go="home"><strong>C4 Home</strong><span>Dashboard + quick actions</span></button>
+          <button data-go="accounts"><strong>C5 Accounts</strong><span>TK của tôi</span></button>
+          <button data-go="transfer"><strong>C6 Payments</strong><span>Chuyển tiền</span></button>
+          <button data-go="history"><strong>C7 History</strong><span>Lịch sử GD</span></button>
+          <button data-go="profile"><strong>C8 Profile</strong><span>Hồ sơ + MFA</span></button>
+          <button data-go="cards"><strong>C9 Cards</strong><span class="soon">Placeholder roadmap</span></button>
+          <button data-go="wealth"><strong>C10 Wealth</strong><span class="soon">Placeholder roadmap</span></button>
+          <button data-go="support"><strong>C11 Support</strong><span class="soon">Placeholder roadmap</span></button>
+        </div>
+      </div>
+      <div class="portal-panel admin">
+        <div class="badge-portal">Portal B · Back Office</div>
+        <h2>Admin — Modules + RBAC</h2>
+        <p class="portal-desc">Console vận hành. Phân quyền SUPER_ADMIN / OPS / KYC / SUPPORT…</p>
+        <div class="gallery-list">
+          <button data-go="admin-login"><strong>A1 Admin Login</strong><span>Staff only</span></button>
+          <button data-go="admin-overview"><strong>A2 Dashboard</strong><span>KPI ops</span></button>
+          <button data-go="admin-customers"><strong>A3 Customers</strong><span>KYC decide</span></button>
+          <button data-go="admin-accounts"><strong>A4 Accounts</strong><span>Freeze + permission</span></button>
+          <button data-go="admin-transfers"><strong>A5 Transactions</strong><span>Monitor all</span></button>
+          <button data-go="admin-rbac"><strong>A6 RBAC</strong><span>Roles × permissions matrix</span></button>
+          <button data-go="admin-audit"><strong>A7 Audit</strong><span>Sensitive actions</span></button>
+          <button data-go="admin-risk"><strong>A8 Risk</strong><span class="soon">Compliance placeholder</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CUSTOMER AUTH -->
+<section id="screen-login" class="screen auth-shell">
+  <div class="auth-brand customer-brand">
+    <div class="brand-logo"><div class="brand-mark">B</div> Bank Online</div>
+    <div>
+      <h1>Internet Banking trọn trải nghiệm</h1>
+      <p>Header sản phẩm · footer đầy đủ · mở rộng thẻ, tiết kiệm, hỗ trợ — không phải tool nội bộ một cột menu.</p>
+    </div>
+    <p class="text-sm" style="opacity:.5;z-index:1">Realm: INTERNET_BANKING</p>
+  </div>
+  <div class="auth-panel">
+    <div class="auth-card">
+      <div class="portal-chip customer">Internet Banking</div>
+      <h2>Đăng nhập</h2>
+      <p class="sub">Khách hàng cá nhân</p>
+      <div class="field"><label>Username</label><input value="nguyenphi" /></div>
+      <div class="field"><label>Password</label><input type="password" value="••••••••" /></div>
+      <button class="btn btn-primary btn-block" data-go="mfa">Đăng nhập</button>
+      <p class="text-sm text-center mt-4 text-secondary">Chưa có TK? <a href="#" data-go="register">Đăng ký</a></p>
+      <p class="text-sm text-center mt-2 text-muted">Nhân viên? <a href="#" data-go="admin-login">Back Office →</a></p>
+      <p class="text-sm text-center mt-4"><a href="#" data-go="gallery">← Gallery</a></p>
+    </div>
+  </div>
+</section>
+
+<section id="screen-register" class="screen auth-shell">
+  <div class="auth-brand customer-brand">
+    <div class="brand-logo"><div class="brand-mark">B</div> Bank Online</div>
+    <div><h1>Mở tài khoản số</h1><p>Credentials trước — profile & sản phẩm sau khi vào app.</p></div>
+    <p class="text-sm" style="opacity:.5;z-index:1">ROLE_CUSTOMER</p>
+  </div>
+  <div class="auth-panel">
+    <div class="auth-card">
+      <div class="portal-chip customer">Internet Banking</div>
+      <h2>Đăng ký</h2>
+      <p class="sub">Không cấp quyền Back Office</p>
+      <div class="field"><label>Họ tên</label><input placeholder="Nguyen Phi" /></div>
+      <div class="field"><label>Username</label><input /></div>
+      <div class="field"><label>Email</label><input type="email" /></div>
+      <div class="field"><label>Password</label><input type="password" /></div>
+      <button class="btn btn-primary btn-block" data-go="login">Tạo tài khoản</button>
+      <p class="text-sm text-center mt-4"><a href="#" data-go="login">← Đã có TK</a></p>
+    </div>
+  </div>
+</section>
+
+<section id="screen-mfa" class="screen auth-shell">
+  <div class="auth-brand customer-brand">
+    <div class="brand-logo"><div class="brand-mark">B</div> Bank Online</div>
+    <div><h1>Xác thực 2 lớp</h1><p>Bảo vệ phiên Internet Banking của bạn.</p></div>
+    <p class="text-sm" style="opacity:.5;z-index:1">TOTP</p>
+  </div>
+  <div class="auth-panel">
+    <div class="auth-card">
+      <div class="portal-chip customer">Internet Banking</div>
+      <h2>Mã MFA</h2>
+      <p class="sub">6 số từ Authenticator</p>
+      <div class="otp-row">
+        <input maxlength="1" inputmode="numeric" /><input maxlength="1" inputmode="numeric" />
+        <input maxlength="1" inputmode="numeric" /><input maxlength="1" inputmode="numeric" />
+        <input maxlength="1" inputmode="numeric" /><input maxlength="1" inputmode="numeric" />
+      </div>
+      <button class="btn btn-accent btn-block" data-go="home">Vào Bank Online</button>
+      <p class="text-sm text-center mt-4"><a href="#" data-go="login">← Login</a></p>
+    </div>
+  </div>
+</section>
+
+<!-- IB HOME -->
+<section id="screen-home" class="screen ib-shell">
+
+      <header class="ib-header">
+        <div class="ib-header-top">
+          <a href="#" class="brand-logo" data-go="home"><div class="brand-mark">B</div> Bank Online</a>
+          <nav class="ib-nav" aria-label="Primary">
+            <button type="button" class="nav-link" data-ib-nav="home" data-go="home">Tổng quan</button>
+            <button type="button" class="nav-link" data-ib-nav="accounts" data-go="accounts">Tài khoản</button>
+            <button type="button" class="nav-link" data-ib-nav="payments" data-go="transfer">Chuyển tiền</button>
+            <button type="button" class="nav-link" data-ib-nav="cards" data-go="cards">Thẻ</button>
+            <details class="nav-more">
+              <summary>Thêm ▾</summary>
+              <div class="dropdown">
+                <button type="button" data-go="wealth">Tiết kiệm / Đầu tư <span class="tag-soon">sắp có</span></button>
+                <button type="button" data-go="support">Hỗ trợ <span class="tag-soon">sắp có</span></button>
+                <button type="button" data-go="history">Lịch sử giao dịch</button>
+                <button type="button" data-go="profile">Hồ sơ & bảo mật</button>
+              </div>
+            </details>
+          </nav>
+          <div class="ib-header-actions">
+            <button type="button" class="btn btn-cta btn-sm" data-go="transfer">+ Chuyển tiền</button>
+            <button type="button" class="ib-icon-btn" title="Thông báo">🔔</button>
+            <button type="button" class="ib-user-btn" data-go="profile">
+              <span class="avatar">NP</span> Nguyen Phi ▾
+            </button>
+          </div>
+        </div>
+        <div class="ib-subbar">
+          <div class="ib-subbar-inner">
+            <div>Xin chào, <strong>Nguyen Phi</strong> · Phiên bảo mật MFA</div>
+            <div>Hotline 1900 9999 · Không phải menu admin</div>
+          </div>
+        </div>
+      </header>
+  <main class="ib-main">
+    <div class="page-head">
+      <div>
+        <div class="breadcrumb">Bank Online / <span>Tổng quan</span></div>
+        <h2>Chào buổi sáng, Phi</h2>
+        <p>Quản lý tài chính cá nhân — không gian khách hàng, tách biệt back-office.</p>
+      </div>
+      <button class="btn btn-cta" data-go="transfer">Chuyển tiền ngay</button>
+    </div>
+    <div class="grid-3 mb-6">
+      <div class="stat-card balance-hero">
+        <div class="stat-label">Tổng số dư khả dụng</div>
+        <div class="stat-value">2.450.000 ₫</div>
+        <div class="stat-meta">2 tài khoản thanh toán · VND</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Chi tiêu tháng này</div>
+        <div class="stat-value">1.2tr</div>
+        <div class="stat-meta">18 giao dịch</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Trạng thái KYC</div>
+        <div class="stat-value" style="font-size:1rem"><span class="badge badge-warning">PENDING</span></div>
+        <div class="stat-meta">Hoàn tất tại Hồ sơ</div>
+      </div>
+    </div>
+    <div class="card mb-6">
+      <div class="card-title">Thao tác nhanh</div>
+      <div class="quick-actions">
+        <button type="button" class="quick-action" data-go="transfer"><div class="ico">⇄</div><strong>Chuyển tiền</strong><span>Nội bộ / sau: 247</span></button>
+        <button type="button" class="quick-action" data-go="accounts"><div class="ico">▣</div><strong>Tài khoản</strong><span>Số dư & chi tiết</span></button>
+        <button type="button" class="quick-action" data-go="cards"><div class="ico">💳</div><strong>Thẻ</strong><span>Sắp ra mắt</span></button>
+        <button type="button" class="quick-action" data-go="support"><div class="ico">💬</div><strong>Hỗ trợ</strong><span>FAQ / ticket</span></button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="flex-between mb-4">
+        <div class="card-title" style="margin:0">Giao dịch gần đây</div>
+        <a href="#" data-go="history" class="text-sm">Xem tất cả</a>
+      </div>
+      <div class="table-wrap" style="border:none">
+        <table class="data">
+          <thead><tr><th>Thời gian</th><th>Mô tả</th><th>Số tiền</th><th>TT</th></tr></thead>
+          <tbody>
+            <tr><td>09/07 10:42</td><td>Tra no cafe</td><td class="money debit">−50.000</td><td><span class="badge badge-success">COMPLETED</span></td></tr>
+            <tr><td>08/07 18:15</td><td>Chuyen tien bo me</td><td class="money debit">−500.000</td><td><span class="badge badge-success">COMPLETED</span></td></tr>
+            <tr><td>07/07 09:01</td><td>Demo compensate</td><td class="money">100.000</td><td><span class="badge badge-warning">COMPENSATED</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+      <footer class="ib-footer">
+        <div class="ib-footer-inner">
+          <div>
+            <div class="brand-logo" style="margin-bottom:12px"><div class="brand-mark">B</div> Bank Online</div>
+            <p class="brand-blurb">Internet Banking dành cho khách hàng cá nhân. Mở rộng sản phẩm: thẻ, tiết kiệm, vay, ưu đãi — kiến trúc nav sẵn sàng.</p>
+          </div>
+          <div>
+            <h4>Sản phẩm</h4>
+            <button type="button" class="linkish" data-go="accounts">Tài khoản thanh toán</button>
+            <button type="button" class="linkish" data-go="cards">Thẻ ghi nợ / tín dụng</button>
+            <button type="button" class="linkish" data-go="wealth">Tiết kiệm</button>
+            <button type="button" class="linkish" data-go="transfer">Chuyển tiền</button>
+          </div>
+          <div>
+            <h4>Hỗ trợ</h4>
+            <button type="button" class="linkish" data-go="support">Trung tâm trợ giúp</button>
+            <a href="#">Biểu phí & lãi suất</a>
+            <a href="#">Chi nhánh / ATM</a>
+            <a href="#">Bảo mật giao dịch</a>
+          </div>
+          <div>
+            <h4>Pháp lý</h4>
+            <a href="#">Điều khoản sử dụng</a>
+            <a href="#">Chính sách bảo mật</a>
+            <a href="#">Quyền riêng tư</a>
+            <button type="button" class="linkish" data-go="gallery">← Design gallery</button>
+          </div>
+        </div>
+        <div class="ib-footer-bottom">
+          <span>© 2026 Bank System · Internet Banking</span>
+          <span>DEV mockup · SSL · PCI-lite demo</span>
+        </div>
+      </footer>
+</section>
+
+<!-- IB ACCOUNTS -->
+<section id="screen-accounts" class="screen ib-shell">
+
+      <header class="ib-header">
+        <div class="ib-header-top">
+          <a href="#" class="brand-logo" data-go="home"><div class="brand-mark">B</div> Bank Online</a>
+          <nav class="ib-nav" aria-label="Primary">
+            <button type="button" class="nav-link" data-ib-nav="home" data-go="home">Tổng quan</button>
+            <button type="button" class="nav-link" data-ib-nav="accounts" data-go="accounts">Tài khoản</button>
+            <button type="button" class="nav-link" data-ib-nav="payments" data-go="transfer">Chuyển tiền</button>
+            <button type="button" class="nav-link" data-ib-nav="cards" data-go="cards">Thẻ</button>
+            <details class="nav-more">
+              <summary>Thêm ▾</summary>
+              <div class="dropdown">
+                <button type="button" data-go="wealth">Tiết kiệm / Đầu tư <span class="tag-soon">sắp có</span></button>
+                <button type="button" data-go="support">Hỗ trợ <span class="tag-soon">sắp có</span></button>
+                <button type="button" data-go="history">Lịch sử giao dịch</button>
+                <button type="button" data-go="profile">Hồ sơ & bảo mật</button>
+              </div>
+            </details>
+          </nav>
+          <div class="ib-header-actions">
+            <button type="button" class="btn btn-cta btn-sm" data-go="transfer">+ Chuyển tiền</button>
+            <button type="button" class="ib-icon-btn" title="Thông báo">🔔</button>
+            <button type="button" class="ib-user-btn" data-go="profile">
+              <span class="avatar">NP</span> Nguyen Phi ▾
+            </button>
+          </div>
+        </div>
+        <div class="ib-subbar">
+          <div class="ib-subbar-inner">
+            <div>Xin chào, <strong>Nguyen Phi</strong> · Phiên bảo mật MFA</div>
+            <div>Hotline 1900 9999 · Không phải menu admin</div>
+          </div>
+        </div>
+      </header>
+  <main class="ib-main">
+    <div class="page-head">
+      <div>
+        <div class="breadcrumb">Bank Online / <span>Tài khoản</span></div>
+        <h2>Tài khoản của tôi</h2>
+        <p>Chỉ dữ liệu thuộc user đăng nhập. Mở rộng: sổ phụ, sao kê PDF.</p>
+      </div>
+      <button class="btn btn-primary">+ Mở tài khoản</button>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="flex-between mb-4">
+          <div><div class="text-sm text-secondary">PAYMENT</div><div class="mono mt-2" style="font-size:1.1rem">10 2847 5631</div></div>
+          <span class="badge badge-success">ACTIVE</span>
+        </div>
+        <div class="stat-value">1.450.000 ₫</div>
+        <div class="btn-row mt-6">
+          <button class="btn btn-cta btn-sm" data-go="transfer">Chuyển tiền</button>
+          <button class="btn btn-outline btn-sm">Sao kê</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="flex-between mb-4">
+          <div><div class="text-sm text-secondary">PAYMENT</div><div class="mono mt-2" style="font-size:1.1rem">10 9912 0044</div></div>
+          <span class="badge badge-success">ACTIVE</span>
+        </div>
+        <div class="stat-value">1.000.000 ₫</div>
+        <div class="btn-row mt-6">
+          <button class="btn btn-cta btn-sm" data-go="transfer">Chuyển tiền</button>
+          <button class="btn btn-outline btn-sm">Sao kê</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+      <footer class="ib-footer">
+        <div class="ib-footer-inner">
+          <div>
+            <div class="brand-logo" style="margin-bottom:12px"><div class="brand-mark">B</div> Bank Online</div>
+            <p class="brand-blurb">Internet Banking dành cho khách hàng cá nhân. Mở rộng sản phẩm: thẻ, tiết kiệm, vay, ưu đãi — kiến trúc nav sẵn sàng.</p>
+          </div>
+          <div>
+            <h4>Sản phẩm</h4>
+            <button type="button" class="linkish" data-go="accounts">Tài khoản thanh toán</button>
+            <button type="button" class="linkish" data-go="cards">Thẻ ghi nợ / tín dụng</button>
+            <button type="button" class="linkish" data-go="wealth">Tiết kiệm</button>
+            <button type="button" class="linkish" data-go="transfer">Chuyển tiền</button>
+          </div>
+          <div>
+            <h4>Hỗ trợ</h4>
+            <button type="button" class="linkish" data-go="support">Trung tâm trợ giúp</button>
+            <a href="#">Biểu phí & lãi suất</a>
+            <a href="#">Chi nhánh / ATM</a>
+            <a href="#">Bảo mật giao dịch</a>
+          </div>
+          <div>
+            <h4>Pháp lý</h4>
+            <a href="#">Điều khoản sử dụng</a>
+            <a href="#">Chính sách bảo mật</a>
+            <a href="#">Quyền riêng tư</a>
+            <button type="button" class="linkish" data-go="gallery">← Design gallery</button>
+          </div>
+        </div>
+        <div class="ib-footer-bottom">
+          <span>© 2026 Bank System · Internet Banking</span>
+          <span>DEV mockup · SSL · PCI-lite demo</span>
+        </div>
+      </footer>
+</section>
+
+<!-- IB TRANSFER -->
+<section id="screen-transfer" class="screen ib-shell">
+
+      <header class="ib-header">
+        <div class="ib-header-top">
+          <a href="#" class="brand-logo" data-go="home"><div class="brand-mark">B</div> Bank Online</a>
+          <nav class="ib-nav" aria-label="Primary">
+            <button type="button" class="nav-link" data-ib-nav="home" data-go="home">Tổng quan</button>
+            <button type="button" class="nav-link" data-ib-nav="accounts" data-go="accounts">Tài khoản</button>
+            <button type="button" class="nav-link" data-ib-nav="payments" data-go="transfer">Chuyển tiền</button>
+            <button type="button" class="nav-link" data-ib-nav="cards" data-go="cards">Thẻ</button>
+            <details class="nav-more">
+              <summary>Thêm ▾</summary>
+              <div class="dropdown">
+                <button type="button" data-go="wealth">Tiết kiệm / Đầu tư <span class="tag-soon">sắp có</span></button>
+                <button type="button" data-go="support">Hỗ trợ <span class="tag-soon">sắp có</span></button>
+                <button type="button" data-go="history">Lịch sử giao dịch</button>
+                <button type="button" data-go="profile">Hồ sơ & bảo mật</button>
+              </div>
+            </details>
+          </nav>
+          <div class="ib-header-actions">
+            <button type="button" class="btn btn-cta btn-sm" data-go="transfer">+ Chuyển tiền</button>
+            <button type="button" class="ib-icon-btn" title="Thông báo">🔔</button>
+            <button type="button" class="ib-user-btn" data-go="profile">
+              <span class="avatar">NP</span> Nguyen Phi ▾
+            </button>
+          </div>
+        </div>
+        <div class="ib-subbar">
+          <div class="ib-subbar-inner">
+            <div>Xin chào, <strong>Nguyen Phi</strong> · Phiên bảo mật MFA</div>
+            <div>Hotline 1900 9999 · Không phải menu admin</div>
+          </div>
+        </div>
+      </header>
+  <main class="ib-main">
+    <div class="page-head">
+      <div>
+        <div class="breadcrumb">Bank Online / Chuyển tiền / <span>Nội bộ</span></div>
+        <h2>Chuyển khoản</h2>
+        <p>MVP: nội bộ. Roadmap: 247, theo lô, định kỳ — cùng module Payments.</p>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Thông tin lệnh</div>
+        <div class="field"><label>Từ tài khoản</label>
+          <select><option>10 2847 5631 — 1.450.000 ₫</option><option>10 9912 0044 — 1.000.000 ₫</option></select>
+        </div>
+        <div class="field"><label>Số tài khoản nhận</label><input class="mono" value="1098765432" /></div>
+        <div class="field"><label>Số tiền (VND)</label><input type="number" value="50000" /></div>
+        <div class="field"><label>Nội dung</label><input value="Tra no cafe" maxlength="255" /></div>
+        <div class="field-hint mb-4">Idempotency-Key tự sinh mỗi lần gửi · xác nhận 2 bước production</div>
+        <button class="btn btn-cta btn-block">Tiếp tục xác nhận</button>
+      </div>
+      <div>
+        <div class="card mb-4">
+          <div class="card-title">Kênh chuyển (roadmap)</div>
+          <div class="btn-row">
+            <button class="btn btn-primary btn-sm">Nội bộ</button>
+            <button class="btn btn-outline btn-sm" disabled>NAPAS 247</button>
+            <button class="btn btn-outline btn-sm" disabled>Theo lô</button>
+            <button class="btn btn-outline btn-sm" disabled>Định kỳ</button>
+          </div>
+        </div>
+        <div class="card" style="background:#ecfdf5;border-color:#a7f3d0">
+          <span class="badge badge-success">COMPLETED · mock</span>
+          <div class="mono mt-4 text-sm">txn a3f2c8e1-…</div>
+          <div class="stat-value mt-4">−50.000 ₫</div>
+          <p class="text-sm text-secondary mt-4">Backend saga/outbox — khách chỉ thấy kết quả.</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+      <footer class="ib-footer">
+        <div class="ib-footer-inner">
+          <div>
+            <div class="brand-logo" style="margin-bottom:12px"><div class="brand-mark">B</div> Bank Online</div>
+            <p class="brand-blurb">Internet Banking dành cho khách hàng cá nhân. Mở rộng sản phẩm: thẻ, tiết kiệm, vay, ưu đãi — kiến trúc nav sẵn sàng.</p>
+          </div>
+          <div>
+            <h4>Sản phẩm</h4>
+            <button type="button" class="linkish" data-go="accounts">Tài khoản thanh toán</button>
+            <button type="button" class="linkish" data-go="cards">Thẻ ghi nợ / tín dụng</button>
+            <button type="button" class="linkish" data-go="wealth">Tiết kiệm</button>
+            <button type="button" class="linkish" data-go="transfer">Chuyển tiền</button>
+          </div>
+          <div>
+            <h4>Hỗ trợ</h4>
+            <button type="button" class="linkish" data-go="support">Trung tâm trợ giúp</button>
+            <a href="#">Biểu phí & lãi suất</a>
+            <a href="#">Chi nhánh / ATM</a>
+            <a href="#">Bảo mật giao dịch</a>
+          </div>
+          <div>
+            <h4>Pháp lý</h4>
+            <a href="#">Điều khoản sử dụng</a>
+            <a href="#">Chính sách bảo mật</a>
+            <a href="#">Quyền riêng tư</a>
+            <button type="button" class="linkish" data-go="gallery">← Design gallery</button>
+          </div>
+        </div>
+        <div class="ib-footer-bottom">
+          <span>© 2026 Bank System · Internet Banking</span>
+          <span>DEV mockup · SSL · PCI-lite demo</span>
+        </div>
+      </footer>
+</section>
+
+<!-- IB HISTORY -->
+<section id="screen-history" class="screen ib-shell">
+
+      <header class="ib-header">
+        <div class="ib-header-top">
+          <a href="#" class="brand-logo" data-go="home"><div class="brand-mark">B</div> Bank Online</a>
+          <nav class="ib-nav" aria-label="Primary">
+            <button type="button" class="nav-link" data-ib-nav="home" data-go="home">Tổng quan</button>
+            <button type="button" class="nav-link" data-ib-nav="accounts" data-go="accounts">Tài khoản</button>
+            <button type="button" class="nav-link" data-ib-nav="payments" data-go="transfer">Chuyển tiền</button>
+            <button type="button" class="nav-link" data-ib-nav="cards" data-go="cards">Thẻ</button>
+            <details class="nav-more">
+              <summary>Thêm ▾</summary>
+              <div class="dropdown">
+                <button type="button" data-go="wealth">Tiết kiệm / Đầu tư <span class="tag-soon">sắp có</span></button>
+                <button type="button" data-go="support">Hỗ trợ <span class="tag-soon">sắp có</span></button>
+                <button type="button" data-go="history">Lịch sử giao dịch</button>
+                <button type="button" data-go="profile">Hồ sơ & bảo mật</button>
+              </div>
+            </details>
+          </nav>
+          <div class="ib-header-actions">
+            <button type="button" class="btn btn-cta btn-sm" data-go="transfer">+ Chuyển tiền</button>
+            <button type="button" class="ib-icon-btn" title="Thông báo">🔔</button>
+            <button type="button" class="ib-user-btn" data-go="profile">
+              <span class="avatar">NP</span> Nguyen Phi ▾
+            </button>
+          </div>
+        </div>
+        <div class="ib-subbar">
+          <div class="ib-subbar-inner">
+            <div>Xin chào, <strong>Nguyen Phi</strong> · Phiên bảo mật MFA</div>
+            <div>Hotline 1900 9999 · Không phải menu admin</div>
+          </div>
+        </div>
+      </header>
+  <main class="ib-main">
+    <div class="page-head">
+      <div>
+        <div class="breadcrumb">Bank Online / <span>Lịch sử</span></div>
+        <h2>Lịch sử giao dịch</h2>
+        <p>Chỉ GD của bạn. Filter thời gian / trạng thái / loại.</p>
+      </div>
+    </div>
+    <div class="page-actions mb-4">
+      <select style="padding:8px 12px;border-radius:8px;border:1px solid #e2e8f0">
+        <option>Tất cả trạng thái</option><option>COMPLETED</option><option>FAILED</option><option>COMPENSATED</option>
+      </select>
+    </div>
+    <div class="table-wrap">
+      <table class="data">
+        <thead><tr><th>ID</th><th>Thời gian</th><th>Đến</th><th>Số tiền</th><th>Mô tả</th><th>TT</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">a3f2…</td><td>09/07 10:42</td><td class="mono">**5432</td><td class="money debit">50.000</td><td>Tra no cafe</td><td><span class="badge badge-success">COMPLETED</span></td></tr>
+          <tr><td class="mono">b71c…</td><td>08/07 18:15</td><td class="mono">**9012</td><td class="money debit">500.000</td><td>Chuyen tien</td><td><span class="badge badge-success">COMPLETED</span></td></tr>
+          <tr><td class="mono">c90e…</td><td>07/07 09:01</td><td class="mono">**0001</td><td class="money">100.000</td><td>Demo fail</td><td><span class="badge badge-warning">COMPENSATED</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+      <footer class="ib-footer">
+        <div class="ib-footer-inner">
+          <div>
+            <div class="brand-logo" style="margin-bottom:12px"><div class="brand-mark">B</div> Bank Online</div>
+            <p class="brand-blurb">Internet Banking dành cho khách hàng cá nhân. Mở rộng sản phẩm: thẻ, tiết kiệm, vay, ưu đãi — kiến trúc nav sẵn sàng.</p>
+          </div>
+          <div>
+            <h4>Sản phẩm</h4>
+            <button type="button" class="linkish" data-go="accounts">Tài khoản thanh toán</button>
+            <button type="button" class="linkish" data-go="cards">Thẻ ghi nợ / tín dụng</button>
+            <button type="button" class="linkish" data-go="wealth">Tiết kiệm</button>
+            <button type="button" class="linkish" data-go="transfer">Chuyển tiền</button>
+          </div>
+          <div>
+            <h4>Hỗ trợ</h4>
+            <button type="button" class="linkish" data-go="support">Trung tâm trợ giúp</button>
+            <a href="#">Biểu phí & lãi suất</a>
+            <a href="#">Chi nhánh / ATM</a>
+            <a href="#">Bảo mật giao dịch</a>
+          </div>
+          <div>
+            <h4>Pháp lý</h4>
+            <a href="#">Điều khoản sử dụng</a>
+            <a href="#">Chính sách bảo mật</a>
+            <a href="#">Quyền riêng tư</a>
+            <button type="button" class="linkish" data-go="gallery">← Design gallery</button>
+          </div>
+        </div>
+        <div class="ib-footer-bottom">
+          <span>© 2026 Bank System · Internet Banking</span>
+          <span>DEV mockup · SSL · PCI-lite demo</span>
+        </div>
+      </footer>
+</section>
+
+<!-- IB PROFILE -->
+<section id="screen-profile" class="screen ib-shell">
+
+      <header class="ib-header">
+        <div class="ib-header-top">
+          <a href="#" class="brand-logo" data-go="home"><div class="brand-mark">B</div> Bank Online</a>
+          <nav class="ib-nav" aria-label="Primary">
+            <button type="button" class="nav-link" data-ib-nav="home" data-go="home">Tổng quan</button>
+            <button type="button" class="nav-link" data-ib-nav="accounts" data-go="accounts">Tài khoản</button>
+            <button type="button" class="nav-link" data-ib-nav="payments" data-go="transfer">Chuyển tiền</button>
+            <button type="button" class="nav-link" data-ib-nav="cards" data-go="cards">Thẻ</button>
+            <details class="nav-more">
+              <summary>Thêm ▾</summary>
+              <div class="dropdown">
+                <button type="button" data-go="wealth">Tiết kiệm / Đầu tư <span class="tag-soon">sắp có</span></button>
+                <button type="button" data-go="support">Hỗ trợ <span class="tag-soon">sắp có</span></button>
+                <button type="button" data-go="history">Lịch sử giao dịch</button>
+                <button type="button" data-go="profile">Hồ sơ & bảo mật</button>
+              </div>
+            </details>
+          </nav>
+          <div class="ib-header-actions">
+            <button type="button" class="btn btn-cta btn-sm" data-go="transfer">+ Chuyển tiền</button>
+            <button type="button" class="ib-icon-btn" title="Thông báo">🔔</button>
+            <button type="button" class="ib-user-btn" data-go="profile">
+              <span class="avatar">NP</span> Nguyen Phi ▾
+            </button>
+          </div>
+        </div>
+        <div class="ib-subbar">
+          <div class="ib-subbar-inner">
+            <div>Xin chào, <strong>Nguyen Phi</strong> · Phiên bảo mật MFA</div>
+            <div>Hotline 1900 9999 · Không phải menu admin</div>
+          </div>
+        </div>
+      </header>
+  <main class="ib-main">
+    <div class="page-head">
+      <div>
+        <div class="breadcrumb">Bank Online / <span>Hồ sơ</span></div>
+        <h2>Hồ sơ & bảo mật</h2>
+        <p>Thông tin cá nhân · MFA · thiết bị tin cậy (roadmap).</p>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Thông tin</div>
+        <div class="field"><label>Họ tên</label><input value="Nguyen Phi" /></div>
+        <div class="field"><label>Email</label><input value="phi@example.com" /></div>
+        <div class="field"><label>SĐT</label><input value="0901234567" /></div>
+        <div class="field"><label>CCCD</label><input value="*********7890" disabled /><div class="field-hint">AES at rest · mask UI</div></div>
+        <button class="btn btn-primary">Lưu</button>
+      </div>
+      <div class="card">
+        <div class="card-title">Bảo mật MFA</div>
+        <div class="alert alert-info">Bật TOTP để bảo vệ đăng nhập Internet Banking.</div>
+        <div style="height:140px;background:#f1f5f9;border-radius:12px;display:grid;place-items:center;color:#94a3b8;font-size:12px;margin-bottom:14px">QR otpauth://</div>
+        <div class="field"><label>Mã xác nhận</label><input class="mono" placeholder="123456" /></div>
+        <button class="btn btn-accent btn-block">Bật MFA</button>
+      </div>
+    </div>
+  </main>
+
+      <footer class="ib-footer">
+        <div class="ib-footer-inner">
+          <div>
+            <div class="brand-logo" style="margin-bottom:12px"><div class="brand-mark">B</div> Bank Online</div>
+            <p class="brand-blurb">Internet Banking dành cho khách hàng cá nhân. Mở rộng sản phẩm: thẻ, tiết kiệm, vay, ưu đãi — kiến trúc nav sẵn sàng.</p>
+          </div>
+          <div>
+            <h4>Sản phẩm</h4>
+            <button type="button" class="linkish" data-go="accounts">Tài khoản thanh toán</button>
+            <button type="button" class="linkish" data-go="cards">Thẻ ghi nợ / tín dụng</button>
+            <button type="button" class="linkish" data-go="wealth">Tiết kiệm</button>
+            <button type="button" class="linkish" data-go="transfer">Chuyển tiền</button>
+          </div>
+          <div>
+            <h4>Hỗ trợ</h4>
+            <button type="button" class="linkish" data-go="support">Trung tâm trợ giúp</button>
+            <a href="#">Biểu phí & lãi suất</a>
+            <a href="#">Chi nhánh / ATM</a>
+            <a href="#">Bảo mật giao dịch</a>
+          </div>
+          <div>
+            <h4>Pháp lý</h4>
+            <a href="#">Điều khoản sử dụng</a>
+            <a href="#">Chính sách bảo mật</a>
+            <a href="#">Quyền riêng tư</a>
+            <button type="button" class="linkish" data-go="gallery">← Design gallery</button>
+          </div>
+        </div>
+        <div class="ib-footer-bottom">
+          <span>© 2026 Bank System · Internet Banking</span>
+          <span>DEV mockup · SSL · PCI-lite demo</span>
+        </div>
+      </footer>
+</section>
+
+<!-- IB PLACEHOLDERS -->
+<section id="screen-cards" class="screen ib-shell">
+
+      <header class="ib-header">
+        <div class="ib-header-top">
+          <a href="#" class="brand-logo" data-go="home"><div class="brand-mark">B</div> Bank Online</a>
+          <nav class="ib-nav" aria-label="Primary">
+            <button type="button" class="nav-link" data-ib-nav="home" data-go="home">Tổng quan</button>
+            <button type="button" class="nav-link" data-ib-nav="accounts" data-go="accounts">Tài khoản</button>
+            <button type="button" class="nav-link" data-ib-nav="payments" data-go="transfer">Chuyển tiền</button>
+            <button type="button" class="nav-link" data-ib-nav="cards" data-go="cards">Thẻ</button>
+            <details class="nav-more">
+              <summary>Thêm ▾</summary>
+              <div class="dropdown">
+                <button type="button" data-go="wealth">Tiết kiệm / Đầu tư <span class="tag-soon">sắp có</span></button>
+                <button type="button" data-go="support">Hỗ trợ <span class="tag-soon">sắp có</span></button>
+                <button type="button" data-go="history">Lịch sử giao dịch</button>
+                <button type="button" data-go="profile">Hồ sơ & bảo mật</button>
+              </div>
+            </details>
+          </nav>
+          <div class="ib-header-actions">
+            <button type="button" class="btn btn-cta btn-sm" data-go="transfer">+ Chuyển tiền</button>
+            <button type="button" class="ib-icon-btn" title="Thông báo">🔔</button>
+            <button type="button" class="ib-user-btn" data-go="profile">
+              <span class="avatar">NP</span> Nguyen Phi ▾
+            </button>
+          </div>
+        </div>
+        <div class="ib-subbar">
+          <div class="ib-subbar-inner">
+            <div>Xin chào, <strong>Nguyen Phi</strong> · Phiên bảo mật MFA</div>
+            <div>Hotline 1900 9999 · Không phải menu admin</div>
+          </div>
+        </div>
+      </header>
+  <main class="ib-main">
+    <div class="card placeholder-page">
+      <div class="ico">💳</div>
+      <h3>Thẻ — đang phát triển</h3>
+      <p>Phát hành thẻ ảo, khóa/mở, đặt hạn mức, xem giao dịch thẻ. Route & nav đã có trong IA.</p>
+      <button class="btn btn-outline" data-go="home">Về tổng quan</button>
+    </div>
+  </main>
+
+      <footer class="ib-footer">
+        <div class="ib-footer-inner">
+          <div>
+            <div class="brand-logo" style="margin-bottom:12px"><div class="brand-mark">B</div> Bank Online</div>
+            <p class="brand-blurb">Internet Banking dành cho khách hàng cá nhân. Mở rộng sản phẩm: thẻ, tiết kiệm, vay, ưu đãi — kiến trúc nav sẵn sàng.</p>
+          </div>
+          <div>
+            <h4>Sản phẩm</h4>
+            <button type="button" class="linkish" data-go="accounts">Tài khoản thanh toán</button>
+            <button type="button" class="linkish" data-go="cards">Thẻ ghi nợ / tín dụng</button>
+            <button type="button" class="linkish" data-go="wealth">Tiết kiệm</button>
+            <button type="button" class="linkish" data-go="transfer">Chuyển tiền</button>
+          </div>
+          <div>
+            <h4>Hỗ trợ</h4>
+            <button type="button" class="linkish" data-go="support">Trung tâm trợ giúp</button>
+            <a href="#">Biểu phí & lãi suất</a>
+            <a href="#">Chi nhánh / ATM</a>
+            <a href="#">Bảo mật giao dịch</a>
+          </div>
+          <div>
+            <h4>Pháp lý</h4>
+            <a href="#">Điều khoản sử dụng</a>
+            <a href="#">Chính sách bảo mật</a>
+            <a href="#">Quyền riêng tư</a>
+            <button type="button" class="linkish" data-go="gallery">← Design gallery</button>
+          </div>
+        </div>
+        <div class="ib-footer-bottom">
+          <span>© 2026 Bank System · Internet Banking</span>
+          <span>DEV mockup · SSL · PCI-lite demo</span>
+        </div>
+      </footer>
+</section>
+
+<section id="screen-wealth" class="screen ib-shell">
+
+      <header class="ib-header">
+        <div class="ib-header-top">
+          <a href="#" class="brand-logo" data-go="home"><div class="brand-mark">B</div> Bank Online</a>
+          <nav class="ib-nav" aria-label="Primary">
+            <button type="button" class="nav-link" data-ib-nav="home" data-go="home">Tổng quan</button>
+            <button type="button" class="nav-link" data-ib-nav="accounts" data-go="accounts">Tài khoản</button>
+            <button type="button" class="nav-link" data-ib-nav="payments" data-go="transfer">Chuyển tiền</button>
+            <button type="button" class="nav-link" data-ib-nav="cards" data-go="cards">Thẻ</button>
+            <details class="nav-more">
+              <summary>Thêm ▾</summary>
+              <div class="dropdown">
+                <button type="button" data-go="wealth">Tiết kiệm / Đầu tư <span class="tag-soon">sắp có</span></button>
+                <button type="button" data-go="support">Hỗ trợ <span class="tag-soon">sắp có</span></button>
+                <button type="button" data-go="history">Lịch sử giao dịch</button>
+                <button type="button" data-go="profile">Hồ sơ & bảo mật</button>
+              </div>
+            </details>
+          </nav>
+          <div class="ib-header-actions">
+            <button type="button" class="btn btn-cta btn-sm" data-go="transfer">+ Chuyển tiền</button>
+            <button type="button" class="ib-icon-btn" title="Thông báo">🔔</button>
+            <button type="button" class="ib-user-btn" data-go="profile">
+              <span class="avatar">NP</span> Nguyen Phi ▾
+            </button>
+          </div>
+        </div>
+        <div class="ib-subbar">
+          <div class="ib-subbar-inner">
+            <div>Xin chào, <strong>Nguyen Phi</strong> · Phiên bảo mật MFA</div>
+            <div>Hotline 1900 9999 · Không phải menu admin</div>
+          </div>
+        </div>
+      </header>
+  <main class="ib-main">
+    <div class="card placeholder-page">
+      <div class="ico">📈</div>
+      <h3>Tiết kiệm / Đầu tư</h3>
+      <p>Mở sổ tiết kiệm, tất toán, lãi dự kiến. Placeholder có chủ đích — không để nav “chết”.</p>
+      <button class="btn btn-outline" data-go="home">Về tổng quan</button>
+    </div>
+  </main>
+
+      <footer class="ib-footer">
+        <div class="ib-footer-inner">
+          <div>
+            <div class="brand-logo" style="margin-bottom:12px"><div class="brand-mark">B</div> Bank Online</div>
+            <p class="brand-blurb">Internet Banking dành cho khách hàng cá nhân. Mở rộng sản phẩm: thẻ, tiết kiệm, vay, ưu đãi — kiến trúc nav sẵn sàng.</p>
+          </div>
+          <div>
+            <h4>Sản phẩm</h4>
+            <button type="button" class="linkish" data-go="accounts">Tài khoản thanh toán</button>
+            <button type="button" class="linkish" data-go="cards">Thẻ ghi nợ / tín dụng</button>
+            <button type="button" class="linkish" data-go="wealth">Tiết kiệm</button>
+            <button type="button" class="linkish" data-go="transfer">Chuyển tiền</button>
+          </div>
+          <div>
+            <h4>Hỗ trợ</h4>
+            <button type="button" class="linkish" data-go="support">Trung tâm trợ giúp</button>
+            <a href="#">Biểu phí & lãi suất</a>
+            <a href="#">Chi nhánh / ATM</a>
+            <a href="#">Bảo mật giao dịch</a>
+          </div>
+          <div>
+            <h4>Pháp lý</h4>
+            <a href="#">Điều khoản sử dụng</a>
+            <a href="#">Chính sách bảo mật</a>
+            <a href="#">Quyền riêng tư</a>
+            <button type="button" class="linkish" data-go="gallery">← Design gallery</button>
+          </div>
+        </div>
+        <div class="ib-footer-bottom">
+          <span>© 2026 Bank System · Internet Banking</span>
+          <span>DEV mockup · SSL · PCI-lite demo</span>
+        </div>
+      </footer>
+</section>
+
+<section id="screen-support" class="screen ib-shell">
+
+      <header class="ib-header">
+        <div class="ib-header-top">
+          <a href="#" class="brand-logo" data-go="home"><div class="brand-mark">B</div> Bank Online</a>
+          <nav class="ib-nav" aria-label="Primary">
+            <button type="button" class="nav-link" data-ib-nav="home" data-go="home">Tổng quan</button>
+            <button type="button" class="nav-link" data-ib-nav="accounts" data-go="accounts">Tài khoản</button>
+            <button type="button" class="nav-link" data-ib-nav="payments" data-go="transfer">Chuyển tiền</button>
+            <button type="button" class="nav-link" data-ib-nav="cards" data-go="cards">Thẻ</button>
+            <details class="nav-more">
+              <summary>Thêm ▾</summary>
+              <div class="dropdown">
+                <button type="button" data-go="wealth">Tiết kiệm / Đầu tư <span class="tag-soon">sắp có</span></button>
+                <button type="button" data-go="support">Hỗ trợ <span class="tag-soon">sắp có</span></button>
+                <button type="button" data-go="history">Lịch sử giao dịch</button>
+                <button type="button" data-go="profile">Hồ sơ & bảo mật</button>
+              </div>
+            </details>
+          </nav>
+          <div class="ib-header-actions">
+            <button type="button" class="btn btn-cta btn-sm" data-go="transfer">+ Chuyển tiền</button>
+            <button type="button" class="ib-icon-btn" title="Thông báo">🔔</button>
+            <button type="button" class="ib-user-btn" data-go="profile">
+              <span class="avatar">NP</span> Nguyen Phi ▾
+            </button>
+          </div>
+        </div>
+        <div class="ib-subbar">
+          <div class="ib-subbar-inner">
+            <div>Xin chào, <strong>Nguyen Phi</strong> · Phiên bảo mật MFA</div>
+            <div>Hotline 1900 9999 · Không phải menu admin</div>
+          </div>
+        </div>
+      </header>
+  <main class="ib-main">
+    <div class="card placeholder-page">
+      <div class="ico">💬</div>
+      <h3>Trung tâm hỗ trợ</h3>
+      <p>FAQ, ticket, chat. Footer + nav “Thêm” đã trỏ vào module này.</p>
+      <button class="btn btn-outline" data-go="home">Về tổng quan</button>
+    </div>
+  </main>
+
+      <footer class="ib-footer">
+        <div class="ib-footer-inner">
+          <div>
+            <div class="brand-logo" style="margin-bottom:12px"><div class="brand-mark">B</div> Bank Online</div>
+            <p class="brand-blurb">Internet Banking dành cho khách hàng cá nhân. Mở rộng sản phẩm: thẻ, tiết kiệm, vay, ưu đãi — kiến trúc nav sẵn sàng.</p>
+          </div>
+          <div>
+            <h4>Sản phẩm</h4>
+            <button type="button" class="linkish" data-go="accounts">Tài khoản thanh toán</button>
+            <button type="button" class="linkish" data-go="cards">Thẻ ghi nợ / tín dụng</button>
+            <button type="button" class="linkish" data-go="wealth">Tiết kiệm</button>
+            <button type="button" class="linkish" data-go="transfer">Chuyển tiền</button>
+          </div>
+          <div>
+            <h4>Hỗ trợ</h4>
+            <button type="button" class="linkish" data-go="support">Trung tâm trợ giúp</button>
+            <a href="#">Biểu phí & lãi suất</a>
+            <a href="#">Chi nhánh / ATM</a>
+            <a href="#">Bảo mật giao dịch</a>
+          </div>
+          <div>
+            <h4>Pháp lý</h4>
+            <a href="#">Điều khoản sử dụng</a>
+            <a href="#">Chính sách bảo mật</a>
+            <a href="#">Quyền riêng tư</a>
+            <button type="button" class="linkish" data-go="gallery">← Design gallery</button>
+          </div>
+        </div>
+        <div class="ib-footer-bottom">
+          <span>© 2026 Bank System · Internet Banking</span>
+          <span>DEV mockup · SSL · PCI-lite demo</span>
+        </div>
+      </footer>
+</section>
+
+<!-- ADMIN LOGIN -->
+<section id="screen-admin-login" class="screen auth-shell">
+  <div class="auth-brand admin-brand">
+    <div class="brand-logo"><div class="brand-mark">BO</div> Bank Ops</div>
+    <div>
+      <h1>Back Office Console</h1>
+      <p>Vận hành, KYC, risk, RBAC staff. Realm tách Internet Banking. Audit mọi thao tác nhạy cảm.</p>
+    </div>
+    <p class="text-sm" style="opacity:.5;z-index:1">Realm: BACK_OFFICE</p>
+  </div>
+  <div class="auth-panel">
+    <div class="auth-card">
+      <div class="portal-chip admin">Back Office</div>
+      <h2>Staff login</h2>
+      <p class="sub">Không đăng ký public · RBAC sau đăng nhập</p>
+      <div class="field"><label>Staff ID</label><input value="admin.ops" /></div>
+      <div class="field"><label>Password</label><input type="password" value="••••••••" /></div>
+      <button class="btn btn-primary btn-block" data-go="admin-overview">Đăng nhập Console</button>
+      <div class="alert alert-warning mt-4" style="margin-bottom:0">CUSTOMER vào đây → 403. SUPPORT thiếu quyền freeze → nút ẩn/disabled.</div>
+      <p class="text-sm text-center mt-4 text-muted">Khách hàng? <a href="#" data-go="login">Internet Banking →</a></p>
+      <p class="text-sm text-center mt-2"><a href="#" data-go="gallery">← Gallery</a></p>
+    </div>
+  </div>
+</section>
+
+<!-- BO OVERVIEW -->
+<section id="screen-admin-overview" class="screen bo-shell">
+
+      <aside class="bo-sidebar">
+        <div class="brand-logo"><div class="brand-mark">BO</div> Ops Console</div>
+        <div class="bo-mod">Vận hành</div>
+        <button type="button" class="bo-nav-item" data-bo-nav="overview" data-go="admin-overview">Dashboard</button>
+        <button type="button" class="bo-nav-item" data-bo-nav="customers" data-go="admin-customers">Customers</button>
+        <button type="button" class="bo-nav-item" data-bo-nav="accounts" data-go="admin-accounts">Accounts</button>
+        <button type="button" class="bo-nav-item" data-bo-nav="transfers" data-go="admin-transfers">Transactions</button>
+        <div class="bo-mod">Sản phẩm (roadmap)</div>
+        <button type="button" class="bo-nav-item disabled" title="Phase sau">Cards <span class="lock">soon</span></button>
+        <button type="button" class="bo-nav-item" data-bo-nav="risk" data-go="admin-risk">Risk & Compliance</button>
+        <div class="bo-mod">Hệ thống</div>
+        <button type="button" class="bo-nav-item" data-bo-nav="rbac" data-go="admin-rbac">RBAC / Staff</button>
+        <button type="button" class="bo-nav-item" data-bo-nav="audit" data-go="admin-audit">Audit log</button>
+        <div class="bo-sidebar-footer">
+          <div style="font-weight:600">admin.ops</div>
+          <div style="opacity:.55;font-size:12px;margin-top:2px">Role: SUPER_ADMIN</div>
+          <button type="button" class="btn btn-ghost btn-sm mt-2" style="color:#fbbf24;padding-left:0" data-go="gallery">Gallery</button>
+        </div>
+      </aside>
+  <div class="bo-body">
+
+        <header class="bo-topbar">
+          <h1>Ops Dashboard</h1>
+          <div class="bo-topbar-meta">
+            <span class="bo-chip">Back Office</span>
+            <span class="bo-chip role">SUPER_ADMIN</span>
+            <span class="text-sm text-secondary">permissions: * </span>
+          </div>
+        </header>
+    <div class="bo-content">
+      <div class="alert alert-warning">Portal vận hành · menu theo module + permission. Không dùng layout header/footer khách hàng.</div>
+      <div class="grid-4 mb-6">
+        <div class="stat-card"><div class="stat-label">Customers</div><div class="stat-value">1.284</div><div class="stat-meta">+32 tuần này</div></div>
+        <div class="stat-card"><div class="stat-label">Accounts frozen</div><div class="stat-value">12</div></div>
+        <div class="stat-card"><div class="stat-label">Tx today</div><div class="stat-value">342</div></div>
+        <div class="stat-card"><div class="stat-label">Compensated 24h</div><div class="stat-value">3</div></div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Hàng đợi cần xử lý</div>
+          <table class="data">
+            <thead><tr><th>Loại</th><th>Chi tiết</th><th>SLA</th><th></th></tr></thead>
+            <tbody>
+              <tr><td><span class="badge badge-warning">KYC</span></td><td>8 hồ sơ &gt; 48h</td><td>HIGH</td><td><button class="btn btn-outline btn-sm" data-go="admin-customers">Xử lý</button></td></tr>
+              <tr><td><span class="badge badge-danger">RISK</span></td><td>2 case AML mở</td><td>CRIT</td><td><button class="btn btn-outline btn-sm" data-go="admin-risk">Mở</button></td></tr>
+              <tr><td><span class="badge badge-info">TX</span></td><td>3 COMPENSATED cần review</td><td>MED</td><td><button class="btn btn-outline btn-sm" data-go="admin-transfers">Xem</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card">
+          <div class="card-title">Quyền phiên hiện tại</div>
+          <p class="text-sm text-secondary mb-4">SUPER_ADMIN · full catalog. Đổi sang SUPPORT để demo ẩn freeze.</p>
+          <div class="btn-row">
+            <span class="badge badge-success">dashboard:read</span>
+            <span class="badge badge-success">customers:*</span>
+            <span class="badge badge-success">accounts:freeze</span>
+            <span class="badge badge-success">rbac:manage</span>
+            <span class="badge badge-success">audit:read</span>
+          </div>
+          <button class="btn btn-outline btn-sm mt-4" data-go="admin-rbac">Mở ma trận RBAC</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BO CUSTOMERS -->
+<section id="screen-admin-customers" class="screen bo-shell">
+
+      <aside class="bo-sidebar">
+        <div class="brand-logo"><div class="brand-mark">BO</div> Ops Console</div>
+        <div class="bo-mod">Vận hành</div>
+        <button type="button" class="bo-nav-item" data-bo-nav="overview" data-go="admin-overview">Dashboard</button>
+        <button type="button" class="bo-nav-item" data-bo-nav="customers" data-go="admin-customers">Customers</button>
+        <button type="button" class="bo-nav-item" data-bo-nav="accounts" data-go="admin-accounts">Accounts</button>
+        <button type="button" class="bo-nav-item" data-bo-nav="transfers" data-go="admin-transfers">Transactions</button>
+        <div class="bo-mod">Sản phẩm (roadmap)</div>
+        <button type="button" class="bo-nav-item disabled" title="Phase sau">Cards <span class="lock">soon</span></button>
+        <button type="button" class="bo-nav-item" data-bo-nav="risk" data-go="admin-risk">Risk & Compliance</button>
+        <div class="bo-mod">Hệ thống</div>
+        <button type="button" class="bo-nav-item" data-bo-nav="rbac" data-go="admin-rbac">RBAC / Staff</button>
+        <button type="button" class="bo-nav-item" data-bo-nav="audit" data-go="admin-audit">Audit log</button>
+        <div class="bo-sidebar-footer">
+          <div style="font-weight:600">admin.ops</div>
+          <div style="opacity:.55;font-size:12px;margin-top:2px">Role: SUPER_ADMIN</div>
+          <button type="button" class="btn btn-ghost btn-sm mt-2" style="color:#fbbf24;padding-left:0" data-go="gallery">Gallery</button>
+        </div>
+      </aside>
+  <div class="bo-body">
+
+        <header class="bo-topbar">
+          <h1>Customers · KYC</h1>
+          <div class="bo-topbar-meta">
+            <span class="bo-chip">Back Office</span>
+            <span class="bo-chip role">SUPER_ADMIN</span>
+            <span class="text-sm text-secondary">permissions: * </span>
+          </div>
+        </header>
+    <div class="bo-content">
+      <div class="flex-between mb-4">
+        <input placeholder="Search name, email, id…" style="padding:8px 12px;border:1px solid #e5e7eb;border-radius:8px;min-width:280px" />
+        <span class="text-sm text-muted">Requires <code>customers:read</code></span>
+      </div>
+      <div class="table-wrap">
+        <table class="data">
+          <thead><tr><th>ID</th><th>Họ tên</th><th>Email</th><th>CCCD</th><th>KYC</th><th>Action</th></tr></thead>
+          <tbody>
+            <tr>
+              <td class="mono">u-001</td><td>Nguyen Phi</td><td>phi@example.com</td><td class="mono">***7890</td>
+              <td><span class="badge badge-warning">PENDING</span></td>
+              <td class="btn-row">
+                <button class="btn btn-primary btn-sm" title="customers:kyc_decide">Verify</button>
+                <button class="btn btn-outline btn-sm">Reject</button>
+              </td>
+            </tr>
+            <tr>
+              <td class="mono">u-002</td><td>Tran Lan</td><td>lan@example.com</td><td class="mono">***1122</td>
+              <td><span class="badge badge-success">VERIFIED</span></td>
+              <td><button class="btn btn-ghost btn-sm">View</button></td>
+            </tr>
+            <tr>
+              <td class="mono">u-003</td><td>Le Minh</td><td>minh@example.com</td><td class="mono">***3344</td>
+              <td><span class="badge badge-danger">REJECTED</span></td>
+              <td><button class="btn btn-ghost btn-sm">View</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BO ACCOUNTS -->
+<section id="screen-admin-accounts" class="screen bo-shell">
+
+      <aside class="bo-sidebar">
+        <div class="brand-logo"><div class="brand-mark">BO</div> Ops Console</div>
+        <div class="bo-mod">Vận hành</div>
+        <button type="button" class="bo-nav-item" data-bo-nav="overview" data-go="admin-overview">Dashboard</button>
+        <button type="button" class="bo-nav-item" data-bo-nav="customers" data-go="admin-customers">Customers</button>
+        <button type="button" class="bo-nav-item" data-bo-nav="accounts" data-go="admin-accounts">Accounts</button>
+        <button type="button" class="bo-nav-item" data-bo-nav="transfers" data-go="admin-transfers">Transactions</button>
+        <div class="bo-mod">Sản phẩm (roadmap)</div>
+        <button type="button" class="bo-nav-item disabled" title="Phase sau">Cards <span class="lock">soon</span></button>
+        <button type="button" class="bo-nav-item" data-bo-nav="risk" data-go="admin-risk">Risk & Compliance</button>
+        <div class="bo-mod">Hệ thống</div>
+        <button type="button" class="bo-nav-item" data-bo-nav="rbac" data-go="admin-rbac">RBAC / Staff</button>
+        <button type="button" class="bo-nav-item" data-bo-nav="audit" data-go="admin-audit">Audit log</button>
+        <div class="bo-sidebar-footer">
+          <div style="font-weight:600">admin.ops</div>
+          <div style="opacity:.55;font-size:12px;margin-top:2px">Role: SUPER_ADMIN</div>
+          <button type="button" class="btn btn-ghost btn-sm mt-2" style="color:#fbbf24;padding-left:0" data-go="gallery">Gallery</button>
+        </div>
+      </aside>
+  <div class="bo-body">
+
+        <header class="bo-topbar">
+          <h1>Accounts control</h1>
+          <div class="bo-topbar-meta">
+            <span class="bo-chip">Back Office</span>
+            <span class="bo-chip role">SUPER_ADMIN</span>
+            <span class="text-sm text-secondary">permissions: * </span>
+          </div>
+        </header>
+    <div class="bo-content">
+      <div class="alert alert-danger">Freeze cần <code>accounts:freeze</code>. SUPPORT không thấy nút / disabled + tooltip.</div>
+      <div class="table-wrap">
+        <table class="data">
+          <thead><tr><th>Số TK</th><th>Owner</th><th>Balance</th><th>Status</th><th>Action</th></tr></thead>
+          <tbody>
+            <tr>
+              <td class="mono">1028475631</td><td>nguyenphi</td><td class="money">1.450.000</td>
+              <td><span class="badge badge-success">ACTIVE</span></td>
+              <td><button class="btn btn-danger btn-sm">Freeze</button></td>
+            </tr>
+            <tr>
+              <td class="mono">1055511122</td><td>tranlan</td><td class="money">0</td>
+              <td><span class="badge badge-danger">FROZEN</span></td>
+              <td><button class="btn btn-outline btn-sm">Unfreeze</button></td>
+            </tr>
+            <tr>
+              <td class="mono">1088811199</td><td>leminh</td><td class="money">320.000</td>
+              <td><span class="badge badge-success">ACTIVE</span></td>
+              <td>
+                <button class="btn btn-danger btn-sm" disabled title="Missing permission accounts:freeze (demo SUPPORT)">Freeze</button>
+                <span class="text-sm text-muted"> · no permission</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BO TRANSFERS -->
+<section id="screen-admin-transfers" class="screen bo-shell">
+
+      <aside class="bo-sidebar">
+        <div class="brand-logo"><div class="brand-mark">BO</div> Ops Console</div>
+        <div class="bo-mod">Vận hành</div>
+        <button type="button" class="bo-nav-item" data-bo-nav="overview" data-go="admin-overview">Dashboard</button>
+        <button type="button" class="bo-nav-item" data-bo-nav="customers" data-go="admin-customers">Customers</button>
+        <button type="button" class="bo-nav-item" data-bo-nav="accounts" data-go="admin-accounts">Accounts</button>
+        <button type="button" class="bo-nav-item" data-bo-nav="transfers" data-go="admin-transfers">Transactions</button>
+        <div class="bo-mod">Sản phẩm (roadmap)</div>
+        <button type="button" class="bo-nav-item disabled" title="Phase sau">Cards <span class="lock">soon</span></button>
+        <button type="button" class="bo-nav-item" data-bo-nav="risk" data-go="admin-risk">Risk & Compliance</button>
+        <div class="bo-mod">Hệ thống</div>
+        <button type="button" class="bo-nav-item" data-bo-nav="rbac" data-go="admin-rbac">RBAC / Staff</button>
+        <button type="button" class="bo-nav-item" data-bo-nav="audit" data-go="admin-audit">Audit log</button>
+        <div class="bo-sidebar-footer">
+          <div style="font-weight:600">admin.ops</div>
+          <div style="opacity:.55;font-size:12px;margin-top:2px">Role: SUPER_ADMIN</div>
+          <button type="button" class="btn btn-ghost btn-sm mt-2" style="color:#fbbf24;padding-left:0" data-go="gallery">Gallery</button>
+        </div>
+      </aside>
+  <div class="bo-body">
+
+        <header class="bo-topbar">
+          <h1>Transactions monitor</h1>
+          <div class="bo-topbar-meta">
+            <span class="bo-chip">Back Office</span>
+            <span class="bo-chip role">SUPER_ADMIN</span>
+            <span class="text-sm text-secondary">permissions: * </span>
+          </div>
+        </header>
+    <div class="bo-content">
+      <div class="grid-3 mb-6">
+        <div class="stat-card"><div class="stat-label">Completed</div><div class="stat-value">142</div></div>
+        <div class="stat-card"><div class="stat-label">Failed</div><div class="stat-value">7</div></div>
+        <div class="stat-card"><div class="stat-label">Compensated</div><div class="stat-value">3</div></div>
+      </div>
+      <div class="table-wrap">
+        <table class="data">
+          <thead><tr><th>ID</th><th>User</th><th>Amount</th><th>Saga</th><th>Status</th><th>Time</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">a3f2…</td><td>nguyenphi</td><td>50.000</td><td class="mono text-sm">DEBIT→CREDIT</td><td><span class="badge badge-success">COMPLETED</span></td><td>09/07 10:42</td></tr>
+            <tr><td class="mono">c90e…</td><td>nguyenphi</td><td>100.000</td><td class="mono text-sm">DEBIT→COMP</td><td><span class="badge badge-warning">COMPENSATED</span></td><td>07/07 09:01</td></tr>
+            <tr><td class="mono">d11a…</td><td>leminh</td><td>200.000</td><td class="mono text-sm">VALIDATE</td><td><span class="badge badge-danger">FAILED</span></td><td>06/07 14:20</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BO RBAC -->
+<section id="screen-admin-rbac" class="screen bo-shell">
+
+      <aside class="bo-sidebar">
+        <div class="brand-logo"><div class="brand-mark">BO</div> Ops Console</div>
+        <div class="bo-mod">Vận hành</div>
+        <button type="button" class="bo-nav-item" data-bo-nav="overview" data-go="admin-overview">Dashboard</button>
+        <button type="button" class="bo-nav-item" data-bo-nav="customers" data-go="admin-customers">Customers</button>
+        <button type="button" class="bo-nav-item" data-bo-nav="accounts" data-go="admin-accounts">Accounts</button>
+        <button type="button" class="bo-nav-item" data-bo-nav="transfers" data-go="admin-transfers">Transactions</button>
+        <div class="bo-mod">Sản phẩm (roadmap)</div>
+        <button type="button" class="bo-nav-item disabled" title="Phase sau">Cards <span class="lock">soon</span></button>
+        <button type="button" class="bo-nav-item" data-bo-nav="risk" data-go="admin-risk">Risk & Compliance</button>
+        <div class="bo-mod">Hệ thống</div>
+        <button type="button" class="bo-nav-item" data-bo-nav="rbac" data-go="admin-rbac">RBAC / Staff</button>
+        <button type="button" class="bo-nav-item" data-bo-nav="audit" data-go="admin-audit">Audit log</button>
+        <div class="bo-sidebar-footer">
+          <div style="font-weight:600">admin.ops</div>
+          <div style="opacity:.55;font-size:12px;margin-top:2px">Role: SUPER_ADMIN</div>
+          <button type="button" class="btn btn-ghost btn-sm mt-2" style="color:#fbbf24;padding-left:0" data-go="gallery">Gallery</button>
+        </div>
+      </aside>
+  <div class="bo-body">
+
+        <header class="bo-topbar">
+          <h1>RBAC · Roles & Permissions</h1>
+          <div class="bo-topbar-meta">
+            <span class="bo-chip">Back Office</span>
+            <span class="bo-chip role">SUPER_ADMIN</span>
+            <span class="text-sm text-secondary">permissions: * </span>
+          </div>
+        </header>
+    <div class="bo-content">
+      <div class="alert alert-info">Chỉ <code>rbac:manage</code> / SUPER_ADMIN. Staff CUSTOMER realm không xuất hiện ở đây.</div>
+      <div class="grid-2 mb-6">
+        <div class="card">
+          <div class="card-title">Staff users</div>
+          <table class="data">
+            <thead><tr><th>User</th><th>Roles</th><th></th></tr></thead>
+            <tbody>
+              <tr><td class="mono">admin.ops</td><td><span class="badge badge-warning">SUPER_ADMIN</span></td><td><button class="btn btn-ghost btn-sm">Edit</button></td></tr>
+              <tr><td class="mono">ops.lan</td><td><span class="badge badge-info">OPS_ADMIN</span></td><td><button class="btn btn-ghost btn-sm">Edit</button></td></tr>
+              <tr><td class="mono">kyc.minh</td><td><span class="badge badge-neutral">KYC_OFFICER</span></td><td><button class="btn btn-ghost btn-sm">Edit</button></td></tr>
+              <tr><td class="mono">cs.hoa</td><td><span class="badge badge-neutral">SUPPORT</span></td><td><button class="btn btn-ghost btn-sm">Edit</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card">
+          <div class="card-title">Roles seed</div>
+          <ul class="text-sm text-secondary" style="padding-left:1.1rem;line-height:1.8">
+            <li><strong>SUPER_ADMIN</strong> — all modules</li>
+            <li><strong>OPS_ADMIN</strong> — freeze, tx, customers read</li>
+            <li><strong>KYC_OFFICER</strong> — kyc_decide</li>
+            <li><strong>COMPLIANCE</strong> — audit, risk read</li>
+            <li><strong>SUPPORT</strong> — read-only + notify resend</li>
+            <li><strong>AUDITOR</strong> — audit/tx read-only</li>
+          </ul>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Permission matrix (rút gọn)</div>
+        <div class="matrix-wrap">
+          <table class="matrix">
+            <thead>
+              <tr>
+                <th class="row-head">Permission \ Role</th>
+                <th>SUPER</th><th>OPS</th><th>KYC</th><th>COMP</th><th>SUP</th><th>AUD</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><th class="row-head">dashboard:read</th><td class="on">✓</td><td class="on">✓</td><td class="on">✓</td><td class="on">✓</td><td class="on">✓</td><td class="on">✓</td></tr>
+              <tr><th class="row-head">customers:kyc_decide</th><td class="on">✓</td><td class="off">—</td><td class="on">✓</td><td class="off">—</td><td class="off">—</td><td class="off">—</td></tr>
+              <tr><th class="row-head">accounts:freeze</th><td class="on">✓</td><td class="on">✓</td><td class="off">—</td><td class="off">—</td><td class="off">—</td><td class="off">—</td></tr>
+              <tr><th class="row-head">transactions:read</th><td class="on">✓</td><td class="on">✓</td><td class="off">—</td><td class="on">✓</td><td class="off">—</td><td class="on">✓</td></tr>
+              <tr><th class="row-head">rbac:manage</th><td class="on">✓</td><td class="off">—</td><td class="off">—</td><td class="off">—</td><td class="off">—</td><td class="off">—</td></tr>
+              <tr><th class="row-head">audit:read</th><td class="on">✓</td><td class="on">✓</td><td class="on">✓</td><td class="on">✓</td><td class="off">—</td><td class="on">✓</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BO AUDIT -->
+<section id="screen-admin-audit" class="screen bo-shell">
+
+      <aside class="bo-sidebar">
+        <div class="brand-logo"><div class="brand-mark">BO</div> Ops Console</div>
+        <div class="bo-mod">Vận hành</div>
+        <button type="button" class="bo-nav-item" data-bo-nav="overview" data-go="admin-overview">Dashboard</button>
+        <button type="button" class="bo-nav-item" data-bo-nav="customers" data-go="admin-customers">Customers</button>
+        <button type="button" class="bo-nav-item" data-bo-nav="accounts" data-go="admin-accounts">Accounts</button>
+        <button type="button" class="bo-nav-item" data-bo-nav="transfers" data-go="admin-transfers">Transactions</button>
+        <div class="bo-mod">Sản phẩm (roadmap)</div>
+        <button type="button" class="bo-nav-item disabled" title="Phase sau">Cards <span class="lock">soon</span></button>
+        <button type="button" class="bo-nav-item" data-bo-nav="risk" data-go="admin-risk">Risk & Compliance</button>
+        <div class="bo-mod">Hệ thống</div>
+        <button type="button" class="bo-nav-item" data-bo-nav="rbac" data-go="admin-rbac">RBAC / Staff</button>
+        <button type="button" class="bo-nav-item" data-bo-nav="audit" data-go="admin-audit">Audit log</button>
+        <div class="bo-sidebar-footer">
+          <div style="font-weight:600">admin.ops</div>
+          <div style="opacity:.55;font-size:12px;margin-top:2px">Role: SUPER_ADMIN</div>
+          <button type="button" class="btn btn-ghost btn-sm mt-2" style="color:#fbbf24;padding-left:0" data-go="gallery">Gallery</button>
+        </div>
+      </aside>
+  <div class="bo-body">
+
+        <header class="bo-topbar">
+          <h1>Audit log</h1>
+          <div class="bo-topbar-meta">
+            <span class="bo-chip">Back Office</span>
+            <span class="bo-chip role">SUPER_ADMIN</span>
+            <span class="text-sm text-secondary">permissions: * </span>
+          </div>
+        </header>
+    <div class="bo-content">
+      <div class="table-wrap">
+        <table class="data">
+          <thead><tr><th>Time</th><th>Actor</th><th>Role ctx</th><th>Action</th><th>Resource</th><th>IP</th></tr></thead>
+          <tbody>
+            <tr><td>09/07 10:42</td><td class="mono">u-001</td><td>CUSTOMER</td><td>TRANSFER_CREATE</td><td class="mono">a3f2…</td><td class="mono">203.0.113.10</td></tr>
+            <tr><td>09/07 09:15</td><td class="mono">admin.ops</td><td>SUPER_ADMIN</td><td>ACCOUNT_FREEZE</td><td class="mono">10555…</td><td class="mono">10.0.0.5</td></tr>
+            <tr><td>08/07 21:00</td><td class="mono">kyc.minh</td><td>KYC_OFFICER</td><td>KYC_VERIFY</td><td class="mono">u-002</td><td class="mono">10.0.0.8</td></tr>
+            <tr><td>08/07 16:40</td><td class="mono">ops.lan</td><td>OPS_ADMIN</td><td>ACCOUNT_UNFREEZE</td><td class="mono">10777…</td><td class="mono">10.0.0.6</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BO RISK PLACEHOLDER -->
+<section id="screen-admin-risk" class="screen bo-shell">
+
+      <aside class="bo-sidebar">
+        <div class="brand-logo"><div class="brand-mark">BO</div> Ops Console</div>
+        <div class="bo-mod">Vận hành</div>
+        <button type="button" class="bo-nav-item" data-bo-nav="overview" data-go="admin-overview">Dashboard</button>
+        <button type="button" class="bo-nav-item" data-bo-nav="customers" data-go="admin-customers">Customers</button>
+        <button type="button" class="bo-nav-item" data-bo-nav="accounts" data-go="admin-accounts">Accounts</button>
+        <button type="button" class="bo-nav-item" data-bo-nav="transfers" data-go="admin-transfers">Transactions</button>
+        <div class="bo-mod">Sản phẩm (roadmap)</div>
+        <button type="button" class="bo-nav-item disabled" title="Phase sau">Cards <span class="lock">soon</span></button>
+        <button type="button" class="bo-nav-item" data-bo-nav="risk" data-go="admin-risk">Risk & Compliance</button>
+        <div class="bo-mod">Hệ thống</div>
+        <button type="button" class="bo-nav-item" data-bo-nav="rbac" data-go="admin-rbac">RBAC / Staff</button>
+        <button type="button" class="bo-nav-item" data-bo-nav="audit" data-go="admin-audit">Audit log</button>
+        <div class="bo-sidebar-footer">
+          <div style="font-weight:600">admin.ops</div>
+          <div style="opacity:.55;font-size:12px;margin-top:2px">Role: SUPER_ADMIN</div>
+          <button type="button" class="btn btn-ghost btn-sm mt-2" style="color:#fbbf24;padding-left:0" data-go="gallery">Gallery</button>
+        </div>
+      </aside>
+  <div class="bo-body">
+
+        <header class="bo-topbar">
+          <h1>Risk & Compliance</h1>
+          <div class="bo-topbar-meta">
+            <span class="bo-chip">Back Office</span>
+            <span class="bo-chip role">SUPER_ADMIN</span>
+            <span class="text-sm text-secondary">permissions: * </span>
+          </div>
+        </header>
+    <div class="bo-content">
+      <div class="card placeholder-page">
+        <div class="ico">🛡️</div>
+        <h3>Risk module — roadmap</h3>
+        <p>Case AML, rule engine, dual control. Nav + permission <code>risk:read</code> đã nằm trong IA/RBAC.</p>
+        <button class="btn btn-outline" data-go="admin-overview">Về dashboard</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script src="js/app.js"></script>
+</body>
+</html>

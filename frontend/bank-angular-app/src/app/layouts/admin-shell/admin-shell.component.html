@@ -1,0 +1,57 @@
+<div class="portal-admin bo-shell" data-portal="admin">
+  <mat-sidenav-container class="bo-container">
+    <mat-sidenav mode="side" opened class="bo-nav">
+      <div class="nav-brand">
+        <span class="mark">BO</span>
+        <div>
+          <div class="t">{{ 'ADMIN.BO_TITLE' | translate }}</div>
+          <div class="s">{{ 'ADMIN.BO_SUB' | translate }}</div>
+        </div>
+      </div>
+      <mat-nav-list>
+        <a mat-list-item routerLink="/admin" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+          <mat-icon matListItemIcon>dashboard</mat-icon>
+          <span matListItemTitle>{{ 'NAV.ADMIN_DASHBOARD' | translate }}</span>
+        </a>
+        <a mat-list-item routerLink="/admin/customers" routerLinkActive="active">
+          <mat-icon matListItemIcon>people</mat-icon>
+          <span matListItemTitle>{{ 'NAV.ADMIN_CUSTOMERS' | translate }}</span>
+        </a>
+        <a mat-list-item routerLink="/admin/accounts" routerLinkActive="active">
+          <mat-icon matListItemIcon>account_balance</mat-icon>
+          <span matListItemTitle>{{ 'NAV.ADMIN_ACCOUNTS' | translate }}</span>
+        </a>
+        <a mat-list-item routerLink="/admin/transactions" routerLinkActive="active">
+          <mat-icon matListItemIcon>swap_horiz</mat-icon>
+          <span matListItemTitle>{{ 'NAV.ADMIN_TX' | translate }}</span>
+        </a>
+        <a mat-list-item routerLink="/admin/audit" routerLinkActive="active">
+          <mat-icon matListItemIcon>history</mat-icon>
+          <span matListItemTitle>{{ 'NAV.ADMIN_AUDIT' | translate }}</span>
+        </a>
+        <a mat-list-item routerLink="/admin/rbac" routerLinkActive="active">
+          <mat-icon matListItemIcon>admin_panel_settings</mat-icon>
+          <span matListItemTitle>{{ 'NAV.ADMIN_RBAC' | translate }}</span>
+        </a>
+        <a mat-list-item routerLink="/admin/risk" routerLinkActive="active">
+          <mat-icon matListItemIcon>shield</mat-icon>
+          <span matListItemTitle>{{ 'NAV.ADMIN_RISK' | translate }}</span>
+        </a>
+      </mat-nav-list>
+    </mat-sidenav>
+    <mat-sidenav-content>
+      <mat-toolbar class="bo-top">
+        <span class="title">{{ 'ADMIN.SHELL_TITLE' | translate }}</span>
+        <span class="spacer"></span>
+        <app-lang-switcher />
+        <span class="env">{{ 'COMMON.DEV' | translate }}</span>
+        <span class="role">{{ 'ADMIN.ROLE_ADMIN' | translate }}</span>
+        <span class="user">{{ username$ | async }}</span>
+        <button mat-button type="button" (click)="logout()">{{ 'COMMON.LOGOUT' | translate }}</button>
+      </mat-toolbar>
+      <div class="bo-main">
+        <router-outlet />
+      </div>
+    </mat-sidenav-content>
+  </mat-sidenav-container>
+</div>

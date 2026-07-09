@@ -1,0 +1,7 @@
+
+.layout { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.full { width: 100%; }
+.err { color: #dc2626; margin-bottom: 0.75rem; }
+.result.ok { border-left: 4px solid #0d9f6e; }
+.result.warn { border-left: 4px solid #d97706; }
+@media (max-width: 800px) { .layout { grid-template-columns: 1fr; } }

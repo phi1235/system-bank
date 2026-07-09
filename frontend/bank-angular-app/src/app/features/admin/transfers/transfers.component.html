@@ -1,0 +1,46 @@
+<app-page-header
+  [title]="'ADMIN.TX_TITLE' | translate"
+  [subtitle]="'ADMIN.TX_SUB' | translate"
+>
+  <mat-form-field appearance="outline">
+    <mat-label>{{ 'COMMON.STATUS' | translate }}</mat-label>
+    <mat-select [(ngModel)]="status">
+      <mat-option value="">{{ 'COMMON.ALL' | translate }}</mat-option>
+      <mat-option value="COMPLETED">COMPLETED</mat-option>
+      <mat-option value="FAILED">FAILED</mat-option>
+      <mat-option value="COMPENSATED">COMPENSATED</mat-option>
+    </mat-select>
+  </mat-form-field>
+  <button mat-flat-button color="primary" type="button" (click)="load()">{{ 'ADMIN.FILTER' | translate }}</button>
+</app-page-header>
+
+<mat-card>
+  <table mat-table [dataSource]="rows" class="full">
+    <ng-container matColumnDef="createdAt">
+      <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.TIME' | translate }}</th>
+      <td mat-cell *matCellDef="let t">{{ t.createdAt | date:'short' }}</td>
+    </ng-container>
+    <ng-container matColumnDef="amount">
+      <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.AMOUNT' | translate }}</th>
+      <td mat-cell *matCellDef="let t">{{ t.amount | moneyVnd:t.currency }}</td>
+    </ng-container>
+    <ng-container matColumnDef="status">
+      <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.STATUS' | translate }}</th>
+      <td mat-cell *matCellDef="let t"><strong>{{ t.status }}</strong></td>
+    </ng-container>
+    <ng-container matColumnDef="fromAccountId">
+      <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.FROM' | translate }}</th>
+      <td mat-cell *matCellDef="let t"><code>{{ t.fromAccountId | slice:0:8 }}</code></td>
+    </ng-container>
+    <ng-container matColumnDef="toAccountNumber">
+      <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.TO' | translate }}</th>
+      <td mat-cell *matCellDef="let t">{{ t.toAccountNumber || '—' }}</td>
+    </ng-container>
+    <ng-container matColumnDef="transactionId">
+      <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.TXN' | translate }}</th>
+      <td mat-cell *matCellDef="let t"><code>{{ t.transactionId | slice:0:8 }}…</code></td>
+    </ng-container>
+    <tr mat-header-row *matHeaderRowDef="cols"></tr>
+    <tr mat-row *matRowDef="let row; columns: cols"></tr>
+  </table>
+</mat-card>

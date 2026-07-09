@@ -1,0 +1,35 @@
+<app-page-header
+  [title]="'ADMIN.ACCOUNTS_TITLE' | translate"
+  [subtitle]="'ADMIN.ACCOUNTS_SUB' | translate"
+/>
+
+<mat-card>
+  <form class="row" [formGroup]="form" (ngSubmit)="lookup()">
+    <mat-form-field appearance="outline" class="grow">
+      <mat-label>{{ 'ADMIN.ACCOUNT_ID' | translate }}</mat-label>
+      <input matInput formControlName="accountId" [placeholder]="'ADMIN.ACCOUNT_ID_PH' | translate" />
+    </mat-form-field>
+    <button mat-flat-button color="primary" type="submit">{{ 'ADMIN.LOOKUP' | translate }}</button>
+  </form>
+
+  @if (account) {
+    <div class="box">
+      <p><strong>{{ 'ADMIN.NUMBER' | translate }}:</strong> {{ account.accountNumber }}</p>
+      <p><strong>{{ 'ADMIN.USER' | translate }}:</strong> {{ account.userId }}</p>
+      <p><strong>{{ 'ADMIN.BALANCE' | translate }}:</strong> {{ account.balance | moneyVnd:account.currency }}</p>
+      <p>
+        <strong>{{ 'ADMIN.STATUS' | translate }}:</strong>
+        <span class="st" [class.bad]="account.status==='FROZEN'">{{ account.status }}</span>
+      </p>
+      <div class="acts">
+        <button mat-stroked-button color="warn" type="button" (click)="freeze()" [disabled]="account.status==='FROZEN'">
+          {{ 'ADMIN.FREEZE' | translate }}
+        </button>
+        <button mat-flat-button color="primary" type="button" (click)="unfreeze()" [disabled]="account.status==='ACTIVE'">
+          {{ 'ADMIN.UNFREEZE' | translate }}
+        </button>
+      </div>
+      <p class="hint">{{ 'ADMIN.FREEZE_HINT' | translate }}</p>
+    </div>
+  }
+</mat-card>

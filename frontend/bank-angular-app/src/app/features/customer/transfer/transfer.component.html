@@ -1,0 +1,49 @@
+<app-page-header
+  [title]="'CUSTOMER.TRANSFER_TITLE' | translate"
+  [subtitle]="'CUSTOMER.TRANSFER_SUB' | translate"
+/>
+
+<div class="layout">
+  <mat-card>
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>{{ 'CUSTOMER.FROM_ACCOUNT' | translate }}</mat-label>
+        <mat-select formControlName="fromAccountId">
+          @for (a of accounts$ | async; track a.id) {
+            <mat-option [value]="a.id" [disabled]="a.status !== 'ACTIVE'">
+              {{ a.accountNumber }} — {{ a.balance | moneyVnd:a.currency }} ({{ a.status }})
+            </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>{{ 'CUSTOMER.TO_ACCOUNT' | translate }}</mat-label>
+        <input matInput formControlName="toAccountNumber" [placeholder]="'CUSTOMER.TO_PLACEHOLDER' | translate" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>{{ 'CUSTOMER.AMOUNT_VND' | translate }}</mat-label>
+        <input matInput type="number" formControlName="amount" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>{{ 'CUSTOMER.DESCRIPTION' | translate }}</mat-label>
+        <input matInput formControlName="description" />
+      </mat-form-field>
+      @if (error$ | async; as err) { <div class="err">{{ err }}</div> }
+      <button mat-flat-button color="primary" type="submit" [disabled]="creating$ | async">
+        {{ (creating$ | async) ? ('CUSTOMER.PROCESSING' | translate) : ('CUSTOMER.CONFIRM_TRANSFER' | translate) }}
+      </button>
+    </form>
+  </mat-card>
+
+  @if (last$ | async; as t) {
+    <mat-card class="result" [class.ok]="t.status==='COMPLETED'" [class.warn]="t.status!=='COMPLETED'">
+      <h3>{{ 'CUSTOMER.RESULT_TITLE' | translate }}</h3>
+      <p><strong>{{ 'CUSTOMER.RESULT_ID' | translate }}:</strong> {{ t.transactionId }}</p>
+      <p><strong>{{ 'CUSTOMER.RESULT_STATUS' | translate }}:</strong> {{ t.status }}</p>
+      <p><strong>{{ 'CUSTOMER.RESULT_AMOUNT' | translate }}:</strong> {{ t.amount | moneyVnd:t.currency }}</p>
+      @if (t.failureReason) {
+        <p><strong>{{ 'CUSTOMER.RESULT_REASON' | translate }}:</strong> {{ t.failureReason }}</p>
+      }
+    </mat-card>
+  }
+</div>

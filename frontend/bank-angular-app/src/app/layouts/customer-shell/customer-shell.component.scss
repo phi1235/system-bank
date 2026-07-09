@@ -1,0 +1,117 @@
+.ib-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+}
+.ib-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0 1.5rem;
+  height: var(--topbar-height);
+  background: var(--color-primary-900);
+  color: var(--color-text-inverse);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+}
+.logo-mark {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--color-accent);
+  color: #042;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+  font-size: 0.8rem;
+}
+.logo-text { font-weight: 700; letter-spacing: 0.02em; }
+.badge-env {
+  font-size: 0.65rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  background: rgba(0, 180, 166, 0.25);
+  color: #5eebdc;
+}
+.primary-nav {
+  display: flex;
+  gap: 0.25rem;
+  flex: 1;
+  a {
+    color: rgba(255, 255, 255, 0.78);
+    text-decoration: none;
+    padding: 0.45rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    &:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
+    &.active {
+      background: var(--sidebar-active);
+      color: var(--sidebar-active-text);
+    }
+  }
+}
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  .cta {
+    background: var(--color-accent) !important;
+    color: #042 !important;
+    font-weight: 700;
+  }
+  button { color: #fff !important; }
+}
+.ib-main {
+  flex: 1;
+  width: min(1120px, 100%);
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 2.5rem;
+}
+.ib-footer {
+  background: var(--color-primary-800);
+  color: rgba(255, 255, 255, 0.8);
+  padding: 1.5rem;
+  font-size: 0.85rem;
+  .cols {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    max-width: 1120px;
+    margin: 0 auto 1rem;
+    strong { color: #fff; display: block; margin-bottom: 0.35rem; }
+    p { margin: 0; opacity: 0.8; }
+  }
+  .copy {
+    text-align: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 0.75rem;
+    max-width: 1120px;
+    margin: 0 auto;
+  }
+  .dev {
+    background: #f59e0b;
+    color: #111;
+    padding: 0.05rem 0.35rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+  }
+}
+@media (max-width: 900px) {
+  .primary-nav { display: none; }
+  .ib-footer .cols { grid-template-columns: 1fr; }
+}

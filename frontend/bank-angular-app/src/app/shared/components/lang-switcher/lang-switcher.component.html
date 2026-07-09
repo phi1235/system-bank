@@ -1,0 +1,8 @@
+<button mat-button type="button" [matMenuTriggerFor]="langMenu" class="lang-btn">
+  <mat-icon>language</mat-icon>
+  {{ currentLang | uppercase }}
+</button>
+<mat-menu #langMenu="matMenu">
+  <button mat-menu-item type="button" (click)="use('vi')">{{ 'COMMON.LANG_VI' | translate }}</button>
+  <button mat-menu-item type="button" (click)="use('en')">{{ 'COMMON.LANG_EN' | translate }}</button>
+</mat-menu>

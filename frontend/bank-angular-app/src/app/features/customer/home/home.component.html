@@ -1,0 +1,56 @@
+<app-page-header
+  [title]="'CUSTOMER.HOME_TITLE' | translate"
+  [subtitle]="'CUSTOMER.HOME_HELLO' | translate: { name: (username$ | async) || '' }"
+>
+  <a mat-flat-button color="primary" routerLink="/customer/payments/transfer">
+    {{ 'NAV.TRANSFER' | translate }}
+  </a>
+</app-page-header>
+
+@if (loading$ | async) {
+  <app-loading />
+} @else {
+  <div class="grid">
+    <mat-card class="hero">
+      <div class="label">{{ 'CUSTOMER.TOTAL_BALANCE' | translate }}</div>
+      <div class="amount">{{ total$ | async | moneyVnd }}</div>
+      <div class="actions">
+        <a mat-stroked-button routerLink="/customer/accounts">{{ 'NAV.ACCOUNTS' | translate }}</a>
+        <a mat-stroked-button routerLink="/customer/history">{{ 'NAV.HISTORY' | translate }}</a>
+      </div>
+    </mat-card>
+
+    <mat-card>
+      <h3>{{ 'CUSTOMER.YOUR_ACCOUNTS' | translate }}</h3>
+      @for (a of accounts$ | async; track a.id) {
+        <div class="row">
+          <div>
+            <div class="num">{{ a.accountNumber | accountMask }}</div>
+            <div class="meta">{{ a.accountType }} · {{ a.status }}</div>
+          </div>
+          <div class="bal">{{ a.balance | moneyVnd: a.currency }}</div>
+        </div>
+      } @empty {
+        <p class="empty">
+          {{ 'CUSTOMER.NO_ACCOUNTS' | translate }}
+          <a routerLink="/customer/accounts">{{ 'CUSTOMER.OPEN_NOW' | translate }}</a>
+        </p>
+      }
+    </mat-card>
+
+    <mat-card class="span2">
+      <h3>{{ 'CUSTOMER.RECENT_TX' | translate }}</h3>
+      @for (t of recent$ | async; track t.transactionId) {
+        <div class="row">
+          <div>
+            <div class="num">{{ t.description || ('NAV.TRANSFER' | translate) }}</div>
+            <div class="meta">{{ t.status }} · {{ t.createdAt | date: 'short' }}</div>
+          </div>
+          <div class="bal">{{ t.amount | moneyVnd: t.currency }}</div>
+        </div>
+      } @empty {
+        <p class="empty">{{ 'CUSTOMER.NO_TX' | translate }}</p>
+      }
+    </mat-card>
+  </div>
+}

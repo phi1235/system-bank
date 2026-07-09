@@ -1,0 +1,103 @@
+@use '@angular/material' as mat;
+
+html {
+  @include mat.theme(
+    (
+      color: (
+        theme-type: light,
+        primary: mat.$azure-palette,
+        tertiary: mat.$cyan-palette,
+      ),
+      typography: Roboto,
+      density: 0,
+    )
+  );
+}
+
+/* Design tokens — aligned with ui-mockups */
+:root {
+  --font-sans: 'DM Sans', 'Segoe UI', Roboto, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --color-success: #0d9f6e;
+  --color-danger: #dc2626;
+  --color-warning: #d97706;
+}
+
+.portal-customer,
+[data-portal='customer'] {
+  --color-primary-900: #0a1628;
+  --color-primary-800: #0f2744;
+  --color-primary-700: #143a5c;
+  --color-primary-600: #1a4d7a;
+  --color-primary-50: #f3f8fc;
+  --color-accent: #00b4a6;
+  --color-bg: #f0f5fa;
+  --color-surface: #ffffff;
+  --color-border: #d8e2ec;
+  --color-text: #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-muted: #94a3b8;
+  --color-text-inverse: #ffffff;
+  --topbar-height: 64px;
+  --sidebar-active: rgba(0, 180, 166, 0.18);
+  --sidebar-active-text: #5eebdc;
+}
+
+.portal-admin,
+[data-portal='admin'] {
+  --color-primary-900: #111827;
+  --color-primary-800: #1f2937;
+  --color-primary-700: #374151;
+  --color-primary-50: #f9fafb;
+  --color-accent: #f59e0b;
+  --color-bg: #eef0f3;
+  --color-surface: #ffffff;
+  --color-border: #e5e7eb;
+  --color-text: #111827;
+  --color-text-secondary: #4b5563;
+  --color-text-muted: #9ca3af;
+  --color-text-inverse: #f9fafb;
+  --sidebar-width: 240px;
+  --topbar-height: 56px;
+  --sidebar-bg: #1f2937;
+  --sidebar-active: rgba(245, 158, 11, 0.16);
+  --sidebar-active-text: #fbbf24;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  font-family: var(--font-sans);
+  background: #f0f5fa;
+  color: #0f172a;
+}
+
+a {
+  color: inherit;
+}
+
+mat-card {
+  border-radius: 12px !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06) !important;
+  border: 1px solid var(--color-border, #e5e7eb);
+}
+
+.toast-success {
+  --mdc-snackbar-container-color: #0d9f6e;
+  --mdc-snackbar-supporting-text-color: #fff;
+}
+.toast-error {
+  --mdc-snackbar-container-color: #dc2626;
+  --mdc-snackbar-supporting-text-color: #fff;
+}
+
+code {
+  font-family: var(--font-mono);
+}

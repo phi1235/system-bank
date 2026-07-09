@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop, master]
+  pull_request:
+    branches: [main, develop, master]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (Maven verify)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Maven verify
+        run: mvn -B -q verify
+
+  frontend:
+    name: Frontend (Angular build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend/bank-angular-app
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/bank-angular-app/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck / lint gate
+        run: npm run lint
+
+      - name: Production build
+        run: npm run build
+
+  secrets-check:
+    name: No committed secrets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fail if real .env committed
+        run: |
+          if git ls-files | grep -E '(^|/)\.env$|infra/\.env$'; then
+            echo "Committed .env files are not allowed"
+            git ls-files | grep -E '(^|/)\.env$|infra/\.env$'
+            exit 1
+          fi
+          echo "OK: no .env in git index"

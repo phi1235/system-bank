@@ -1,0 +1,37 @@
+<app-page-header
+  [title]="'CUSTOMER.ACCOUNTS_TITLE' | translate"
+  [subtitle]="'CUSTOMER.ACCOUNTS_SUB' | translate"
+>
+  <button mat-stroked-button type="button" (click)="open('PAYMENT')">{{ 'CUSTOMER.OPEN_PAYMENT' | translate }}</button>
+  <button mat-flat-button color="primary" type="button" (click)="open('SAVINGS')">{{ 'CUSTOMER.OPEN_SAVINGS' | translate }}</button>
+</app-page-header>
+
+@if (loading$ | async) { <app-loading /> }
+
+<mat-card>
+  <table mat-table [dataSource]="(accounts$ | async) || []" class="full">
+    <ng-container matColumnDef="accountNumber">
+      <th mat-header-cell *matHeaderCellDef>{{ 'CUSTOMER.ACCOUNT_NUMBER' | translate }}</th>
+      <td mat-cell *matCellDef="let a"><strong>{{ a.accountNumber }}</strong></td>
+    </ng-container>
+    <ng-container matColumnDef="accountType">
+      <th mat-header-cell *matHeaderCellDef>{{ 'CUSTOMER.ACCOUNT_TYPE' | translate }}</th>
+      <td mat-cell *matCellDef="let a">{{ a.accountType }}</td>
+    </ng-container>
+    <ng-container matColumnDef="balance">
+      <th mat-header-cell *matHeaderCellDef>{{ 'CUSTOMER.BALANCE' | translate }}</th>
+      <td mat-cell *matCellDef="let a">{{ a.balance | moneyVnd:a.currency }}</td>
+    </ng-container>
+    <ng-container matColumnDef="status">
+      <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.STATUS' | translate }}</th>
+      <td mat-cell *matCellDef="let a">
+        <span class="chip" [class.ok]="a.status==='ACTIVE'" [class.bad]="a.status==='FROZEN'">{{ a.status }}</span>
+      </td>
+    </ng-container>
+    <tr mat-header-row *matHeaderRowDef="cols"></tr>
+    <tr mat-row *matRowDef="let row; columns: cols"></tr>
+  </table>
+  @if (((accounts$ | async) || []).length === 0 && !(loading$ | async)) {
+    <p class="empty">{{ 'CUSTOMER.EMPTY_ACCOUNTS' | translate }}</p>
+  }
+</mat-card>
