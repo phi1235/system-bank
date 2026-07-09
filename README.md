@@ -2,7 +2,7 @@
 
 Microservices platform for **internet banking** (customer) and **back-office operations** (admin).
 
-Built as a portfolio-grade distributed system: service isolation, transactional transfer saga, event-driven notifications, JWT/MFA security, and dual Angular portals.
+Distributed banking demo: service isolation, transfer saga, event-driven notifications, JWT/MFA security, and dual Angular portals.
 
 ---
 
@@ -82,6 +82,25 @@ Browser (Angular) ──► API Gateway (JWT · CORS · rate limit)
 
 ---
 
+## Branching
+
+| Branch | Environment | Purpose |
+|--------|-------------|---------|
+| **`main`** | **STG** | Staging / stable integration |
+| **`uat/v1.0.0`** | **UAT** | Release line for v1.0.0 |
+
+**Workflow:** `feat/*` or `fix/*` → MR into `uat/v1.0.0` → (when ready) MR into `main` (STG).
+
+```bash
+git fetch origin
+git checkout uat/v1.0.0 && git pull
+git checkout -b feat/your-feature
+# work → push → open MR targeting uat/v1.0.0
+# after UAT OK → MR uat/v1.0.0 → main
+```
+
+---
+
 ## Quick start
 
 ### 1. Clone and configure environment
@@ -93,20 +112,20 @@ cd system-bank
 cp infra/.env.example infra/.env
 ```
 
-Edit `infra/.env` and replace every `change-me-*` value. Generate secrets:
+Edit `infra/.env` and replace every `change-me-*` value:
 
 ```bash
-openssl rand -base64 32   # AES_SECRET_KEY (32 bytes, base64)
+openssl rand -base64 32   # AES_SECRET_KEY
 openssl rand -hex 32      # PASSWORD_PEPPER / INTERNAL_API_KEY
-openssl rand -base64 48   # JWT_SECRET (≥ 32 chars after decode or use as-is long string)
+openssl rand -base64 48   # JWT_SECRET (use a long random string)
 ```
 
-| File | Purpose | Version control |
-|------|---------|-----------------|
+| File | Purpose | Git |
+|------|---------|-----|
 | `infra/.env.example` | Template | Committed |
-| `infra/.env` | Real secrets | **Never commit** (gitignored) |
+| `infra/.env` | Real secrets | **Never commit** |
 
-See [docs/06-infra/ENV_AND_SECRETS.md](docs/06-infra/ENV_AND_SECRETS.md) for the full variable catalog.
+Required secrets include: `POSTGRES_PASSWORD`, `JWT_SECRET`, `AES_SECRET_KEY`, `INTERNAL_API_KEY`, `PASSWORD_PEPPER`, `ADMIN_PASSWORD`, `GRAFANA_ADMIN_PASSWORD`.
 
 ### 2. Start infrastructure and services
 
@@ -114,8 +133,7 @@ See [docs/06-infra/ENV_AND_SECRETS.md](docs/06-infra/ENV_AND_SECRETS.md) for the
 docker compose -f infra/docker-compose.yml --env-file infra/.env up -d --build
 ```
 
-On first Postgres boot (empty volume), databases are created automatically via  
-`infra/postgres/init-databases.sql`.  
+On first Postgres boot (empty volume), DBs are created via `infra/postgres/init-databases.sql`.  
 Schemas are applied by **Flyway** when each service starts.
 
 If databases are missing on an existing volume:
@@ -171,7 +189,7 @@ Gateway public API base path: `/api/v1/...`
 
 ## Default accounts
 
-Credentials come from `infra/.env` (not hardcoded in application code).
+Credentials come from `infra/.env` (not hardcoded in application source).
 
 | Role | How to obtain | Portal |
 |------|----------------|--------|
@@ -180,7 +198,7 @@ Credentials come from `infra/.env` (not hardcoded in application code).
 
 Set `ADMIN_SEED_ENABLED=false` after bootstrap if you no longer want auto-seed.
 
-Internal debug APIs require header:
+Internal debug APIs require:
 
 ```http
 X-Internal-Api-Key: <INTERNAL_API_KEY from .env>
@@ -195,7 +213,7 @@ X-Internal-Api-Key: <INTERNAL_API_KEY from .env>
 1. Register and log in as customer  
 2. Create profile (if prompted)  
 3. Open two accounts  
-4. Transfer from A → B using destination **account number**  
+4. Transfer A → B using destination **account number**  
 5. Check history and balances  
 
 ### Notifications
@@ -212,7 +230,7 @@ docker logs bank-notification 2>&1 | grep MOCK_EMAIL | tail
 ```bash
 SAGA_FAIL_CREDIT=true docker compose -f infra/docker-compose.yml --env-file infra/.env \
   up -d --force-recreate --no-deps transaction-service
-# perform a transfer → status COMPENSATED, source balance restored
+# transfer → COMPENSATED, source balance restored
 
 SAGA_FAIL_CREDIT=false docker compose -f infra/docker-compose.yml --env-file infra/.env \
   up -d --force-recreate --no-deps transaction-service
@@ -239,26 +257,6 @@ cd frontend/bank-angular-app && npm run lint
 
 ---
 
-## Branching
-
-| Branch | Environment | Purpose |
-|--------|-------------|---------|
-| **`main`** | **STG** | Staging / stable integration |
-| **`uat/v1.0.0`** | **UAT** | Release line for v1.0.0 |
-
-**Workflow:** `feat/*` or `fix/*` → MR into `uat/v1.0.0` → (when ready) MR into `main` (STG).
-
-Details: [docs/07-devops/BRANCHING.md](docs/07-devops/BRANCHING.md)
-
-```bash
-git fetch origin
-git checkout uat/v1.0.0 && git pull
-git checkout -b feat/your-feature
-# ... work, push, open MR → uat/v1.0.0
-```
-
----
-
 ## Project structure
 
 ```
@@ -273,7 +271,7 @@ system-bank/
 │   ├── transaction-service/
 │   └── notification-service/
 ├── frontend/
-│   ├── bank-angular-app/    # Angular 19 (customer + admin portals)
+│   ├── bank-angular-app/    # Angular 19 (customer + admin)
 │   └── ui-mockups/          # Static design reference
 ├── infra/
 │   ├── docker-compose.yml
@@ -282,31 +280,15 @@ system-bank/
 │   ├── prometheus/
 │   ├── grafana/
 │   └── scripts/init-databases.sh
-├── docs/                    # Architecture, API, security, ADRs
 └── .github/workflows/ci.yml
 ```
-
----
-
-## Documentation
-
-| Document | Description |
-|----------|-------------|
-| [Architecture](docs/01-architecture/architecture.md) | System design |
-| [Saga transfer](docs/01-architecture/saga-transfer.md) | Transfer orchestration |
-| [Security](docs/01-architecture/security.md) | AuthN/Z, crypto, rate limit |
-| [Environment & secrets](docs/06-infra/ENV_AND_SECRETS.md) | Env variable reference |
-| [API contracts](docs/03-api/contracts/) | Service APIs |
-| [Demo script](docs/DEMO_SCRIPT.md) | End-to-end walkthrough |
-| [Known limitations](docs/KNOWN_LIMITATIONS.md) | Scope boundaries |
-| [ADRs](docs/99-decisions/) | Architecture decisions |
 
 ---
 
 ## Security notes
 
 - Passwords are stored as **one-way hashes** (HMAC with server pepper + username, then BCrypt)—never plaintext.  
-- Secrets load only from environment variables; YAML does not embed production defaults for secrets.  
+- Secrets load only from environment variables; YAML does not embed secret production defaults.  
 - MFA TOTP secrets and national ID are encrypted at rest (AES-GCM).  
 - Do not commit `infra/.env`. Rotate keys if they were ever exposed.
 
@@ -314,5 +296,5 @@ system-bank/
 
 ## License
 
-This project is provided for educational and portfolio demonstration purposes.
-Use and modify at your own risk; it is **not** a production core-banking system.
+Educational and portfolio demonstration purposes only.  
+**Not** a production core-banking system.

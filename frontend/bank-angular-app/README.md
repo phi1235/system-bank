@@ -29,7 +29,7 @@ Proxy: `proxy.conf.json` (optional path `/api` → gateway)
 **NgRx:** auth / accounts / transfers  
 **Guards / interceptors:** auth, role, Bearer, refresh, error toast  
 **i18n:** `@ngx-translate` — `public/i18n/vi.json` + `en.json` + language switcher  
-**Structure:** each component = `.ts` + `.html` + `.scss` — see `docs/FRONTEND_CONVENTIONS.md`
+**Structure:** each component = `.ts` + `.html` + `.scss` (no hardcoded UI copy; use i18n keys)
 
 ## Verify (low RAM)
 
