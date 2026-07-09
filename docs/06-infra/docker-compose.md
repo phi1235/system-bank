@@ -1,4 +1,4 @@
-# IMPLEMENT — Infra docker-compose
+# Docker Compose
 
 ## Path
 

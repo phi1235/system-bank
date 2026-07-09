@@ -1,7 +1,6 @@
 # Roadmap triển khai
 
-> Chi tiết checklist từng phase: `docs/08-phases/PHASE-*.md`  
-> Ước lượng: part-time ~10–15h/tuần → **5–6 tuần**. Full-time: **2–3 tuần**.
+> Ước lượng tham chiếu: part-time ~10–15h/tuần → **5–6 tuần**. Full-time: **2–3 tuần**.
 
 ```
 PHASE 0  Foundation docs lock + repo skeleton
@@ -27,7 +26,7 @@ PHASE 8  Demo script + README runbook + interview talking points
 
 | Phase | Focus | Done when |
 |-------|-------|-----------|
-| 0 | Docs + empty modules | AI đọc docs code được không hỏi lại |
+| 0 | Docs + empty modules | Architecture/API docs ready |
 | 1 | Compose + Eureka + Gateway + common-lib | `docker compose up` có Eureka UI |
 | 2 | Auth | Login/refresh/MFA Postman pass |
 | 3 | Customer + Account | Tạo user → có profile + 1 account |
@@ -65,7 +64,7 @@ frontend ──► gateway only
 | Feign + Eureka local fail | Compose network cố định, healthcheck `depends_on` |
 | JWT secret lệch | 1 env `JWT_SECRET` shared gateway+auth |
 | FE scope creep | Chỉ 6 màn hình customer + 3 admin |
-| AI drift plan | AGENTS.md + IMPLEMENT.md bắt buộc |
+| Scope creep | SCOPE_MVP + ADR |
 
 ## Status MVP
 

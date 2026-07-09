@@ -197,25 +197,25 @@ docker compose -f infra/docker-compose.yml --env-file infra/.env up -d --build
 
 ---
 
-## Docs (SSOT)
+## Docs
 
 | Path | Content |
 |------|---------|
-| `AGENTS.md` | Rules for AI/dev |
 | `docs/00-overview/` | Scope, roadmap, PROVIDE_LATER |
 | `docs/01-architecture/` | Architecture, saga, security, diagrams |
-| `docs/04-services/*/IMPLEMENT.md` | Per-service prompts |
+| `docs/02-data/` | DB-per-service, ER |
+| `docs/03-api/` | API contracts |
 | `docs/05-frontend/` | Portals, IA, RBAC |
-| `docs/06-infra/` | Compose, observability |
+| `docs/06-infra/` | Compose, env secrets, observability |
 | `docs/07-devops/` | CI |
-| `docs/08-phases/` | Phases 0–8 |
-| `docs/DEMO_SCRIPT.md` | Live demo |
+| `docs/99-decisions/` | ADRs |
+| `docs/DEMO_SCRIPT.md` | Live demo 15′ |
 | `docs/INTERVIEW_TALKING_POINTS.md` | Interview |
 | `docs/KNOWN_LIMITATIONS.md` | Gaps |
 
-## Phase roadmap
+## Roadmap (done)
 
-0 Docs → 1 Infra → 2 Auth → 3 Customer/Account → 4 Saga → 5 Notification → 6 Angular → 7 Ops/CI → **8 Demo** ✅
+Infra → Auth → Customer/Account → Saga → Notification → Angular → Ops/CI → Demo pack ✅
 
 ## Stack
 
