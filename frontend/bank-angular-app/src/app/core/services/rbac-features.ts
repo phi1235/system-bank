@@ -327,6 +327,30 @@ export const RBAC_SCREENS: RbacScreenDef[] = [
       },
     ],
   },
+  {
+    id: 'bo-users',
+    portal: 'bo',
+    labelKey: 'ADMIN.SCR_USERS',
+    label: 'BO · Quản lý người dùng',
+    icon: 'manage_accounts',
+    description: 'Danh sách user · khóa · cấp lại MK',
+    features: [
+      {
+        id: 'reset',
+        labelKey: 'ADMIN.FEAT_PWD_RESET',
+        label: 'Cấp lại mật khẩu (blind)',
+        hint: 'Icon password trên dòng user — admin không xem MK tạm',
+        actions: { execute: PERMISSIONS.USERS_PASSWORD_RESET },
+      },
+      {
+        id: 'lock',
+        labelKey: 'ADMIN.FEAT_USER_LOCK',
+        label: 'Khóa / mở khóa đăng nhập',
+        hint: 'Icon lock trên dòng user',
+        actions: { execute: PERMISSIONS.USERS_LOCK_EXECUTE },
+      },
+    ],
+  },
 ];
 
 export const RBAC_ACTION_COLUMNS: { key: RbacActionKey; labelKey: string; label: string }[] = [

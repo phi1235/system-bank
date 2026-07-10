@@ -28,15 +28,16 @@ public final class AuthDtos {
       String tokenType,
       Long expiresIn,
       boolean mfaRequired,
-      String mfaToken
+      String mfaToken,
+      boolean mustChangePassword
   ) {
-    public static LoginResponse tokens(TokenResponse t) {
+    public static LoginResponse tokens(TokenResponse t, boolean mustChangePassword) {
       return new LoginResponse(t.accessToken(), t.refreshToken(), t.tokenType(), t.expiresIn(),
-          false, null);
+          false, null, mustChangePassword);
     }
 
     public static LoginResponse mfaRequired(String mfaToken) {
-      return new LoginResponse(null, null, null, null, true, mfaToken);
+      return new LoginResponse(null, null, null, null, true, mfaToken, false);
     }
   }
 
@@ -45,7 +46,8 @@ public final class AuthDtos {
       String refreshToken,
       String tokenType,
       long expiresIn,
-      boolean mfaRequired
+      boolean mfaRequired,
+      boolean mustChangePassword
   ) {}
 
   public record RefreshRequest(@NotBlank String refreshToken) {}
@@ -63,6 +65,8 @@ public final class AuthDtos {
       List<String> roles,
       List<String> permissions,
       boolean mfaEnabled,
-      boolean staff
+      boolean staff,
+      boolean mustChangePassword,
+      boolean enabled
   ) {}
 }

@@ -12,6 +12,7 @@ import { map } from 'rxjs';
 import { PERMISSIONS } from '../../core/services/rbac.util';
 import { AuthActions } from '../../store/auth/auth.actions';
 import {
+  selectHasAnyPermission,
   selectHasPermission,
   selectPermissions,
   selectRoles,
@@ -51,6 +52,14 @@ export class AdminShellComponent {
   canAudit$ = this.store.select(selectHasPermission(PERMISSIONS.AUDIT_LIST_VIEW));
   canRbac$ = this.store.select(selectHasPermission(PERMISSIONS.RBAC_ACCESS));
   canRisk$ = this.store.select(selectHasPermission(PERMISSIONS.RISK_VIEW));
+  canUsers$ = this.store.select(
+    selectHasAnyPermission([
+      PERMISSIONS.USERS_PASSWORD_RESET,
+      PERMISSIONS.USERS_LOCK_EXECUTE,
+      PERMISSIONS.RBAC_USERS_ASSIGN,
+      PERMISSIONS.RBAC_ACCESS,
+    ]),
+  );
 
   roleBadge$ = this.roles$.pipe(
     map((roles) => {
