@@ -1,5 +1,5 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
-import { inject } from '@angular/core';
+import { inject, Injector } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, switchMap, throwError } from 'rxjs';
 import { AuthApiService } from '../services/auth-api.service';
@@ -9,8 +9,8 @@ let refreshing = false;
 
 export const refreshInterceptor: HttpInterceptorFn = (req, next) => {
   const tokens = inject(TokenService);
-  const authApi = inject(AuthApiService);
   const router = inject(Router);
+  const injector = inject(Injector);
 
   return next(req).pipe(
     catchError((err: HttpErrorResponse) => {
@@ -24,6 +24,7 @@ export const refreshInterceptor: HttpInterceptorFn = (req, next) => {
         return throwError(() => err);
       }
       refreshing = true;
+      const authApi = injector.get(AuthApiService);
       return authApi.refresh(refresh).pipe(
         switchMap((t) => {
           tokens.setTokens(t.accessToken, t.refreshToken);
@@ -42,3 +43,4 @@ export const refreshInterceptor: HttpInterceptorFn = (req, next) => {
     }),
   );
 };
+
