@@ -1,12 +1,11 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
-import { inject } from '@angular/core';
+import { inject, Injector } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, throwError } from 'rxjs';
 import { ToastService } from '../services/toast.service';
 
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
-  const toast = inject(ToastService);
-  const i18n = inject(TranslateService);
+  const injector = inject(Injector);
   return next(req).pipe(
     catchError((err: HttpErrorResponse) => {
       // skip noisy 401 on me/bootstrap
@@ -17,6 +16,10 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
       if (req.url.includes('/i18n/')) {
         return throwError(() => err);
       }
+      
+      const toast = injector.get(ToastService);
+      const i18n = injector.get(TranslateService);
+      
       const body = err.error;
       let msg = i18n.instant('ERRORS.GENERIC');
       if (body?.error?.message) {
@@ -37,3 +40,4 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
     }),
   );
 };
+
