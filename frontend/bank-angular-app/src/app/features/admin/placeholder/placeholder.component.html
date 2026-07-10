@@ -1,4 +1,17 @@
 <app-page-header [title]="title" [subtitle]="subtitle" />
-<mat-card>
-  <p>{{ 'ADMIN.PLACEHOLDER_BODY' | translate }}</p>
-</mat-card>
+<div class="placeholder">
+  <mat-card class="hero">
+    <div class="ico"><mat-icon>construction</mat-icon></div>
+    <h2>{{ title }}</h2>
+    <p>{{ 'ADMIN.PLACEHOLDER_BODY' | translate }}</p>
+    <a mat-flat-button color="primary" routerLink="/admin">{{ 'NAV.ADMIN_DASHBOARD' | translate }}</a>
+  </mat-card>
+  <mat-card class="side">
+    <h3>{{ 'ADMIN.PLACEHOLDER_NEXT' | translate }}</h3>
+    <ul>
+      <li>{{ 'ADMIN.PLACEHOLDER_NEXT_1' | translate }}</li>
+      <li>{{ 'ADMIN.PLACEHOLDER_NEXT_2' | translate }}</li>
+      <li>{{ 'ADMIN.PLACEHOLDER_NEXT_3' | translate }}</li>
+    </ul>
+  </mat-card>
+</div>

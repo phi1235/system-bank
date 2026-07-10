@@ -30,6 +30,10 @@ spring:
           uri: lb://TRANSACTION-SERVICE
           predicates:
             - Path=/api/v1/transactions/**
+        - id: admin-routes-rbac
+          uri: lb://AUTH-SERVICE
+          predicates:
+            - Path=/api/v1/admin/rbac/**
         - id: admin-routes-customers
           uri: lb://CUSTOMER-SERVICE
           predicates:

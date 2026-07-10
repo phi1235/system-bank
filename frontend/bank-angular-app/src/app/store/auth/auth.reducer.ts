@@ -5,6 +5,7 @@ import { AuthActions } from './auth.actions';
 export interface AuthState {
   user: MeResponse | null;
   roles: string[];
+  permissions: string[];
   loading: boolean;
   error: string | null;
   mfaToken: string | null;
@@ -16,6 +17,7 @@ export interface AuthState {
 export const initialAuthState: AuthState = {
   user: null,
   roles: [],
+  permissions: [],
   loading: false,
   error: null,
   mfaToken: null,
@@ -57,6 +59,7 @@ export const authReducer = createReducer(
     loading: false,
     user,
     roles: user.roles || [],
+    permissions: user.permissions || [],
     authenticated: true,
     error: null,
   })),
@@ -65,6 +68,7 @@ export const authReducer = createReducer(
     loading: false,
     user: null,
     roles: [],
+    permissions: [],
     authenticated: false,
   })),
   on(AuthActions.loginFailure, AuthActions.registerFailure, (s, { error }) => ({

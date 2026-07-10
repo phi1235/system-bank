@@ -36,7 +36,9 @@
         <mat-label>{{ 'CUSTOMER.ADDRESS' | translate }}</mat-label>
         <input matInput formControlName="address" />
       </mat-form-field>
-      <button mat-flat-button color="primary" type="submit">{{ 'COMMON.SAVE' | translate }}</button>
+      @if (canEdit$ | async) {
+        <button mat-flat-button color="primary" type="submit">{{ 'COMMON.SAVE' | translate }}</button>
+      }
     </form>
   </mat-card>
 
@@ -49,7 +51,9 @@
         <strong>{{ u.mfaEnabled ? ('CUSTOMER.MFA_ON' | translate) : ('CUSTOMER.MFA_OFF' | translate) }}</strong>
       </p>
     }
-    <button mat-stroked-button type="button" (click)="startMfa()">{{ 'CUSTOMER.MFA_SETUP' | translate }}</button>
+    @if (canMfa$ | async) {
+      <button mat-stroked-button type="button" (click)="startMfa()">{{ 'CUSTOMER.MFA_SETUP' | translate }}</button>
+    }
     @if (mfaSetup) {
       <div class="mfa-box">
         <p>{{ 'CUSTOMER.MFA_SECRET_DEV' | translate }}: <code>{{ mfaSetup.secret }}</code></p>

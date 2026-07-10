@@ -9,33 +9,55 @@
   <button mat-flat-button color="primary" type="button" (click)="load()">{{ 'COMMON.SEARCH' | translate }}</button>
 </app-page-header>
 
-<mat-card>
-  <table mat-table [dataSource]="rows" class="full">
-    <ng-container matColumnDef="fullName">
-      <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.FULL_NAME' | translate }}</th>
-      <td mat-cell *matCellDef="let c">{{ c.fullName }}</td>
-    </ng-container>
-    <ng-container matColumnDef="email">
-      <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.EMAIL' | translate }}</th>
-      <td mat-cell *matCellDef="let c">{{ c.email || '—' }}</td>
-    </ng-container>
-    <ng-container matColumnDef="phone">
-      <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.PHONE' | translate }}</th>
-      <td mat-cell *matCellDef="let c">{{ c.phone || '—' }}</td>
-    </ng-container>
-    <ng-container matColumnDef="kycStatus">
-      <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.KYC' | translate }}</th>
-      <td mat-cell *matCellDef="let c"><strong>{{ c.kycStatus }}</strong></td>
-    </ng-container>
-    <ng-container matColumnDef="actions">
-      <th mat-header-cell *matHeaderCellDef></th>
-      <td mat-cell *matCellDef="let c" class="acts">
-        <button mat-button type="button" (click)="setKyc(c, 'VERIFIED')">{{ 'ADMIN.VERIFY' | translate }}</button>
-        <button mat-button type="button" (click)="setKyc(c, 'REJECTED')">{{ 'ADMIN.REJECT' | translate }}</button>
-        <button mat-button type="button" (click)="setKyc(c, 'PENDING')">{{ 'ADMIN.PENDING' | translate }}</button>
-      </td>
-    </ng-container>
-    <tr mat-header-row *matHeaderRowDef="cols"></tr>
-    <tr mat-row *matRowDef="let row; columns: cols"></tr>
-  </table>
+<mat-card class="table-card">
+  <div class="table-wrap">
+    <table mat-table [dataSource]="rows" class="full">
+      <ng-container matColumnDef="fullName">
+        <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.FULL_NAME' | translate }}</th>
+        <td mat-cell *matCellDef="let c"><strong>{{ c.fullName }}</strong></td>
+      </ng-container>
+      <ng-container matColumnDef="email">
+        <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.EMAIL' | translate }}</th>
+        <td mat-cell *matCellDef="let c">{{ c.email || '—' }}</td>
+      </ng-container>
+      <ng-container matColumnDef="phone">
+        <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.PHONE' | translate }}</th>
+        <td mat-cell *matCellDef="let c">{{ c.phone || '—' }}</td>
+      </ng-container>
+      <ng-container matColumnDef="kycStatus">
+        <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.KYC' | translate }}</th>
+        <td mat-cell *matCellDef="let c">
+          <span
+            class="chip"
+            [class.ok]="c.kycStatus === 'VERIFIED'"
+            [class.warn]="c.kycStatus === 'PENDING'"
+            [class.bad]="c.kycStatus === 'REJECTED'"
+          >{{ c.kycStatus }}</span>
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.ACTIONS' | translate }}</th>
+        <td mat-cell *matCellDef="let c" class="acts">
+          @if (canKyc$ | async) {
+            <button mat-stroked-button type="button" class="btn-ok" (click)="setKyc(c, 'VERIFIED')">
+              {{ 'ADMIN.VERIFY' | translate }}
+            </button>
+            <button mat-stroked-button type="button" class="btn-bad" (click)="setKyc(c, 'REJECTED')">
+              {{ 'ADMIN.REJECT' | translate }}
+            </button>
+            <button mat-button type="button" (click)="setKyc(c, 'PENDING')">
+              {{ 'ADMIN.PENDING' | translate }}
+            </button>
+          } @else {
+            <span class="no-perm">{{ 'ADMIN.NO_PERM_KYC' | translate }}</span>
+          }
+        </td>
+      </ng-container>
+      <tr mat-header-row *matHeaderRowDef="cols"></tr>
+      <tr mat-row *matRowDef="let row; columns: cols"></tr>
+    </table>
+  </div>
+  @if (rows.length === 0) {
+    <p class="empty">{{ 'ADMIN.EMPTY_CUSTOMERS' | translate }}</p>
+  }
 </mat-card>

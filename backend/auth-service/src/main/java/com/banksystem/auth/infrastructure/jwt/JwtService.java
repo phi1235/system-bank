@@ -1,5 +1,6 @@
 package com.banksystem.auth.infrastructure.jwt;
 
+import com.banksystem.auth.application.RbacService;
 import com.banksystem.auth.domain.UserEntity;
 import com.banksystem.common.security.SecurityHeaders;
 import io.jsonwebtoken.Claims;
@@ -22,9 +23,11 @@ public class JwtService {
 
   private final JwtProperties props;
   private final SecretKey key;
+  private final RbacService rbacService;
 
-  public JwtService(JwtProperties props) {
+  public JwtService(JwtProperties props, RbacService rbacService) {
     this.props = props;
+    this.rbacService = rbacService;
     byte[] bytes = props.getSecret().getBytes(StandardCharsets.UTF_8);
     this.key = Keys.hmacShaKeyFor(bytes.length >= 32 ? bytes : pad(bytes));
   }
@@ -71,15 +74,16 @@ public class JwtService {
 
   private String buildToken(UserEntity user, String jti, String type, Instant exp, Instant now) {
     List<String> roles = user.roleList();
-    String realm = roles.stream().anyMatch(r -> r.equalsIgnoreCase("ADMIN") || r.contains("ADMIN"))
-        ? "BACK_OFFICE"
-        : "INTERNET_BANKING";
+    List<String> permissions = rbacService.resolvePermissions(roles);
+    boolean staff = rbacService.isStaff(roles);
+    String realm = staff ? "BACK_OFFICE" : "INTERNET_BANKING";
 
     return Jwts.builder()
         .id(jti)
         .subject(user.getId().toString())
         .claim("username", user.getUsername())
         .claim(SecurityHeaders.JWT_CLAIM_ROLES, roles)
+        .claim(SecurityHeaders.JWT_CLAIM_PERMISSIONS, permissions)
         .claim(SecurityHeaders.JWT_CLAIM_TYPE, type)
         .claim(SecurityHeaders.JWT_CLAIM_REALM, realm)
         .issuedAt(Date.from(now))

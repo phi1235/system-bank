@@ -27,6 +27,7 @@ class PasswordValidationTest {
         mock(JwtService.class),
         mock(TokenStore.class),
         mock(MfaService.class),
+        mock(RbacService.class),
         5,
         15
     );
@@ -56,6 +57,7 @@ class PasswordValidationTest {
         mock(JwtService.class),
         mock(TokenStore.class),
         mock(MfaService.class),
+        mock(RbacService.class),
         5,
         15
     );

@@ -3,33 +3,60 @@
   [subtitle]="'ADMIN.ACCOUNTS_SUB' | translate"
 />
 
-<mat-card>
-  <form class="row" [formGroup]="form" (ngSubmit)="lookup()">
-    <mat-form-field appearance="outline" class="grow">
-      <mat-label>{{ 'ADMIN.ACCOUNT_ID' | translate }}</mat-label>
-      <input matInput formControlName="accountId" [placeholder]="'ADMIN.ACCOUNT_ID_PH' | translate" />
-    </mat-form-field>
-    <button mat-flat-button color="primary" type="submit">{{ 'ADMIN.LOOKUP' | translate }}</button>
-  </form>
+<div class="layout">
+  <mat-card class="lookup-card">
+    <h3>{{ 'ADMIN.LOOKUP' | translate }}</h3>
+    <form class="row" [formGroup]="form" (ngSubmit)="lookup()">
+      <mat-form-field appearance="outline" class="grow">
+        <mat-label>{{ 'ADMIN.ACCOUNT_ID' | translate }}</mat-label>
+        <input matInput formControlName="accountId" [placeholder]="'ADMIN.ACCOUNT_ID_PH' | translate" />
+        <mat-icon matPrefix>search</mat-icon>
+      </mat-form-field>
+      <button mat-flat-button color="primary" type="submit">{{ 'ADMIN.LOOKUP' | translate }}</button>
+    </form>
+    <p class="hint">{{ 'ADMIN.FREEZE_HINT' | translate }}</p>
+  </mat-card>
 
   @if (account) {
-    <div class="box">
-      <p><strong>{{ 'ADMIN.NUMBER' | translate }}:</strong> {{ account.accountNumber }}</p>
-      <p><strong>{{ 'ADMIN.USER' | translate }}:</strong> {{ account.userId }}</p>
-      <p><strong>{{ 'ADMIN.BALANCE' | translate }}:</strong> {{ account.balance | moneyVnd:account.currency }}</p>
-      <p>
-        <strong>{{ 'ADMIN.STATUS' | translate }}:</strong>
-        <span class="st" [class.bad]="account.status==='FROZEN'">{{ account.status }}</span>
-      </p>
-      <div class="acts">
-        <button mat-stroked-button color="warn" type="button" (click)="freeze()" [disabled]="account.status==='FROZEN'">
-          {{ 'ADMIN.FREEZE' | translate }}
-        </button>
-        <button mat-flat-button color="primary" type="button" (click)="unfreeze()" [disabled]="account.status==='ACTIVE'">
-          {{ 'ADMIN.UNFREEZE' | translate }}
-        </button>
+    <mat-card class="result-card" [class.frozen]="account.status === 'FROZEN'">
+      <div class="result-head">
+        <h3>{{ 'ADMIN.NUMBER' | translate }}</h3>
+        <span class="chip" [class.ok]="account.status === 'ACTIVE'" [class.bad]="account.status === 'FROZEN'">
+          {{ account.status }}
+        </span>
       </div>
-      <p class="hint">{{ 'ADMIN.FREEZE_HINT' | translate }}</p>
-    </div>
+      <div class="acc-num">{{ account.accountNumber }}</div>
+      <div class="meta-grid">
+        <div>
+          <span class="k">{{ 'ADMIN.USER' | translate }}</span>
+          <span class="v mono">{{ account.userId }}</span>
+        </div>
+        <div>
+          <span class="k">{{ 'ADMIN.BALANCE' | translate }}</span>
+          <span class="v bal">{{ account.balance | moneyVnd: account.currency }}</span>
+        </div>
+        <div>
+          <span class="k">{{ 'ADMIN.STATUS' | translate }}</span>
+          <span class="v">{{ account.status }}</span>
+        </div>
+      </div>
+      <div class="acts">
+        @if (canFreeze$ | async) {
+          <button mat-stroked-button color="warn" type="button" (click)="freeze()" [disabled]="account.status === 'FROZEN'">
+            {{ 'ADMIN.FREEZE' | translate }}
+          </button>
+          <button mat-flat-button color="primary" type="button" (click)="unfreeze()" [disabled]="account.status === 'ACTIVE'">
+            {{ 'ADMIN.UNFREEZE' | translate }}
+          </button>
+        } @else {
+          <p class="hint">{{ 'ADMIN.NO_PERM_FREEZE' | translate }}</p>
+        }
+      </div>
+    </mat-card>
+  } @else {
+    <mat-card class="empty-card">
+      <mat-icon>account_balance</mat-icon>
+      <p>{{ 'ADMIN.LOOKUP_EMPTY' | translate }}</p>
+    </mat-card>
   }
-</mat-card>
+</div>

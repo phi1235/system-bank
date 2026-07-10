@@ -1,27 +1,41 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatDialogModule } from '@angular/material/dialog';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { Store } from '@ngrx/store';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { MoneyVndPipe } from '../../../shared/pipes/money-vnd.pipe';
+import { PERMISSIONS } from '../../../core/services/rbac.util';
 import { AccountsActions } from '../../../store/accounts/accounts.actions';
 import { selectAccounts } from '../../../store/accounts/accounts.selectors';
 import { TransfersActions } from '../../../store/transfers/transfers.actions';
 import { selectLastTransfer, selectTransferCreating, selectTransferError } from '../../../store/transfers/transfers.selectors';
+import { selectHasPermission } from '../../../store/auth/auth.selectors';
 
 @Component({
   selector: 'app-transfer',
   standalone: true,
   imports: [
-    CommonModule, ReactiveFormsModule, MatCardModule, MatFormFieldModule, MatInputModule,
-    MatSelectModule, MatButtonModule, MatDialogModule, PageHeaderComponent, MoneyVndPipe,
+    CommonModule,
+    ReactiveFormsModule,
+    RouterLink,
+    MatCardModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatButtonModule,
+    MatIconModule,
+    MatDialogModule,
+    PageHeaderComponent,
+    MoneyVndPipe,
     TranslateModule,
   ],
   templateUrl: './transfer.component.html',
@@ -35,6 +49,7 @@ export class TransferComponent implements OnInit {
   creating$ = this.store.select(selectTransferCreating);
   last$ = this.store.select(selectLastTransfer);
   error$ = this.store.select(selectTransferError);
+  canExecute$ = this.store.select(selectHasPermission(PERMISSIONS.IB_TRANSFER_EXECUTE));
 
   form = this.fb.nonNullable.group({
     fromAccountId: ['', Validators.required],

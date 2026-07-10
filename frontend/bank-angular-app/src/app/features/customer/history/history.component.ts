@@ -1,6 +1,9 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { TranslateModule } from '@ngx-translate/core';
@@ -14,7 +17,17 @@ import { selectTransferHistory, selectTransferLoading, selectTransferPageMeta } 
 @Component({
   selector: 'app-history',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatTableModule, MatPaginatorModule, PageHeaderComponent, LoadingComponent, MoneyVndPipe,
+  imports: [
+    CommonModule,
+    RouterLink,
+    MatButtonModule,
+    MatCardModule,
+    MatIconModule,
+    MatTableModule,
+    MatPaginatorModule,
+    PageHeaderComponent,
+    LoadingComponent,
+    MoneyVndPipe,
     TranslateModule,
   ],
   templateUrl: './history.component.html',

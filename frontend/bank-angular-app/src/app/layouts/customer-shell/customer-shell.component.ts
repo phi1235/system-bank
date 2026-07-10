@@ -4,10 +4,12 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatDividerModule } from '@angular/material/divider';
 import { TranslateModule } from '@ngx-translate/core';
 import { Store } from '@ngrx/store';
 import { AuthActions } from '../../store/auth/auth.actions';
-import { selectUsername } from '../../store/auth/auth.selectors';
+import { selectHasPermission, selectUsername } from '../../store/auth/auth.selectors';
+import { PERMISSIONS } from '../../core/services/rbac.util';
 import { LangSwitcherComponent } from '../../shared/components/lang-switcher/lang-switcher.component';
 
 @Component({
@@ -21,6 +23,7 @@ import { LangSwitcherComponent } from '../../shared/components/lang-switcher/lan
     MatButtonModule,
     MatIconModule,
     MatMenuModule,
+    MatDividerModule,
     TranslateModule,
     LangSwitcherComponent,
   ],
@@ -30,6 +33,15 @@ import { LangSwitcherComponent } from '../../shared/components/lang-switcher/lan
 export class CustomerShellComponent {
   private readonly store = inject(Store);
   username$ = this.store.select(selectUsername);
+
+  canHome$ = this.store.select(selectHasPermission(PERMISSIONS.IB_HOME_VIEW));
+  canAccounts$ = this.store.select(selectHasPermission(PERMISSIONS.IB_ACCOUNTS_VIEW));
+  canTransfer$ = this.store.select(selectHasPermission(PERMISSIONS.IB_TRANSFER_VIEW));
+  canCards$ = this.store.select(selectHasPermission(PERMISSIONS.IB_CARDS_VIEW));
+  canWealth$ = this.store.select(selectHasPermission(PERMISSIONS.IB_WEALTH_VIEW));
+  canSupport$ = this.store.select(selectHasPermission(PERMISSIONS.IB_SUPPORT_VIEW));
+  canProfile$ = this.store.select(selectHasPermission(PERMISSIONS.IB_PROFILE_VIEW));
+  canHistory$ = this.store.select(selectHasPermission(PERMISSIONS.IB_HISTORY_VIEW));
 
   logout(): void {
     this.store.dispatch(AuthActions.logout());

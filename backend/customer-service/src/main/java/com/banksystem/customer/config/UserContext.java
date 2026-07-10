@@ -21,9 +21,13 @@ public final class UserContext {
   }
 
   public static void requireAdmin() {
+    requirePermission("customers:list:view");
+  }
+
+  public static void requirePermission(String permission) {
     GatewayUser u = requireUser();
-    if (!u.hasRole("ADMIN")) {
-      throw new BusinessException("FORBIDDEN", "Admin role required", HttpStatus.FORBIDDEN);
+    if (!u.hasPermission(permission)) {
+      throw new BusinessException("FORBIDDEN", "Missing permission: " + permission, HttpStatus.FORBIDDEN);
     }
   }
 }
