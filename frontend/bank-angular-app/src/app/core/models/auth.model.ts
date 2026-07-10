@@ -29,7 +29,9 @@ export interface MeResponse {
   username: string;
   email: string;
   roles: string[];
+  permissions: string[];
   mfaEnabled: boolean;
+  staff?: boolean;
 }
 
 export interface MfaSetupResponse {

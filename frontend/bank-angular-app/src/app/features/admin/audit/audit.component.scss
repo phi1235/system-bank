@@ -1,1 +1,22 @@
 .full { width: 100%; }
+
+.table-card {
+  padding-bottom: 0.75rem !important;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  margin: -0.25rem;
+}
+
+.empty {
+  text-align: center;
+  color: var(--color-text-muted);
+  padding: 1.5rem 1rem 0.5rem;
+  margin: 0;
+}
+
+code {
+  font-size: 0.8rem;
+  color: #334155;
+}

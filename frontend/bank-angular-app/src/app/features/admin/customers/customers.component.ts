@@ -9,9 +9,12 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { BankApiService } from '../../../core/services/bank-api.service';
+import { PERMISSIONS } from '../../../core/services/rbac.util';
 import { ToastService } from '../../../core/services/toast.service';
 import { CustomerProfile } from '../../../core/models/domain.model';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { Store } from '@ngrx/store';
+import { selectHasPermission } from '../../../store/auth/auth.selectors';
 
 @Component({
   selector: 'app-admin-customers',
@@ -26,9 +29,11 @@ export class AdminCustomersComponent implements OnInit {
   private readonly api = inject(BankApiService);
   private readonly toast = inject(ToastService);
   private readonly i18n = inject(TranslateService);
+  private readonly store = inject(Store);
   rows: CustomerProfile[] = [];
   q = '';
   cols = ['fullName', 'email', 'phone', 'kycStatus', 'actions'];
+  canKyc$ = this.store.select(selectHasPermission(PERMISSIONS.CUSTOMERS_KYC_DECIDE));
 
   ngOnInit(): void { this.load(); }
 

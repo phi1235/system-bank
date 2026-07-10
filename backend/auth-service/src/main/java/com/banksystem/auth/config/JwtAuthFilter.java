@@ -46,7 +46,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
           if (roles == null) {
             roles = List.of();
           }
-          UserPrincipal principal = new UserPrincipal(userId, username, roles);
+          @SuppressWarnings("unchecked")
+          List<String> permissions = claims.get(SecurityHeaders.JWT_CLAIM_PERMISSIONS, List.class);
+          if (permissions == null) {
+            permissions = List.of();
+          }
+          UserPrincipal principal = new UserPrincipal(userId, username, roles, permissions);
           var authentication = new UsernamePasswordAuthenticationToken(
               principal, null, principal.getAuthorities());
           SecurityContextHolder.getContext().setAuthentication(authentication);

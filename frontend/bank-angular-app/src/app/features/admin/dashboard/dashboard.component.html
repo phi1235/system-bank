@@ -2,25 +2,131 @@
   [title]="'ADMIN.DASH_TITLE' | translate"
   [subtitle]="'ADMIN.DASH_SUB' | translate"
 />
+
+<div class="banner">
+  <mat-icon>admin_panel_settings</mat-icon>
+  <div>
+    <strong>{{ 'ADMIN.DASH_BANNER_TITLE' | translate }}</strong>
+    <p>{{ 'ADMIN.DASH_BANNER_BODY' | translate }}</p>
+  </div>
+</div>
+
 <div class="kpis">
-  <mat-card>
-    <div class="k">{{ 'ADMIN.KPI_CUSTOMERS' | translate }}</div>
+  <mat-card class="kpi customers">
+    <div class="kpi-top">
+      <div class="ico"><mat-icon>people</mat-icon></div>
+      <span class="k">{{ 'ADMIN.KPI_CUSTOMERS' | translate }}</span>
+    </div>
     <div class="v">{{ customers }}</div>
-    <a routerLink="/admin/customers">{{ 'ADMIN.OPEN_MODULE' | translate }}</a>
+    <a class="module-link" routerLink="/admin/customers">{{ 'ADMIN.OPEN_MODULE' | translate }}</a>
   </mat-card>
-  <mat-card>
-    <div class="k">{{ 'ADMIN.KPI_TRANSFERS' | translate }}</div>
+
+  <mat-card class="kpi transfers">
+    <div class="kpi-top">
+      <div class="ico"><mat-icon>swap_horiz</mat-icon></div>
+      <span class="k">{{ 'ADMIN.KPI_TRANSFERS' | translate }}</span>
+    </div>
     <div class="v">{{ transfers }}</div>
-    <a routerLink="/admin/transactions">{{ 'ADMIN.MONITOR' | translate }}</a>
+    <a class="module-link" routerLink="/admin/transactions">{{ 'ADMIN.MONITOR' | translate }}</a>
   </mat-card>
-  <mat-card>
-    <div class="k">{{ 'ADMIN.KPI_AUDIT' | translate }}</div>
+
+  <mat-card class="kpi audits">
+    <div class="kpi-top">
+      <div class="ico"><mat-icon>history</mat-icon></div>
+      <span class="k">{{ 'ADMIN.KPI_AUDIT' | translate }}</span>
+    </div>
     <div class="v">{{ audits }}</div>
-    <a routerLink="/admin/audit">{{ 'ADMIN.VIEW_LOG' | translate }}</a>
+    <a class="module-link" routerLink="/admin/audit">{{ 'ADMIN.VIEW_LOG' | translate }}</a>
   </mat-card>
-  <mat-card class="cta">
-    <div class="k">{{ 'ADMIN.QUICK' | translate }}</div>
-    <a mat-stroked-button routerLink="/admin/accounts">{{ 'ADMIN.FREEZE_LINK' | translate }}</a>
-    <a mat-stroked-button routerLink="/admin/rbac">{{ 'ADMIN.RBAC_LINK' | translate }}</a>
+
+  <mat-card class="kpi cta">
+    <div class="kpi-top">
+      <div class="ico"><mat-icon>bolt</mat-icon></div>
+      <span class="k">{{ 'ADMIN.QUICK' | translate }}</span>
+    </div>
+    <div class="cta-actions">
+      <a mat-flat-button color="primary" routerLink="/admin/accounts">{{ 'ADMIN.FREEZE_LINK' | translate }}</a>
+      <a mat-stroked-button routerLink="/admin/rbac">{{ 'ADMIN.RBAC_LINK' | translate }}</a>
+    </div>
+  </mat-card>
+</div>
+
+<div class="panels">
+  <mat-card class="panel">
+    <h3>{{ 'ADMIN.QUEUE_TITLE' | translate }}</h3>
+    <div class="queue">
+      <div class="q-item">
+        <span class="chip warn">KYC</span>
+        <div class="q-body">
+          <strong>{{ 'ADMIN.QUEUE_KYC' | translate }}</strong>
+          <span>{{ 'ADMIN.QUEUE_KYC_HINT' | translate }}</span>
+        </div>
+        <a mat-stroked-button routerLink="/admin/customers">{{ 'ADMIN.HANDLE' | translate }}</a>
+      </div>
+      <div class="q-item">
+        <span class="chip bad">RISK</span>
+        <div class="q-body">
+          <strong>{{ 'ADMIN.QUEUE_RISK' | translate }}</strong>
+          <span>{{ 'ADMIN.QUEUE_RISK_HINT' | translate }}</span>
+        </div>
+        <a mat-stroked-button routerLink="/admin/risk">{{ 'ADMIN.HANDLE' | translate }}</a>
+      </div>
+      <div class="q-item">
+        <span class="chip info">TX</span>
+        <div class="q-body">
+          <strong>{{ 'ADMIN.QUEUE_TX' | translate }}</strong>
+          <span>{{ 'ADMIN.QUEUE_TX_HINT' | translate }}</span>
+        </div>
+        <a mat-stroked-button routerLink="/admin/transactions">{{ 'ADMIN.HANDLE' | translate }}</a>
+      </div>
+    </div>
+  </mat-card>
+
+  <mat-card class="panel">
+    <h3>{{ 'ADMIN.MODULES_TITLE' | translate }}</h3>
+    <div class="modules">
+      <a class="mod" routerLink="/admin/customers">
+        <mat-icon>people</mat-icon>
+        <div>
+          <strong>{{ 'NAV.ADMIN_CUSTOMERS' | translate }}</strong>
+          <span>{{ 'ADMIN.CUSTOMERS_SUB' | translate }}</span>
+        </div>
+      </a>
+      <a class="mod" routerLink="/admin/accounts">
+        <mat-icon>account_balance</mat-icon>
+        <div>
+          <strong>{{ 'NAV.ADMIN_ACCOUNTS' | translate }}</strong>
+          <span>{{ 'ADMIN.ACCOUNTS_SUB' | translate }}</span>
+        </div>
+      </a>
+      <a class="mod" routerLink="/admin/transactions">
+        <mat-icon>swap_horiz</mat-icon>
+        <div>
+          <strong>{{ 'NAV.ADMIN_TX' | translate }}</strong>
+          <span>{{ 'ADMIN.TX_SUB' | translate }}</span>
+        </div>
+      </a>
+      <a class="mod" routerLink="/admin/audit">
+        <mat-icon>history</mat-icon>
+        <div>
+          <strong>{{ 'NAV.ADMIN_AUDIT' | translate }}</strong>
+          <span>{{ 'ADMIN.AUDIT_SUB' | translate }}</span>
+        </div>
+      </a>
+      <a class="mod" routerLink="/admin/rbac">
+        <mat-icon>admin_panel_settings</mat-icon>
+        <div>
+          <strong>{{ 'NAV.ADMIN_RBAC' | translate }}</strong>
+          <span>{{ 'ADMIN.RBAC_SUB' | translate }}</span>
+        </div>
+      </a>
+      <a class="mod muted" routerLink="/admin/risk">
+        <mat-icon>shield</mat-icon>
+        <div>
+          <strong>{{ 'NAV.ADMIN_RISK' | translate }}</strong>
+          <span>{{ 'COMMON.COMING_SOON' | translate }}</span>
+        </div>
+      </a>
+    </div>
   </mat-card>
 </div>

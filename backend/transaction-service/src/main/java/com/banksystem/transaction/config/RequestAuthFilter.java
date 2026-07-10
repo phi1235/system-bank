@@ -24,17 +24,23 @@ public class RequestAuthFilter extends OncePerRequestFilter {
       HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
       throws ServletException, IOException {
     String userId = request.getHeader(SecurityHeaders.USER_ID);
-    String rolesHeader = request.getHeader(SecurityHeaders.USER_ROLES);
     if (userId != null && !userId.isBlank()) {
-      List<String> roles = rolesHeader == null || rolesHeader.isBlank()
-          ? List.of()
-          : Arrays.stream(rolesHeader.split(",")).map(String::trim).filter(s -> !s.isEmpty()).toList();
+      List<String> roles = splitCsv(request.getHeader(SecurityHeaders.USER_ROLES));
+      List<String> permissions = splitCsv(request.getHeader(SecurityHeaders.USER_PERMISSIONS));
       try {
+        GatewayUser user = new GatewayUser(UUID.fromString(userId), roles, permissions);
         RequestContextHolder.currentRequestAttributes()
-            .setAttribute(ATTR, new GatewayUser(UUID.fromString(userId), roles), RequestAttributes.SCOPE_REQUEST);
+            .setAttribute(ATTR, user, RequestAttributes.SCOPE_REQUEST);
       } catch (IllegalArgumentException ignored) {
       }
     }
     filterChain.doFilter(request, response);
+  }
+
+  private static List<String> splitCsv(String header) {
+    if (header == null || header.isBlank()) {
+      return List.of();
+    }
+    return Arrays.stream(header.split(",")).map(String::trim).filter(s -> !s.isEmpty()).toList();
   }
 }

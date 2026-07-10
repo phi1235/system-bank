@@ -61,6 +61,8 @@ public final class AuthDtos {
       String username,
       String email,
       List<String> roles,
-      boolean mfaEnabled
+      List<String> permissions,
+      boolean mfaEnabled,
+      boolean staff
   ) {}
 }

@@ -2,21 +2,394 @@
   [title]="'ADMIN.RBAC_TITLE' | translate"
   [subtitle]="'ADMIN.RBAC_SUB' | translate"
 />
-<mat-card>
-  <table mat-table [dataSource]="rows" class="full">
-    <ng-container matColumnDef="role">
-      <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.ROLE' | translate }}</th>
-      <td mat-cell *matCellDef="let r"><strong>{{ r.role }}</strong></td>
-    </ng-container>
-    <ng-container matColumnDef="desc">
-      <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.DESC' | translate }}</th>
-      <td mat-cell *matCellDef="let r">{{ r.desc }}</td>
-    </ng-container>
-    <ng-container matColumnDef="perms">
-      <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.PERMS' | translate }}</th>
-      <td mat-cell *matCellDef="let r"><code>{{ r.perms }}</code></td>
-    </ng-container>
-    <tr mat-header-row *matHeaderRowDef="cols"></tr>
-    <tr mat-row *matRowDef="let row; columns: cols"></tr>
-  </table>
-</mat-card>
+
+<mat-tab-group
+  class="rbac-tabs"
+  animationDuration="180ms"
+  [selectedIndex]="tabIndex"
+  (selectedIndexChange)="onTabChange($event)"
+  mat-stretch-tabs="false"
+  mat-align-tabs="start"
+>
+  <!-- ═══════ USERS ═══════ -->
+  <mat-tab>
+    <ng-template mat-tab-label>
+      <mat-icon class="tab-ico">person</mat-icon>
+      {{ 'ADMIN.RBAC_TAB_USERS' | translate }}
+    </ng-template>
+
+    <div class="tab-pad">
+      <mat-drawer-container class="workspace" autosize>
+        <mat-drawer-content>
+          <mat-card appearance="outlined" class="surface">
+            <mat-card-header>
+              <mat-card-title>{{ 'ADMIN.RBAC_USERS' | translate }}</mat-card-title>
+              <mat-card-subtitle>{{ 'ADMIN.RBAC_USERS_HINT' | translate }}</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              <form class="search-bar" (ngSubmit)="searchUsers()">
+                <mat-form-field appearance="outline" class="grow" subscriptSizing="dynamic">
+                  <mat-label>{{ 'ADMIN.RBAC_SEARCH_PH' | translate }}</mat-label>
+                  <mat-icon matPrefix>search</mat-icon>
+                  <input matInput [(ngModel)]="q" name="q" />
+                </mat-form-field>
+                <button mat-flat-button color="primary" type="submit">
+                  {{ 'COMMON.SEARCH' | translate }}
+                </button>
+              </form>
+
+              @if (usersLoading) {
+                <div class="center-state"><mat-spinner diameter="40" /></div>
+              } @else if (!users.length) {
+                <div class="center-state">
+                  <mat-icon color="disabled">person_off</mat-icon>
+                  <p>{{ 'ADMIN.RBAC_EMPTY_HINT' | translate }}</p>
+                </div>
+              } @else {
+                <div class="table-scroll">
+                  <table mat-table [dataSource]="users" class="mat-elevation-z0 full-table">
+                    <ng-container matColumnDef="username">
+                      <th mat-header-cell *matHeaderCellDef>{{ 'AUTH.USERNAME' | translate }}</th>
+                      <td mat-cell *matCellDef="let u"><strong>{{ u.username }}</strong></td>
+                    </ng-container>
+                    <ng-container matColumnDef="email">
+                      <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.EMAIL' | translate }}</th>
+                      <td mat-cell *matCellDef="let u">{{ u.email || '—' }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="roles">
+                      <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.ROLE' | translate }}</th>
+                      <td mat-cell *matCellDef="let u">
+                        <mat-chip-set>
+                          @for (r of u.roles; track r) {
+                            <mat-chip [highlighted]="r !== 'CUSTOMER'">{{ r }}</mat-chip>
+                          }
+                        </mat-chip-set>
+                      </td>
+                    </ng-container>
+                    <ng-container matColumnDef="type">
+                      <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.RBAC_TYPE' | translate }}</th>
+                      <td mat-cell *matCellDef="let u">
+                        <span class="badge" [class.staff]="u.staff">
+                          {{ u.staff ? ('ADMIN.RBAC_TYPE_STAFF' | translate) : ('ADMIN.RBAC_TYPE_CUSTOMER' | translate) }}
+                        </span>
+                      </td>
+                    </ng-container>
+                    <ng-container matColumnDef="actions">
+                      <th mat-header-cell *matHeaderCellDef></th>
+                      <td mat-cell *matCellDef="let u">
+                        <button mat-stroked-button color="primary" type="button"
+                          (click)="openUserAssign(u); $event.stopPropagation()">
+                          <mat-icon>badge</mat-icon>
+                          {{ 'ADMIN.RBAC_ASSIGN' | translate }}
+                        </button>
+                      </td>
+                    </ng-container>
+                    <tr mat-header-row *matHeaderRowDef="userCols"></tr>
+                    <tr mat-row *matRowDef="let row; columns: userCols"
+                      class="row-click"
+                      [class.row-selected]="selectedUser?.userId === row.userId"
+                      (click)="openUserAssign(row)"></tr>
+                  </table>
+                </div>
+                <mat-paginator
+                  [length]="total" [pageIndex]="page" [pageSize]="size"
+                  [pageSizeOptions]="[10, 20, 50]" (page)="onPage($event)" showFirstLastButtons />
+              }
+            </mat-card-content>
+          </mat-card>
+        </mat-drawer-content>
+
+        <mat-drawer mode="side" position="end" [opened]="!!selectedUser" class="side-drawer">
+          @if (selectedUser) {
+            <div class="drawer-inner">
+              <div class="drawer-toolbar">
+                <div>
+                  <h2>{{ 'ADMIN.RBAC_ASSIGN_TITLE' | translate }}</h2>
+                  <p>{{ selectedUser.username }} · {{ selectedUser.email }}</p>
+                </div>
+                <button mat-icon-button type="button" (click)="closeUserDrawer()">
+                  <mat-icon>close</mat-icon>
+                </button>
+              </div>
+              <mat-divider />
+              <div class="drawer-scroll">
+                <h3 class="subhead">{{ 'ADMIN.RBAC_PICK_ROLES' | translate }}</h3>
+                <mat-selection-list class="role-select-list">
+                  @for (role of roles; track role.code) {
+                    <mat-list-option
+                      [selected]="isUserRoleChecked(role.code)"
+                      [value]="role.code"
+                      (click)="toggleUserRole(role.code, !isUserRoleChecked(role.code)); $event.preventDefault()"
+                    >
+                      <span matListItemTitle>{{ role.code }}</span>
+                      <span matListItemLine>{{ role.description || role.name }}</span>
+                    </mat-list-option>
+                  }
+                </mat-selection-list>
+
+                <h3 class="subhead">{{ 'ADMIN.RBAC_MENU_PREVIEW' | translate }}</h3>
+                @for (block of userEffectiveSummary; track block.screen) {
+                  <div class="preview-block">
+                    <div class="preview-title">{{ block.screen }}</div>
+                    <ul>
+                      @for (it of block.items; track it) {
+                        <li>{{ it }}</li>
+                      }
+                    </ul>
+                  </div>
+                } @empty {
+                  <p class="muted">{{ 'ADMIN.RBAC_PERM_EMPTY' | translate }}</p>
+                }
+
+                <mat-card appearance="outlined" class="hint-card">
+                  <mat-card-content>{{ 'ADMIN.RBAC_RELOGIN_HINT' | translate }}</mat-card-content>
+                </mat-card>
+              </div>
+              <div class="drawer-actions">
+                <button mat-button type="button" (click)="closeUserDrawer()">{{ 'COMMON.CLOSE' | translate }}</button>
+                <button mat-flat-button color="primary" type="button" [disabled]="savingUser" (click)="saveUserRoles()">
+                  {{ savingUser ? ('COMMON.LOADING' | translate) : ('COMMON.SAVE' | translate) }}
+                </button>
+              </div>
+            </div>
+          }
+        </mat-drawer>
+      </mat-drawer-container>
+    </div>
+  </mat-tab>
+
+  <!-- ═══════ ROLES ═══════ -->
+  <mat-tab>
+    <ng-template mat-tab-label>
+      <mat-icon class="tab-ico">rule</mat-icon>
+      {{ 'ADMIN.RBAC_TAB_ROLES' | translate }}
+    </ng-template>
+
+    <div class="tab-pad roles-tab-pad">
+      <div class="roles-layout">
+        <!-- LEFT: sticky role menu -->
+        <aside class="roles-nav sticky-col">
+          <div class="nav-head">
+            <h2>{{ 'ADMIN.RBAC_ROLES_TITLE' | translate }}</h2>
+            <button mat-flat-button color="primary" type="button" class="w-full" (click)="startCreate()">
+              <mat-icon>add</mat-icon>
+              {{ 'ADMIN.RBAC_ROLE_CREATE' | translate }}
+            </button>
+            <mat-form-field appearance="outline" class="w-full" subscriptSizing="dynamic">
+              <mat-label>{{ 'ADMIN.RBAC_ROLE_SEARCH' | translate }}</mat-label>
+              <mat-icon matPrefix>search</mat-icon>
+              <input matInput [(ngModel)]="roleFilter" name="roleFilter" />
+            </mat-form-field>
+          </div>
+          <mat-divider />
+          <div class="role-nav-scroll">
+            @if (rolesLoading) {
+              <div class="center-state compact"><mat-spinner diameter="32" /></div>
+            } @else {
+              <mat-nav-list dense class="role-nav-list">
+                @for (role of filteredRoles; track role.code) {
+                  <a mat-list-item
+                    [activated]="!creating && selectedRole?.code === role.code"
+                    (click)="selectRole(role)"
+                  >
+                    <mat-icon matListItemIcon>{{ role.staff ? 'badge' : 'person' }}</mat-icon>
+                    <span matListItemTitle>{{ role.code }}</span>
+                    <span matListItemLine>{{ rolePermCount(role) }} {{ 'ADMIN.RBAC_PERM_COUNT' | translate }}</span>
+                  </a>
+                } @empty {
+                  <p class="muted pad-sm">{{ 'ADMIN.RBAC_ROLE_NO_MATCH' | translate }}</p>
+                }
+              </mat-nav-list>
+            }
+          </div>
+        </aside>
+
+        <!-- RIGHT: scrollable body + sticky footer actions -->
+        <section class="roles-main sticky-col">
+          @if (!creating && !selectedRole) {
+            <mat-card appearance="outlined" class="surface empty-pick">
+              <mat-icon>touch_app</mat-icon>
+              <h2>{{ 'ADMIN.RBAC_ROLE_PICK' | translate }}</h2>
+              <p>{{ 'ADMIN.RBAC_ROLES_HINT' | translate }}</p>
+            </mat-card>
+          } @else {
+            <div class="editor-panel surface">
+              <div class="editor-scroll">
+                <header class="editor-head-block">
+                  <h2 class="editor-title">
+                    @if (creating) {
+                      {{ 'ADMIN.RBAC_ROLE_CREATE' | translate }}
+                    } @else {
+                      {{ 'ADMIN.RBAC_ROLE_EDIT' | translate }}
+                      <mat-chip class="title-chip">{{ selectedRole!.code }}</mat-chip>
+                    }
+                  </h2>
+                  <p class="editor-sub">
+                    {{ creating ? ('ADMIN.RBAC_ROLE_CREATE_HINT' | translate) : ('ADMIN.RBAC_ROLE_PERM_HINT' | translate) }}
+                  </p>
+                </header>
+
+                <div class="meta-grid">
+                  @if (creating) {
+                    <mat-form-field appearance="outline">
+                      <mat-label>{{ 'ADMIN.RBAC_ROLE_CODE' | translate }}</mat-label>
+                      <input matInput [(ngModel)]="newCode" name="newCode" />
+                    </mat-form-field>
+                    <mat-form-field appearance="outline">
+                      <mat-label>{{ 'ADMIN.RBAC_ROLE_NAME' | translate }}</mat-label>
+                      <input matInput [(ngModel)]="newName" name="newName" />
+                    </mat-form-field>
+                    <mat-form-field appearance="outline" class="span-2">
+                      <mat-label>{{ 'ADMIN.DESC' | translate }}</mat-label>
+                      <input matInput [(ngModel)]="newDesc" name="newDesc" />
+                    </mat-form-field>
+                    <mat-slide-toggle [(ngModel)]="newStaff" name="newStaff" color="primary">
+                      {{ 'ADMIN.RBAC_ROLE_STAFF' | translate }}
+                    </mat-slide-toggle>
+                  } @else {
+                    <mat-form-field appearance="outline">
+                      <mat-label>{{ 'ADMIN.RBAC_ROLE_NAME' | translate }}</mat-label>
+                      <input matInput [(ngModel)]="draftRoleName" name="draftRoleName" />
+                    </mat-form-field>
+                    <mat-form-field appearance="outline" class="span-2">
+                      <mat-label>{{ 'ADMIN.DESC' | translate }}</mat-label>
+                      <input matInput [(ngModel)]="draftRoleDesc" name="draftRoleDesc" />
+                    </mat-form-field>
+                    @if (selectedRole!.code !== 'CUSTOMER') {
+                      <mat-slide-toggle [(ngModel)]="draftRoleStaff" name="draftRoleStaff" color="primary">
+                        {{ 'ADMIN.RBAC_ROLE_STAFF' | translate }}
+                      </mat-slide-toggle>
+                    }
+                  }
+                </div>
+
+                <h3 class="matrix-title">
+                  <mat-icon>grid_on</mat-icon>
+                  {{ 'ADMIN.RBAC_PICK_MENUS' | translate }}
+                </h3>
+                <p class="matrix-sub">{{ 'ADMIN.RBAC_MATRIX_HINT' | translate }}</p>
+
+                <div class="portal-block">
+                  <div class="portal-label ib">
+                    <mat-icon>phone_iphone</mat-icon>
+                    {{ 'ADMIN.PORTAL_IB' | translate }}
+                  </div>
+                  <mat-accordion multi class="screen-accordion">
+                    @for (screen of ibScreens; track screen.id) {
+                      <ng-container *ngTemplateOutlet="screenPanel; context: { $implicit: screen }" />
+                    }
+                  </mat-accordion>
+                </div>
+
+                <div class="portal-block">
+                  <div class="portal-label bo">
+                    <mat-icon>admin_panel_settings</mat-icon>
+                    {{ 'ADMIN.PORTAL_BO' | translate }}
+                  </div>
+                  <mat-accordion multi class="screen-accordion">
+                    @for (screen of boScreens; track screen.id) {
+                      <ng-container *ngTemplateOutlet="screenPanel; context: { $implicit: screen }" />
+                    }
+                  </mat-accordion>
+                </div>
+
+                <ng-template #screenPanel let-screen>
+                  <mat-expansion-panel
+                    [expanded]="expandedScreen === screen.id"
+                    (opened)="expandedScreen = screen.id"
+                  >
+                    <mat-expansion-panel-header>
+                      <mat-panel-title>
+                        <mat-icon class="panel-ico">{{ screen.icon }}</mat-icon>
+                        {{ screenLabel(screen) }}
+                      </mat-panel-title>
+                      <mat-panel-description>
+                        <mat-chip>{{ screenPermCount(screen) }} {{ 'ADMIN.RBAC_PERM_COUNT' | translate }}</mat-chip>
+                        <span class="panel-desc">{{ screen.description || '' }}</span>
+                      </mat-panel-description>
+                    </mat-expansion-panel-header>
+
+                    <div class="feature-table-wrap">
+                      <table class="feature-matrix">
+                        <thead>
+                          <tr>
+                            <th class="col-feat">{{ 'ADMIN.RBAC_COL_FEATURE' | translate }}</th>
+                            @for (col of actionCols; track col.key) {
+                              <th class="col-act">{{ actionLabel(col.key) }}</th>
+                            }
+                            <th class="col-all">{{ 'ADMIN.RBAC_COL_ALL' | translate }}</th>
+                            <th class="col-note">{{ 'ADMIN.RBAC_COL_NOTE' | translate }}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @for (f of screen.features; track f.id) {
+                            <tr>
+                              <td class="col-feat">
+                                <strong>{{ featLabel(f) }}</strong>
+                              </td>
+                              @for (col of actionCols; track col.key) {
+                                <td class="col-act">
+                                  @if (featureHasAction(f, col.key)) {
+                                    <mat-checkbox
+                                      color="primary"
+                                      [checked]="hasPerm(featureActionPerm(f, col.key))"
+                                      (change)="onActionToggle(featureActionPerm(f, col.key), $event)"
+                                      [matTooltip]="featureActionPerm(f, col.key) || ''"
+                                    />
+                                  } @else {
+                                    <span class="na">—</span>
+                                  }
+                                </td>
+                              }
+                              <td class="col-all">
+                                <mat-checkbox
+                                  color="primary"
+                                  [checked]="featureAllChecked(f)"
+                                  [indeterminate]="featureSomeChecked(f)"
+                                  (change)="toggleFeatureAll(f, $event.checked)"
+                                  [matTooltip]="'ADMIN.RBAC_TOGGLE_FEATURE' | translate"
+                                />
+                              </td>
+                              <td class="col-note">
+                                <span class="hint-text">{{ f.hint || '' }}</span>
+                                <div class="perm-codes">
+                                  @for (perm of f.actions | keyvalue; track perm.key) {
+                                    @if (perm.value) {
+                                      <code [class.on]="hasPerm($any(perm.value))">{{ perm.value }}</code>
+                                    }
+                                  }
+                                </div>
+                              </td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    </div>
+                  </mat-expansion-panel>
+                </ng-template>
+
+                <mat-card appearance="outlined" class="hint-card impact">
+                  <mat-card-content>
+                    <mat-icon>info</mat-icon>
+                    {{ 'ADMIN.RBAC_ROLE_IMPACT' | translate }}
+                  </mat-card-content>
+                </mat-card>
+              </div>
+
+              <!-- Sticky bottom actions -->
+              <footer class="editor-sticky-footer">
+                @if (creating) {
+                  <button mat-button type="button" (click)="cancelCreate()">{{ 'COMMON.CLOSE' | translate }}</button>
+                }
+                <button mat-flat-button color="primary" type="button" [disabled]="savingRole" (click)="saveRoleMatrix()">
+                  <mat-icon>save</mat-icon>
+                  {{ savingRole ? ('COMMON.LOADING' | translate) : ('COMMON.SAVE' | translate) }}
+                </button>
+              </footer>
+            </div>
+          }
+        </section>
+      </div>
+    </div>
+  </mat-tab>
+</mat-tab-group>

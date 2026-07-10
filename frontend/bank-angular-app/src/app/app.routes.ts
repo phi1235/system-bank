@@ -19,13 +19,13 @@ export const routes: Routes = [
 
   {
     path: 'customer',
-    canActivate: [authGuard, roleGuard(['CUSTOMER', 'ADMIN'])],
+    canActivate: [authGuard, roleGuard(['CUSTOMER', 'ADMIN', 'SUPER_ADMIN'])],
     loadChildren: () => import('./features/customer/routes').then((m) => m.CUSTOMER_ROUTES),
   },
 
   {
     path: 'admin',
-    canActivate: [authGuard, roleGuard(['ADMIN'])],
+    canActivate: [authGuard, roleGuard(['STAFF'])],
     loadChildren: () => import('./features/admin/routes').then((m) => m.ADMIN_ROUTES),
   },
 

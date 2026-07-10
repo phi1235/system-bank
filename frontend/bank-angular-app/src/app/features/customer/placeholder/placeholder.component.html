@@ -1,5 +1,35 @@
 <app-page-header [title]="title" [subtitle]="subtitle" />
-<mat-card>
-  <p>{{ 'COMMON.PLACEHOLDER_HINT' | translate }} <strong>{{ title }}</strong></p>
-  <p class="muted">{{ 'COMMON.PLACEHOLDER_MVP' | translate }}</p>
-</mat-card>
+<div class="placeholder">
+  <mat-card class="hero">
+    <div class="icon-wrap">
+      <mat-icon>construction</mat-icon>
+    </div>
+    <h2>{{ title }}</h2>
+    <p>{{ 'COMMON.PLACEHOLDER_HINT' | translate }} <strong>{{ title }}</strong></p>
+    <p class="muted">{{ 'COMMON.PLACEHOLDER_MVP' | translate }}</p>
+    <div class="actions">
+      <a mat-flat-button color="primary" routerLink="/customer/home">{{ 'NAV.HOME' | translate }}</a>
+      <a mat-stroked-button routerLink="/customer/support">{{ 'NAV.SUPPORT' | translate }}</a>
+    </div>
+  </mat-card>
+  <div class="hints">
+    <mat-card>
+      <mat-icon>account_balance</mat-icon>
+      <strong>{{ 'NAV.ACCOUNTS' | translate }}</strong>
+      <span>{{ 'CUSTOMER.QUICK_ACCOUNTS_HINT' | translate }}</span>
+      <a routerLink="/customer/accounts">{{ 'CUSTOMER.VIEW_ALL' | translate }}</a>
+    </mat-card>
+    <mat-card>
+      <mat-icon>swap_horiz</mat-icon>
+      <strong>{{ 'NAV.TRANSFER' | translate }}</strong>
+      <span>{{ 'CUSTOMER.QUICK_TRANSFER_HINT' | translate }}</span>
+      <a routerLink="/customer/payments/transfer">{{ 'CUSTOMER.VIEW_ALL' | translate }}</a>
+    </mat-card>
+    <mat-card>
+      <mat-icon>person</mat-icon>
+      <strong>{{ 'NAV.PROFILE' | translate }}</strong>
+      <span>{{ 'CUSTOMER.QUICK_PROFILE_HINT' | translate }}</span>
+      <a routerLink="/customer/profile">{{ 'CUSTOMER.VIEW_ALL' | translate }}</a>
+    </mat-card>
+  </div>
+</div>

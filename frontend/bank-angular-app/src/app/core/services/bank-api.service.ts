@@ -85,4 +85,81 @@ export class BankApiService {
   auditLogs(page = 0, size = 20): Observable<PageResponse<AuditLog>> {
     return this.api.get('/admin/audit-logs', { page, size });
   }
+
+  // RBAC
+  rbacMatrix(): Observable<RbacMatrix> {
+    return this.api.get('/admin/rbac/matrix');
+  }
+
+  rbacRoles(staffOnly = true): Observable<RbacRole[]> {
+    return this.api.get('/admin/rbac/roles', { staffOnly });
+  }
+
+  rbacPermissions(): Observable<RbacPermission[]> {
+    return this.api.get('/admin/rbac/permissions');
+  }
+
+  createRole(body: {
+    code: string;
+    name: string;
+    description?: string;
+    staff: boolean;
+    permissions: string[];
+  }): Observable<RbacRole> {
+    return this.api.post('/admin/rbac/roles', body);
+  }
+
+  updateRole(
+    code: string,
+    body: { name: string; description?: string; staff?: boolean },
+  ): Observable<RbacRole> {
+    return this.api.put(`/admin/rbac/roles/${code}`, body);
+  }
+
+  updateRolePermissions(code: string, permissions: string[]): Observable<RbacRole> {
+    return this.api.put(`/admin/rbac/roles/${code}/permissions`, { permissions });
+  }
+
+  rbacUsers(page = 0, size = 20, q?: string): Observable<PageResponse<RbacStaffUser>> {
+    return this.api.get('/admin/rbac/users', { page, size, q });
+  }
+
+  assignRoles(userId: string, roles: string[]): Observable<RbacStaffUser> {
+    return this.api.put(`/admin/rbac/users/${userId}/roles`, { roles });
+  }
+}
+
+export interface RbacRole {
+  code: string;
+  name: string;
+  description: string;
+  staff: boolean;
+  permissions: string[];
+}
+
+export interface RbacPermission {
+  code: string;
+  description: string;
+}
+
+export interface RbacMatrixCell {
+  roleCode: string;
+  permissionCode: string;
+  granted: boolean;
+}
+
+export interface RbacMatrix {
+  roles: RbacRole[];
+  permissions: RbacPermission[];
+  cells: RbacMatrixCell[];
+}
+
+export interface RbacStaffUser {
+  userId: string;
+  username: string;
+  email: string;
+  roles: string[];
+  permissions: string[];
+  staff: boolean;
+  enabled: boolean;
 }

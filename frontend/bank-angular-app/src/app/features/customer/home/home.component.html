@@ -3,6 +3,7 @@
   [subtitle]="'CUSTOMER.HOME_HELLO' | translate: { name: (username$ | async) || '' }"
 >
   <a mat-flat-button color="primary" routerLink="/customer/payments/transfer">
+    <mat-icon>swap_horiz</mat-icon>
     {{ 'NAV.TRANSFER' | translate }}
   </a>
 </app-page-header>
@@ -10,47 +11,118 @@
 @if (loading$ | async) {
   <app-loading />
 } @else {
-  <div class="grid">
-    <mat-card class="hero">
-      <div class="label">{{ 'CUSTOMER.TOTAL_BALANCE' | translate }}</div>
-      <div class="amount">{{ total$ | async | moneyVnd }}</div>
-      <div class="actions">
-        <a mat-stroked-button routerLink="/customer/accounts">{{ 'NAV.ACCOUNTS' | translate }}</a>
-        <a mat-stroked-button routerLink="/customer/history">{{ 'NAV.HISTORY' | translate }}</a>
+  <div class="home">
+    <section class="stats">
+      <mat-card class="hero">
+        <div class="label">{{ 'CUSTOMER.TOTAL_BALANCE' | translate }}</div>
+        <div class="amount">{{ total$ | async | moneyVnd }}</div>
+        <div class="meta">
+          {{ 'CUSTOMER.HOME_ACCOUNTS_META' | translate: { count: ((accounts$ | async) || []).length } }}
+        </div>
+        <div class="actions">
+          <a mat-stroked-button routerLink="/customer/accounts">{{ 'NAV.ACCOUNTS' | translate }}</a>
+          <a mat-stroked-button routerLink="/customer/history">{{ 'NAV.HISTORY' | translate }}</a>
+        </div>
+      </mat-card>
+
+      <mat-card class="stat">
+        <div class="stat-icon"><mat-icon>account_balance_wallet</mat-icon></div>
+        <div class="label">{{ 'CUSTOMER.YOUR_ACCOUNTS' | translate }}</div>
+        <div class="value">{{ ((accounts$ | async) || []).length }}</div>
+        <div class="meta">{{ 'CUSTOMER.HOME_ACCOUNTS_HINT' | translate }}</div>
+      </mat-card>
+
+      <mat-card class="stat">
+        <div class="stat-icon teal"><mat-icon>receipt_long</mat-icon></div>
+        <div class="label">{{ 'CUSTOMER.RECENT_TX' | translate }}</div>
+        <div class="value">{{ ((recent$ | async) || []).length }}</div>
+        <div class="meta">{{ 'CUSTOMER.HOME_TX_HINT' | translate }}</div>
+      </mat-card>
+    </section>
+
+    <mat-card class="quick-card">
+      <h3>{{ 'CUSTOMER.QUICK_ACTIONS' | translate }}</h3>
+      <div class="quick-actions">
+        <a class="quick" routerLink="/customer/payments/transfer">
+          <mat-icon>swap_horiz</mat-icon>
+          <strong>{{ 'NAV.TRANSFER' | translate }}</strong>
+          <span>{{ 'CUSTOMER.QUICK_TRANSFER_HINT' | translate }}</span>
+        </a>
+        <a class="quick" routerLink="/customer/accounts">
+          <mat-icon>account_balance</mat-icon>
+          <strong>{{ 'NAV.ACCOUNTS' | translate }}</strong>
+          <span>{{ 'CUSTOMER.QUICK_ACCOUNTS_HINT' | translate }}</span>
+        </a>
+        <a class="quick" routerLink="/customer/history">
+          <mat-icon>history</mat-icon>
+          <strong>{{ 'NAV.HISTORY' | translate }}</strong>
+          <span>{{ 'CUSTOMER.QUICK_HISTORY_HINT' | translate }}</span>
+        </a>
+        <a class="quick" routerLink="/customer/profile">
+          <mat-icon>person</mat-icon>
+          <strong>{{ 'NAV.PROFILE' | translate }}</strong>
+          <span>{{ 'CUSTOMER.QUICK_PROFILE_HINT' | translate }}</span>
+        </a>
+        <a class="quick muted" routerLink="/customer/cards">
+          <mat-icon>credit_card</mat-icon>
+          <strong>{{ 'NAV.CARDS' | translate }}</strong>
+          <span>{{ 'COMMON.COMING_SOON' | translate }}</span>
+        </a>
+        <a class="quick muted" routerLink="/customer/support">
+          <mat-icon>support_agent</mat-icon>
+          <strong>{{ 'NAV.SUPPORT' | translate }}</strong>
+          <span>{{ 'COMMON.COMING_SOON' | translate }}</span>
+        </a>
       </div>
     </mat-card>
 
-    <mat-card>
-      <h3>{{ 'CUSTOMER.YOUR_ACCOUNTS' | translate }}</h3>
-      @for (a of accounts$ | async; track a.id) {
-        <div class="row">
-          <div>
-            <div class="num">{{ a.accountNumber | accountMask }}</div>
-            <div class="meta">{{ a.accountType }} · {{ a.status }}</div>
-          </div>
-          <div class="bal">{{ a.balance | moneyVnd: a.currency }}</div>
+    <section class="panels">
+      <mat-card class="panel">
+        <div class="panel-head">
+          <h3>{{ 'CUSTOMER.YOUR_ACCOUNTS' | translate }}</h3>
+          <a routerLink="/customer/accounts">{{ 'CUSTOMER.VIEW_ALL' | translate }}</a>
         </div>
-      } @empty {
-        <p class="empty">
-          {{ 'CUSTOMER.NO_ACCOUNTS' | translate }}
-          <a routerLink="/customer/accounts">{{ 'CUSTOMER.OPEN_NOW' | translate }}</a>
-        </p>
-      }
-    </mat-card>
+        @for (a of accounts$ | async; track a.id) {
+          <div class="row">
+            <div class="row-left">
+              <div class="ico-acc"><mat-icon>payments</mat-icon></div>
+              <div>
+                <div class="num">{{ a.accountNumber | accountMask }}</div>
+                <div class="row-meta">{{ a.accountType }} · {{ a.status }}</div>
+              </div>
+            </div>
+            <div class="bal">{{ a.balance | moneyVnd: a.currency }}</div>
+          </div>
+        } @empty {
+          <p class="empty">
+            {{ 'CUSTOMER.NO_ACCOUNTS' | translate }}
+            <a routerLink="/customer/accounts">{{ 'CUSTOMER.OPEN_NOW' | translate }}</a>
+          </p>
+        }
+      </mat-card>
 
-    <mat-card class="span2">
-      <h3>{{ 'CUSTOMER.RECENT_TX' | translate }}</h3>
-      @for (t of recent$ | async; track t.transactionId) {
-        <div class="row">
-          <div>
-            <div class="num">{{ t.description || ('NAV.TRANSFER' | translate) }}</div>
-            <div class="meta">{{ t.status }} · {{ t.createdAt | date: 'short' }}</div>
-          </div>
-          <div class="bal">{{ t.amount | moneyVnd: t.currency }}</div>
+      <mat-card class="panel">
+        <div class="panel-head">
+          <h3>{{ 'CUSTOMER.RECENT_TX' | translate }}</h3>
+          <a routerLink="/customer/history">{{ 'CUSTOMER.VIEW_ALL' | translate }}</a>
         </div>
-      } @empty {
-        <p class="empty">{{ 'CUSTOMER.NO_TX' | translate }}</p>
-      }
-    </mat-card>
+        @for (t of recent$ | async; track t.transactionId) {
+          <div class="row">
+            <div class="row-left">
+              <div class="ico-tx" [class.ok]="t.status === 'COMPLETED'" [class.warn]="t.status !== 'COMPLETED'">
+                <mat-icon>{{ t.status === 'COMPLETED' ? 'check_circle' : 'schedule' }}</mat-icon>
+              </div>
+              <div>
+                <div class="num">{{ t.description || ('NAV.TRANSFER' | translate) }}</div>
+                <div class="row-meta">{{ t.status }} · {{ t.createdAt | date: 'short' }}</div>
+              </div>
+            </div>
+            <div class="bal">{{ t.amount | moneyVnd: t.currency }}</div>
+          </div>
+        } @empty {
+          <p class="empty">{{ 'CUSTOMER.NO_TX' | translate }}</p>
+        }
+      </mat-card>
+    </section>
   </div>
 }
