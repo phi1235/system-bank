@@ -127,7 +127,7 @@ public class AuthService {
 
     TokenPair pair = issueAndStore(user);
     audit(user.getId(), "LOGIN_SUCCESS", ip, null);
-    return LoginResponse.tokens(toTokenResponse(pair));
+    return LoginResponse.tokens(toTokenResponse(pair, user.isMustChangePassword()), user.isMustChangePassword());
   }
 
   @Transactional(readOnly = true)
@@ -153,7 +153,7 @@ public class AuthService {
     }
     TokenPair pair = issueAndStore(user);
     audit(userId, "MFA_VERIFY_SUCCESS", ip, null);
-    return toTokenResponse(pair);
+    return toTokenResponse(pair, user.isMustChangePassword());
   }
 
   @Transactional(readOnly = true)
@@ -184,7 +184,7 @@ public class AuthService {
             HttpStatus.NOT_FOUND));
     TokenPair pair = issueAndStore(user);
     audit(userId, "TOKEN_REFRESH", null, null);
-    return toTokenResponse(pair);
+    return toTokenResponse(pair, user.isMustChangePassword());
   }
 
   public void logout(String accessToken) {
@@ -229,7 +229,9 @@ public class AuthService {
         roles,
         permissions,
         user.isMfaEnabled(),
-        rbacService.isStaff(roles)
+        rbacService.isStaff(roles),
+        user.isMustChangePassword(),
+        user.isEnabled()
     );
   }
 
@@ -245,13 +247,14 @@ public class AuthService {
     return pair;
   }
 
-  private TokenResponse toTokenResponse(TokenPair pair) {
+  private TokenResponse toTokenResponse(TokenPair pair, boolean mustChangePassword) {
     return new TokenResponse(
         pair.accessToken(),
         pair.refreshToken(),
         "Bearer",
         pair.accessTtlSeconds(),
-        false
+        false,
+        mustChangePassword
     );
   }
 

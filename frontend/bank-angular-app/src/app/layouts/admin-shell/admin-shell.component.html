@@ -15,6 +15,12 @@
             <span matListItemTitle>{{ 'NAV.ADMIN_DASHBOARD' | translate }}</span>
           </a>
         }
+        @if (canUsers$ | async) {
+          <a mat-list-item routerLink="/admin/users" routerLinkActive="active">
+            <mat-icon matListItemIcon>manage_accounts</mat-icon>
+            <span matListItemTitle>{{ 'NAV.ADMIN_USERS' | translate }}</span>
+          </a>
+        }
         @if (canCustomers$ | async) {
           <a mat-list-item routerLink="/admin/customers" routerLinkActive="active">
             <mat-icon matListItemIcon>people</mat-icon>

@@ -25,6 +25,8 @@ export const PERMISSIONS = {
   RBAC_USERS_ASSIGN: 'rbac:users:assign',
   RBAC_ROLES_MANAGE: 'rbac:roles:manage',
   RISK_VIEW: 'risk:view',
+  USERS_PASSWORD_RESET: 'users:password:reset',
+  USERS_LOCK_EXECUTE: 'users:lock:execute',
   // Internet Banking (customer)
   IB_HOME_VIEW: 'ib:home:view',
   IB_ACCOUNTS_VIEW: 'ib:accounts:view',

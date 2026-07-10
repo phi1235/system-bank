@@ -15,6 +15,8 @@ public interface UserRepository extends JpaRepository<UserEntity, UUID> {
 
   boolean existsByEmail(String email);
 
+  java.util.Optional<UserEntity> findByEmailIgnoreCase(String email);
+
   @Query("""
       SELECT u FROM UserEntity u
       WHERE LOWER(u.username) LIKE LOWER(CONCAT('%', :q, '%'))

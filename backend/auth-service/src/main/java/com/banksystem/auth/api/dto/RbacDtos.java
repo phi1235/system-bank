@@ -35,7 +35,10 @@ public final class RbacDtos {
       List<String> roles,
       List<String> permissions,
       boolean staff,
-      boolean enabled
+      boolean enabled,
+      boolean mustChangePassword,
+      String lockedReason,
+      boolean openResetTicket
   ) {}
 
   public record AssignRolesRequest(@NotEmpty List<String> roles) {}
