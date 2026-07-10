@@ -17,11 +17,13 @@ export interface TokenResponse {
   expiresIn: number;
   mfaRequired?: boolean;
   mfaToken?: string | null;
+  mustChangePassword?: boolean;
 }
 
 export interface LoginResponse extends TokenResponse {
   mfaRequired: boolean;
   mfaToken: string | null;
+  mustChangePassword?: boolean;
 }
 
 export interface MeResponse {
@@ -32,6 +34,29 @@ export interface MeResponse {
   permissions: string[];
   mfaEnabled: boolean;
   staff?: boolean;
+  mustChangePassword?: boolean;
+  enabled?: boolean;
+}
+
+export interface PasswordResetTicket {
+  ticketId: string;
+  username: string;
+  emailMasked: string;
+  channel: string;
+  status: string;
+  requesterNote?: string | null;
+  rejectReason?: string | null;
+  createdAt?: string | null;
+  fulfilledAt?: string | null;
+  rejectedAt?: string | null;
+}
+
+export interface PasswordResetFulfillResult {
+  ticketId: string;
+  status: string;
+  channel: string;
+  deliveryMasked: string;
+  message: string;
 }
 
 export interface MfaSetupResponse {

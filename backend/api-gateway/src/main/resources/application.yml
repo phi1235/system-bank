@@ -34,6 +34,10 @@ spring:
           uri: lb://AUTH-SERVICE
           predicates:
             - Path=/api/v1/admin/rbac/**
+        - id: admin-routes-password-reset
+          uri: lb://AUTH-SERVICE
+          predicates:
+            - Path=/api/v1/admin/password-reset/**,/api/v1/admin/users/**
         - id: admin-routes-customers
           uri: lb://CUSTOMER-SERVICE
           predicates:

@@ -162,4 +162,7 @@ export interface RbacStaffUser {
   permissions: string[];
   staff: boolean;
   enabled: boolean;
+  mustChangePassword?: boolean;
+  lockedReason?: string | null;
+  openResetTicket?: boolean;
 }

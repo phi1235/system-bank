@@ -34,6 +34,12 @@ public class UserEntity {
   @Column(name = "mfa_enabled", nullable = false)
   private boolean mfaEnabled = false;
 
+  @Column(name = "must_change_password", nullable = false)
+  private boolean mustChangePassword = false;
+
+  @Column(name = "locked_reason", length = 255)
+  private String lockedReason;
+
   @Column(name = "created_at", nullable = false)
   private Instant createdAt = Instant.now();
 
@@ -101,6 +107,22 @@ public class UserEntity {
 
   public void setMfaEnabled(boolean mfaEnabled) {
     this.mfaEnabled = mfaEnabled;
+  }
+
+  public boolean isMustChangePassword() {
+    return mustChangePassword;
+  }
+
+  public void setMustChangePassword(boolean mustChangePassword) {
+    this.mustChangePassword = mustChangePassword;
+  }
+
+  public String getLockedReason() {
+    return lockedReason;
+  }
+
+  public void setLockedReason(String lockedReason) {
+    this.lockedReason = lockedReason;
   }
 
   public Instant getCreatedAt() {

@@ -85,11 +85,28 @@ export class AuthEffects {
     ),
   );
 
+  /** Force change password when mustChangePassword (login + page refresh). */
+  forceChangePassword$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(AuthActions.loadMeSuccess, AuthActions.bootstrapSuccess),
+        tap(({ user }) => {
+          if (user.mustChangePassword && !this.router.url.startsWith('/auth/change-password')) {
+            this.router.navigateByUrl('/auth/change-password');
+          }
+        }),
+      ),
+    { dispatch: false },
+  );
+
   afterMe$ = createEffect(
     () =>
       this.actions$.pipe(
         ofType(AuthActions.loadMeSuccess),
         tap(({ user }) => {
+          if (user.mustChangePassword) {
+            return; // handled by forceChangePassword$
+          }
           const roles = user.roles || [];
           const permissions = user.permissions || [];
           const staff = !!user.staff || isStaffUser(roles, permissions);
