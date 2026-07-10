@@ -87,11 +87,13 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
         return unauthorized(exchange, "Token has been revoked");
       }
       String userId = claims.getSubject();
-      String roles = normalizeRoles(claims.get(SecurityHeaders.JWT_CLAIM_ROLES));
+      String roles = normalizeListClaim(claims.get(SecurityHeaders.JWT_CLAIM_ROLES));
+      String permissions = normalizeListClaim(claims.get(SecurityHeaders.JWT_CLAIM_PERMISSIONS));
       String realm = claims.get(SecurityHeaders.JWT_CLAIM_REALM, String.class);
       ServerHttpRequest request = exchange.getRequest().mutate()
           .header(SecurityHeaders.USER_ID, userId == null ? "" : userId)
           .header(SecurityHeaders.USER_ROLES, roles)
+          .header(SecurityHeaders.USER_PERMISSIONS, permissions)
           .header(SecurityHeaders.USER_REALM, realm == null ? "" : realm)
           .build();
       return chain.filter(exchange.mutate().request(request).build());
@@ -102,14 +104,14 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
     return PUBLIC_PREFIXES.stream().anyMatch(path::startsWith) || path.equals("/");
   }
 
-  private String normalizeRoles(Object rolesClaim) {
-    if (rolesClaim == null) {
+  private String normalizeListClaim(Object claim) {
+    if (claim == null) {
       return "";
     }
-    if (rolesClaim instanceof List<?> list) {
+    if (claim instanceof List<?> list) {
       return list.stream().map(Object::toString).collect(Collectors.joining(","));
     }
-    return rolesClaim.toString();
+    return claim.toString();
   }
 
   private Mono<Void> unauthorized(ServerWebExchange exchange, String message) {

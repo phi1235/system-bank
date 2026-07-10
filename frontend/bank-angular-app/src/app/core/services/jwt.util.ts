@@ -11,16 +11,24 @@ export function decodeJwtPayload(token: string | null): Record<string, unknown> 
 }
 
 export function rolesFromToken(token: string | null): string[] {
+  return listClaimFromToken(token, 'roles');
+}
+
+export function permissionsFromToken(token: string | null): string[] {
+  return listClaimFromToken(token, 'permissions');
+}
+
+function listClaimFromToken(token: string | null, claim: string): string[] {
   const p = decodeJwtPayload(token);
   if (!p) return [];
-  const roles = p['roles'];
-  if (Array.isArray(roles)) return roles.map(String);
-  if (typeof roles === 'string') {
+  const value = p[claim];
+  if (Array.isArray(value)) return value.map(String);
+  if (typeof value === 'string') {
     try {
-      const parsed = JSON.parse(roles);
+      const parsed = JSON.parse(value);
       if (Array.isArray(parsed)) return parsed.map(String);
     } catch {
-      return roles.split(',').map((s) => s.trim());
+      return value.split(',').map((s) => s.trim()).filter(Boolean);
     }
   }
   return [];

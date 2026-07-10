@@ -54,14 +54,14 @@ public class CustomerController {
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "20") int size,
       @RequestParam(required = false) String q) {
-    UserContext.requireAdmin();
+    UserContext.requirePermission("customers:list:view");
     return ApiResponse.ok(service.list(q, page, Math.min(size, 100)));
   }
 
   @PatchMapping({"/customers/{id}/kyc", "/admin/customers/{id}/kyc"})
   public ApiResponse<CustomerResponse> kyc(
       @PathVariable UUID id, @Valid @RequestBody KycUpdateRequest req) {
-    UserContext.requireAdmin();
+    UserContext.requirePermission("customers:kyc:decide");
     return ApiResponse.ok(service.updateKyc(id, req));
   }
 }

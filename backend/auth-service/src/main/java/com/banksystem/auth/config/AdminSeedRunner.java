@@ -57,12 +57,12 @@ public class AdminSeedRunner implements ApplicationRunner {
     admin.setUsername(username);
     admin.setEmail(email);
     admin.setPasswordHash(boundPasswordEncoder.encode(password, username));
-    admin.setRoles("ADMIN");
+    admin.setRoles("SUPER_ADMIN");
     admin.setEnabled(true);
     admin.setMfaEnabled(false);
     admin.setCreatedAt(Instant.now());
     admin.setUpdatedAt(Instant.now());
     userRepository.save(admin);
-    log.info("Seeded bootstrap admin username={} (password from env ADMIN_PASSWORD only)", username);
+    log.info("Seeded bootstrap SUPER_ADMIN username={} (password from env ADMIN_PASSWORD only)", username);
   }
 }

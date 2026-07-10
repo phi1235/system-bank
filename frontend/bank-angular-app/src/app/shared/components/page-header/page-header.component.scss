@@ -3,21 +3,27 @@
   justify-content: space-between;
   align-items: flex-start;
   gap: 1rem;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--color-border, #d8e2ec);
 }
 h1 {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: clamp(1.35rem, 1.8vw, 1.65rem);
   font-weight: 700;
   color: var(--color-text);
+  letter-spacing: -0.02em;
 }
 .sub {
-  margin: 0.25rem 0 0;
+  margin: 0.35rem 0 0;
   color: var(--color-text-secondary);
-  font-size: 0.9rem;
+  font-size: 0.92rem;
+  max-width: 64ch;
 }
 .actions {
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
+  flex-shrink: 0;
+  align-items: center;
 }

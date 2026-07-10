@@ -68,7 +68,7 @@ public class TransferService {
     }
 
     AccountView from = loadAccount(req.fromAccountId());
-    if (!from.userIdUuid().equals(user.userId()) && !user.hasRole("ADMIN")) {
+    if (!from.userIdUuid().equals(user.userId()) && !user.hasPermission("transactions:list:view")) {
       throw new BusinessException("FORBIDDEN", "Source account is not yours", HttpStatus.FORBIDDEN);
     }
     if (!"ACTIVE".equals(from.status())) {
@@ -122,7 +122,7 @@ public class TransferService {
     TransferOrderEntity e = transferOrderRepository.findById(id)
         .orElseThrow(() -> new BusinessException("TRANSFER_NOT_FOUND", "Transfer not found",
             HttpStatus.NOT_FOUND));
-    if (!user.hasRole("ADMIN") && !e.getUserId().equals(user.userId())) {
+    if (!user.hasPermission("transactions:list:view") && !e.getUserId().equals(user.userId())) {
       throw new BusinessException("FORBIDDEN", "Not your transfer", HttpStatus.FORBIDDEN);
     }
     return toResponse(e);

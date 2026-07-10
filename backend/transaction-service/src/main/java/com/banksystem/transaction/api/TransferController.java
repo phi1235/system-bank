@@ -61,7 +61,7 @@ public class TransferController {
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "20") int size,
       @RequestParam(required = false) String status) {
-    UserContext.requireAdmin();
+    UserContext.requirePermission("transactions:list:view");
     return ApiResponse.ok(transferService.adminList(status, page, Math.min(size, 100)));
   }
 
@@ -69,7 +69,7 @@ public class TransferController {
   public ApiResponse<PageResponse<AuditResponse>> auditLogs(
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "20") int size) {
-    UserContext.requireAdmin();
+    UserContext.requirePermission("audit:list:view");
     var p = auditLogRepository.findAllByOrderByCreatedAtDesc(PageRequest.of(page, Math.min(size, 100)));
     var items = p.getContent().stream().map(this::toAudit).toList();
     return ApiResponse.ok(new PageResponse<>(items, p.getNumber(), p.getSize(),

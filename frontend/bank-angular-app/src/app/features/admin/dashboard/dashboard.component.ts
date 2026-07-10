@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
@@ -10,7 +11,13 @@ import { TranslateModule } from '@ngx-translate/core';
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatButtonModule, RouterLink, PageHeaderComponent,
+  imports: [
+    CommonModule,
+    MatCardModule,
+    MatIconModule,
+    MatButtonModule,
+    RouterLink,
+    PageHeaderComponent,
     TranslateModule,
   ],
   templateUrl: './dashboard.component.html',

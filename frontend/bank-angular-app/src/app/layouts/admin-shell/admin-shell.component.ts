@@ -8,8 +8,15 @@ import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { TranslateModule } from '@ngx-translate/core';
 import { Store } from '@ngrx/store';
+import { map } from 'rxjs';
+import { PERMISSIONS } from '../../core/services/rbac.util';
 import { AuthActions } from '../../store/auth/auth.actions';
-import { selectUsername } from '../../store/auth/auth.selectors';
+import {
+  selectHasPermission,
+  selectPermissions,
+  selectRoles,
+  selectUsername,
+} from '../../store/auth/auth.selectors';
 import { LangSwitcherComponent } from '../../shared/components/lang-switcher/lang-switcher.component';
 
 @Component({
@@ -34,6 +41,23 @@ import { LangSwitcherComponent } from '../../shared/components/lang-switcher/lan
 export class AdminShellComponent {
   private readonly store = inject(Store);
   username$ = this.store.select(selectUsername);
+  roles$ = this.store.select(selectRoles);
+  permissions$ = this.store.select(selectPermissions);
+
+  canDashboard$ = this.store.select(selectHasPermission(PERMISSIONS.DASHBOARD_VIEW));
+  canCustomers$ = this.store.select(selectHasPermission(PERMISSIONS.CUSTOMERS_LIST_VIEW));
+  canAccounts$ = this.store.select(selectHasPermission(PERMISSIONS.ACCOUNTS_LOOKUP_VIEW));
+  canTx$ = this.store.select(selectHasPermission(PERMISSIONS.TX_LIST_VIEW));
+  canAudit$ = this.store.select(selectHasPermission(PERMISSIONS.AUDIT_LIST_VIEW));
+  canRbac$ = this.store.select(selectHasPermission(PERMISSIONS.RBAC_ACCESS));
+  canRisk$ = this.store.select(selectHasPermission(PERMISSIONS.RISK_VIEW));
+
+  roleBadge$ = this.roles$.pipe(
+    map((roles) => {
+      const staff = (roles || []).filter((r) => r !== 'CUSTOMER');
+      return staff[0] || roles[0] || 'STAFF';
+    }),
+  );
 
   logout(): void {
     this.store.dispatch(AuthActions.logout());

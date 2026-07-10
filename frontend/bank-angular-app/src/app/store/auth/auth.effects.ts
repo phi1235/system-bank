@@ -5,6 +5,7 @@ import { TranslateService } from '@ngx-translate/core';
 import { of } from 'rxjs';
 import { catchError, exhaustMap, map, tap } from 'rxjs/operators';
 import { AuthApiService } from '../../core/services/auth-api.service';
+import { isStaffUser } from '../../core/services/rbac.util';
 import { ToastService } from '../../core/services/toast.service';
 import { TokenService } from '../../core/services/token.service';
 import { AuthActions } from './auth.actions';
@@ -70,13 +71,11 @@ export class AuthEffects {
         this.authApi.me().pipe(
           map((user) => {
             const roles = user.roles || [];
-            if (admin && !roles.includes('ADMIN')) {
+            const permissions = user.permissions || [];
+            if (admin && !isStaffUser(roles, permissions) && !user.staff) {
               this.tokens.clear();
               this.toast.error(this.i18n.instant('AUTH.NO_ADMIN'));
               return AuthActions.loginFailure({ error: this.i18n.instant('AUTH.NO_ADMIN') });
-            }
-            if (!admin && roles.includes('ADMIN') && !roles.includes('CUSTOMER')) {
-              // admin logging into customer portal — still allow or redirect
             }
             return AuthActions.loadMeSuccess({ user });
           }),
@@ -92,20 +91,22 @@ export class AuthEffects {
         ofType(AuthActions.loadMeSuccess),
         tap(({ user }) => {
           const roles = user.roles || [];
-          if (roles.includes('ADMIN') && this.router.url.includes('/admin')) {
+          const permissions = user.permissions || [];
+          const staff = !!user.staff || isStaffUser(roles, permissions);
+          if (staff && (this.router.url.includes('/admin') || this.router.url.startsWith('/admin/login'))) {
             this.router.navigateByUrl('/admin');
             return;
           }
-          if (roles.includes('ADMIN') && !roles.includes('CUSTOMER')) {
+          if (staff && !roles.includes('CUSTOMER')) {
             this.router.navigateByUrl('/admin');
             return;
           }
           if (this.router.url.startsWith('/admin')) {
             this.router.navigateByUrl('/admin');
-          } else if (this.router.url.startsWith('/auth') || this.router.url === '/') {
+          } else if (this.router.url.startsWith('/auth') || this.router.url === '/' || this.router.url.startsWith('/admin/login')) {
             if (roles.includes('CUSTOMER')) {
               this.router.navigateByUrl('/customer/home');
-            } else if (roles.includes('ADMIN')) {
+            } else if (staff) {
               this.router.navigateByUrl('/admin');
             }
           }

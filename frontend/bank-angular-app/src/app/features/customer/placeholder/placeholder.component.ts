@@ -1,13 +1,15 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 
 @Component({
   selector: 'app-placeholder',
   standalone: true,
-  imports: [MatCardModule, PageHeaderComponent, TranslateModule],
+  imports: [MatCardModule, MatButtonModule, MatIconModule, RouterLink, PageHeaderComponent, TranslateModule],
   templateUrl: './placeholder.component.html',
   styleUrl: './placeholder.component.scss',
 })

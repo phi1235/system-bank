@@ -70,7 +70,9 @@ public class AccountAppService {
   @Transactional(readOnly = true)
   public AccountResponse get(UUID id, GatewayUser user) {
     AccountEntity a = require(id);
-    if (!user.hasRole("ADMIN") && !a.getUserId().equals(user.userId())) {
+    boolean staffLookup = user.hasPermission("accounts:lookup:view")
+        || user.hasPermission("accounts:freeze:execute");
+    if (!staffLookup && !a.getUserId().equals(user.userId())) {
       throw new BusinessException("FORBIDDEN", "Not your account", HttpStatus.FORBIDDEN);
     }
     return toResponse(a);

@@ -21,6 +21,7 @@ import com.banksystem.auth.infrastructure.security.BoundPasswordEncoder;
 import com.banksystem.common.exception.BusinessException;
 import io.jsonwebtoken.Claims;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -36,6 +37,7 @@ public class AuthService {
   private final JwtService jwtService;
   private final TokenStore tokenStore;
   private final MfaService mfaService;
+  private final RbacService rbacService;
   private final int maxFailures;
   private final int lockMinutes;
 
@@ -46,6 +48,7 @@ public class AuthService {
       JwtService jwtService,
       TokenStore tokenStore,
       MfaService mfaService,
+      RbacService rbacService,
       @Value("${bank.security.login-max-failures:5}") int maxFailures,
       @Value("${bank.security.login-lock-minutes:15}") int lockMinutes) {
     this.userRepository = userRepository;
@@ -54,6 +57,7 @@ public class AuthService {
     this.jwtService = jwtService;
     this.tokenStore = tokenStore;
     this.mfaService = mfaService;
+    this.rbacService = rbacService;
     this.maxFailures = maxFailures;
     this.lockMinutes = lockMinutes;
   }
@@ -216,12 +220,16 @@ public class AuthService {
   @Transactional(readOnly = true)
   public UserMeResponse me(UUID userId) {
     UserEntity user = requireUser(userId);
+    List<String> roles = user.roleList();
+    List<String> permissions = rbacService.resolvePermissions(roles);
     return new UserMeResponse(
         user.getId().toString(),
         user.getUsername(),
         user.getEmail(),
-        user.roleList(),
-        user.isMfaEnabled()
+        roles,
+        permissions,
+        user.isMfaEnabled(),
+        rbacService.isStaff(roles)
     );
   }
 

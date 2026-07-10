@@ -11,9 +11,10 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
 import { AuthApiService } from '../../../core/services/auth-api.service';
 import { BankApiService } from '../../../core/services/bank-api.service';
 import { ToastService } from '../../../core/services/toast.service';
-import { selectUser } from '../../../store/auth/auth.selectors';
+import { selectHasPermission, selectUser } from '../../../store/auth/auth.selectors';
 import { CustomerProfile } from '../../../core/models/domain.model';
 import { MfaSetupResponse } from '../../../core/models/auth.model';
+import { PERMISSIONS } from '../../../core/services/rbac.util';
 
 @Component({
   selector: 'app-profile',
@@ -32,6 +33,8 @@ export class ProfileComponent implements OnInit {
   private readonly i18n = inject(TranslateService);
   private readonly store = inject(Store);
   user$ = this.store.select(selectUser);
+  canEdit$ = this.store.select(selectHasPermission(PERMISSIONS.IB_PROFILE_EDIT));
+  canMfa$ = this.store.select(selectHasPermission(PERMISSIONS.IB_PROFILE_MFA));
   profile: CustomerProfile | null = null;
   needsCreate = false;
   mfaSetup: MfaSetupResponse | null = null;

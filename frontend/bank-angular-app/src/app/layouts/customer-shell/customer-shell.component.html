@@ -6,25 +6,59 @@
       <span class="badge-env">IB</span>
     </div>
     <nav class="primary-nav">
-      <a routerLink="/customer/home" routerLinkActive="active">{{ 'NAV.HOME' | translate }}</a>
-      <a routerLink="/customer/accounts" routerLinkActive="active">{{ 'NAV.ACCOUNTS' | translate }}</a>
-      <a routerLink="/customer/payments/transfer" routerLinkActive="active">{{ 'NAV.TRANSFER' | translate }}</a>
-      <a routerLink="/customer/cards" routerLinkActive="active">{{ 'NAV.CARDS' | translate }}</a>
-      <a routerLink="/customer/wealth" routerLinkActive="active">{{ 'NAV.WEALTH' | translate }}</a>
-      <a routerLink="/customer/support" routerLinkActive="active">{{ 'NAV.SUPPORT' | translate }}</a>
+      @if (canHome$ | async) {
+        <a routerLink="/customer/home" routerLinkActive="active">{{ 'NAV.HOME' | translate }}</a>
+      }
+      @if (canAccounts$ | async) {
+        <a routerLink="/customer/accounts" routerLinkActive="active">{{ 'NAV.ACCOUNTS' | translate }}</a>
+      }
+      @if (canTransfer$ | async) {
+        <a routerLink="/customer/payments/transfer" routerLinkActive="active">{{ 'NAV.TRANSFER' | translate }}</a>
+      }
+      @if (canCards$ | async) {
+        <a routerLink="/customer/cards" routerLinkActive="active">{{ 'NAV.CARDS' | translate }}</a>
+      }
+      @if (canWealth$ | async) {
+        <a routerLink="/customer/wealth" routerLinkActive="active">{{ 'NAV.WEALTH' | translate }}</a>
+      }
+      @if (canSupport$ | async) {
+        <a routerLink="/customer/support" routerLinkActive="active">{{ 'NAV.SUPPORT' | translate }}</a>
+      }
     </nav>
     <div class="header-actions">
       <app-lang-switcher />
-      <a mat-flat-button color="primary" class="cta" routerLink="/customer/payments/transfer">
-        {{ 'NAV.TRANSFER' | translate }}
-      </a>
+      @if (canTransfer$ | async) {
+        <a mat-flat-button color="primary" class="cta" routerLink="/customer/payments/transfer">
+          {{ 'NAV.TRANSFER' | translate }}
+        </a>
+      }
       <button mat-button type="button" [matMenuTriggerFor]="userMenu">
         <mat-icon>account_circle</mat-icon>
         {{ username$ | async }}
       </button>
       <mat-menu #userMenu="matMenu">
-        <a mat-menu-item routerLink="/customer/profile">{{ 'NAV.PROFILE' | translate }}</a>
-        <a mat-menu-item routerLink="/customer/history">{{ 'NAV.HISTORY' | translate }}</a>
+        @if (canHome$ | async) {
+          <a mat-menu-item class="mobile-only-link" routerLink="/customer/home">{{ 'NAV.HOME' | translate }}</a>
+        }
+        @if (canAccounts$ | async) {
+          <a mat-menu-item class="mobile-only-link" routerLink="/customer/accounts">{{ 'NAV.ACCOUNTS' | translate }}</a>
+        }
+        @if (canCards$ | async) {
+          <a mat-menu-item class="mobile-only-link" routerLink="/customer/cards">{{ 'NAV.CARDS' | translate }}</a>
+        }
+        @if (canWealth$ | async) {
+          <a mat-menu-item class="mobile-only-link" routerLink="/customer/wealth">{{ 'NAV.WEALTH' | translate }}</a>
+        }
+        @if (canSupport$ | async) {
+          <a mat-menu-item class="mobile-only-link" routerLink="/customer/support">{{ 'NAV.SUPPORT' | translate }}</a>
+        }
+        <mat-divider class="mobile-only-link"></mat-divider>
+        @if (canProfile$ | async) {
+          <a mat-menu-item routerLink="/customer/profile">{{ 'NAV.PROFILE' | translate }}</a>
+        }
+        @if (canHistory$ | async) {
+          <a mat-menu-item routerLink="/customer/history">{{ 'NAV.HISTORY' | translate }}</a>
+        }
         <button mat-menu-item type="button" (click)="logout()">{{ 'COMMON.LOGOUT' | translate }}</button>
       </mat-menu>
     </div>

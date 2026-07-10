@@ -2,11 +2,16 @@ package com.banksystem.auth.infrastructure.jwt;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import com.banksystem.auth.application.RbacService;
 import com.banksystem.auth.domain.UserEntity;
 import com.banksystem.auth.infrastructure.jwt.JwtService.TokenPair;
 import com.banksystem.common.security.SecurityHeaders;
 import io.jsonwebtoken.Claims;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,7 +27,10 @@ class JwtServiceTest {
     props.setAccessTtlSeconds(900);
     props.setRefreshTtlSeconds(3600);
     props.setMfaTtlSeconds(300);
-    jwtService = new JwtService(props);
+    RbacService rbac = mock(RbacService.class);
+    when(rbac.resolvePermissions(anyList())).thenReturn(List.of());
+    when(rbac.isStaff(anyList())).thenReturn(false);
+    jwtService = new JwtService(props, rbac);
   }
 
   @Test
