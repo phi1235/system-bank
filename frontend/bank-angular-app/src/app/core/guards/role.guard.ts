@@ -47,18 +47,31 @@ export function roleGuard(allowed: string[]): CanActivateFn {
 
 /** Route data: requiredPermissions: string[] — all required (AND). */
 export function permissionGuard(required: string[]): CanActivateFn {
+  return permissionGuardMode(required, 'all');
+}
+
+/** Any of the listed permissions (OR). */
+export function permissionAnyGuard(required: string[]): CanActivateFn {
+  return permissionGuardMode(required, 'any');
+}
+
+function permissionGuardMode(required: string[], mode: 'all' | 'any'): CanActivateFn {
   return () => {
     const router = inject(Router);
     const tokens = inject(TokenService);
     const store = inject(Store);
 
+    const isAdmin = (roles: string[]) =>
+      roles.some((r) => ['ADMIN', 'SUPER_ADMIN'].includes(r.toUpperCase().replace(/^ROLE_/, '')));
+
+    const has = (roles: string[], perms: string[], p: string) =>
+      isAdmin(roles) || perms.includes(p) || perms.includes('*')
+      || (p.startsWith('rbac:') && perms.includes('rbac:manage'));
+
     const check = (roles: string[], perms: string[]) =>
-      required.every((p) => {
-        if (roles.some((r) => ['ADMIN', 'SUPER_ADMIN'].includes(r.toUpperCase().replace(/^ROLE_/, '')))) {
-          return true;
-        }
-        return perms.includes(p) || perms.includes('*');
-      });
+      mode === 'any'
+        ? required.some((p) => has(roles, perms, p))
+        : required.every((p) => has(roles, perms, p));
 
     const roles = rolesFromToken(tokens.getAccessToken());
     const perms = permissionsFromToken(tokens.getAccessToken());
@@ -69,7 +82,6 @@ export function permissionGuard(required: string[]): CanActivateFn {
     return store.select(selectRoles).pipe(
       take(1),
       map((storeRoles) => {
-        // re-read jwt after bootstrap
         const r = rolesFromToken(tokens.getAccessToken()) || storeRoles;
         const p = permissionsFromToken(tokens.getAccessToken());
         if (check(r, p)) return true;

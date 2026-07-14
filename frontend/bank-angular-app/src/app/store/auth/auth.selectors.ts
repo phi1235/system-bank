@@ -22,3 +22,8 @@ export const selectHasPermission = (permission: string) =>
   createSelector(selectPermissions, selectRoles, (perms, roles) =>
     hasPermission(perms, permission, roles),
   );
+
+export const selectHasAnyPermission = (permissions: string[]) =>
+  createSelector(selectPermissions, selectRoles, (perms, roles) =>
+    permissions.some((p) => hasPermission(perms, p, roles)),
+  );

@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { permissionGuard } from '../../core/guards/role.guard';
+import { permissionAnyGuard, permissionGuard } from '../../core/guards/role.guard';
 import { PERMISSIONS } from '../../core/services/rbac.util';
 import { AdminShellComponent } from '../../layouts/admin-shell/admin-shell.component';
 
@@ -44,6 +44,18 @@ export const ADMIN_ROUTES: Routes = [
         canActivate: [permissionGuard([PERMISSIONS.RISK_VIEW])],
         loadComponent: () => import('./placeholder/placeholder.component').then((m) => m.AdminPlaceholderComponent),
         data: { titleKey: 'ADMIN.RISK_TITLE', subtitleKey: 'ADMIN.RISK_SUB' },
+      },
+      {
+        path: 'users',
+        canActivate: [
+          permissionAnyGuard([
+            PERMISSIONS.USERS_PASSWORD_RESET,
+            PERMISSIONS.USERS_LOCK_EXECUTE,
+            PERMISSIONS.RBAC_USERS_ASSIGN,
+            PERMISSIONS.RBAC_ACCESS,
+          ]),
+        ],
+        loadComponent: () => import('./users/users.component').then((m) => m.AdminUsersComponent),
       },
     ],
   },

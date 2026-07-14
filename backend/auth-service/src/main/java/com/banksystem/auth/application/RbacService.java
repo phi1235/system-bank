@@ -9,6 +9,7 @@ import com.banksystem.auth.api.dto.RbacDtos.RoleDto;
 import com.banksystem.auth.api.dto.RbacDtos.StaffUserDto;
 import com.banksystem.auth.api.dto.RbacDtos.UpdateRolePermissionsRequest;
 import com.banksystem.auth.api.dto.RbacDtos.UpdateRoleRequest;
+import com.banksystem.auth.domain.PasswordResetTicketRepository;
 import com.banksystem.auth.domain.PermissionEntity;
 import com.banksystem.auth.domain.PermissionRepository;
 import com.banksystem.auth.domain.RoleEntity;
@@ -43,16 +44,19 @@ public class RbacService {
   private final PermissionRepository permissionRepository;
   private final RolePermissionRepository rolePermissionRepository;
   private final UserRepository userRepository;
+  private final PasswordResetTicketRepository passwordResetTicketRepository;
 
   public RbacService(
       RoleRepository roleRepository,
       PermissionRepository permissionRepository,
       RolePermissionRepository rolePermissionRepository,
-      UserRepository userRepository) {
+      UserRepository userRepository,
+      PasswordResetTicketRepository passwordResetTicketRepository) {
     this.roleRepository = roleRepository;
     this.permissionRepository = permissionRepository;
     this.rolePermissionRepository = rolePermissionRepository;
     this.userRepository = userRepository;
+    this.passwordResetTicketRepository = passwordResetTicketRepository;
   }
 
   @Transactional(readOnly = true)
@@ -282,6 +286,7 @@ public class RbacService {
 
   private StaffUserDto toStaffDto(UserEntity u) {
     List<String> roles = u.roleList();
+    boolean openTicket = passwordResetTicketRepository.existsByUserIdAndStatus(u.getId(), "OPEN");
     return new StaffUserDto(
         u.getId().toString(),
         u.getUsername(),
@@ -289,7 +294,10 @@ public class RbacService {
         roles,
         resolvePermissions(roles),
         isStaff(roles),
-        u.isEnabled()
+        u.isEnabled(),
+        u.isMustChangePassword(),
+        u.getLockedReason(),
+        openTicket
     );
   }
 

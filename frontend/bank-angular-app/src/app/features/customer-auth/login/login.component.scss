@@ -1,1 +1,6 @@
-@use '../auth-shared';
+@use '../auth-shared.scss';
+
+.links {
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+}
