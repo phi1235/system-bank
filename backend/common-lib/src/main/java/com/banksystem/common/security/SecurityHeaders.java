@@ -7,6 +7,8 @@ public final class SecurityHeaders {
   public static final String USER_PERMISSIONS = "X-User-Permissions";
   public static final String USER_REALM = "X-User-Realm";
   public static final String INTERNAL_API_KEY = "X-Internal-Api-Key";
+  public static final String GATEWAY_TIMESTAMP = "X-Gateway-Timestamp";
+  public static final String GATEWAY_SIGNATURE = "X-Gateway-Signature";
 
   public static final String JWT_CLAIM_ROLES = "roles";
   public static final String JWT_CLAIM_PERMISSIONS = "permissions";

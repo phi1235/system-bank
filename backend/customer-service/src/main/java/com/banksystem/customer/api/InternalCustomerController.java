@@ -3,6 +3,7 @@ package com.banksystem.customer.api;
 import com.banksystem.common.api.ApiResponse;
 import com.banksystem.common.exception.BusinessException;
 import com.banksystem.common.security.SecurityHeaders;
+import com.banksystem.common.security.SecretVerifier;
 import com.banksystem.customer.api.dto.CustomerDtos.ExistsResponse;
 import com.banksystem.customer.application.CustomerAppService;
 import java.util.UUID;
@@ -37,7 +38,7 @@ public class InternalCustomerController {
   }
 
   private void requireKey(String key) {
-    if (key == null || !key.equals(apiKey)) {
+    if (!SecretVerifier.matches(key, apiKey)) {
       throw new BusinessException("FORBIDDEN", "Invalid internal API key", HttpStatus.FORBIDDEN);
     }
   }

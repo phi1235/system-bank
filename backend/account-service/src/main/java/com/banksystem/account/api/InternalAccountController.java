@@ -7,6 +7,7 @@ import com.banksystem.account.application.AccountAppService;
 import com.banksystem.common.api.ApiResponse;
 import com.banksystem.common.exception.BusinessException;
 import com.banksystem.common.security.SecurityHeaders;
+import com.banksystem.common.security.SecretVerifier;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
@@ -68,7 +69,7 @@ public class InternalAccountController {
   }
 
   private void requireKey(String key) {
-    if (key == null || !key.equals(apiKey)) {
+    if (!SecretVerifier.matches(key, apiKey)) {
       throw new BusinessException("FORBIDDEN", "Invalid internal API key", HttpStatus.FORBIDDEN);
     }
   }

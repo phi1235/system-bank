@@ -29,7 +29,10 @@ public class JwtService {
     this.props = props;
     this.rbacService = rbacService;
     byte[] bytes = props.getSecret().getBytes(StandardCharsets.UTF_8);
-    this.key = Keys.hmacShaKeyFor(bytes.length >= 32 ? bytes : pad(bytes));
+    if (bytes.length < 32) {
+      throw new IllegalArgumentException("JWT secret must contain at least 32 bytes");
+    }
+    this.key = Keys.hmacShaKeyFor(bytes);
   }
 
   public TokenPair issueSessionTokens(UserEntity user) {
@@ -90,12 +93,6 @@ public class JwtService {
         .expiration(Date.from(exp))
         .signWith(key)
         .compact();
-  }
-
-  private static byte[] pad(byte[] key) {
-    byte[] padded = new byte[32];
-    System.arraycopy(key, 0, padded, 0, Math.min(key.length, 32));
-    return padded;
   }
 
   public record TokenPair(

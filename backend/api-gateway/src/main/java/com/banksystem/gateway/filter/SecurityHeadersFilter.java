@@ -18,11 +18,17 @@ public class SecurityHeadersFilter implements GlobalFilter, Ordered {
     ServerHttpResponse response = exchange.getResponse();
     response.beforeCommit(() -> {
       HttpHeaders h = response.getHeaders();
-      h.addIfAbsent("X-Content-Type-Options", "nosniff");
-      h.addIfAbsent("X-Frame-Options", "DENY");
-      h.addIfAbsent("Referrer-Policy", "no-referrer");
-      h.addIfAbsent("X-XSS-Protection", "0");
-      h.addIfAbsent("Cache-Control", "no-store");
+      h.set("X-Content-Type-Options", "nosniff");
+      h.set("X-Frame-Options", "DENY");
+      h.set("Content-Security-Policy",
+          "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'");
+      h.set("Referrer-Policy", "no-referrer");
+      h.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()");
+      h.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+      h.set("X-XSS-Protection", "0");
+      h.set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+      h.set("Pragma", "no-cache");
+      h.set("Expires", "0");
       return Mono.empty();
     });
     return chain.filter(exchange);
@@ -30,6 +36,6 @@ public class SecurityHeadersFilter implements GlobalFilter, Ordered {
 
   @Override
   public int getOrder() {
-    return -50;
+    return Ordered.HIGHEST_PRECEDENCE;
   }
 }

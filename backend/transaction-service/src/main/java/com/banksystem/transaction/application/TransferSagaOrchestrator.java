@@ -40,7 +40,7 @@ public class TransferSagaOrchestrator {
       SagaStepLogRepository sagaStepLogRepository,
       AccountClient accountClient,
       OutboxService outboxService,
-      @Value("${bank.internal.api-key}") String internalApiKey,
+      @Value("${bank.internal.account-api-key}") String internalApiKey,
       @Value("${bank.saga.fail-credit:false}") boolean failCredit) {
     this.transferOrderRepository = transferOrderRepository;
     this.sagaStepLogRepository = sagaStepLogRepository;
