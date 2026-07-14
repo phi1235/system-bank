@@ -17,5 +17,4 @@ WORKDIR /app
 RUN apk add --no-cache wget && addgroup -S bank && adduser -S bank -G bank
 COPY --from=build /workspace/discovery-server/target/discovery-server-*.jar app.jar
 USER bank
-EXPOSE 8761
 ENTRYPOINT ["java", "-jar", "app.jar"]

@@ -71,6 +71,8 @@ Browser (Angular) ──► API Gateway (JWT · CORS · rate limit)
 - **Transactional outbox** → Kafka → notification consumer (idempotent)
 - Gateway **rate limit** (login + global) via Redis
 - Distributed **tracing** (Micrometer → Zipkin) and **metrics** (Prometheus)
+- Gateway strips caller identity headers, then signs downstream identity with **HMAC-SHA256**
+- Backend services and actuator endpoints are isolated on the internal Docker network
 
 ---
 
@@ -84,19 +86,20 @@ Browser (Angular) ──► API Gateway (JWT · CORS · rate limit)
 
 ## Branching
 
-| Branch | Environment | Purpose |
-|--------|-------------|---------|
-| **`main`** | **STG** | Staging / stable integration |
-| **`uat/v1.0.0`** | **UAT** | Release line for v1.0.0 |
+| Branch | Purpose |
+|--------|---------|
+| **`main`** | Protected, deployable integration baseline |
+| **`feat/*`** | Feature work created from current `main` |
+| **`fix/*`** | Bug and security fixes created from current `main` |
+| **`uat/*`** | Optional release-candidate line cut from `main` |
 
-**Workflow:** `feat/*` or `fix/*` → MR into `uat/v1.0.0` → (when ready) MR into `main` (STG).
+Current workflow: branch from updated `main`, open a PR back to `main`, pass CI/security review, then merge. Cut `uat/*` only when a release candidate needs dedicated validation.
 
 ```bash
 git fetch origin
-git checkout uat/v1.0.0 && git pull
-git checkout -b feat/your-feature
-# work → push → open MR targeting uat/v1.0.0
-# after UAT OK → MR uat/v1.0.0 → main
+git switch main && git pull --ff-only
+git switch -c fix/short-description   # or feat/short-description
+# work -> test -> push -> open PR targeting main
 ```
 
 ---
@@ -112,24 +115,33 @@ cd system-bank
 cp infra/.env.example infra/.env
 ```
 
-Edit `infra/.env` and replace every `change-me-*` value:
+`infra/.env.example` is a **names-only checklist** (empty values + comments). Copy it to `infra/.env` and fill **every** variable for your environment. Never put real values back into the tracked template.
 
 ```bash
 openssl rand -base64 32   # AES_SECRET_KEY
-openssl rand -hex 32      # PASSWORD_PEPPER / INTERNAL_API_KEY
+openssl rand -hex 32      # Generate pepper/signing/internal keys separately
 openssl rand -base64 48   # JWT_SECRET (use a long random string)
+openssl rand -base64 16 | tr -d '='   # KAFKA_CLUSTER_ID
+
+git check-ignore infra/.env            # must print infra/.env
 ```
 
 | File | Purpose | Git |
 |------|---------|-----|
-| `infra/.env.example` | Template | Committed |
-| `infra/.env` | Real secrets | **Never commit** |
+| `infra/.env.example` | Variable names + setup comments only (no real data) | Committed |
+| `infra/.env` | All environment-specific values and secrets | **Ignored; never commit** |
+| `application.yml` | Environment references; no secret or port fallback | Committed |
+| `docker-compose.yml` | Environment references; no literal port mapping | Committed |
 
-Required secrets include: `POSTGRES_PASSWORD`, `JWT_SECRET`, `AES_SECRET_KEY`, `INTERNAL_API_KEY`, `PASSWORD_PEPPER`, `ADMIN_PASSWORD`, `GRAFANA_ADMIN_PASSWORD`.
+Required secrets include: `POSTGRES_PASSWORD`, `JWT_SECRET`, `AES_SECRET_KEY`, `GATEWAY_SIGNING_SECRET`, each service-specific `*_INTERNAL_API_KEY`, `PASSWORD_PEPPER`, `ADMIN_PASSWORD`, and `GRAFANA_ADMIN_PASSWORD`. Also set ports, hosts, topics, and other non-secret keys listed in the template — Compose/YAML have no baked-in defaults for them.
+Migration note: remove the former shared `INTERNAL_API_KEY`; use the three service-specific keys shown in `.env.example`.
+
+Docker Compose fails before startup when a required secret or `KAFKA_CLUSTER_ID` is empty.
 
 ### 2. Start infrastructure and services
 
 ```bash
+docker compose -f infra/docker-compose.yml --env-file infra/.env config --quiet
 docker compose -f infra/docker-compose.yml --env-file infra/.env up -d --build
 ```
 
@@ -158,30 +170,29 @@ npm start
 ### 4. Verify
 
 ```bash
-curl -s http://localhost:8761/actuator/health
-curl -s http://localhost:8080/actuator/health
-curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/api/v1/customers/me   # expect 401
+docker compose -f infra/docker-compose.yml --env-file infra/.env exec api-gateway sh -c \
+  'wget -qO- "http://localhost:${MANAGEMENT_SERVER_PORT}/actuator/health"'
+API_PORT=$(awk -F= '$1=="API_GATEWAY_HOST_PORT" {print $2}' infra/.env)
+curl -s -o /dev/null -w "%{http_code}\n" "http://localhost:${API_PORT}/api/v1/customers/me"  # expect 401
 ```
 
 ---
 
-## Service endpoints
+## Ports and service exposure
 
-| Component | URL |
-|-----------|-----|
-| Eureka Dashboard | http://localhost:8761 |
-| API Gateway | http://localhost:8080 |
-| Auth (direct) | http://localhost:18081 |
-| Customer | http://localhost:18082 |
-| Account | http://localhost:18083 |
-| Transaction | http://localhost:18084 |
-| Notification | http://localhost:18085 |
-| Zipkin | http://localhost:9411 |
-| Prometheus | http://localhost:9090 |
-| Grafana | http://localhost:3000 |
-| PostgreSQL (host) | `localhost:5433` |
-| Redis | `localhost:6379` |
-| Kafka | `localhost:9092` |
+No Docker port is defined as a literal in Compose. Change ports only in `infra/.env`:
+
+| Component | Host port variable | Exposure |
+|-----------|--------------------|----------|
+| API Gateway | `API_GATEWAY_HOST_PORT` | Published on `HOST_BIND_ADDRESS` |
+| PostgreSQL | `POSTGRES_HOST_PORT` | Loopback development access |
+| Redis | `REDIS_HOST_PORT` | Loopback development access |
+| Kafka | `KAFKA_HOST_PORT` | Loopback development access |
+| Zipkin | `ZIPKIN_HOST_PORT` | Loopback development access |
+| Prometheus | `PROMETHEUS_HOST_PORT` | Loopback development access |
+| Grafana | `GRAFANA_HOST_PORT` | Loopback development access |
+
+Auth, customer, account, transaction, notification, Eureka, internal APIs and actuator ports are not published to the host. They are reachable only inside `bank-net`; external clients must use the API Gateway.
 
 Gateway public API base path: `/api/v1/...`
 
@@ -201,7 +212,7 @@ Set `ADMIN_SEED_ENABLED=false` after bootstrap if you no longer want auto-seed.
 Internal debug APIs require:
 
 ```http
-X-Internal-Api-Key: <INTERNAL_API_KEY from .env>
+X-Internal-Api-Key: <the target service's *_INTERNAL_API_KEY from .env>
 ```
 
 ---
@@ -219,8 +230,9 @@ X-Internal-Api-Key: <INTERNAL_API_KEY from .env>
 ### Notifications
 
 ```bash
-curl -s http://localhost:18085/internal/notifications \
-  -H "X-Internal-Api-Key: $INTERNAL_API_KEY"
+docker compose -f infra/docker-compose.yml --env-file infra/.env exec notification-service sh -c \
+  'wget -qO- --header="X-Internal-Api-Key: $NOTIFICATION_INTERNAL_API_KEY" \
+  "http://localhost:${SERVER_PORT}/internal/notifications"'
 
 docker logs bank-notification 2>&1 | grep MOCK_EMAIL | tail
 ```
@@ -239,9 +251,12 @@ SAGA_FAIL_CREDIT=false docker compose -f infra/docker-compose.yml --env-file inf
 ### Login rate limit
 
 ```bash
-for i in $(seq 1 8); do
+API_PORT=$(awk -F= '$1=="API_GATEWAY_HOST_PORT" {print $2}' infra/.env)
+LOGIN_LIMIT=$(awk -F= '$1=="RATE_LIMIT_LOGIN" {print $2}' infra/.env)
+ATTEMPTS=$((LOGIN_LIMIT + 3))
+for i in $(seq 1 "$ATTEMPTS"); do
   curl -s -o /dev/null -w "$i %{http_code}\n" \
-    -X POST http://localhost:8080/api/v1/auth/login \
+    -X POST "http://localhost:${API_PORT}/api/v1/auth/login" \
     -H 'Content-Type: application/json' \
     -d '{"username":"nope","password":"bad"}'
 done
@@ -289,6 +304,11 @@ system-bank/
 
 - Passwords are stored as **one-way hashes** (HMAC with server pepper + username, then BCrypt)—never plaintext.  
 - Secrets load only from environment variables; YAML does not embed secret production defaults.  
+- Tracked `infra/.env.example` keeps **all values blank** (names + comments only); real data belongs only in ignored `infra/.env` or a production secret manager.  
+- `application.yml` and Docker Compose contain environment references instead of literal service ports or secret defaults.  
+- Reserved identity/signature headers are stripped from external requests; downstream identity is signed with HMAC.  
+- Direct backend and actuator ports are not published to the host.  
+- Private keys, keystores, secret directories and local application-secret files are ignored by Git.  
 - MFA TOTP secrets and national ID are encrypted at rest (AES-GCM).  
 - Do not commit `infra/.env`. Rotate keys if they were ever exposed.
 

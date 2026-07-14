@@ -1,5 +1,5 @@
 server:
-  port: 8761
+  port: ${SERVER_PORT}
 
 spring:
   application:
@@ -7,7 +7,7 @@ spring:
 
 eureka:
   instance:
-    hostname: ${EUREKA_INSTANCE_HOSTNAME:localhost}
+    hostname: ${EUREKA_INSTANCE_HOSTNAME}
     prefer-ip-address: false
   client:
     register-with-eureka: false
@@ -15,27 +15,27 @@ eureka:
     service-url:
       defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
   server:
-    enable-self-preservation: false
-    eviction-interval-timer-in-ms: 5000
+    enable-self-preservation: ${EUREKA_SELF_PRESERVATION}
+    eviction-interval-timer-in-ms: ${EUREKA_EVICTION_INTERVAL_MS}
 
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,prometheus,metrics
+        include: health,prometheus
   endpoint:
     health:
-      show-details: always
+      show-details: never
 
   metrics:
     tags:
       application: ${spring.application.name}
   tracing:
     sampling:
-      probability: ${TRACING_SAMPLE_PROBABILITY:1.0}
+      probability: ${TRACING_SAMPLE_PROBABILITY}
   zipkin:
     tracing:
-      endpoint: ${ZIPKIN_ENDPOINT:http://localhost:9411/api/v2/spans}
+      endpoint: ${ZIPKIN_ENDPOINT}
 
 logging:
   pattern:
