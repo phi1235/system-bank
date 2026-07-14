@@ -32,19 +32,21 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
   private final ObjectMapper objectMapper = new ObjectMapper();
   private final ReactiveStringRedisTemplate redis;
 
-  private static final List<String> PUBLIC_PREFIXES = List.of(
+  private static final List<String> PUBLIC_PATHS = List.of(
       "/api/v1/auth/register",
       "/api/v1/auth/login",
       "/api/v1/auth/refresh",
-      "/api/v1/auth/mfa/verify",
-      "/actuator"
+      "/api/v1/auth/mfa/verify"
   );
 
   public JwtAuthFilter(
       @Value("${bank.jwt.secret}") String secret,
       ReactiveStringRedisTemplate redis) {
     byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
-    this.secretKey = Keys.hmacShaKeyFor(keyBytes.length >= 32 ? keyBytes : pad(keyBytes));
+    if (keyBytes.length < 32) {
+      throw new IllegalArgumentException("JWT secret must contain at least 32 bytes");
+    }
+    this.secretKey = Keys.hmacShaKeyFor(keyBytes);
     this.redis = redis;
   }
 
@@ -73,7 +75,7 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
     }
 
     String typ = claims.get(SecurityHeaders.JWT_CLAIM_TYPE, String.class);
-    if (typ != null && !"access".equals(typ)) {
+    if (!"access".equals(typ)) {
       return unauthorized(exchange, "Access token required");
     }
 
@@ -91,17 +93,19 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
       String permissions = normalizeListClaim(claims.get(SecurityHeaders.JWT_CLAIM_PERMISSIONS));
       String realm = claims.get(SecurityHeaders.JWT_CLAIM_REALM, String.class);
       ServerHttpRequest request = exchange.getRequest().mutate()
-          .header(SecurityHeaders.USER_ID, userId == null ? "" : userId)
-          .header(SecurityHeaders.USER_ROLES, roles)
-          .header(SecurityHeaders.USER_PERMISSIONS, permissions)
-          .header(SecurityHeaders.USER_REALM, realm == null ? "" : realm)
+          .headers(headers -> {
+            headers.set(SecurityHeaders.USER_ID, userId == null ? "" : userId);
+            headers.set(SecurityHeaders.USER_ROLES, roles);
+            headers.set(SecurityHeaders.USER_PERMISSIONS, permissions);
+            headers.set(SecurityHeaders.USER_REALM, realm == null ? "" : realm);
+          })
           .build();
       return chain.filter(exchange.mutate().request(request).build());
     });
   }
 
   private boolean isPublic(String path) {
-    return PUBLIC_PREFIXES.stream().anyMatch(path::startsWith) || path.equals("/");
+    return PUBLIC_PATHS.contains(path) || path.equals("/");
   }
 
   private String normalizeListClaim(Object claim) {
@@ -132,14 +136,8 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
     return exchange.getResponse().writeWith(Mono.just(buffer));
   }
 
-  private static byte[] pad(byte[] key) {
-    byte[] padded = new byte[32];
-    System.arraycopy(key, 0, padded, 0, Math.min(key.length, 32));
-    return padded;
-  }
-
   @Override
   public int getOrder() {
-    return Ordered.HIGHEST_PRECEDENCE + 2;
+    return Ordered.HIGHEST_PRECEDENCE + 4;
   }
 }

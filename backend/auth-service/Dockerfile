@@ -17,5 +17,4 @@ WORKDIR /app
 RUN apk add --no-cache wget && addgroup -S bank && adduser -S bank -G bank
 COPY --from=build /workspace/auth-service/target/auth-service-*.jar app.jar
 USER bank
-EXPOSE 8081
 ENTRYPOINT ["java", "-jar", "app.jar"]

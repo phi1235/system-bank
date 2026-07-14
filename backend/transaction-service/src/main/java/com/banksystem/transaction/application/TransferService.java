@@ -39,7 +39,7 @@ public class TransferService {
       AuditLogRepository auditLogRepository,
       AccountClient accountClient,
       TransferSagaOrchestrator sagaOrchestrator,
-      @Value("${bank.internal.api-key}") String internalApiKey) {
+      @Value("${bank.internal.account-api-key}") String internalApiKey) {
     this.transferOrderRepository = transferOrderRepository;
     this.auditLogRepository = auditLogRepository;
     this.accountClient = accountClient;

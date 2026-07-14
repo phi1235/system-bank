@@ -1,12 +1,12 @@
 server:
-  port: 8081
+  port: ${SERVER_PORT}
 
 spring:
   application:
     name: AUTH-SERVICE
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5433}/${DB_NAME:bank_auth}
-    username: ${DB_USER:bank}
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+    username: ${DB_USER}
     password: ${DB_PASSWORD}
   jpa:
     hibernate:
@@ -20,56 +20,59 @@ spring:
     enabled: true
   data:
     redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
 
 eureka:
   client:
     service-url:
-      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
+      defaultZone: ${EUREKA_URL}
     fetch-registry: true
     register-with-eureka: true
   instance:
     prefer-ip-address: true
 
 bank:
+  gateway:
+    signing-secret: ${GATEWAY_SIGNING_SECRET}
+    max-clock-skew-seconds: ${GATEWAY_MAX_CLOCK_SKEW_SECONDS}
   jwt:
     secret: ${JWT_SECRET}
-    access-ttl-seconds: ${JWT_ACCESS_TTL:900}
-    refresh-ttl-seconds: ${JWT_REFRESH_TTL:604800}
-    mfa-ttl-seconds: ${JWT_MFA_TTL:300}
+    access-ttl-seconds: ${JWT_ACCESS_TTL}
+    refresh-ttl-seconds: ${JWT_REFRESH_TTL}
+    mfa-ttl-seconds: ${JWT_MFA_TTL}
   aes:
     secret-key: ${AES_SECRET_KEY}
   security:
-    login-max-failures: ${LOGIN_MAX_FAILURES:5}
-    login-lock-minutes: ${LOGIN_LOCK_MINUTES:15}
+    login-max-failures: ${LOGIN_MAX_FAILURES}
+    login-lock-minutes: ${LOGIN_LOCK_MINUTES}
     # Server-only pepper for BoundPasswordEncoder (never store in DB)
     password-pepper: ${PASSWORD_PEPPER}
   admin:
     # Bootstrap seed from env — set seed-enabled=false after first staff created
-    seed-enabled: ${ADMIN_SEED_ENABLED:true}
-    username: ${ADMIN_USERNAME:admin}
+    seed-enabled: ${ADMIN_SEED_ENABLED}
+    username: ${ADMIN_USERNAME}
     password: ${ADMIN_PASSWORD}
-    email: ${ADMIN_EMAIL:admin@bank.local}
+    email: ${ADMIN_EMAIL}
 
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,prometheus,metrics
+        include: health,prometheus
   endpoint:
     health:
-      show-details: always
+      show-details: never
 
   metrics:
     tags:
       application: ${spring.application.name}
   tracing:
     sampling:
-      probability: ${TRACING_SAMPLE_PROBABILITY:1.0}
+      probability: ${TRACING_SAMPLE_PROBABILITY}
   zipkin:
     tracing:
-      endpoint: ${ZIPKIN_ENDPOINT:http://localhost:9411/api/v2/spans}
+      endpoint: ${ZIPKIN_ENDPOINT}
 
 springdoc:
   api-docs:

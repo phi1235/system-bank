@@ -1,13 +1,13 @@
 server:
-  port: 8080
+  port: ${SERVER_PORT}
 
 spring:
   application:
     name: api-gateway
   data:
     redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
   cloud:
     gateway:
       discovery:
@@ -50,44 +50,48 @@ spring:
 eureka:
   client:
     service-url:
-      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
+      defaultZone: ${EUREKA_URL}
     fetch-registry: true
     register-with-eureka: true
   instance:
     prefer-ip-address: true
 
 bank:
+  gateway:
+    signing-secret: ${GATEWAY_SIGNING_SECRET}
   jwt:
     secret: ${JWT_SECRET}
   cors:
-    allowed-origins: ${CORS_ORIGINS:http://localhost:4200,http://localhost:5173}
+    allowed-origins: ${CORS_ORIGINS}
   rate-limit:
     login:
-      limit: ${RATE_LIMIT_LOGIN:5}
-      window-seconds: 60
+      limit: ${RATE_LIMIT_LOGIN}
+      window-seconds: ${RATE_LIMIT_LOGIN_WINDOW_SECONDS}
     global:
-      enabled: ${RATE_LIMIT_GLOBAL_ENABLED:true}
-      limit: ${RATE_LIMIT_GLOBAL:100}
-      window-seconds: 60
+      enabled: ${RATE_LIMIT_GLOBAL_ENABLED}
+      limit: ${RATE_LIMIT_GLOBAL}
+      window-seconds: ${RATE_LIMIT_GLOBAL_WINDOW_SECONDS}
 
 management:
+  server:
+    port: ${MANAGEMENT_SERVER_PORT}
   endpoints:
     web:
       exposure:
-        include: health,info,prometheus,metrics
+        include: health,prometheus
   endpoint:
     health:
-      show-details: always
+      show-details: never
 
   metrics:
     tags:
       application: ${spring.application.name}
   tracing:
     sampling:
-      probability: ${TRACING_SAMPLE_PROBABILITY:1.0}
+      probability: ${TRACING_SAMPLE_PROBABILITY}
   zipkin:
     tracing:
-      endpoint: ${ZIPKIN_ENDPOINT:http://localhost:9411/api/v2/spans}
+      endpoint: ${ZIPKIN_ENDPOINT}
 
 logging:
   pattern:

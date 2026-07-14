@@ -10,11 +10,11 @@ services:
     container_name: bank-postgres
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in infra/.env}
+      POSTGRES_DB: ${POSTGRES_DEFAULT_DB}
     ports:
       # Host 5433 to avoid clash with local Postgres on 5432
-      - "5433:5432"
+      - "${HOST_BIND_ADDRESS}:${POSTGRES_HOST_PORT}:${POSTGRES_CONTAINER_PORT}"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./postgres/init-databases.sql:/docker-entrypoint-initdb.d/01-init-databases.sql:ro
@@ -30,7 +30,7 @@ services:
     image: redis:7-alpine
     container_name: bank-redis
     ports:
-      - "6379:6379"
+      - "${HOST_BIND_ADDRESS}:${REDIS_HOST_PORT}:${REDIS_CONTAINER_PORT}"
     volumes:
       - redisdata:/data
     healthcheck:
@@ -45,23 +45,23 @@ services:
     image: apache/kafka:3.8.0
     container_name: bank-kafka
     ports:
-      - "9092:9092"
+      - "${HOST_BIND_ADDRESS}:${KAFKA_HOST_PORT}:${KAFKA_BROKER_PORT}"
     environment:
-      KAFKA_NODE_ID: 1
+      KAFKA_NODE_ID: ${KAFKA_NODE_ID}
       KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENERS: PLAINTEXT://:${KAFKA_BROKER_PORT},CONTROLLER://:${KAFKA_CONTROLLER_PORT}
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:${KAFKA_BROKER_PORT}
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
-      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
-      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:${KAFKA_CONTROLLER_PORT}
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: ${KAFKA_OFFSETS_REPLICATION_FACTOR}
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: ${KAFKA_TRANSACTION_REPLICATION_FACTOR}
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: ${KAFKA_TRANSACTION_MIN_ISR}
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: ${KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS}
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: ${KAFKA_AUTO_CREATE_TOPICS_ENABLE}
+      CLUSTER_ID: ${KAFKA_CLUSTER_ID:?KAFKA_CLUSTER_ID must be set in infra/.env}
     healthcheck:
-      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list || exit 1"]
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:${KAFKA_BROKER_PORT} --list || exit 1"]
       interval: 10s
       timeout: 10s
       retries: 12
@@ -73,7 +73,7 @@ services:
     image: openzipkin/zipkin:3.4
     container_name: bank-zipkin
     ports:
-      - "9411:9411"
+      - "${HOST_BIND_ADDRESS}:${ZIPKIN_HOST_PORT}:${ZIPKIN_CONTAINER_PORT}"
     networks:
       - bank-net
 
@@ -81,7 +81,7 @@ services:
     image: prom/prometheus:v2.54.1
     container_name: bank-prometheus
     ports:
-      - "9090:9090"
+      - "${HOST_BIND_ADDRESS}:${PROMETHEUS_HOST_PORT}:${PROMETHEUS_CONTAINER_PORT}"
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheusdata:/prometheus
@@ -96,10 +96,10 @@ services:
     image: grafana/grafana:11.2.0
     container_name: bank-grafana
     ports:
-      - "3000:3000"
+      - "${HOST_BIND_ADDRESS}:${GRAFANA_HOST_PORT}:${GRAFANA_CONTAINER_PORT}"
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD must be set in infra/.env}
       GF_USERS_ALLOW_SIGN_UP: "false"
     volumes:
       - grafanadata:/var/lib/grafana
@@ -114,13 +114,15 @@ services:
       context: ../backend
       dockerfile: discovery-server/Dockerfile
     container_name: bank-discovery
-    ports:
-      - "8761:8761"
     environment:
-      EUREKA_INSTANCE_HOSTNAME: discovery-server
-      ZIPKIN_ENDPOINT: ${ZIPKIN_ENDPOINT:-http://zipkin:9411/api/v2/spans}
+      SERVER_PORT: ${DISCOVERY_SERVICE_PORT}
+      EUREKA_INSTANCE_HOSTNAME: ${EUREKA_INSTANCE_HOSTNAME}
+      ZIPKIN_ENDPOINT: ${ZIPKIN_ENDPOINT}
+      EUREKA_SELF_PRESERVATION: ${EUREKA_SELF_PRESERVATION}
+      EUREKA_EVICTION_INTERVAL_MS: ${EUREKA_EVICTION_INTERVAL_MS}
+      TRACING_SAMPLE_PROBABILITY: ${TRACING_SAMPLE_PROBABILITY}
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8761/actuator/health | grep -q UP || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:${DISCOVERY_SERVICE_PORT}/actuator/health | grep -q UP || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 12
@@ -133,32 +135,33 @@ services:
       context: ../backend
       dockerfile: auth-service/Dockerfile
     container_name: bank-auth
-    ports:
-      # Host 18081 if local 8081 is occupied
-      - "18081:8081"
     environment:
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_NAME: bank_auth
+      SERVER_PORT: ${AUTH_SERVICE_PORT}
+      DB_HOST: ${POSTGRES_HOST}
+      DB_PORT: ${POSTGRES_CONTAINER_PORT}
+      DB_NAME: ${AUTH_DB_NAME}
 
       DB_USER: ${POSTGRES_USER}
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      EUREKA_URL: http://discovery-server:8761/eureka/
-      JWT_SECRET: ${JWT_SECRET}
-      AES_SECRET_KEY: ${AES_SECRET_KEY}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in infra/.env}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_CONTAINER_PORT}
+      EUREKA_URL: ${EUREKA_URL}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set in infra/.env}
+      AES_SECRET_KEY: ${AES_SECRET_KEY:?AES_SECRET_KEY must be set in infra/.env}
+      GATEWAY_SIGNING_SECRET: ${GATEWAY_SIGNING_SECRET:?GATEWAY_SIGNING_SECRET must be set in infra/.env}
+      GATEWAY_MAX_CLOCK_SKEW_SECONDS: ${GATEWAY_MAX_CLOCK_SKEW_SECONDS}
+      TRACING_SAMPLE_PROBABILITY: ${TRACING_SAMPLE_PROBABILITY}
       ADMIN_USERNAME: ${ADMIN_USERNAME}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD must be set in infra/.env}
       ADMIN_EMAIL: ${ADMIN_EMAIL}
-      ADMIN_SEED_ENABLED: ${ADMIN_SEED_ENABLED:-true}
-      PASSWORD_PEPPER: ${PASSWORD_PEPPER}
-      JWT_ACCESS_TTL: ${JWT_ACCESS_TTL:-900}
-      JWT_REFRESH_TTL: ${JWT_REFRESH_TTL:-604800}
-      JWT_MFA_TTL: ${JWT_MFA_TTL:-300}
-      LOGIN_MAX_FAILURES: ${LOGIN_MAX_FAILURES:-5}
-      LOGIN_LOCK_MINUTES: ${LOGIN_LOCK_MINUTES:-15}
-      ZIPKIN_ENDPOINT: ${ZIPKIN_ENDPOINT:-http://zipkin:9411/api/v2/spans}
+      ADMIN_SEED_ENABLED: ${ADMIN_SEED_ENABLED}
+      PASSWORD_PEPPER: ${PASSWORD_PEPPER:?PASSWORD_PEPPER must be set in infra/.env}
+      JWT_ACCESS_TTL: ${JWT_ACCESS_TTL}
+      JWT_REFRESH_TTL: ${JWT_REFRESH_TTL}
+      JWT_MFA_TTL: ${JWT_MFA_TTL}
+      LOGIN_MAX_FAILURES: ${LOGIN_MAX_FAILURES}
+      LOGIN_LOCK_MINUTES: ${LOGIN_LOCK_MINUTES}
+      ZIPKIN_ENDPOINT: ${ZIPKIN_ENDPOINT}
     depends_on:
       postgres:
         condition: service_healthy
@@ -167,7 +170,7 @@ services:
       discovery-server:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8081/actuator/health | grep -q UP || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:${AUTH_SERVICE_PORT}/actuator/health | grep -q UP || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 15
@@ -180,25 +183,27 @@ services:
       context: ../backend
       dockerfile: customer-service/Dockerfile
     container_name: bank-customer
-    ports:
-      - "18082:8082"
     environment:
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_NAME: bank_customer
+      SERVER_PORT: ${CUSTOMER_SERVICE_PORT}
+      DB_HOST: ${POSTGRES_HOST}
+      DB_PORT: ${POSTGRES_CONTAINER_PORT}
+      DB_NAME: ${CUSTOMER_DB_NAME}
       DB_USER: ${POSTGRES_USER}
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
-      EUREKA_URL: http://discovery-server:8761/eureka/
-      AES_SECRET_KEY: ${AES_SECRET_KEY}
-      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
-      ZIPKIN_ENDPOINT: ${ZIPKIN_ENDPOINT:-http://zipkin:9411/api/v2/spans}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in infra/.env}
+      EUREKA_URL: ${EUREKA_URL}
+      AES_SECRET_KEY: ${AES_SECRET_KEY:?AES_SECRET_KEY must be set in infra/.env}
+      CUSTOMER_INTERNAL_API_KEY: ${CUSTOMER_INTERNAL_API_KEY:?CUSTOMER_INTERNAL_API_KEY must be set in infra/.env}
+      GATEWAY_MAX_CLOCK_SKEW_SECONDS: ${GATEWAY_MAX_CLOCK_SKEW_SECONDS}
+      TRACING_SAMPLE_PROBABILITY: ${TRACING_SAMPLE_PROBABILITY}
+      GATEWAY_SIGNING_SECRET: ${GATEWAY_SIGNING_SECRET:?GATEWAY_SIGNING_SECRET must be set in infra/.env}
+      ZIPKIN_ENDPOINT: ${ZIPKIN_ENDPOINT}
     depends_on:
       postgres:
         condition: service_healthy
       discovery-server:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8082/actuator/health | grep -q UP || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:${CUSTOMER_SERVICE_PORT}/actuator/health | grep -q UP || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 15
@@ -211,26 +216,28 @@ services:
       context: ../backend
       dockerfile: account-service/Dockerfile
     container_name: bank-account
-    ports:
-      - "18083:8083"
     environment:
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_NAME: bank_account
+      SERVER_PORT: ${ACCOUNT_SERVICE_PORT}
+      DB_HOST: ${POSTGRES_HOST}
+      DB_PORT: ${POSTGRES_CONTAINER_PORT}
+      DB_NAME: ${ACCOUNT_DB_NAME}
       DB_USER: ${POSTGRES_USER}
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
-      EUREKA_URL: http://discovery-server:8761/eureka/
-      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
-      ACCOUNT_MAX_PER_USER: ${ACCOUNT_MAX_PER_USER:-3}
-      ACCOUNT_INITIAL_BALANCE: ${ACCOUNT_INITIAL_BALANCE:-1000000}
-      ZIPKIN_ENDPOINT: ${ZIPKIN_ENDPOINT:-http://zipkin:9411/api/v2/spans}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in infra/.env}
+      EUREKA_URL: ${EUREKA_URL}
+      GATEWAY_MAX_CLOCK_SKEW_SECONDS: ${GATEWAY_MAX_CLOCK_SKEW_SECONDS}
+      TRACING_SAMPLE_PROBABILITY: ${TRACING_SAMPLE_PROBABILITY}
+      ACCOUNT_INTERNAL_API_KEY: ${ACCOUNT_INTERNAL_API_KEY:?ACCOUNT_INTERNAL_API_KEY must be set in infra/.env}
+      GATEWAY_SIGNING_SECRET: ${GATEWAY_SIGNING_SECRET:?GATEWAY_SIGNING_SECRET must be set in infra/.env}
+      ACCOUNT_MAX_PER_USER: ${ACCOUNT_MAX_PER_USER}
+      ACCOUNT_INITIAL_BALANCE: ${ACCOUNT_INITIAL_BALANCE}
+      ZIPKIN_ENDPOINT: ${ZIPKIN_ENDPOINT}
     depends_on:
       postgres:
         condition: service_healthy
       discovery-server:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8083/actuator/health | grep -q UP || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:${ACCOUNT_SERVICE_PORT}/actuator/health | grep -q UP || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 15
@@ -244,19 +251,34 @@ services:
       context: ../backend
       dockerfile: transaction-service/Dockerfile
     container_name: bank-transaction
-    ports:
-      - "18084:8084"
     environment:
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_NAME: bank_transaction
+      SERVER_PORT: ${TRANSACTION_SERVICE_PORT}
+      DB_HOST: ${POSTGRES_HOST}
+      DB_PORT: ${POSTGRES_CONTAINER_PORT}
+      DB_NAME: ${TRANSACTION_DB_NAME}
       DB_USER: ${POSTGRES_USER}
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
-      EUREKA_URL: http://discovery-server:8761/eureka/
-      KAFKA_BOOTSTRAP: kafka:9092
-      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
-      SAGA_FAIL_CREDIT: ${SAGA_FAIL_CREDIT:-false}
-      ZIPKIN_ENDPOINT: ${ZIPKIN_ENDPOINT:-http://zipkin:9411/api/v2/spans}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in infra/.env}
+      EUREKA_URL: ${EUREKA_URL}
+      GATEWAY_MAX_CLOCK_SKEW_SECONDS: ${GATEWAY_MAX_CLOCK_SKEW_SECONDS}
+      TRACING_SAMPLE_PROBABILITY: ${TRACING_SAMPLE_PROBABILITY}
+      KAFKA_PRODUCER_ACKS: ${KAFKA_PRODUCER_ACKS}
+      KAFKA_PRODUCER_IDEMPOTENCE: ${KAFKA_PRODUCER_IDEMPOTENCE}
+      KAFKA_TOPIC_COMPLETED: ${KAFKA_TOPIC_COMPLETED}
+      KAFKA_TOPIC_FAILED: ${KAFKA_TOPIC_FAILED}
+      FEIGN_CONNECT_TIMEOUT_MS: ${FEIGN_CONNECT_TIMEOUT_MS}
+      FEIGN_READ_TIMEOUT_MS: ${FEIGN_READ_TIMEOUT_MS}
+      CIRCUIT_BREAKER_WINDOW_SIZE: ${CIRCUIT_BREAKER_WINDOW_SIZE}
+      CIRCUIT_BREAKER_FAILURE_RATE_THRESHOLD: ${CIRCUIT_BREAKER_FAILURE_RATE_THRESHOLD}
+      CIRCUIT_BREAKER_OPEN_STATE_DURATION: ${CIRCUIT_BREAKER_OPEN_STATE_DURATION}
+      RETRY_MAX_ATTEMPTS: ${RETRY_MAX_ATTEMPTS}
+      RETRY_WAIT_DURATION: ${RETRY_WAIT_DURATION}
+      OUTBOX_POLL_MS: ${OUTBOX_POLL_MS}
+      OUTBOX_BATCH_SIZE: ${OUTBOX_BATCH_SIZE}
+      KAFKA_BOOTSTRAP: ${KAFKA_BOOTSTRAP}
+      ACCOUNT_INTERNAL_API_KEY: ${ACCOUNT_INTERNAL_API_KEY:?ACCOUNT_INTERNAL_API_KEY must be set in infra/.env}
+      GATEWAY_SIGNING_SECRET: ${GATEWAY_SIGNING_SECRET:?GATEWAY_SIGNING_SECRET must be set in infra/.env}
+      SAGA_FAIL_CREDIT: ${SAGA_FAIL_CREDIT}
+      ZIPKIN_ENDPOINT: ${ZIPKIN_ENDPOINT}
     depends_on:
       postgres:
         condition: service_healthy
@@ -267,7 +289,7 @@ services:
       kafka:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8084/actuator/health | grep -q UP || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:${TRANSACTION_SERVICE_PORT}/actuator/health | grep -q UP || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 15
@@ -281,18 +303,25 @@ services:
       context: ../backend
       dockerfile: notification-service/Dockerfile
     container_name: bank-notification
-    ports:
-      - "18085:8085"
     environment:
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_NAME: bank_notification
+      SERVER_PORT: ${NOTIFICATION_SERVICE_PORT}
+      DB_HOST: ${POSTGRES_HOST}
+      DB_PORT: ${POSTGRES_CONTAINER_PORT}
+      DB_NAME: ${NOTIFICATION_DB_NAME}
       DB_USER: ${POSTGRES_USER}
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
-      EUREKA_URL: http://discovery-server:8761/eureka/
-      KAFKA_BOOTSTRAP: kafka:9092
-      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
-      ZIPKIN_ENDPOINT: ${ZIPKIN_ENDPOINT:-http://zipkin:9411/api/v2/spans}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in infra/.env}
+      EUREKA_URL: ${EUREKA_URL}
+      GATEWAY_MAX_CLOCK_SKEW_SECONDS: ${GATEWAY_MAX_CLOCK_SKEW_SECONDS}
+      TRACING_SAMPLE_PROBABILITY: ${TRACING_SAMPLE_PROBABILITY}
+      KAFKA_CONSUMER_GROUP: ${KAFKA_CONSUMER_GROUP}
+      KAFKA_ENABLE_AUTO_COMMIT: ${KAFKA_ENABLE_AUTO_COMMIT}
+      KAFKA_TOPIC_COMPLETED: ${KAFKA_TOPIC_COMPLETED}
+      KAFKA_TOPIC_FAILED: ${KAFKA_TOPIC_FAILED}
+
+      KAFKA_BOOTSTRAP: ${KAFKA_BOOTSTRAP}
+      NOTIFICATION_INTERNAL_API_KEY: ${NOTIFICATION_INTERNAL_API_KEY:?NOTIFICATION_INTERNAL_API_KEY must be set in infra/.env}
+      GATEWAY_SIGNING_SECRET: ${GATEWAY_SIGNING_SECRET:?GATEWAY_SIGNING_SECRET must be set in infra/.env}
+      ZIPKIN_ENDPOINT: ${ZIPKIN_ENDPOINT}
     depends_on:
       postgres:
         condition: service_healthy
@@ -301,7 +330,7 @@ services:
       kafka:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8085/actuator/health | grep -q UP || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:${NOTIFICATION_SERVICE_PORT}/actuator/health | grep -q UP || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 15
@@ -315,17 +344,23 @@ services:
       dockerfile: api-gateway/Dockerfile
     container_name: bank-gateway
     ports:
-      - "8080:8080"
+      - "${HOST_BIND_ADDRESS}:${API_GATEWAY_HOST_PORT}:${API_GATEWAY_SERVICE_PORT}"
     environment:
-      EUREKA_URL: http://discovery-server:8761/eureka/
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      JWT_SECRET: ${JWT_SECRET}
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:4200,http://localhost:5173}
-      ZIPKIN_ENDPOINT: ${ZIPKIN_ENDPOINT:-http://zipkin:9411/api/v2/spans}
-      RATE_LIMIT_LOGIN: ${RATE_LIMIT_LOGIN:-5}
-      RATE_LIMIT_GLOBAL: ${RATE_LIMIT_GLOBAL:-100}
-      RATE_LIMIT_GLOBAL_ENABLED: ${RATE_LIMIT_GLOBAL_ENABLED:-true}
+      SERVER_PORT: ${API_GATEWAY_SERVICE_PORT}
+      EUREKA_URL: ${EUREKA_URL}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_CONTAINER_PORT}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set in infra/.env}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      ZIPKIN_ENDPOINT: ${ZIPKIN_ENDPOINT}
+      GATEWAY_SIGNING_SECRET: ${GATEWAY_SIGNING_SECRET:?GATEWAY_SIGNING_SECRET must be set in infra/.env}
+      MANAGEMENT_SERVER_PORT: ${API_GATEWAY_MANAGEMENT_PORT}
+      RATE_LIMIT_LOGIN: ${RATE_LIMIT_LOGIN}
+      RATE_LIMIT_LOGIN_WINDOW_SECONDS: ${RATE_LIMIT_LOGIN_WINDOW_SECONDS}
+      RATE_LIMIT_GLOBAL_WINDOW_SECONDS: ${RATE_LIMIT_GLOBAL_WINDOW_SECONDS}
+      TRACING_SAMPLE_PROBABILITY: ${TRACING_SAMPLE_PROBABILITY}
+      RATE_LIMIT_GLOBAL: ${RATE_LIMIT_GLOBAL}
+      RATE_LIMIT_GLOBAL_ENABLED: ${RATE_LIMIT_GLOBAL_ENABLED}
     depends_on:
       discovery-server:
         condition: service_healthy
@@ -340,7 +375,7 @@ services:
       transaction-service:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep -q UP || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:${API_GATEWAY_MANAGEMENT_PORT}/actuator/health | grep -q UP || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 12
