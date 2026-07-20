@@ -3,7 +3,7 @@ package com.banksystem.account.api;
 import com.banksystem.account.api.dto.AccountDtos.AccountResponse;
 import com.banksystem.account.api.dto.AccountDtos.MoneyCommand;
 import com.banksystem.account.api.dto.AccountDtos.MoneyResult;
-import com.banksystem.account.application.AccountAppService;
+import com.banksystem.account.application.AccountMoneyService;
 import com.banksystem.common.api.ApiResponse;
 import com.banksystem.common.exception.BusinessException;
 import com.banksystem.common.security.SecurityHeaders;
@@ -24,11 +24,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/internal/accounts")
 public class InternalAccountController {
 
-  private final AccountAppService service;
+  private final AccountMoneyService service;
   private final String apiKey;
 
   public InternalAccountController(
-      AccountAppService service,
+      AccountMoneyService service,
       @Value("${bank.internal.api-key}") String apiKey) {
     this.service = service;
     this.apiKey = apiKey;

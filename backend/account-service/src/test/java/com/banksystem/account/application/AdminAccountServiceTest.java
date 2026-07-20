@@ -14,7 +14,6 @@ import com.banksystem.account.api.dto.AccountDtos.AccountResponse;
 import com.banksystem.account.application.query.AdminAccountSearchQuery;
 import com.banksystem.account.domain.AccountEntity;
 import com.banksystem.account.domain.AccountRepository;
-import com.banksystem.account.domain.LedgerEntryRepository;
 import com.banksystem.common.api.PageResponse;
 import com.banksystem.common.exception.BusinessException;
 import java.math.BigDecimal;
@@ -28,16 +27,17 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
-class AccountAppServiceAdminListTest {
+class AdminAccountServiceTest {
 
   private AccountRepository accountRepository;
-  private AccountAppService service;
+  private AdminAccountService service;
 
   @BeforeEach
   void setUp() {
     accountRepository = mock(AccountRepository.class);
-    LedgerEntryRepository ledgerEntryRepository = mock(LedgerEntryRepository.class);
-    service = new AccountAppService(accountRepository, ledgerEntryRepository, 3, new BigDecimal("1000000"));
+    AccountAccessService access = new AccountAccessService(accountRepository);
+    AccountMapper mapper = new AccountMapper();
+    service = new AdminAccountService(accountRepository, access, mapper);
   }
 
   @Test

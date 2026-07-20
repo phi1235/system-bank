@@ -26,11 +26,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
-class AccountAppServiceStatementTest {
+class CustomerAccountServiceStatementTest {
 
   private AccountRepository accountRepository;
   private LedgerEntryRepository ledgerEntryRepository;
-  private AccountAppService service;
+  private CustomerAccountService service;
 
   private final UUID ownerId = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
   private final UUID otherId = UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
@@ -40,9 +40,15 @@ class AccountAppServiceStatementTest {
   void setUp() {
     accountRepository = mock(AccountRepository.class);
     ledgerEntryRepository = mock(LedgerEntryRepository.class);
-    service = new AccountAppService(
+    AccountAccessService access = new AccountAccessService(accountRepository);
+    AccountMapper mapper = new AccountMapper();
+    AccountNumberGenerator numbers = new AccountNumberGenerator(accountRepository);
+    service = new CustomerAccountService(
         accountRepository,
         ledgerEntryRepository,
+        access,
+        mapper,
+        numbers,
         3,
         new BigDecimal("1000000"));
   }
