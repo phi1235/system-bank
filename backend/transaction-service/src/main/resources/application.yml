@@ -68,6 +68,10 @@ bank:
   outbox:
     poll-ms: ${OUTBOX_POLL_MS}
     batch-size: ${OUTBOX_BATCH_SIZE}
+    # Retry / dead-letter for unpublished events
+    max-attempts: ${OUTBOX_MAX_ATTEMPTS:10}
+    base-delay-ms: ${OUTBOX_BASE_DELAY_MS:1000}
+    max-delay-ms: ${OUTBOX_MAX_DELAY_MS:300000}
   transfer:
     # Internal transfer limits (VND). Override via env when needed.
     max-per-transaction: ${TRANSFER_MAX_PER_TX:50000000}
