@@ -1,0 +1,103 @@
+<app-page-header
+  [title]="'ADMIN.OUTBOX_TITLE' | translate"
+  [subtitle]="'ADMIN.OUTBOX_SUB' | translate"
+>
+  <mat-form-field appearance="outline" class="filter">
+    <mat-label>{{ 'COMMON.STATUS' | translate }}</mat-label>
+    <mat-select [(ngModel)]="status">
+      <mat-option value="DEAD">DEAD</mat-option>
+      <mat-option value="PENDING">PENDING</mat-option>
+      <mat-option value="PUBLISHED">PUBLISHED</mat-option>
+    </mat-select>
+  </mat-form-field>
+  <button mat-flat-button color="primary" type="button" (click)="load()" [disabled]="loading">
+    <mat-icon>refresh</mat-icon>
+    {{ 'ADMIN.FILTER' | translate }}
+  </button>
+</app-page-header>
+
+@if (counts) {
+  <div class="counts" aria-live="polite">
+    <mat-card class="count-card">
+      <div class="label">{{ 'ADMIN.OUTBOX_PENDING' | translate }}</div>
+      <div class="value">{{ counts.pending }}</div>
+    </mat-card>
+    <mat-card class="count-card">
+      <div class="label">{{ 'ADMIN.OUTBOX_PUBLISHED' | translate }}</div>
+      <div class="value">{{ counts.published }}</div>
+    </mat-card>
+    <mat-card class="count-card dead">
+      <div class="label">{{ 'ADMIN.OUTBOX_DEAD' | translate }}</div>
+      <div class="value">{{ counts.dead }}</div>
+    </mat-card>
+  </div>
+}
+
+<mat-card class="table-card">
+  <div class="table-wrap">
+    <table mat-table [dataSource]="rows" class="full">
+      <ng-container matColumnDef="createdAt">
+        <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.TIME' | translate }}</th>
+        <td mat-cell *matCellDef="let e">{{ e.createdAt | date: 'short' }}</td>
+      </ng-container>
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.STATUS' | translate }}</th>
+        <td mat-cell *matCellDef="let e">
+          <span
+            class="chip"
+            [class.ok]="e.status === 'PUBLISHED'"
+            [class.warn]="e.status === 'PENDING'"
+            [class.bad]="e.status === 'DEAD'"
+            >{{ e.status }}</span
+          >
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="eventType">
+        <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.OUTBOX_EVENT' | translate }}</th>
+        <td mat-cell *matCellDef="let e">{{ e.eventType }}</td>
+      </ng-container>
+      <ng-container matColumnDef="aggregateId">
+        <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.OUTBOX_AGG' | translate }}</th>
+        <td mat-cell *matCellDef="let e">
+          <code [matTooltip]="e.aggregateId">{{ shortId(e.aggregateId) }}</code>
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="attemptCount">
+        <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.OUTBOX_ATTEMPTS' | translate }}</th>
+        <td mat-cell *matCellDef="let e">{{ e.attemptCount }}</td>
+      </ng-container>
+      <ng-container matColumnDef="lastError">
+        <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.OUTBOX_ERROR' | translate }}</th>
+        <td mat-cell *matCellDef="let e" class="err">
+          <span [matTooltip]="e.lastError || ''">{{ e.lastError || '—' }}</span>
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.ACTIONS' | translate }}</th>
+        <td mat-cell *matCellDef="let e">
+          @if (e.status === 'DEAD') {
+            <button
+              mat-stroked-button
+              color="primary"
+              type="button"
+              (click)="replay(e)"
+              [disabled]="replayingId === e.id"
+              [attr.aria-label]="'ADMIN.OUTBOX_REPLAY' | translate"
+              [matTooltip]="'ADMIN.OUTBOX_REPLAY' | translate"
+            >
+              <mat-icon>replay</mat-icon>
+              {{ 'ADMIN.OUTBOX_REPLAY' | translate }}
+            </button>
+          } @else {
+            <span class="muted">—</span>
+          }
+        </td>
+      </ng-container>
+      <tr mat-header-row *matHeaderRowDef="cols"></tr>
+      <tr mat-row *matRowDef="let row; columns: cols"></tr>
+    </table>
+  </div>
+  @if (!loading && rows.length === 0) {
+    <p class="empty">{{ 'ADMIN.OUTBOX_EMPTY' | translate }}</p>
+  }
+</mat-card>

@@ -7,6 +7,8 @@ import {
   Beneficiary,
   CustomerProfile,
   LedgerEntry,
+  OutboxCounts,
+  OutboxEvent,
   Transfer,
   TransferRequest,
 } from '../models/domain.model';
@@ -132,6 +134,23 @@ export class BankApiService {
 
   auditLogs(page = 0, size = 20): Observable<PageResponse<AuditLog>> {
     return this.api.get('/admin/audit-logs', { page, size });
+  }
+
+  /** Staff outbox inspect/replay (default status DEAD on API). */
+  adminOutboxList(
+    page = 0,
+    size = 20,
+    status?: string,
+  ): Observable<PageResponse<OutboxEvent>> {
+    return this.api.get('/admin/outbox', { page, size, status });
+  }
+
+  adminOutboxCounts(): Observable<OutboxCounts> {
+    return this.api.get('/admin/outbox/counts');
+  }
+
+  adminOutboxReplay(id: string): Observable<OutboxEvent> {
+    return this.api.post(`/admin/outbox/${id}/replay`, {});
   }
 
   // RBAC

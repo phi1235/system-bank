@@ -38,6 +38,10 @@
             <mat-icon matListItemIcon>swap_horiz</mat-icon>
             <span matListItemTitle>{{ 'NAV.ADMIN_TX' | translate }}</span>
           </a>
+          <a mat-list-item routerLink="/admin/outbox" routerLinkActive="active">
+            <mat-icon matListItemIcon>outbox</mat-icon>
+            <span matListItemTitle>{{ 'NAV.ADMIN_OUTBOX' | translate }}</span>
+          </a>
         }
         @if (canAudit$ | async) {
           <a mat-list-item routerLink="/admin/audit" routerLinkActive="active">
