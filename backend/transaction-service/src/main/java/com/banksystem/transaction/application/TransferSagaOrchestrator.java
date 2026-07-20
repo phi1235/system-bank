@@ -33,6 +33,7 @@ public class TransferSagaOrchestrator {
   private final SagaStepLogRepository sagaStepLogRepository;
   private final AccountClient accountClient;
   private final OutboxService outboxService;
+  private final TransferFeeGlService feeGlService;
   private final String internalApiKey;
   private final boolean failCredit;
 
@@ -41,18 +42,20 @@ public class TransferSagaOrchestrator {
       SagaStepLogRepository sagaStepLogRepository,
       AccountClient accountClient,
       OutboxService outboxService,
+      TransferFeeGlService feeGlService,
       @Value("${bank.internal.account-api-key}") String internalApiKey,
       @Value("${bank.saga.fail-credit:false}") boolean failCredit) {
     this.transferOrderRepository = transferOrderRepository;
     this.sagaStepLogRepository = sagaStepLogRepository;
     this.accountClient = accountClient;
     this.outboxService = outboxService;
+    this.feeGlService = feeGlService;
     this.internalApiKey = internalApiKey;
     this.failCredit = failCredit;
   }
 
   public TransferOrderEntity run(TransferOrderEntity order) {
-    // STEP 1 — debit source
+    // STEP 1 — debit source (principal + fee)
     try {
       MoneyResult debit = callDebit(order.getFromAccountId(), order);
       order.setDebitEntryRef(debit.ledgerEntryId());
@@ -72,7 +75,7 @@ public class TransferSagaOrchestrator {
       return order;
     }
 
-    // STEP 2 — credit destination (injectable failure for demo)
+    // STEP 2 — credit destination principal only
     try {
       if (failCredit) {
         throw new BusinessException("SAGA_INJECTED_FAIL", "Injected credit failure for demo",
@@ -80,27 +83,95 @@ public class TransferSagaOrchestrator {
       }
       MoneyResult credit = callCredit(order.getToAccountId(), order, order.getId().toString());
       order.setCreditEntryRef(credit.ledgerEntryId());
-      order.setStatus(TransferStatus.COMPLETED);
       order.setUpdatedAt(Instant.now());
       transferOrderRepository.save(order);
       step(order.getId(), "CREDIT_DEST", "SUCCESS", "ledger=" + credit.ledgerEntryId());
-      enqueueCompleted(order);
-      return order;
     } catch (Exception ex) {
       log.warn("Credit failed for transfer {}, compensating", order.getId());
       step(order.getId(), "CREDIT_DEST", "FAILED", ex.getMessage());
-      compensate(order, ex.getMessage());
+      compensateSourceOnly(order, ex.getMessage());
       return order;
     }
+
+    // STEP 3 — fee GL: credit bank income account (skip when fee = 0)
+    if (feeGlService.requiresPosting(order)) {
+      try {
+        String feeLedgerId = feeGlService.postFee(order);
+        order.setFeeEntryRef(feeLedgerId);
+        order.setUpdatedAt(Instant.now());
+        transferOrderRepository.save(order);
+        step(order.getId(), "CREDIT_FEE_INCOME", "SUCCESS", "ledger=" + feeLedgerId);
+      } catch (Exception ex) {
+        log.warn("Fee GL failed for transfer {}, reversing dest and refunding source", order.getId());
+        step(order.getId(), "CREDIT_FEE_INCOME", "FAILED", ex.getMessage());
+        compensateAfterDestCredit(order, ex.getMessage());
+        return order;
+      }
+    } else {
+      step(order.getId(), "CREDIT_FEE_INCOME", "SKIPPED", "fee=0");
+    }
+
+    order.setStatus(TransferStatus.COMPLETED);
+    order.setUpdatedAt(Instant.now());
+    transferOrderRepository.save(order);
+    enqueueCompleted(order);
+    return order;
   }
 
-  private void compensate(TransferOrderEntity order, String reason) {
+  /** Dest not credited yet — refund full debit (principal + fee) to source. */
+  private void compensateSourceOnly(TransferOrderEntity order, String reason) {
     order.setStatus(TransferStatus.COMPENSATING);
     order.setFailureReason(reason);
     order.setUpdatedAt(Instant.now());
     transferOrderRepository.save(order);
     try {
-      // Refund the full debit (principal + fee) back to source.
+      String ref = order.getId() + "-compensation";
+      MoneyResult refund = callCreditTotal(order.getFromAccountId(), order, ref);
+      order.setStatus(TransferStatus.COMPENSATED);
+      order.setUpdatedAt(Instant.now());
+      transferOrderRepository.save(order);
+      step(order.getId(), "COMPENSATE_SOURCE", "SUCCESS", "ledger=" + refund.ledgerEntryId());
+      enqueueFailed(order);
+    } catch (Exception ex) {
+      order.setStatus(TransferStatus.COMPENSATED);
+      order.setFailureReason("COMPENSATION_PARTIAL: " + reason + " | " + ex.getMessage());
+      order.setUpdatedAt(Instant.now());
+      transferOrderRepository.save(order);
+      step(order.getId(), "COMPENSATE_SOURCE", "FAILED", ex.getMessage());
+      enqueueFailed(order);
+    }
+  }
+
+  /**
+   * Dest already credited; fee GL failed.
+   * Reverse dest principal, then refund source principal+fee.
+   * Fee income was not posted (or failed before commit) so no fee reverse.
+   */
+  private void compensateAfterDestCredit(TransferOrderEntity order, String reason) {
+    order.setStatus(TransferStatus.COMPENSATING);
+    order.setFailureReason(reason);
+    order.setUpdatedAt(Instant.now());
+    transferOrderRepository.save(order);
+
+    try {
+      String revRef = order.getId() + "-reverse-dest";
+      MoneyResult rev = callDebitAmount(
+          order.getToAccountId(),
+          order.getAmount(),
+          revRef,
+          "Reverse dest " + order.getId());
+      step(order.getId(), "REVERSE_DEST", "SUCCESS", "ledger=" + rev.ledgerEntryId());
+    } catch (Exception ex) {
+      order.setStatus(TransferStatus.COMPENSATED);
+      order.setFailureReason("COMPENSATION_PARTIAL: reverse dest failed: " + reason + " | " + ex.getMessage());
+      order.setUpdatedAt(Instant.now());
+      transferOrderRepository.save(order);
+      step(order.getId(), "REVERSE_DEST", "FAILED", ex.getMessage());
+      enqueueFailed(order);
+      return;
+    }
+
+    try {
       String ref = order.getId() + "-compensation";
       MoneyResult refund = callCreditTotal(order.getFromAccountId(), order, ref);
       order.setStatus(TransferStatus.COMPENSATED);
@@ -119,18 +190,21 @@ public class TransferSagaOrchestrator {
   }
 
   private MoneyResult callDebit(UUID accountId, TransferOrderEntity order) {
+    BigDecimal fee = order.getFeeAmount() == null ? BigDecimal.ZERO : order.getFeeAmount();
+    BigDecimal debitTotal = order.getAmount().add(fee);
+    String desc = order.getDescription();
+    if (fee.compareTo(BigDecimal.ZERO) > 0) {
+      desc = (desc == null || desc.isBlank() ? "Transfer" : desc)
+          + " (fee " + fee.toPlainString() + ")";
+    }
+    return callDebitAmount(accountId, debitTotal, order.getId().toString(), desc);
+  }
+
+  private MoneyResult callDebitAmount(UUID accountId, BigDecimal amount, String referenceId, String description) {
     try {
-      // Source pays principal + fee. Fee GL posting (bank income) deferred.
-      BigDecimal fee = order.getFeeAmount() == null ? BigDecimal.ZERO : order.getFeeAmount();
-      BigDecimal debitTotal = order.getAmount().add(fee);
-      String desc = order.getDescription();
-      if (fee.compareTo(BigDecimal.ZERO) > 0) {
-        desc = (desc == null || desc.isBlank() ? "Transfer" : desc)
-            + " (fee " + fee.toPlainString() + ")";
-      }
       ApiResponse<MoneyResult> res = accountClient.debit(
           accountId,
-          new MoneyCommand(debitTotal, order.getId().toString(), desc, order.getId().toString()),
+          new MoneyCommand(amount, referenceId, description, referenceId),
           internalApiKey);
       if (res == null || !res.success() || res.data() == null) {
         String code = res != null && res.error() != null ? res.error().code() : "DEBIT_FAILED";
@@ -148,19 +222,18 @@ public class TransferSagaOrchestrator {
 
   /** Credit principal only (destination receives amount, never fee). */
   private MoneyResult callCredit(UUID accountId, TransferOrderEntity order, String referenceId) {
-    return callCreditAmount(accountId, order, order.getAmount(), referenceId, order.getDescription());
+    return callCreditAmount(accountId, order.getAmount(), referenceId, order.getDescription());
   }
 
   /** Compensation: reverse full source debit (amount + fee). */
   private MoneyResult callCreditTotal(UUID accountId, TransferOrderEntity order, String referenceId) {
     BigDecimal fee = order.getFeeAmount() == null ? BigDecimal.ZERO : order.getFeeAmount();
     BigDecimal total = order.getAmount().add(fee);
-    return callCreditAmount(accountId, order, total, referenceId, "Compensation " + order.getId());
+    return callCreditAmount(accountId, total, referenceId, "Compensation " + order.getId());
   }
 
   private MoneyResult callCreditAmount(
       UUID accountId,
-      TransferOrderEntity order,
       BigDecimal amount,
       String referenceId,
       String description) {
@@ -217,9 +290,7 @@ public class TransferSagaOrchestrator {
   }
 
   private void enqueueFailed(TransferOrderEntity order) {
-    Map<String, Object> payload = baseEvent(
-        order.getStatus() == TransferStatus.COMPENSATED ? "TRANSACTION_FAILED" : "TRANSACTION_FAILED",
-        order);
+    Map<String, Object> payload = baseEvent("TRANSACTION_FAILED", order);
     payload.put("failureReason", order.getFailureReason());
     payload.put("finalStatus", order.getStatus().name());
     outboxService.enqueue("TRANSACTION_FAILED", order.getId(), payload);
@@ -233,6 +304,7 @@ public class TransferSagaOrchestrator {
     data.put("toAccountId", order.getToAccountId() == null ? null : order.getToAccountId().toString());
     data.put("amount", order.getAmount());
     data.put("feeAmount", order.getFeeAmount() == null ? BigDecimal.ZERO : order.getFeeAmount());
+    data.put("feeEntryRef", order.getFeeEntryRef());
     data.put("currency", order.getCurrency());
     data.put("description", order.getDescription());
 
