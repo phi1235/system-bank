@@ -76,6 +76,8 @@ bank:
     # Internal transfer limits (VND). Override via env when needed.
     max-per-transaction: ${TRANSFER_MAX_PER_TX:50000000}
     daily-limit: ${TRANSFER_DAILY_LIMIT:200000000}
+    # Calendar day for daily limit (banking day). Default Vietnam.
+    daily-limit-zone: ${TRANSFER_DAILY_LIMIT_ZONE:Asia/Bangkok}
 
 management:
   endpoints:
