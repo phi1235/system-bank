@@ -18,10 +18,34 @@
         </mat-select>
       </mat-form-field>
       <mat-form-field appearance="outline" class="full">
+        <mat-label>{{ 'CUSTOMER.TRANSFER_PICK_BENEFICIARY' | translate }}</mat-label>
+        <mat-select
+          [value]="selectedBeneficiaryId"
+          (selectionChange)="onBeneficiaryPicked($event.value)"
+        >
+          <mat-option value="">{{ 'CUSTOMER.NONE' | translate }}</mat-option>
+          @for (b of beneficiaries; track b.id) {
+            <mat-option [value]="b.id">
+              {{ b.nickname }} — {{ b.accountNumber }}
+            </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="full">
         <mat-label>{{ 'CUSTOMER.TO_ACCOUNT' | translate }}</mat-label>
-        <input matInput formControlName="toAccountNumber" [placeholder]="'CUSTOMER.TO_PLACEHOLDER' | translate" />
+        <input
+          matInput
+          formControlName="toAccountNumber"
+          [placeholder]="'CUSTOMER.TO_PLACEHOLDER' | translate"
+          (input)="onToAccountTyped()"
+        />
         <mat-icon matPrefix>person_outline</mat-icon>
       </mat-form-field>
+      <div class="beneficiary-link">
+        <a routerLink="/customer/payments/beneficiaries">
+          {{ 'CUSTOMER.TRANSFER_MANAGE_BENEFICIARIES' | translate }}
+        </a>
+      </div>
       <div class="row-2">
         <mat-form-field appearance="outline" class="full">
           <mat-label>{{ 'CUSTOMER.AMOUNT_VND' | translate }}</mat-label>
@@ -84,6 +108,7 @@
         <li>{{ 'CUSTOMER.TRANSFER_TIP_1' | translate }}</li>
         <li>{{ 'CUSTOMER.TRANSFER_TIP_2' | translate }}</li>
         <li>{{ 'CUSTOMER.TRANSFER_TIP_3' | translate }}</li>
+        <li>{{ 'CUSTOMER.TRANSFER_TIP_4' | translate }}</li>
       </ul>
     </mat-card>
 
