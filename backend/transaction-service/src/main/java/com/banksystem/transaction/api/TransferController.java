@@ -3,6 +3,7 @@ package com.banksystem.transaction.api;
 import com.banksystem.common.api.ApiResponse;
 import com.banksystem.common.api.PageResponse;
 import com.banksystem.transaction.api.dto.TransferDtos.AuditResponse;
+import com.banksystem.transaction.api.dto.TransferDtos.TransferDetailResponse;
 import com.banksystem.transaction.api.dto.TransferDtos.TransferRequest;
 import com.banksystem.transaction.api.dto.TransferDtos.TransferResponse;
 import com.banksystem.transaction.application.TransferService;
@@ -54,6 +55,12 @@ public class TransferController {
   @GetMapping("/transactions/transfers/{id}")
   public ApiResponse<TransferResponse> get(@PathVariable UUID id) {
     return ApiResponse.ok(transferService.get(id, UserContext.requireUser()));
+  }
+
+  /** Transfer + saga step timeline (owner or staff). */
+  @GetMapping("/transactions/transfers/{id}/detail")
+  public ApiResponse<TransferDetailResponse> detail(@PathVariable UUID id) {
+    return ApiResponse.ok(transferService.getDetail(id, UserContext.requireUser()));
   }
 
   @GetMapping({"/admin/transfers", "/transactions/admin/transfers"})

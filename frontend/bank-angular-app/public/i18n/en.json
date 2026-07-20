@@ -499,5 +499,15 @@
   },
   "ERRORS": {
     "GENERIC": "System error"
+  },
+  "TRANSFER_DETAIL": {
+    "TITLE": "Transfer detail",
+    "OPEN": "Detail",
+    "STEPS": "Saga steps",
+    "NO_STEPS": "No saga steps recorded.",
+    "TO": "To account",
+    "ID": "Transaction ID",
+    "FAILURE": "Failure reason",
+    "LOAD_FAIL": "Could not load transfer detail"
   }
 }

@@ -3,11 +3,15 @@ package com.banksystem.transaction.application;
 import com.banksystem.common.api.ApiResponse;
 import com.banksystem.common.api.PageResponse;
 import com.banksystem.common.exception.BusinessException;
+import com.banksystem.transaction.api.dto.TransferDtos.SagaStepResponse;
+import com.banksystem.transaction.api.dto.TransferDtos.TransferDetailResponse;
 import com.banksystem.transaction.api.dto.TransferDtos.TransferRequest;
 import com.banksystem.transaction.api.dto.TransferDtos.TransferResponse;
 import com.banksystem.transaction.config.GatewayUser;
 import com.banksystem.transaction.domain.AuditLogEntity;
 import com.banksystem.transaction.domain.AuditLogRepository;
+import com.banksystem.transaction.domain.SagaStepLogEntity;
+import com.banksystem.transaction.domain.SagaStepLogRepository;
 import com.banksystem.transaction.domain.TransferOrderEntity;
 import com.banksystem.transaction.domain.TransferOrderRepository;
 import com.banksystem.transaction.domain.TransferStatus;
@@ -30,6 +34,7 @@ public class TransferService {
 
   private final TransferOrderRepository transferOrderRepository;
   private final AuditLogRepository auditLogRepository;
+  private final SagaStepLogRepository sagaStepLogRepository;
   private final AccountClient accountClient;
   private final TransferSagaOrchestrator sagaOrchestrator;
   private final TransferLimitPolicy transferLimitPolicy;
@@ -39,6 +44,7 @@ public class TransferService {
   public TransferService(
       TransferOrderRepository transferOrderRepository,
       AuditLogRepository auditLogRepository,
+      SagaStepLogRepository sagaStepLogRepository,
       AccountClient accountClient,
       TransferSagaOrchestrator sagaOrchestrator,
       TransferLimitPolicy transferLimitPolicy,
@@ -46,6 +52,7 @@ public class TransferService {
       @Value("${bank.internal.account-api-key}") String internalApiKey) {
     this.transferOrderRepository = transferOrderRepository;
     this.auditLogRepository = auditLogRepository;
+    this.sagaStepLogRepository = sagaStepLogRepository;
     this.accountClient = accountClient;
     this.sagaOrchestrator = sagaOrchestrator;
     this.transferLimitPolicy = transferLimitPolicy;
@@ -131,13 +138,31 @@ public class TransferService {
 
   @Transactional(readOnly = true)
   public TransferResponse get(UUID id, GatewayUser user) {
+    return toResponse(requireReadable(id, user));
+  }
+
+  /**
+   * Transfer order plus ordered saga step logs (owner or staff with transactions:list:view).
+   */
+  @Transactional(readOnly = true)
+  public TransferDetailResponse getDetail(UUID id, GatewayUser user) {
+    TransferOrderEntity e = requireReadable(id, user);
+    List<SagaStepResponse> steps = sagaStepLogRepository
+        .findByTransferIdOrderByCreatedAtAsc(e.getId())
+        .stream()
+        .map(this::toStep)
+        .toList();
+    return new TransferDetailResponse(toResponse(e), steps);
+  }
+
+  private TransferOrderEntity requireReadable(UUID id, GatewayUser user) {
     TransferOrderEntity e = transferOrderRepository.findById(id)
         .orElseThrow(() -> new BusinessException("TRANSFER_NOT_FOUND", "Transfer not found",
             HttpStatus.NOT_FOUND));
     if (!user.hasPermission("transactions:list:view") && !e.getUserId().equals(user.userId())) {
       throw new BusinessException("FORBIDDEN", "Not your transfer", HttpStatus.FORBIDDEN);
     }
-    return toResponse(e);
+    return e;
   }
 
   @Transactional(readOnly = true)
@@ -205,6 +230,16 @@ public class TransferService {
         e.getDescription(),
         e.getFailureReason(),
         e.getCreatedAt()
+    );
+  }
+
+  private SagaStepResponse toStep(SagaStepLogEntity s) {
+    return new SagaStepResponse(
+        s.getId().toString(),
+        s.getStep(),
+        s.getStatus(),
+        s.getDetail(),
+        s.getCreatedAt()
     );
   }
 }

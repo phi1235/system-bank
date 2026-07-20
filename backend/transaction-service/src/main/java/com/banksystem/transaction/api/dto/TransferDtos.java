@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 public final class TransferDtos {
@@ -30,6 +31,21 @@ public final class TransferDtos {
       String description,
       String failureReason,
       Instant createdAt
+  ) {}
+
+  /** Single saga step log line for transfer lifecycle visibility. */
+  public record SagaStepResponse(
+      String id,
+      String step,
+      String status,
+      String detail,
+      Instant createdAt
+  ) {}
+
+  /** Transfer order + ordered saga steps (ops / customer detail). */
+  public record TransferDetailResponse(
+      TransferResponse transfer,
+      List<SagaStepResponse> steps
   ) {}
 
   public record AuditResponse(

@@ -499,5 +499,15 @@
   },
   "ERRORS": {
     "GENERIC": "Lỗi hệ thống"
+  },
+  "TRANSFER_DETAIL": {
+    "TITLE": "Chi tiết chuyển tiền",
+    "OPEN": "Chi tiết",
+    "STEPS": "Các bước saga",
+    "NO_STEPS": "Chưa có log bước saga.",
+    "TO": "Tài khoản nhận",
+    "ID": "Mã giao dịch",
+    "FAILURE": "Lý do lỗi",
+    "LOAD_FAIL": "Không tải được chi tiết giao dịch"
   }
 }
