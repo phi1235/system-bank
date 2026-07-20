@@ -2,15 +2,16 @@ package com.banksystem.account.application;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.banksystem.account.api.dto.AccountDtos.AccountResponse;
+import com.banksystem.account.application.query.AdminAccountSearchQuery;
 import com.banksystem.account.domain.AccountEntity;
 import com.banksystem.account.domain.AccountRepository;
 import com.banksystem.account.domain.LedgerEntryRepository;
@@ -45,7 +46,8 @@ class AccountAppServiceAdminListTest {
     when(accountRepository.adminSearch(eq("1001"), eq("ACTIVE"), isNull(), isNull(), any(Pageable.class)))
         .thenReturn(new PageImpl<>(List.of(entity), PageRequest.of(0, 20), 1));
 
-    PageResponse<AccountResponse> page = service.adminList("1001", "active", 0, 20);
+    PageResponse<AccountResponse> page = service.adminList(
+        AdminAccountSearchQuery.of("1001", "active", 0, 20));
 
     assertEquals(1, page.items().size());
     assertEquals(entity.getAccountNumber(), page.items().get(0).accountNumber());
@@ -59,7 +61,7 @@ class AccountAppServiceAdminListTest {
     when(accountRepository.adminSearch(eq(id.toString()), isNull(), eq(id), eq(id), any(Pageable.class)))
         .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 10), 0));
 
-    service.adminList(id.toString(), null, 0, 10);
+    service.adminList(AdminAccountSearchQuery.of(id.toString(), null, 0, 10));
 
     ArgumentCaptor<UUID> userIdCaptor = ArgumentCaptor.forClass(UUID.class);
     ArgumentCaptor<UUID> accountIdCaptor = ArgumentCaptor.forClass(UUID.class);
@@ -74,9 +76,22 @@ class AccountAppServiceAdminListTest {
   }
 
   @Test
+  void adminList_clampsPageSizeInQueryObject() {
+    when(accountRepository.adminSearch(isNull(), isNull(), isNull(), isNull(), any(Pageable.class)))
+        .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 100), 0));
+
+    service.adminList(AdminAccountSearchQuery.of(null, null, -3, 500));
+
+    ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+    verify(accountRepository).adminSearch(isNull(), isNull(), isNull(), isNull(), pageableCaptor.capture());
+    assertEquals(0, pageableCaptor.getValue().getPageNumber());
+    assertEquals(AdminAccountSearchQuery.MAX_SIZE, pageableCaptor.getValue().getPageSize());
+  }
+
+  @Test
   void adminList_rejectsInvalidStatus() {
     BusinessException ex = assertThrows(BusinessException.class,
-        () -> service.adminList(null, "HOLD", 0, 20));
+        () -> service.adminList(AdminAccountSearchQuery.of(null, "HOLD", 0, 20)));
     assertEquals("INVALID_STATUS", ex.getCode());
   }
 
@@ -88,7 +103,17 @@ class AccountAppServiceAdminListTest {
     AccountResponse response = service.freeze(entity.getId());
 
     assertEquals("FROZEN", response.status());
-    assertTrue(true);
+    verify(accountRepository, never()).save(any());
+  }
+
+  @Test
+  void freeze_rejectsClosedAccount() {
+    AccountEntity entity = sampleAccount("CLOSED");
+    when(accountRepository.findById(entity.getId())).thenReturn(java.util.Optional.of(entity));
+
+    BusinessException ex = assertThrows(BusinessException.class, () -> service.freeze(entity.getId()));
+    assertEquals("ACCOUNT_CLOSED", ex.getCode());
+    verify(accountRepository, never()).save(any());
   }
 
   private AccountEntity sampleAccount(String status) {

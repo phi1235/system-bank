@@ -20,10 +20,6 @@ public final class UserContext {
     return gu;
   }
 
-  public static void requireAdmin() {
-    requirePermission("accounts:lookup:view");
-  }
-
   public static void requirePermission(String permission) {
     GatewayUser u = requireUser();
     if (!u.hasPermission(permission)) {
