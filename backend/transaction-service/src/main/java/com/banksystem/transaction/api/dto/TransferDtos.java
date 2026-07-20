@@ -25,6 +25,7 @@ public final class TransferDtos {
       String toAccountId,
       String toAccountNumber,
       BigDecimal amount,
+      BigDecimal feeAmount,
       String currency,
       String description,
       String failureReason,

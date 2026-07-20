@@ -12,6 +12,7 @@ import com.banksystem.transaction.infrastructure.feign.AccountClientDtos.MoneyCo
 import com.banksystem.transaction.infrastructure.feign.AccountClientDtos.MoneyResult;
 import com.banksystem.transaction.infrastructure.outbox.OutboxService;
 import feign.FeignException;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -99,8 +100,9 @@ public class TransferSagaOrchestrator {
     order.setUpdatedAt(Instant.now());
     transferOrderRepository.save(order);
     try {
+      // Refund the full debit (principal + fee) back to source.
       String ref = order.getId() + "-compensation";
-      MoneyResult refund = callCredit(order.getFromAccountId(), order, ref);
+      MoneyResult refund = callCreditTotal(order.getFromAccountId(), order, ref);
       order.setStatus(TransferStatus.COMPENSATED);
       order.setUpdatedAt(Instant.now());
       transferOrderRepository.save(order);
@@ -118,9 +120,17 @@ public class TransferSagaOrchestrator {
 
   private MoneyResult callDebit(UUID accountId, TransferOrderEntity order) {
     try {
+      // Source pays principal + fee. Fee GL posting (bank income) deferred.
+      BigDecimal fee = order.getFeeAmount() == null ? BigDecimal.ZERO : order.getFeeAmount();
+      BigDecimal debitTotal = order.getAmount().add(fee);
+      String desc = order.getDescription();
+      if (fee.compareTo(BigDecimal.ZERO) > 0) {
+        desc = (desc == null || desc.isBlank() ? "Transfer" : desc)
+            + " (fee " + fee.toPlainString() + ")";
+      }
       ApiResponse<MoneyResult> res = accountClient.debit(
           accountId,
-          new MoneyCommand(order.getAmount(), order.getId().toString(), order.getDescription(), order.getId().toString()),
+          new MoneyCommand(debitTotal, order.getId().toString(), desc, order.getId().toString()),
           internalApiKey);
       if (res == null || !res.success() || res.data() == null) {
         String code = res != null && res.error() != null ? res.error().code() : "DEBIT_FAILED";
@@ -136,11 +146,28 @@ public class TransferSagaOrchestrator {
     }
   }
 
+  /** Credit principal only (destination receives amount, never fee). */
   private MoneyResult callCredit(UUID accountId, TransferOrderEntity order, String referenceId) {
+    return callCreditAmount(accountId, order, order.getAmount(), referenceId, order.getDescription());
+  }
+
+  /** Compensation: reverse full source debit (amount + fee). */
+  private MoneyResult callCreditTotal(UUID accountId, TransferOrderEntity order, String referenceId) {
+    BigDecimal fee = order.getFeeAmount() == null ? BigDecimal.ZERO : order.getFeeAmount();
+    BigDecimal total = order.getAmount().add(fee);
+    return callCreditAmount(accountId, order, total, referenceId, "Compensation " + order.getId());
+  }
+
+  private MoneyResult callCreditAmount(
+      UUID accountId,
+      TransferOrderEntity order,
+      BigDecimal amount,
+      String referenceId,
+      String description) {
     try {
       ApiResponse<MoneyResult> res = accountClient.credit(
           accountId,
-          new MoneyCommand(order.getAmount(), referenceId, order.getDescription(), referenceId),
+          new MoneyCommand(amount, referenceId, description, referenceId),
           internalApiKey);
       if (res == null || !res.success() || res.data() == null) {
         String code = res != null && res.error() != null ? res.error().code() : "CREDIT_FAILED";
@@ -205,6 +232,7 @@ public class TransferSagaOrchestrator {
     data.put("fromAccountId", order.getFromAccountId().toString());
     data.put("toAccountId", order.getToAccountId() == null ? null : order.getToAccountId().toString());
     data.put("amount", order.getAmount());
+    data.put("feeAmount", order.getFeeAmount() == null ? BigDecimal.ZERO : order.getFeeAmount());
     data.put("currency", order.getCurrency());
     data.put("description", order.getDescription());
 
