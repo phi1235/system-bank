@@ -29,6 +29,22 @@ export class ApiService {
     return this.http.patch<ApiResponse<T>>(this.url(path), body ?? {}).pipe(map((r) => this.unwrap(r)));
   }
 
+  delete<T = void>(path: string): Observable<T> {
+    return this.http.delete<ApiResponse<T> | null>(this.url(path), { observe: 'body' }).pipe(
+      map((r) => {
+        // 204 No Content or empty body
+        if (r == null) {
+          return undefined as T;
+        }
+        // Some endpoints return ApiResponse envelope; others are empty.
+        if (typeof r === 'object' && 'success' in (r as object)) {
+          return this.unwrap(r as ApiResponse<T>);
+        }
+        return r as T;
+      }),
+    );
+  }
+
   private url(path: string): string {
     return path.startsWith('http') ? path : `${this.base}${path.startsWith('/') ? path : '/' + path}`;
   }
