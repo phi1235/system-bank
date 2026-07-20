@@ -4,6 +4,7 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
+import java.time.Instant;
 
 public final class AccountDtos {
   private AccountDtos() {}
@@ -28,4 +29,17 @@ public final class AccountDtos {
   ) {}
 
   public record MoneyResult(String ledgerEntryId, BigDecimal balanceAfter) {}
+
+  /** Single ledger line for account statement (not transfer-order history). */
+  public record LedgerEntryResponse(
+      String id,
+      String accountId,
+      String entryType,
+      BigDecimal amount,
+      /** Signed amount: CREDIT +, DEBIT - */
+      BigDecimal signedAmount,
+      String referenceId,
+      String description,
+      Instant createdAt
+  ) {}
 }

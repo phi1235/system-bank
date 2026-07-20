@@ -39,6 +39,18 @@ export interface TransferRequest {
   currency?: string;
 }
 
+/** Account ledger line (DEBIT/CREDIT), not transfer-order history. */
+export interface LedgerEntry {
+  id: string;
+  accountId: string;
+  entryType: 'DEBIT' | 'CREDIT' | string;
+  amount: number;
+  signedAmount: number;
+  referenceId: string | null;
+  description: string | null;
+  createdAt: string;
+}
+
 export interface Beneficiary {
   id: string;
   nickname: string;

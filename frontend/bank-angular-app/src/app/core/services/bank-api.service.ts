@@ -6,6 +6,7 @@ import {
   AuditLog,
   Beneficiary,
   CustomerProfile,
+  LedgerEntry,
   Transfer,
   TransferRequest,
 } from '../models/domain.model';
@@ -45,6 +46,25 @@ export class BankApiService {
 
   getAccount(id: string): Observable<Account> {
     return this.api.get(`/accounts/${id}`);
+  }
+
+  accountStatement(
+    accountId: string,
+    params?: {
+      page?: number;
+      size?: number;
+      entryType?: string;
+      from?: string;
+      to?: string;
+    },
+  ): Observable<PageResponse<LedgerEntry>> {
+    return this.api.get(`/accounts/${accountId}/statement`, {
+      page: params?.page,
+      size: params?.size,
+      entryType: params?.entryType,
+      from: params?.from,
+      to: params?.to,
+    });
   }
 
   freezeAccount(id: string): Observable<Account> {
