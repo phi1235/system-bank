@@ -3,7 +3,7 @@ package com.banksystem.account.api;
 import com.banksystem.account.api.dto.AccountDtos.AccountResponse;
 import com.banksystem.account.api.dto.AccountDtos.LedgerEntryResponse;
 import com.banksystem.account.api.dto.AccountDtos.OpenAccountRequest;
-import com.banksystem.account.application.AccountAppService;
+import com.banksystem.account.application.CustomerAccountService;
 import com.banksystem.account.application.query.LedgerStatementQuery;
 import com.banksystem.account.config.UserContext;
 import com.banksystem.common.api.ApiResponse;
@@ -30,9 +30,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/accounts")
 public class AccountController {
 
-  private final AccountAppService service;
+  private final CustomerAccountService service;
 
-  public AccountController(AccountAppService service) {
+  public AccountController(CustomerAccountService service) {
     this.service = service;
   }
 

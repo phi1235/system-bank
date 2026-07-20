@@ -1,7 +1,7 @@
 package com.banksystem.account.api;
 
 import com.banksystem.account.api.dto.AccountDtos.AccountResponse;
-import com.banksystem.account.application.AccountAppService;
+import com.banksystem.account.application.AdminAccountService;
 import com.banksystem.account.application.query.AdminAccountSearchQuery;
 import com.banksystem.account.config.UserContext;
 import com.banksystem.common.api.ApiResponse;
@@ -17,15 +17,15 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * Staff-facing account operations.
  * Controller responsibility: HTTP mapping + auth gate only.
- * Business rules live in {@link AccountAppService}.
+ * Business rules live in {@link AdminAccountService}.
  */
 @RestController
 @RequestMapping("/api/v1/admin/accounts")
 public class AdminAccountController {
 
-  private final AccountAppService service;
+  private final AdminAccountService service;
 
-  public AdminAccountController(AccountAppService service) {
+  public AdminAccountController(AdminAccountService service) {
     this.service = service;
   }
 
