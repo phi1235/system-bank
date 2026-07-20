@@ -30,6 +30,7 @@ class OutboxPollerTest {
   private OutboxEventRepository repository;
   private KafkaTemplate<String, String> kafkaTemplate;
   private OutboxRetryPolicy retryPolicy;
+  private OutboxMetrics metrics;
   private OutboxPoller poller;
 
   @BeforeEach
@@ -37,11 +38,13 @@ class OutboxPollerTest {
   void setUp() {
     repository = mock(OutboxEventRepository.class);
     kafkaTemplate = mock(KafkaTemplate.class);
+    metrics = mock(OutboxMetrics.class);
     retryPolicy = new OutboxRetryPolicy(3, 1000, 60_000, Clock.fixed(NOW, ZoneOffset.UTC));
     poller = new OutboxPoller(
         repository,
         kafkaTemplate,
         retryPolicy,
+        metrics,
         50,
         "tx.completed",
         "tx.failed");
@@ -60,6 +63,7 @@ class OutboxPollerTest {
     assertEquals(NOW, event.getPublishedAt());
     assertNull(event.getLastError());
     verify(repository).save(event);
+    verify(metrics).incrementPublished();
   }
 
   @Test
@@ -78,6 +82,7 @@ class OutboxPollerTest {
     assertEquals("broker down", event.getLastError());
     assertNull(event.getPublishedAt());
     verify(repository).save(event);
+    verify(metrics).incrementRetry();
   }
 
   @Test
@@ -96,6 +101,7 @@ class OutboxPollerTest {
     assertEquals("still down", event.getLastError());
     assertNull(event.getPublishedAt());
     verify(repository).save(event);
+    verify(metrics).incrementDead();
   }
 
   @Test

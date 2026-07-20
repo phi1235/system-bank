@@ -151,6 +151,18 @@ public class OutboxEventEntity {
     this.lastError = truncate(error);
   }
 
+  /**
+   * Ops replay: put a DEAD event back into the publish queue with a fresh attempt budget.
+   * Does not clear publishedAt (DEAD rows never published successfully).
+   */
+  public void markForReplay(Instant now) {
+    this.status = OutboxStatus.PENDING.name();
+    this.attemptCount = 0;
+    this.nextAttemptAt = now;
+    this.lastError = null;
+    this.publishedAt = null;
+  }
+
   private static String truncate(String error) {
     if (error == null) {
       return null;

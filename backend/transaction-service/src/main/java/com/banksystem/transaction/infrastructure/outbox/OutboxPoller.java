@@ -23,6 +23,7 @@ public class OutboxPoller {
   private final OutboxEventRepository repository;
   private final KafkaTemplate<String, String> kafkaTemplate;
   private final OutboxRetryPolicy retryPolicy;
+  private final OutboxMetrics metrics;
   private final int batchSize;
   private final String topicCompleted;
   private final String topicFailed;
@@ -31,12 +32,14 @@ public class OutboxPoller {
       OutboxEventRepository repository,
       KafkaTemplate<String, String> kafkaTemplate,
       OutboxRetryPolicy retryPolicy,
+      OutboxMetrics metrics,
       @Value("${bank.outbox.batch-size:50}") int batchSize,
       @Value("${bank.kafka.topic-completed}") String topicCompleted,
       @Value("${bank.kafka.topic-failed}") String topicFailed) {
     this.repository = repository;
     this.kafkaTemplate = kafkaTemplate;
     this.retryPolicy = retryPolicy;
+    this.metrics = metrics;
     this.batchSize = batchSize;
     this.topicCompleted = topicCompleted;
     this.topicFailed = topicFailed;
@@ -57,6 +60,7 @@ public class OutboxPoller {
       kafkaTemplate.send(topic, event.getAggregateId().toString(), event.getPayload()).get();
       event.markPublished(retryPolicy.now());
       repository.save(event);
+      metrics.incrementPublished();
       log.info(
           "Outbox published eventId={} type={} topic={} attempts={}",
           event.getId(),
@@ -75,6 +79,7 @@ public class OutboxPoller {
     if (retryPolicy.isDead(attempts)) {
       event.markDead(attempts, message);
       repository.save(event);
+      metrics.incrementDead();
       log.error(
           "Outbox DEAD eventId={} type={} attempts={}: {}",
           event.getId(),
@@ -86,6 +91,7 @@ public class OutboxPoller {
 
     event.markRetry(attempts, retryPolicy.nextAttemptAt(attempts), message);
     repository.save(event);
+    metrics.incrementRetry();
     log.warn(
         "Outbox publish failed eventId={} attempt={}/{} nextAttemptAt={}: {}",
         event.getId(),
