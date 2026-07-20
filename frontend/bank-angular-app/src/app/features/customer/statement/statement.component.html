@@ -27,7 +27,11 @@
       <div>
         <div class="label">{{ 'COMMON.STATUS' | translate }}</div>
         <div class="value">
-          <span class="chip" [class.ok]="account.status === 'ACTIVE'" [class.bad]="account.status === 'FROZEN'">
+          <span
+            class="chip"
+            [class.ok]="account.status === 'ACTIVE'"
+            [class.bad]="account.status === 'FROZEN'"
+          >
             {{ account.status }}
           </span>
         </div>
@@ -54,75 +58,120 @@
       <mat-label>{{ 'CUSTOMER.STATEMENT_TO' | translate }}</mat-label>
       <input matInput type="date" formControlName="to" />
     </mat-form-field>
-    <button mat-flat-button color="primary" type="submit" [disabled]="loading">
-      {{ 'COMMON.SEARCH' | translate }}
-    </button>
+    <div class="filter-actions">
+      <button mat-flat-button color="primary" type="submit" [disabled]="loading">
+        <mat-icon>filter_list</mat-icon>
+        {{ 'COMMON.SEARCH' | translate }}
+      </button>
+      <button
+        mat-button
+        type="button"
+        (click)="resetFilters()"
+        [disabled]="loading || !hasActiveFilters"
+      >
+        {{ 'CUSTOMER.STATEMENT_RESET' | translate }}
+      </button>
+    </div>
   </form>
   <p class="hint">{{ 'CUSTOMER.STATEMENT_HINT' | translate }}</p>
 </mat-card>
 
-@if (loading) {
+@if (loading && !rows.length) {
   <app-loading />
 }
 
 <mat-card class="table-card">
-  <div class="table-wrap">
-    <table mat-table [dataSource]="rows" class="full">
-      <ng-container matColumnDef="createdAt">
-        <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.TIME' | translate }}</th>
-        <td mat-cell *matCellDef="let r">{{ r.createdAt | date: 'short' }}</td>
-      </ng-container>
-
-      <ng-container matColumnDef="entryType">
-        <th mat-header-cell *matHeaderCellDef>{{ 'CUSTOMER.STATEMENT_TYPE' | translate }}</th>
-        <td mat-cell *matCellDef="let r">
-          <span class="chip" [class.ok]="r.entryType === 'CREDIT'" [class.bad]="r.entryType === 'DEBIT'">
-            {{ r.entryType }}
-          </span>
-        </td>
-      </ng-container>
-
-      <ng-container matColumnDef="description">
-        <th mat-header-cell *matHeaderCellDef>{{ 'CUSTOMER.HISTORY_DESC' | translate }}</th>
-        <td mat-cell *matCellDef="let r">
-          <div class="desc">{{ r.description || '—' }}</div>
-        </td>
-      </ng-container>
-
-      <ng-container matColumnDef="amount">
-        <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.AMOUNT' | translate }}</th>
-        <td
-          mat-cell
-          *matCellDef="let r"
-          class="money"
-          [class.credit]="r.entryType === 'CREDIT'"
-          [class.debit]="r.entryType === 'DEBIT'"
-        >
-          {{ r.signedAmount | moneyVnd: (account?.currency || 'VND') }}
-        </td>
-      </ng-container>
-
-      <ng-container matColumnDef="referenceId">
-        <th mat-header-cell *matHeaderCellDef>{{ 'CUSTOMER.STATEMENT_REF' | translate }}</th>
-        <td mat-cell *matCellDef="let r">
-          <code>{{ r.referenceId || '—' }}</code>
-        </td>
-      </ng-container>
-
-      <tr mat-header-row *matHeaderRowDef="cols"></tr>
-      <tr mat-row *matRowDef="let row; columns: cols"></tr>
-    </table>
+  <div class="table-meta">
+    <span class="meta-label">{{ 'CUSTOMER.STATEMENT_RESULT' | translate }}</span>
+    <span class="meta-count" aria-live="polite">
+      {{ 'CUSTOMER.STATEMENT_COUNT' | translate: { count: totalElements } }}
+    </span>
   </div>
 
-  @if (!loading && rows.length === 0) {
-    <p class="empty">{{ 'CUSTOMER.STATEMENT_EMPTY' | translate }}</p>
+  @if (rows.length) {
+    <div class="table-wrap">
+      <table mat-table [dataSource]="rows" class="full">
+        <ng-container matColumnDef="createdAt">
+          <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.TIME' | translate }}</th>
+          <td mat-cell *matCellDef="let r" class="time">{{ r.createdAt | date: 'short' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="entryType">
+          <th mat-header-cell *matHeaderCellDef>{{ 'CUSTOMER.STATEMENT_TYPE' | translate }}</th>
+          <td mat-cell *matCellDef="let r">
+            <span
+              class="chip"
+              [class.ok]="r.entryType === 'CREDIT'"
+              [class.bad]="r.entryType === 'DEBIT'"
+            >
+              {{ r.entryType }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="description">
+          <th mat-header-cell *matHeaderCellDef>{{ 'CUSTOMER.HISTORY_DESC' | translate }}</th>
+          <td mat-cell *matCellDef="let r">
+            <div
+              class="desc"
+              [matTooltip]="r.description || ''"
+              [matTooltipDisabled]="!r.description"
+            >
+              {{ r.description || '—' }}
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="amount">
+          <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.AMOUNT' | translate }}</th>
+          <td
+            mat-cell
+            *matCellDef="let r"
+            class="money"
+            [class.credit]="r.entryType === 'CREDIT'"
+            [class.debit]="r.entryType === 'DEBIT'"
+          >
+            {{ r.signedAmount | moneyVnd: (account?.currency || 'VND') }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="referenceId">
+          <th mat-header-cell *matHeaderCellDef>{{ 'CUSTOMER.STATEMENT_REF' | translate }}</th>
+          <td mat-cell *matCellDef="let r">
+            <code class="ref">{{ r.referenceId || '—' }}</code>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="cols"></tr>
+        <tr mat-row *matRowDef="let row; columns: cols"></tr>
+      </table>
+    </div>
+  } @else if (!loading) {
+    <div class="empty" role="status">
+      <mat-icon>receipt_long</mat-icon>
+      <p class="empty-title">{{ 'CUSTOMER.STATEMENT_EMPTY' | translate }}</p>
+      <p class="empty-body">{{ 'CUSTOMER.STATEMENT_EMPTY_HINT' | translate }}</p>
+      <div class="empty-actions">
+        @if (hasActiveFilters) {
+          <button mat-flat-button color="primary" type="button" (click)="resetFilters()">
+            {{ 'CUSTOMER.STATEMENT_RESET' | translate }}
+          </button>
+        }
+        <a mat-stroked-button routerLink="/customer/payments/transfer">
+          <mat-icon>swap_horiz</mat-icon>
+          {{ 'NAV.TRANSFER' | translate }}
+        </a>
+      </div>
+    </div>
   }
 
-  <mat-paginator
-    [length]="totalElements"
-    [pageIndex]="pageIndex"
-    [pageSize]="pageSize"
-    [pageSizeOptions]="[10, 20, 50, 100]"
-    (page)="page($event)"
-  />
+  @if (rows.length || totalElements > 0) {
+    <mat-paginator
+      [length]="totalElements"
+      [pageIndex]="pageIndex"
+      [pageSize]="pageSize"
+      [pageSizeOptions]="[10, 20, 50, 100]"
+      (page)="page($event)"
+    />
+  }
 </mat-card>

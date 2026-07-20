@@ -4,12 +4,19 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatTableModule } from '@angular/material/table';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { filter } from 'rxjs/operators';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import {
+  ConfirmDialogComponent,
+  ConfirmDialogData,
+} from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { BankApiService } from '../../../core/services/bank-api.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { Beneficiary } from '../../../core/models/domain.model';
@@ -27,6 +34,8 @@ import { Beneficiary } from '../../../core/models/domain.model';
     MatButtonModule,
     MatIconModule,
     MatTableModule,
+    MatTooltipModule,
+    MatDialogModule,
     PageHeaderComponent,
     TranslateModule,
   ],
@@ -38,10 +47,12 @@ export class BeneficiariesComponent implements OnInit {
   private readonly api = inject(BankApiService);
   private readonly toast = inject(ToastService);
   private readonly i18n = inject(TranslateService);
+  private readonly dialog = inject(MatDialog);
 
   rows: Beneficiary[] = [];
   loading = false;
   saving = false;
+  deletingId: string | null = null;
   cols = ['nickname', 'accountNumber', 'actions'];
 
   form = this.fb.nonNullable.group({
@@ -90,21 +101,38 @@ export class BeneficiariesComponent implements OnInit {
   }
 
   remove(row: Beneficiary): void {
-    const ok = confirm(
-      this.i18n.instant('CUSTOMER.BENEFICIARY_DELETE_CONFIRM', {
+    const data: ConfirmDialogData = {
+      title: this.i18n.instant('CUSTOMER.BENEFICIARY_DELETE_TITLE'),
+      message: this.i18n.instant('CUSTOMER.BENEFICIARY_DELETE_CONFIRM', {
         name: row.nickname,
         account: row.accountNumber,
       }),
-    );
-    if (!ok) return;
-    this.api.deleteBeneficiary(row.id).subscribe({
-      next: () => {
-        this.toast.success(this.i18n.instant('CUSTOMER.BENEFICIARY_DELETE_OK'));
-        this.load();
-      },
-      error: (err) => {
-        this.toast.error(err?.message || this.i18n.instant('CUSTOMER.BENEFICIARY_DELETE_FAIL'));
-      },
-    });
+      confirmLabel: this.i18n.instant('CUSTOMER.BENEFICIARY_DELETE'),
+      cancelLabel: this.i18n.instant('COMMON.CANCEL'),
+      destructive: true,
+    };
+
+    this.dialog
+      .open(ConfirmDialogComponent, {
+        width: '420px',
+        data,
+        autoFocus: 'first-tabbable',
+      })
+      .afterClosed()
+      .pipe(filter((ok): ok is true => ok === true))
+      .subscribe(() => {
+        this.deletingId = row.id;
+        this.api.deleteBeneficiary(row.id).subscribe({
+          next: () => {
+            this.deletingId = null;
+            this.toast.success(this.i18n.instant('CUSTOMER.BENEFICIARY_DELETE_OK'));
+            this.load();
+          },
+          error: (err) => {
+            this.deletingId = null;
+            this.toast.error(err?.message || this.i18n.instant('CUSTOMER.BENEFICIARY_DELETE_FAIL'));
+          },
+        });
+      });
   }
 }

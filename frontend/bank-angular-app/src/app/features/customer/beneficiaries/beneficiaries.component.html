@@ -1,32 +1,51 @@
 <app-page-header
   [title]="'CUSTOMER.BENEFICIARY_TITLE' | translate"
   [subtitle]="'CUSTOMER.BENEFICIARY_SUB' | translate"
-/>
+>
+  <a mat-stroked-button routerLink="/customer/payments/transfer">
+    <mat-icon>swap_horiz</mat-icon>
+    {{ 'NAV.TRANSFER' | translate }}
+  </a>
+</app-page-header>
 
 <div class="layout">
   <mat-card class="form-card">
-    <h3>{{ 'CUSTOMER.BENEFICIARY_ADD' | translate }}</h3>
-    <form [formGroup]="form" (ngSubmit)="create()">
+    <h3 class="card-title">{{ 'CUSTOMER.BENEFICIARY_ADD' | translate }}</h3>
+    <form [formGroup]="form" (ngSubmit)="create()" novalidate>
       <mat-form-field appearance="outline" class="full">
         <mat-label>{{ 'CUSTOMER.BENEFICIARY_NICKNAME' | translate }}</mat-label>
-        <input matInput formControlName="nickname" maxlength="80" />
+        <input matInput formControlName="nickname" maxlength="80" autocomplete="off" />
+        @if (form.controls.nickname.touched && form.controls.nickname.hasError('required')) {
+          <mat-error>{{ 'CUSTOMER.BENEFICIARY_NICKNAME_REQUIRED' | translate }}</mat-error>
+        }
+        @if (form.controls.nickname.touched && form.controls.nickname.hasError('maxlength')) {
+          <mat-error>{{ 'CUSTOMER.BENEFICIARY_NICKNAME_MAX' | translate }}</mat-error>
+        }
       </mat-form-field>
+
       <mat-form-field appearance="outline" class="full">
         <mat-label>{{ 'CUSTOMER.BENEFICIARY_ACCOUNT' | translate }}</mat-label>
         <input
           matInput
           formControlName="accountNumber"
+          inputmode="numeric"
+          autocomplete="off"
           [placeholder]="'CUSTOMER.TO_PLACEHOLDER' | translate"
         />
         <mat-icon matPrefix>account_balance</mat-icon>
+        @if (form.controls.accountNumber.touched && form.controls.accountNumber.hasError('required')) {
+          <mat-error>{{ 'CUSTOMER.BENEFICIARY_ACCOUNT_REQUIRED' | translate }}</mat-error>
+        }
+        @if (form.controls.accountNumber.touched && form.controls.accountNumber.hasError('pattern')) {
+          <mat-error>{{ 'CUSTOMER.BENEFICIARY_ACCOUNT_PATTERN' | translate }}</mat-error>
+        }
       </mat-form-field>
+
       <div class="actions">
-        <button mat-flat-button color="primary" type="submit" [disabled]="saving">
+        <button mat-flat-button color="primary" type="submit" [disabled]="saving || form.invalid">
+          <mat-icon>person_add</mat-icon>
           {{ saving ? ('COMMON.LOADING' | translate) : ('CUSTOMER.BENEFICIARY_SAVE' | translate) }}
         </button>
-        <a mat-stroked-button routerLink="/customer/payments/transfer">
-          {{ 'NAV.TRANSFER' | translate }}
-        </a>
       </div>
     </form>
     <p class="hint">{{ 'CUSTOMER.BENEFICIARY_HINT' | translate }}</p>
@@ -34,55 +53,87 @@
 
   <mat-card class="table-card">
     <div class="table-head">
-      <h3>{{ 'CUSTOMER.BENEFICIARY_LIST' | translate }}</h3>
-      <button mat-button type="button" (click)="load()" [disabled]="loading">
+      <div>
+        <h3 class="card-title">{{ 'CUSTOMER.BENEFICIARY_LIST' | translate }}</h3>
+        @if (!loading && rows.length) {
+          <p class="count">
+            {{ 'CUSTOMER.BENEFICIARY_COUNT' | translate: { count: rows.length } }}
+          </p>
+        }
+      </div>
+      <button
+        mat-icon-button
+        type="button"
+        (click)="load()"
+        [disabled]="loading"
+        [attr.aria-label]="'CUSTOMER.BENEFICIARY_REFRESH' | translate"
+        [matTooltip]="'CUSTOMER.BENEFICIARY_REFRESH' | translate"
+      >
         <mat-icon>refresh</mat-icon>
-        {{ 'COMMON.SEARCH' | translate }}
       </button>
     </div>
 
-    @if (rows.length) {
-      <table mat-table [dataSource]="rows" class="full-table">
-        <ng-container matColumnDef="nickname">
-          <th mat-header-cell *matHeaderCellDef>{{ 'CUSTOMER.BENEFICIARY_NICKNAME' | translate }}</th>
-          <td mat-cell *matCellDef="let row" class="strong">{{ row.nickname }}</td>
-        </ng-container>
+    @if (loading && !rows.length) {
+      <div class="empty muted" role="status">
+        <mat-icon>hourglass_empty</mat-icon>
+        <p>{{ 'COMMON.LOADING' | translate }}</p>
+      </div>
+    } @else if (rows.length) {
+      <div class="table-wrap">
+        <table mat-table [dataSource]="rows" class="full-table">
+          <ng-container matColumnDef="nickname">
+            <th mat-header-cell *matHeaderCellDef>{{ 'CUSTOMER.BENEFICIARY_NICKNAME' | translate }}</th>
+            <td mat-cell *matCellDef="let row" class="strong">
+              <span class="clamp">{{ row.nickname }}</span>
+            </td>
+          </ng-container>
 
-        <ng-container matColumnDef="accountNumber">
-          <th mat-header-cell *matHeaderCellDef>{{ 'CUSTOMER.BENEFICIARY_ACCOUNT' | translate }}</th>
-          <td mat-cell *matCellDef="let row" class="mono">{{ row.accountNumber }}</td>
-        </ng-container>
+          <ng-container matColumnDef="accountNumber">
+            <th mat-header-cell *matHeaderCellDef>{{ 'CUSTOMER.BENEFICIARY_ACCOUNT' | translate }}</th>
+            <td mat-cell *matCellDef="let row" class="mono">{{ row.accountNumber }}</td>
+          </ng-container>
 
-        <ng-container matColumnDef="actions">
-          <th mat-header-cell *matHeaderCellDef></th>
-          <td mat-cell *matCellDef="let row">
-            <a
-              mat-button
-              color="primary"
-              [routerLink]="['/customer/payments/transfer']"
-              [queryParams]="{ to: row.accountNumber }"
-            >
-              {{ 'CUSTOMER.BENEFICIARY_USE' | translate }}
-            </a>
-            <button mat-button color="warn" type="button" (click)="remove(row)">
-              {{ 'CUSTOMER.BENEFICIARY_DELETE' | translate }}
-            </button>
-          </td>
-        </ng-container>
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef class="actions-col">
+              {{ 'COMMON.ACTIONS' | translate }}
+            </th>
+            <td mat-cell *matCellDef="let row" class="actions-cell">
+              <a
+                mat-stroked-button
+                color="primary"
+                [routerLink]="['/customer/payments/transfer']"
+                [queryParams]="{ to: row.accountNumber }"
+              >
+                <mat-icon>swap_horiz</mat-icon>
+                {{ 'CUSTOMER.BENEFICIARY_USE' | translate }}
+              </a>
+              <button
+                mat-icon-button
+                color="warn"
+                type="button"
+                (click)="remove(row)"
+                [disabled]="deletingId === row.id"
+                [attr.aria-label]="'CUSTOMER.BENEFICIARY_DELETE' | translate"
+                [matTooltip]="'CUSTOMER.BENEFICIARY_DELETE' | translate"
+              >
+                <mat-icon>delete_outline</mat-icon>
+              </button>
+            </td>
+          </ng-container>
 
-        <tr mat-header-row *matHeaderRowDef="cols"></tr>
-        <tr mat-row *matRowDef="let row; columns: cols"></tr>
-      </table>
+          <tr mat-header-row *matHeaderRowDef="cols"></tr>
+          <tr mat-row *matRowDef="let row; columns: cols"></tr>
+        </table>
+      </div>
     } @else {
-      <div class="empty">
+      <div class="empty" role="status">
         <mat-icon>contact_page</mat-icon>
-        <p>
-          {{
-            loading
-              ? ('COMMON.LOADING' | translate)
-              : ('CUSTOMER.BENEFICIARY_EMPTY' | translate)
-          }}
-        </p>
+        <p class="empty-title">{{ 'CUSTOMER.BENEFICIARY_EMPTY' | translate }}</p>
+        <p class="empty-body">{{ 'CUSTOMER.BENEFICIARY_EMPTY_HINT' | translate }}</p>
+        <a mat-flat-button color="primary" routerLink="/customer/payments/transfer">
+          <mat-icon>swap_horiz</mat-icon>
+          {{ 'NAV.TRANSFER' | translate }}
+        </a>
       </div>
     }
   </mat-card>

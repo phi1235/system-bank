@@ -18,10 +18,11 @@
 
 .value {
   font-weight: 700;
+  text-wrap: balance;
 
   &.mono {
     font-family: var(--font-mono, ui-monospace, monospace);
-    letter-spacing: 0.03em;
+    font-variant-numeric: tabular-nums;
   }
 
   &.money {
@@ -34,22 +35,57 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.filter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
   align-items: center;
+  padding-top: 0.25rem;
 }
 
 .hint {
-  margin: 0.25rem 0 0;
+  margin: 0.35rem 0 0;
   color: var(--color-text-muted, #64748b);
   font-size: 0.85rem;
   line-height: 1.45;
+  text-wrap: pretty;
+  max-width: 70ch;
+}
+
+.table-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-bottom: 0.65rem;
+}
+
+.meta-label {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.meta-count {
+  font-size: 0.82rem;
+  color: var(--color-text-muted, #64748b);
+  font-variant-numeric: tabular-nums;
 }
 
 .table-wrap {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .full {
   width: 100%;
+}
+
+.time {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .desc {
@@ -92,18 +128,69 @@
   }
 }
 
-.empty {
-  text-align: center;
-  color: var(--color-text-secondary, #64748b);
-  padding: 1.5rem 1rem;
+.ref {
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  word-break: break-all;
 }
 
-code {
-  font-size: 0.8rem;
+.empty {
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--color-text-muted, #64748b);
+  gap: 0.5rem;
+  padding: 1.75rem 1.25rem;
+
+  mat-icon {
+    font-size: 40px;
+    width: 40px;
+    height: 40px;
+    color: #94a3b8;
+  }
+
+  .empty-title {
+    margin: 0;
+    max-width: 40ch;
+    font-weight: 600;
+    color: var(--color-text-secondary, #475569);
+    line-height: 1.4;
+    text-wrap: balance;
+  }
+
+  .empty-body {
+    margin: 0;
+    max-width: 44ch;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    text-wrap: pretty;
+  }
+
+  .empty-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-top: 0.45rem;
+  }
 }
 
 @media (max-width: 800px) {
   .summary-grid {
     grid-template-columns: 1fr;
+  }
+
+  .filters mat-form-field {
+    min-width: min(100%, 220px);
+    flex: 1 1 180px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto;
   }
 }

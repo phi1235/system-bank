@@ -10,6 +10,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { LoadingComponent } from '../../../shared/components/loading/loading.component';
@@ -33,6 +34,7 @@ import { Account, LedgerEntry } from '../../../core/models/domain.model';
     MatIconModule,
     MatTableModule,
     MatPaginatorModule,
+    MatTooltipModule,
     PageHeaderComponent,
     LoadingComponent,
     MoneyVndPipe,
@@ -73,6 +75,11 @@ export class StatementComponent implements OnInit {
     this.load();
   }
 
+  get hasActiveFilters(): boolean {
+    const f = this.filter.getRawValue();
+    return !!(f.entryType || f.from || f.to);
+  }
+
   loadAccount(): void {
     this.api.getAccount(this.accountId).subscribe({
       next: (a) => (this.account = a),
@@ -83,6 +90,12 @@ export class StatementComponent implements OnInit {
   }
 
   applyFilters(): void {
+    this.pageIndex = 0;
+    this.load();
+  }
+
+  resetFilters(): void {
+    this.filter.reset({ entryType: '', from: '', to: '' });
     this.pageIndex = 0;
     this.load();
   }
