@@ -9,14 +9,19 @@ import com.banksystem.account.domain.AccountEntity;
 import com.banksystem.account.domain.AccountRepository;
 import com.banksystem.account.domain.LedgerEntryEntity;
 import com.banksystem.account.domain.LedgerEntryRepository;
+import com.banksystem.common.api.PageResponse;
 import com.banksystem.common.exception.BusinessException;
 import java.math.BigDecimal;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -67,6 +72,42 @@ public class AccountAppService {
         .toList();
   }
 
+  private static final Set<String> ACCOUNT_STATUSES = Set.of("ACTIVE", "FROZEN", "CLOSED");
+
+  @Transactional(readOnly = true)
+  public PageResponse<AccountResponse> adminList(String q, String status, int page, int size) {
+    String normalizedStatus = normalizeStatus(status);
+    String query = q == null ? null : q.trim();
+    if (query != null && query.isEmpty()) {
+      query = null;
+    }
+
+    UUID userId = null;
+    UUID accountId = null;
+    if (query != null) {
+      UUID asUuid = tryParseUuid(query);
+      if (asUuid != null) {
+        // Allow staff to paste either account id or owner user id.
+        userId = asUuid;
+        accountId = asUuid;
+      }
+    }
+
+    Page<AccountEntity> result = accountRepository.adminSearch(
+        query,
+        normalizedStatus,
+        userId,
+        accountId,
+        PageRequest.of(page, size));
+    List<AccountResponse> items = result.getContent().stream().map(this::toResponse).toList();
+    return new PageResponse<>(
+        items,
+        result.getNumber(),
+        result.getSize(),
+        result.getTotalElements(),
+        result.getTotalPages());
+  }
+
   @Transactional(readOnly = true)
   public AccountResponse get(UUID id, GatewayUser user) {
     AccountEntity a = require(id);
@@ -81,6 +122,13 @@ public class AccountAppService {
   @Transactional
   public AccountResponse freeze(UUID id) {
     AccountEntity a = require(id);
+    if ("CLOSED".equals(a.getStatus())) {
+      throw new BusinessException("ACCOUNT_CLOSED", "Closed account cannot be frozen",
+          HttpStatus.UNPROCESSABLE_ENTITY);
+    }
+    if ("FROZEN".equals(a.getStatus())) {
+      return toResponse(a);
+    }
     a.setStatus("FROZEN");
     a.setUpdatedAt(Instant.now());
     return toResponse(accountRepository.save(a));
@@ -89,6 +137,13 @@ public class AccountAppService {
   @Transactional
   public AccountResponse unfreeze(UUID id) {
     AccountEntity a = require(id);
+    if ("CLOSED".equals(a.getStatus())) {
+      throw new BusinessException("ACCOUNT_CLOSED", "Closed account cannot be unfrozen",
+          HttpStatus.UNPROCESSABLE_ENTITY);
+    }
+    if ("ACTIVE".equals(a.getStatus())) {
+      return toResponse(a);
+    }
     a.setStatus("ACTIVE");
     a.setUpdatedAt(Instant.now());
     return toResponse(accountRepository.save(a));
@@ -203,6 +258,28 @@ public class AccountAppService {
     return accountRepository.findById(id)
         .orElseThrow(() -> new BusinessException("ACCOUNT_NOT_FOUND", "Account not found",
             HttpStatus.NOT_FOUND));
+  }
+
+  private String normalizeStatus(String status) {
+    if (status == null || status.isBlank()) {
+      return null;
+    }
+    String normalized = status.trim().toUpperCase(Locale.ROOT);
+    if (!ACCOUNT_STATUSES.contains(normalized)) {
+      throw new BusinessException(
+          "INVALID_STATUS",
+          "status must be ACTIVE|FROZEN|CLOSED",
+          HttpStatus.BAD_REQUEST);
+    }
+    return normalized;
+  }
+
+  private UUID tryParseUuid(String raw) {
+    try {
+      return UUID.fromString(raw.trim());
+    } catch (IllegalArgumentException ex) {
+      return null;
+    }
   }
 
   private String generateAccountNumber() {
