@@ -30,6 +30,11 @@ export const ADMIN_ROUTES: Routes = [
         loadComponent: () => import('./transfers/transfers.component').then((m) => m.AdminTransfersComponent),
       },
       {
+        path: 'outbox',
+        canActivate: [permissionGuard([PERMISSIONS.TX_LIST_VIEW])],
+        loadComponent: () => import('./outbox/outbox.component').then((m) => m.AdminOutboxComponent),
+      },
+      {
         path: 'audit',
         canActivate: [permissionGuard([PERMISSIONS.AUDIT_LIST_VIEW])],
         loadComponent: () => import('./audit/audit.component').then((m) => m.AdminAuditComponent),

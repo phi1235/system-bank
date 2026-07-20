@@ -73,3 +73,23 @@ export interface AuditLog {
   metadata: string | null;
   createdAt: string;
 }
+
+/** Outbox event for ops (Kafka publish lifecycle). */
+export interface OutboxEvent {
+  id: string;
+  aggregateType: string;
+  aggregateId: string;
+  eventType: string;
+  status: 'PENDING' | 'PUBLISHED' | 'DEAD' | string;
+  attemptCount: number;
+  nextAttemptAt: string | null;
+  createdAt: string;
+  publishedAt: string | null;
+  lastError: string | null;
+}
+
+export interface OutboxCounts {
+  pending: number;
+  published: number;
+  dead: number;
+}

@@ -1,0 +1,93 @@
+.filter {
+  min-width: 160px;
+  margin-right: 0.5rem;
+}
+
+.counts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.count-card {
+  padding: 0.85rem 1rem;
+
+  .label {
+    font-size: 0.8rem;
+    opacity: 0.75;
+  }
+
+  .value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-top: 0.25rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &.dead .value {
+    color: #c62828;
+  }
+}
+
+.table-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table.full {
+  width: 100%;
+}
+
+.chip {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: #eceff1;
+
+  &.ok {
+    background: #e8f5e9;
+    color: #1b5e20;
+  }
+
+  &.warn {
+    background: #fff8e1;
+    color: #f57f17;
+  }
+
+  &.bad {
+    background: #ffebee;
+    color: #b71c1c;
+  }
+}
+
+.err {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+
+.muted {
+  opacity: 0.45;
+}
+
+.empty {
+  padding: 1.25rem 1rem;
+  margin: 0;
+  opacity: 0.7;
+}
+
+@media (max-width: 720px) {
+  .counts {
+    grid-template-columns: 1fr;
+  }
+}
