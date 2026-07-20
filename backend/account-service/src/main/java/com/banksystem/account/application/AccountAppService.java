@@ -5,10 +5,12 @@ import com.banksystem.account.api.dto.AccountDtos.LedgerEntryResponse;
 import com.banksystem.account.api.dto.AccountDtos.MoneyCommand;
 import com.banksystem.account.api.dto.AccountDtos.MoneyResult;
 import com.banksystem.account.api.dto.AccountDtos.OpenAccountRequest;
+import com.banksystem.account.application.query.AdminAccountSearchQuery;
 import com.banksystem.account.application.query.LedgerStatementQuery;
 import com.banksystem.account.config.GatewayUser;
 import com.banksystem.account.domain.AccountEntity;
 import com.banksystem.account.domain.AccountRepository;
+import com.banksystem.account.domain.AccountStatus;
 import com.banksystem.account.domain.LedgerEntryEntity;
 import com.banksystem.account.domain.LedgerEntryRepository;
 import com.banksystem.account.domain.LedgerEntryType;
@@ -54,14 +56,18 @@ public class AccountAppService {
       throw new BusinessException("MAX_ACCOUNTS", "Maximum " + maxPerUser + " accounts per user",
           HttpStatus.UNPROCESSABLE_ENTITY);
     }
+    String accountType = (req == null || req.accountType() == null || req.accountType().isBlank())
+        ? "PAYMENT"
+        : req.accountType().trim();
+
     AccountEntity a = new AccountEntity();
     a.setId(UUID.randomUUID());
     a.setUserId(userId);
     a.setAccountNumber(generateAccountNumber());
-    a.setAccountType(req.accountType() == null || req.accountType().isBlank() ? "PAYMENT" : req.accountType());
+    a.setAccountType(accountType);
     a.setCurrency("VND");
     a.setBalance(initialBalance);
-    a.setStatus("ACTIVE");
+    a.setStatus(AccountStatus.ACTIVE.name());
     a.setCreatedAt(Instant.now());
     a.setUpdatedAt(Instant.now());
     return toResponse(accountRepository.save(a));
@@ -72,6 +78,38 @@ public class AccountAppService {
     return accountRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
         .map(this::toResponse)
         .toList();
+  }
+
+  @Transactional(readOnly = true)
+  public PageResponse<AccountResponse> adminList(AdminAccountSearchQuery query) {
+    String status = query.status() == null
+        ? null
+        : AccountStatus.parseRequired(query.status()).name();
+
+    // Staff may paste account number, account UUID, or owner user UUID in the same `q` box.
+    UUID userId = null;
+    UUID accountId = null;
+    if (query.q() != null) {
+      UUID asUuid = tryParseUuid(query.q());
+      if (asUuid != null) {
+        userId = asUuid;
+        accountId = asUuid;
+      }
+    }
+
+    Page<AccountEntity> result = accountRepository.adminSearch(
+        query.q(),
+        status,
+        userId,
+        accountId,
+        PageRequest.of(query.page(), query.size()));
+    List<AccountResponse> items = result.getContent().stream().map(this::toResponse).toList();
+    return new PageResponse<>(
+        items,
+        result.getNumber(),
+        result.getSize(),
+        result.getTotalElements(),
+        result.getTotalPages());
   }
 
   @Transactional(readOnly = true)
@@ -110,7 +148,15 @@ public class AccountAppService {
   @Transactional
   public AccountResponse freeze(UUID id) {
     AccountEntity a = require(id);
-    a.setStatus("FROZEN");
+    AccountStatus current = currentStatus(a);
+    if (current.isClosed()) {
+      throw new BusinessException("ACCOUNT_CLOSED", "Closed account cannot be frozen",
+          HttpStatus.UNPROCESSABLE_ENTITY);
+    }
+    if (current.isFrozen()) {
+      return toResponse(a);
+    }
+    a.setStatus(AccountStatus.FROZEN.name());
     a.setUpdatedAt(Instant.now());
     return toResponse(accountRepository.save(a));
   }
@@ -118,7 +164,15 @@ public class AccountAppService {
   @Transactional
   public AccountResponse unfreeze(UUID id) {
     AccountEntity a = require(id);
-    a.setStatus("ACTIVE");
+    AccountStatus current = currentStatus(a);
+    if (current.isClosed()) {
+      throw new BusinessException("ACCOUNT_CLOSED", "Closed account cannot be unfrozen",
+          HttpStatus.UNPROCESSABLE_ENTITY);
+    }
+    if (current.isActive()) {
+      return toResponse(a);
+    }
+    a.setStatus(AccountStatus.ACTIVE.name());
     a.setUpdatedAt(Instant.now());
     return toResponse(accountRepository.save(a));
   }
@@ -139,7 +193,7 @@ public class AccountAppService {
   public MoneyResult debit(UUID id, MoneyCommand cmd) {
     validateAmount(cmd.amount());
     AccountEntity account = require(id);
-    if ("FROZEN".equals(account.getStatus()) || "CLOSED".equals(account.getStatus())) {
+    if (!currentStatus(account).isActive()) {
       throw new BusinessException("ACCOUNT_FROZEN", "Account is not active", HttpStatus.UNPROCESSABLE_ENTITY);
     }
 
@@ -154,7 +208,7 @@ public class AccountAppService {
     if (updated == 0) {
       // distinguish frozen vs insufficient
       AccountEntity current = require(id);
-      if (!"ACTIVE".equals(current.getStatus())) {
+      if (!currentStatus(current).isActive()) {
         throw new BusinessException("ACCOUNT_FROZEN", "Account is not active", HttpStatus.UNPROCESSABLE_ENTITY);
       }
       throw new BusinessException("INSUFFICIENT_BALANCE", "Account balance is insufficient",
@@ -188,10 +242,9 @@ public class AccountAppService {
     int updated = accountRepository.creditIfActive(id, cmd.amount());
     if (updated == 0) {
       AccountEntity current = require(id);
-      if (!"ACTIVE".equals(current.getStatus())) {
-        // allow credit to frozen for compensation? ADR debit/credit - compensate reverse.
-        // For compensation after debit, account is still ACTIVE typically.
-        // If frozen, still try direct update for credit compensation:
+      if (!currentStatus(current).isActive()) {
+        // Compensation after debit usually targets ACTIVE accounts.
+        // Frozen/closed credit remains blocked for now.
         throw new BusinessException("ACCOUNT_FROZEN", "Account is not active for credit",
             HttpStatus.UNPROCESSABLE_ENTITY);
       }
@@ -258,6 +311,22 @@ public class AccountAppService {
         e.getReferenceId(),
         e.getDescription(),
         e.getCreatedAt());
+  }
+
+  private AccountStatus currentStatus(AccountEntity account) {
+    return AccountStatus.tryParse(account.getStatus())
+        .orElseThrow(() -> new BusinessException(
+            "INVALID_ACCOUNT_STATE",
+            "Account has unknown status: " + account.getStatus(),
+            HttpStatus.INTERNAL_SERVER_ERROR));
+  }
+
+  private UUID tryParseUuid(String raw) {
+    try {
+      return UUID.fromString(raw.trim());
+    } catch (IllegalArgumentException ex) {
+      return null;
+    }
   }
 
   private String generateAccountNumber() {

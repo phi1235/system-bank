@@ -4,6 +4,7 @@ import { PageResponse } from '../models/api.model';
 import {
   Account,
   AuditLog,
+  Beneficiary,
   CustomerProfile,
   LedgerEntry,
   Transfer,
@@ -74,6 +75,16 @@ export class BankApiService {
     return this.api.post(`/admin/accounts/${id}/unfreeze`, {});
   }
 
+  /** Staff list/search: q = account number | account UUID | owner user UUID */
+  adminListAccounts(
+    page = 0,
+    size = 20,
+    q?: string,
+    status?: string,
+  ): Observable<PageResponse<Account>> {
+    return this.api.get('/admin/accounts', { page, size, q, status });
+  }
+
   // Transfers
   transfer(body: TransferRequest, idempotencyKey: string): Observable<Transfer> {
     return this.api.post('/transactions/transfers', body, {
@@ -87,6 +98,23 @@ export class BankApiService {
 
   getTransfer(id: string): Observable<Transfer> {
     return this.api.get(`/transactions/transfers/${id}`);
+  }
+
+  // Beneficiaries (internal transfer address book)
+  listBeneficiaries(): Observable<Beneficiary[]> {
+    return this.api.get('/transactions/beneficiaries');
+  }
+
+  createBeneficiary(body: { nickname: string; accountNumber: string }): Observable<Beneficiary> {
+    return this.api.post('/transactions/beneficiaries', body);
+  }
+
+  renameBeneficiary(id: string, nickname: string): Observable<Beneficiary> {
+    return this.api.put(`/transactions/beneficiaries/${id}`, { nickname });
+  }
+
+  deleteBeneficiary(id: string): Observable<void> {
+    return this.api.delete(`/transactions/beneficiaries/${id}`);
   }
 
   // Admin

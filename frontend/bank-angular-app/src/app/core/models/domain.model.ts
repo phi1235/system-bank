@@ -51,6 +51,16 @@ export interface LedgerEntry {
   createdAt: string;
 }
 
+export interface Beneficiary {
+  id: string;
+  nickname: string;
+  accountNumber: string;
+  accountId: string | null;
+  currency: string;
+  active: boolean;
+  createdAt: string;
+}
+
 export interface AuditLog {
   id: string;
   actorUserId: string | null;
