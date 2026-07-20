@@ -55,6 +55,16 @@ export class BankApiService {
     return this.api.post(`/admin/accounts/${id}/unfreeze`, {});
   }
 
+  /** Staff list/search: q = account number | account UUID | owner user UUID */
+  adminListAccounts(
+    page = 0,
+    size = 20,
+    q?: string,
+    status?: string,
+  ): Observable<PageResponse<Account>> {
+    return this.api.get('/admin/accounts', { page, size, q, status });
+  }
+
   // Transfers
   transfer(body: TransferRequest, idempotencyKey: string): Observable<Transfer> {
     return this.api.post('/transactions/transfers', body, {
