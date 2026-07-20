@@ -140,7 +140,7 @@
     "TRANSFER_TIP_1": "Chỉ chuyển được từ tài khoản ACTIVE của bạn.",
     "TRANSFER_TIP_2": "Số TK nhận gồm 8–14 chữ số, không khoảng trắng.",
     "TRANSFER_TIP_3": "Mỗi lần gửi tạo Idempotency-Key riêng để tránh trùng.",
-    "TRANSFER_TIP_4": "Hạn mức mặc định: 50 triệu/lần · 200 triệu/ngày (COMPLETED).",
+    "TRANSFER_TIP_4": "Hạn mức mặc định: 50 triệu/lần · 200 triệu/ngày theo giờ VN (Asia/Bangkok, COMPLETED).",
     "TRANSFER_PICK_BENEFICIARY": "Chọn thụ hưởng",
     "TRANSFER_MANAGE_BENEFICIARIES": "Quản lý thụ hưởng",
     "BENEFICIARY_TITLE": "Danh bạ thụ hưởng",

@@ -7,7 +7,7 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 /**
  * Application policy for internal transfer limits.
  * Keeps monetary thresholds out of controllers and easy to unit-test.
+ * Daily window is calendar-day in {@code bank.transfer.daily-limit-zone} (default Asia/Bangkok).
  */
 @Component
 public class TransferLimitPolicy {
@@ -24,15 +25,18 @@ public class TransferLimitPolicy {
   private final BigDecimal maxPerTransaction;
   private final BigDecimal dailyLimit;
   private final Clock clock;
+  private final ZoneId dailyLimitZone;
 
   public TransferLimitPolicy(
       TransferOrderRepository transferOrderRepository,
       @Value("${bank.transfer.max-per-transaction:50000000}") BigDecimal maxPerTransaction,
       @Value("${bank.transfer.daily-limit:200000000}") BigDecimal dailyLimit,
+      @Value("${bank.transfer.daily-limit-zone:Asia/Bangkok}") String dailyLimitZone,
       Clock clock) {
     this.transferOrderRepository = transferOrderRepository;
     this.maxPerTransaction = maxPerTransaction;
     this.dailyLimit = dailyLimit;
+    this.dailyLimitZone = ZoneId.of(dailyLimitZone);
     this.clock = clock;
   }
 
@@ -47,7 +51,7 @@ public class TransferLimitPolicy {
           HttpStatus.UNPROCESSABLE_ENTITY);
     }
 
-    Instant dayStart = LocalDate.now(clock).atStartOfDay().toInstant(ZoneOffset.UTC);
+    Instant dayStart = startOfBusinessDay();
     BigDecimal spentToday = transferOrderRepository.sumAmountByUserAndStatusSince(
         userId, TransferStatus.COMPLETED, dayStart);
     if (spentToday == null) {
@@ -63,11 +67,24 @@ public class TransferLimitPolicy {
     }
   }
 
+  /**
+   * Inclusive start of the current banking calendar day in the configured zone.
+   * Example: Asia/Bangkok 2026-07-21 00:00+07 → Instant 2026-07-20T17:00:00Z.
+   */
+  Instant startOfBusinessDay() {
+    LocalDate today = LocalDate.now(clock.withZone(dailyLimitZone));
+    return today.atStartOfDay(dailyLimitZone).toInstant();
+  }
+
   public BigDecimal maxPerTransaction() {
     return maxPerTransaction;
   }
 
   public BigDecimal dailyLimit() {
     return dailyLimit;
+  }
+
+  public ZoneId dailyLimitZone() {
+    return dailyLimitZone;
   }
 }

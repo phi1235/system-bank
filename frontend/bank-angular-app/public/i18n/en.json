@@ -140,7 +140,7 @@
     "TRANSFER_TIP_1": "You can only send from your ACTIVE accounts.",
     "TRANSFER_TIP_2": "Destination account must be 8–14 digits, no spaces.",
     "TRANSFER_TIP_3": "Each submit uses a unique Idempotency-Key.",
-    "TRANSFER_TIP_4": "Default limits: 50M VND/tx · 200M VND/day (COMPLETED).",
+    "TRANSFER_TIP_4": "Default limits: 50M VND/tx · 200M VND/day in Asia/Bangkok (COMPLETED).",
     "TRANSFER_PICK_BENEFICIARY": "Pick beneficiary",
     "TRANSFER_MANAGE_BENEFICIARIES": "Manage beneficiaries",
     "BENEFICIARY_TITLE": "Beneficiaries",
