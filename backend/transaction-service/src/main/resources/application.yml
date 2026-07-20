@@ -68,6 +68,10 @@ bank:
   outbox:
     poll-ms: ${OUTBOX_POLL_MS}
     batch-size: ${OUTBOX_BATCH_SIZE}
+  transfer:
+    # Internal transfer limits (VND). Override via env when needed.
+    max-per-transaction: ${TRANSFER_MAX_PER_TX:50000000}
+    daily-limit: ${TRANSFER_DAILY_LIMIT:200000000}
 
 management:
   endpoints:

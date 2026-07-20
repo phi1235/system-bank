@@ -1,5 +1,7 @@
 package com.banksystem.transaction.domain;
 
+import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
@@ -19,4 +21,16 @@ public interface TransferOrderRepository extends JpaRepository<TransferOrderEnti
       ORDER BY t.createdAt DESC
       """)
   Page<TransferOrderEntity> adminSearch(@Param("status") TransferStatus status, Pageable pageable);
+
+  @Query("""
+      SELECT COALESCE(SUM(t.amount), 0)
+      FROM TransferOrderEntity t
+      WHERE t.userId = :userId
+        AND t.status = :status
+        AND t.createdAt >= :fromInclusive
+      """)
+  BigDecimal sumAmountByUserAndStatusSince(
+      @Param("userId") UUID userId,
+      @Param("status") TransferStatus status,
+      @Param("fromInclusive") Instant fromInclusive);
 }

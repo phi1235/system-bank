@@ -1,7 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -14,10 +14,16 @@ import { Store } from '@ngrx/store';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { MoneyVndPipe } from '../../../shared/pipes/money-vnd.pipe';
 import { PERMISSIONS } from '../../../core/services/rbac.util';
+import { BankApiService } from '../../../core/services/bank-api.service';
+import { Beneficiary } from '../../../core/models/domain.model';
 import { AccountsActions } from '../../../store/accounts/accounts.actions';
 import { selectAccounts } from '../../../store/accounts/accounts.selectors';
 import { TransfersActions } from '../../../store/transfers/transfers.actions';
-import { selectLastTransfer, selectTransferCreating, selectTransferError } from '../../../store/transfers/transfers.selectors';
+import {
+  selectLastTransfer,
+  selectTransferCreating,
+  selectTransferError,
+} from '../../../store/transfers/transfers.selectors';
 import { selectHasPermission } from '../../../store/auth/auth.selectors';
 
 @Component({
@@ -45,11 +51,17 @@ export class TransferComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly store = inject(Store);
   private readonly i18n = inject(TranslateService);
+  private readonly api = inject(BankApiService);
+  private readonly route = inject(ActivatedRoute);
+
   accounts$ = this.store.select(selectAccounts);
   creating$ = this.store.select(selectTransferCreating);
   last$ = this.store.select(selectLastTransfer);
   error$ = this.store.select(selectTransferError);
   canExecute$ = this.store.select(selectHasPermission(PERMISSIONS.IB_TRANSFER_EXECUTE));
+
+  beneficiaries: Beneficiary[] = [];
+  selectedBeneficiaryId = '';
 
   form = this.fb.nonNullable.group({
     fromAccountId: ['', Validators.required],
@@ -62,10 +74,50 @@ export class TransferComponent implements OnInit {
     this.form.patchValue({ description: this.i18n.instant('CUSTOMER.DEFAULT_DESC') });
     this.store.dispatch(AccountsActions.load());
     this.store.dispatch(TransfersActions.clearStatus());
+    this.loadBeneficiaries();
+
+    const to = this.route.snapshot.queryParamMap.get('to');
+    if (to && /^\d{8,14}$/.test(to)) {
+      this.form.patchValue({ toAccountNumber: to });
+    }
+  }
+
+  loadBeneficiaries(): void {
+    this.api.listBeneficiaries().subscribe({
+      next: (items) => {
+        this.beneficiaries = items || [];
+        const current = this.form.controls.toAccountNumber.value;
+        const match = this.beneficiaries.find((b) => b.accountNumber === current);
+        this.selectedBeneficiaryId = match?.id ?? '';
+      },
+      error: () => {
+        this.beneficiaries = [];
+      },
+    });
+  }
+
+  onBeneficiaryPicked(id: string): void {
+    this.selectedBeneficiaryId = id || '';
+    if (!id) {
+      return;
+    }
+    const found = this.beneficiaries.find((b) => b.id === id);
+    if (found) {
+      this.form.patchValue({ toAccountNumber: found.accountNumber });
+    }
+  }
+
+  onToAccountTyped(): void {
+    const current = this.form.controls.toAccountNumber.value;
+    const match = this.beneficiaries.find((b) => b.accountNumber === current);
+    this.selectedBeneficiaryId = match?.id ?? '';
   }
 
   submit(): void {
-    if (this.form.invalid) { this.form.markAllAsTouched(); return; }
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
     const v = this.form.getRawValue();
     const ok = confirm(
       this.i18n.instant('CUSTOMER.CONFIRM_MSG', {

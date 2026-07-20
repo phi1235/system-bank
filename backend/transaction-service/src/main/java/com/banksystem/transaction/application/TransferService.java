@@ -32,6 +32,7 @@ public class TransferService {
   private final AuditLogRepository auditLogRepository;
   private final AccountClient accountClient;
   private final TransferSagaOrchestrator sagaOrchestrator;
+  private final TransferLimitPolicy transferLimitPolicy;
   private final String internalApiKey;
 
   public TransferService(
@@ -39,11 +40,13 @@ public class TransferService {
       AuditLogRepository auditLogRepository,
       AccountClient accountClient,
       TransferSagaOrchestrator sagaOrchestrator,
+      TransferLimitPolicy transferLimitPolicy,
       @Value("${bank.internal.account-api-key}") String internalApiKey) {
     this.transferOrderRepository = transferOrderRepository;
     this.auditLogRepository = auditLogRepository;
     this.accountClient = accountClient;
     this.sagaOrchestrator = sagaOrchestrator;
+    this.transferLimitPolicy = transferLimitPolicy;
     this.internalApiKey = internalApiKey;
   }
 
@@ -66,6 +69,9 @@ public class TransferService {
       }
       return toResponse(e);
     }
+
+    // Enforce limits before any external side effects / order creation.
+    transferLimitPolicy.validate(user.userId(), req.amount());
 
     AccountView from = loadAccount(req.fromAccountId());
     if (!from.userIdUuid().equals(user.userId()) && !user.hasPermission("transactions:list:view")) {

@@ -20,6 +20,21 @@
 
 .full { width: 100%; }
 
+.beneficiary-link {
+  margin: -0.35rem 0 0.85rem;
+  font-size: 0.85rem;
+
+  a {
+    color: #0b6bcb;
+    text-decoration: none;
+    font-weight: 600;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
 .err {
   color: #dc2626;
   margin-bottom: 0.75rem;
