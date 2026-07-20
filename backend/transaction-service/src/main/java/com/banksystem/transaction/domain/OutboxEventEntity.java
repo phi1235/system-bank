@@ -32,6 +32,18 @@ public class OutboxEventEntity {
   @Column(name = "published_at")
   private Instant publishedAt;
 
+  @Column(name = "status", nullable = false, length = 20)
+  private String status = OutboxStatus.PENDING.name();
+
+  @Column(name = "attempt_count", nullable = false)
+  private int attemptCount;
+
+  @Column(name = "next_attempt_at", nullable = false)
+  private Instant nextAttemptAt = Instant.now();
+
+  @Column(name = "last_error", length = 500)
+  private String lastError;
+
   public UUID getId() {
     return id;
   }
@@ -86,5 +98,63 @@ public class OutboxEventEntity {
 
   public void setPublishedAt(Instant publishedAt) {
     this.publishedAt = publishedAt;
+  }
+
+  public String getStatus() {
+    return status;
+  }
+
+  public void setStatus(String status) {
+    this.status = status;
+  }
+
+  public int getAttemptCount() {
+    return attemptCount;
+  }
+
+  public void setAttemptCount(int attemptCount) {
+    this.attemptCount = attemptCount;
+  }
+
+  public Instant getNextAttemptAt() {
+    return nextAttemptAt;
+  }
+
+  public void setNextAttemptAt(Instant nextAttemptAt) {
+    this.nextAttemptAt = nextAttemptAt;
+  }
+
+  public String getLastError() {
+    return lastError;
+  }
+
+  public void setLastError(String lastError) {
+    this.lastError = lastError;
+  }
+
+  public void markPublished(Instant at) {
+    this.publishedAt = at;
+    this.status = OutboxStatus.PUBLISHED.name();
+    this.lastError = null;
+  }
+
+  public void markRetry(int attemptCount, Instant nextAttemptAt, String error) {
+    this.attemptCount = attemptCount;
+    this.nextAttemptAt = nextAttemptAt;
+    this.status = OutboxStatus.PENDING.name();
+    this.lastError = truncate(error);
+  }
+
+  public void markDead(int attemptCount, String error) {
+    this.attemptCount = attemptCount;
+    this.status = OutboxStatus.DEAD.name();
+    this.lastError = truncate(error);
+  }
+
+  private static String truncate(String error) {
+    if (error == null) {
+      return null;
+    }
+    return error.length() <= 500 ? error : error.substring(0, 500);
   }
 }
