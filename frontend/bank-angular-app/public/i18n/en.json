@@ -141,6 +141,8 @@
     "TRANSFER_TIP_2": "Destination account must be 8–14 digits, no spaces.",
     "TRANSFER_TIP_3": "Each submit uses a unique Idempotency-Key.",
     "TRANSFER_TIP_4": "Default limits: 50M VND/tx · 200M VND/day in Asia/Bangkok (COMPLETED).",
+    "TRANSFER_TIP_5": "Transfer fee (if enabled) is extra on the source; destination gets principal only. Default 0.",
+    "FEE": "Fee",
     "TRANSFER_PICK_BENEFICIARY": "Pick beneficiary",
     "TRANSFER_MANAGE_BENEFICIARIES": "Manage beneficiaries",
     "BENEFICIARY_TITLE": "Beneficiaries",

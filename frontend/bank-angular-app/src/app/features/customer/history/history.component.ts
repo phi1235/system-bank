@@ -38,7 +38,7 @@ export class HistoryComponent implements OnInit {
   rows$ = this.store.select(selectTransferHistory);
   loading$ = this.store.select(selectTransferLoading);
   meta$ = this.store.select(selectTransferPageMeta);
-  cols = ['createdAt', 'description', 'amount', 'status', 'transactionId'];
+  cols = ['createdAt', 'description', 'amount', 'feeAmount', 'status', 'transactionId'];
 
   ngOnInit(): void {
     this.store.dispatch(TransfersActions.loadHistory({ page: 0, size: 10 }));

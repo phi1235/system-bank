@@ -33,6 +33,7 @@ public class TransferService {
   private final AccountClient accountClient;
   private final TransferSagaOrchestrator sagaOrchestrator;
   private final TransferLimitPolicy transferLimitPolicy;
+  private final TransferFeePolicy transferFeePolicy;
   private final String internalApiKey;
 
   public TransferService(
@@ -41,12 +42,14 @@ public class TransferService {
       AccountClient accountClient,
       TransferSagaOrchestrator sagaOrchestrator,
       TransferLimitPolicy transferLimitPolicy,
+      TransferFeePolicy transferFeePolicy,
       @Value("${bank.internal.account-api-key}") String internalApiKey) {
     this.transferOrderRepository = transferOrderRepository;
     this.auditLogRepository = auditLogRepository;
     this.accountClient = accountClient;
     this.sagaOrchestrator = sagaOrchestrator;
     this.transferLimitPolicy = transferLimitPolicy;
+    this.transferFeePolicy = transferFeePolicy;
     this.internalApiKey = internalApiKey;
   }
 
@@ -71,7 +74,9 @@ public class TransferService {
     }
 
     // Enforce limits before any external side effects / order creation.
+    // Daily / per-tx limits apply to principal only (fee is separate product rule).
     transferLimitPolicy.validate(user.userId(), req.amount());
+    BigDecimal feeAmount = transferFeePolicy.calculate(req.amount());
 
     AccountView from = loadAccount(req.fromAccountId());
     if (!from.userIdUuid().equals(user.userId()) && !user.hasPermission("transactions:list:view")) {
@@ -100,6 +105,7 @@ public class TransferService {
     order.setToAccountId(to.idUuid());
     order.setToAccountNumber(to.accountNumber());
     order.setAmount(req.amount());
+    order.setFeeAmount(feeAmount);
     order.setCurrency(req.currency() == null || req.currency().isBlank() ? "VND" : req.currency());
     order.setDescription(req.description());
     order.setRequestFingerprint(fingerprint);
@@ -110,7 +116,7 @@ public class TransferService {
 
     auditLogRepository.save(AuditLogEntity.of(
         user.userId(), "TRANSFER_CREATE", "TRANSFER", order.getId().toString(), ip,
-        "amount=" + req.amount() + ",to=" + req.toAccountNumber()));
+        "amount=" + req.amount() + ",fee=" + feeAmount.toPlainString() + ",to=" + req.toAccountNumber()));
 
     TransferOrderEntity result = sagaOrchestrator.run(order);
     return toResponse(result);
@@ -186,6 +192,7 @@ public class TransferService {
   }
 
   private TransferResponse toResponse(TransferOrderEntity e) {
+    BigDecimal fee = e.getFeeAmount() == null ? BigDecimal.ZERO : e.getFeeAmount();
     return new TransferResponse(
         e.getId().toString(),
         e.getStatus().name(),
@@ -193,6 +200,7 @@ public class TransferService {
         e.getToAccountId() == null ? null : e.getToAccountId().toString(),
         e.getToAccountNumber(),
         e.getAmount(),
+        fee,
         e.getCurrency(),
         e.getDescription(),
         e.getFailureReason(),

@@ -35,6 +35,10 @@ public class TransferOrderEntity {
   @Column(nullable = false, precision = 19, scale = 2)
   private BigDecimal amount;
 
+  /** Fee charged on source (in addition to amount); destination receives amount only. */
+  @Column(name = "fee_amount", nullable = false, precision = 19, scale = 2)
+  private BigDecimal feeAmount = BigDecimal.ZERO;
+
   @Column(nullable = false, length = 3)
   private String currency = "VND";
 
@@ -117,6 +121,14 @@ public class TransferOrderEntity {
 
   public void setAmount(BigDecimal amount) {
     this.amount = amount;
+  }
+
+  public BigDecimal getFeeAmount() {
+    return feeAmount;
+  }
+
+  public void setFeeAmount(BigDecimal feeAmount) {
+    this.feeAmount = feeAmount == null ? BigDecimal.ZERO : feeAmount;
   }
 
   public String getCurrency() {

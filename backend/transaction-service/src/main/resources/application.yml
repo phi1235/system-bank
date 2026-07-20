@@ -78,6 +78,14 @@ bank:
     daily-limit: ${TRANSFER_DAILY_LIMIT:200000000}
     # Calendar day for daily limit (banking day). Default Vietnam.
     daily-limit-zone: ${TRANSFER_DAILY_LIMIT_ZONE:Asia/Bangkok}
+    # Fee skeleton: fee = clamp(min, max, flat + amount * percent/100). Defaults free.
+    # Full fee GL posting deferred — source is debited amount+fee; dest credited amount only.
+    fee:
+      enabled: ${TRANSFER_FEE_ENABLED:true}
+      flat: ${TRANSFER_FEE_FLAT:0}
+      percent: ${TRANSFER_FEE_PERCENT:0}
+      min: ${TRANSFER_FEE_MIN:0}
+      max: ${TRANSFER_FEE_MAX:50000}
 
 management:
   endpoints:

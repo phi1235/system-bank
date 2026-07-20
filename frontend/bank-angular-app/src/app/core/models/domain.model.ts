@@ -25,6 +25,8 @@ export interface Transfer {
   toAccountId: string | null;
   toAccountNumber: string | null;
   amount: number;
+  /** Fee charged on source in addition to amount (skeleton; may be 0). */
+  feeAmount?: number;
   currency: string;
   description: string | null;
   failureReason: string | null;

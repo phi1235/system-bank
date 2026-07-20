@@ -141,6 +141,8 @@
     "TRANSFER_TIP_2": "Số TK nhận gồm 8–14 chữ số, không khoảng trắng.",
     "TRANSFER_TIP_3": "Mỗi lần gửi tạo Idempotency-Key riêng để tránh trùng.",
     "TRANSFER_TIP_4": "Hạn mức mặc định: 50 triệu/lần · 200 triệu/ngày theo giờ VN (Asia/Bangkok, COMPLETED).",
+    "TRANSFER_TIP_5": "Phí chuyển (nếu bật): trừ thêm ở TK nguồn; người nhận chỉ nhận số tiền gốc. Mặc định 0đ.",
+    "FEE": "Phí",
     "TRANSFER_PICK_BENEFICIARY": "Chọn thụ hưởng",
     "TRANSFER_MANAGE_BENEFICIARIES": "Quản lý thụ hưởng",
     "BENEFICIARY_TITLE": "Danh bạ thụ hưởng",
