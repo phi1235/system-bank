@@ -1,0 +1,109 @@
+.summary-card,
+.filter-card,
+.table-card {
+  margin-bottom: 1rem;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.label {
+  font-size: 0.78rem;
+  color: var(--color-text-muted, #64748b);
+  margin-bottom: 0.25rem;
+}
+
+.value {
+  font-weight: 700;
+
+  &.mono {
+    font-family: var(--font-mono, ui-monospace, monospace);
+    letter-spacing: 0.03em;
+  }
+
+  &.money {
+    font-variant-numeric: tabular-nums;
+    font-size: 1.1rem;
+  }
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.hint {
+  margin: 0.25rem 0 0;
+  color: var(--color-text-muted, #64748b);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+.full {
+  width: 100%;
+}
+
+.desc {
+  max-width: 28ch;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.money {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+
+  &.credit {
+    color: #0d9f6e;
+  }
+
+  &.debit {
+    color: #dc2626;
+  }
+}
+
+.chip {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.18rem 0.55rem;
+  border-radius: 999px;
+  background: #e5e7eb;
+  color: #374151;
+
+  &.ok {
+    background: #e6f7f0;
+    color: #0d9f6e;
+  }
+
+  &.bad {
+    background: #fee2e2;
+    color: #dc2626;
+  }
+}
+
+.empty {
+  text-align: center;
+  color: var(--color-text-secondary, #64748b);
+  padding: 1.5rem 1rem;
+}
+
+code {
+  font-size: 0.8rem;
+}
+
+@media (max-width: 800px) {
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+}

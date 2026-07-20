@@ -32,6 +32,9 @@
           <div class="acc-bal">{{ a.balance | moneyVnd: a.currency }}</div>
           <div class="acc-actions">
             <a mat-stroked-button routerLink="/customer/payments/transfer">{{ 'NAV.TRANSFER' | translate }}</a>
+            <a mat-button [routerLink]="['/customer/accounts', a.id, 'statement']">
+              {{ 'CUSTOMER.STATEMENT_LINK' | translate }}
+            </a>
             <a mat-button routerLink="/customer/history">{{ 'NAV.HISTORY' | translate }}</a>
           </div>
         </mat-card>

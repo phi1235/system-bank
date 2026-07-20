@@ -1,0 +1,128 @@
+<app-page-header
+  [title]="'CUSTOMER.STATEMENT_TITLE' | translate"
+  [subtitle]="
+    account
+      ? ('CUSTOMER.STATEMENT_SUB_ACC' | translate: { account: account.accountNumber })
+      : ('CUSTOMER.STATEMENT_SUB' | translate)
+  "
+>
+  <a mat-stroked-button routerLink="/customer/accounts">
+    <mat-icon>arrow_back</mat-icon>
+    {{ 'NAV.ACCOUNTS' | translate }}
+  </a>
+  <a mat-button routerLink="/customer/history">{{ 'NAV.HISTORY' | translate }}</a>
+</app-page-header>
+
+@if (account) {
+  <mat-card class="summary-card">
+    <div class="summary-grid">
+      <div>
+        <div class="label">{{ 'CUSTOMER.ACCOUNT_NUMBER' | translate }}</div>
+        <div class="value mono">{{ account.accountNumber }}</div>
+      </div>
+      <div>
+        <div class="label">{{ 'CUSTOMER.BALANCE' | translate }}</div>
+        <div class="value money">{{ account.balance | moneyVnd: account.currency }}</div>
+      </div>
+      <div>
+        <div class="label">{{ 'COMMON.STATUS' | translate }}</div>
+        <div class="value">
+          <span class="chip" [class.ok]="account.status === 'ACTIVE'" [class.bad]="account.status === 'FROZEN'">
+            {{ account.status }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </mat-card>
+}
+
+<mat-card class="filter-card">
+  <form class="filters" [formGroup]="filter" (ngSubmit)="applyFilters()">
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'CUSTOMER.STATEMENT_TYPE' | translate }}</mat-label>
+      <mat-select formControlName="entryType">
+        <mat-option value="">{{ 'CUSTOMER.STATEMENT_TYPE_ALL' | translate }}</mat-option>
+        <mat-option value="CREDIT">CREDIT</mat-option>
+        <mat-option value="DEBIT">DEBIT</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'CUSTOMER.STATEMENT_FROM' | translate }}</mat-label>
+      <input matInput type="date" formControlName="from" />
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'CUSTOMER.STATEMENT_TO' | translate }}</mat-label>
+      <input matInput type="date" formControlName="to" />
+    </mat-form-field>
+    <button mat-flat-button color="primary" type="submit" [disabled]="loading">
+      {{ 'COMMON.SEARCH' | translate }}
+    </button>
+  </form>
+  <p class="hint">{{ 'CUSTOMER.STATEMENT_HINT' | translate }}</p>
+</mat-card>
+
+@if (loading) {
+  <app-loading />
+}
+
+<mat-card class="table-card">
+  <div class="table-wrap">
+    <table mat-table [dataSource]="rows" class="full">
+      <ng-container matColumnDef="createdAt">
+        <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.TIME' | translate }}</th>
+        <td mat-cell *matCellDef="let r">{{ r.createdAt | date: 'short' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="entryType">
+        <th mat-header-cell *matHeaderCellDef>{{ 'CUSTOMER.STATEMENT_TYPE' | translate }}</th>
+        <td mat-cell *matCellDef="let r">
+          <span class="chip" [class.ok]="r.entryType === 'CREDIT'" [class.bad]="r.entryType === 'DEBIT'">
+            {{ r.entryType }}
+          </span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="description">
+        <th mat-header-cell *matHeaderCellDef>{{ 'CUSTOMER.HISTORY_DESC' | translate }}</th>
+        <td mat-cell *matCellDef="let r">
+          <div class="desc">{{ r.description || '—' }}</div>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="amount">
+        <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.AMOUNT' | translate }}</th>
+        <td
+          mat-cell
+          *matCellDef="let r"
+          class="money"
+          [class.credit]="r.entryType === 'CREDIT'"
+          [class.debit]="r.entryType === 'DEBIT'"
+        >
+          {{ r.signedAmount | moneyVnd: (account?.currency || 'VND') }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="referenceId">
+        <th mat-header-cell *matHeaderCellDef>{{ 'CUSTOMER.STATEMENT_REF' | translate }}</th>
+        <td mat-cell *matCellDef="let r">
+          <code>{{ r.referenceId || '—' }}</code>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="cols"></tr>
+      <tr mat-row *matRowDef="let row; columns: cols"></tr>
+    </table>
+  </div>
+
+  @if (!loading && rows.length === 0) {
+    <p class="empty">{{ 'CUSTOMER.STATEMENT_EMPTY' | translate }}</p>
+  }
+
+  <mat-paginator
+    [length]="totalElements"
+    [pageIndex]="pageIndex"
+    [pageSize]="pageSize"
+    [pageSizeOptions]="[10, 20, 50, 100]"
+    (page)="page($event)"
+  />
+</mat-card>

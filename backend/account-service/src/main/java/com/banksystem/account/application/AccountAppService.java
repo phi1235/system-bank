@@ -1,14 +1,18 @@
 package com.banksystem.account.application;
 
 import com.banksystem.account.api.dto.AccountDtos.AccountResponse;
+import com.banksystem.account.api.dto.AccountDtos.LedgerEntryResponse;
 import com.banksystem.account.api.dto.AccountDtos.MoneyCommand;
 import com.banksystem.account.api.dto.AccountDtos.MoneyResult;
 import com.banksystem.account.api.dto.AccountDtos.OpenAccountRequest;
+import com.banksystem.account.application.query.LedgerStatementQuery;
 import com.banksystem.account.config.GatewayUser;
 import com.banksystem.account.domain.AccountEntity;
 import com.banksystem.account.domain.AccountRepository;
 import com.banksystem.account.domain.LedgerEntryEntity;
 import com.banksystem.account.domain.LedgerEntryRepository;
+import com.banksystem.account.domain.LedgerEntryType;
+import com.banksystem.common.api.PageResponse;
 import com.banksystem.common.exception.BusinessException;
 import java.math.BigDecimal;
 import java.security.SecureRandom;
@@ -17,6 +21,9 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -69,13 +76,35 @@ public class AccountAppService {
 
   @Transactional(readOnly = true)
   public AccountResponse get(UUID id, GatewayUser user) {
-    AccountEntity a = require(id);
-    boolean staffLookup = user.hasPermission("accounts:lookup:view")
-        || user.hasPermission("accounts:freeze:execute");
-    if (!staffLookup && !a.getUserId().equals(user.userId())) {
-      throw new BusinessException("FORBIDDEN", "Not your account", HttpStatus.FORBIDDEN);
-    }
+    AccountEntity a = requireOwnedOrStaff(id, user);
     return toResponse(a);
+  }
+
+  /**
+   * Customer/staff account ledger statement (money movements), newest first.
+   * Distinct from transfer-order history in transaction-service.
+   */
+  @Transactional(readOnly = true)
+  public PageResponse<LedgerEntryResponse> statement(LedgerStatementQuery query, GatewayUser user) {
+    requireOwnedOrStaff(query.accountId(), user);
+    String type = query.entryType() == null ? null : query.entryType().name();
+    PageRequest pageable = PageRequest.of(
+        query.page(),
+        query.size(),
+        Sort.by(Sort.Direction.DESC, "createdAt"));
+    Page<LedgerEntryEntity> page = ledgerEntryRepository.search(
+        query.accountId(),
+        type,
+        query.from(),
+        query.to(),
+        pageable);
+    List<LedgerEntryResponse> items = page.getContent().stream().map(this::toLedgerResponse).toList();
+    return new PageResponse<>(
+        items,
+        page.getNumber(),
+        page.getSize(),
+        page.getTotalElements(),
+        page.getTotalPages());
   }
 
   @Transactional
@@ -203,6 +232,32 @@ public class AccountAppService {
     return accountRepository.findById(id)
         .orElseThrow(() -> new BusinessException("ACCOUNT_NOT_FOUND", "Account not found",
             HttpStatus.NOT_FOUND));
+  }
+
+  private AccountEntity requireOwnedOrStaff(UUID id, GatewayUser user) {
+    AccountEntity a = require(id);
+    boolean staffLookup = user.hasPermission("accounts:lookup:view")
+        || user.hasPermission("accounts:freeze:execute");
+    if (!staffLookup && !a.getUserId().equals(user.userId())) {
+      throw new BusinessException("FORBIDDEN", "Not your account", HttpStatus.FORBIDDEN);
+    }
+    return a;
+  }
+
+  private LedgerEntryResponse toLedgerResponse(LedgerEntryEntity e) {
+    BigDecimal signed = e.getAmount();
+    if (LedgerEntryType.DEBIT.name().equalsIgnoreCase(e.getEntryType())) {
+      signed = e.getAmount().negate();
+    }
+    return new LedgerEntryResponse(
+        e.getId().toString(),
+        e.getAccountId().toString(),
+        e.getEntryType(),
+        e.getAmount(),
+        signed,
+        e.getReferenceId(),
+        e.getDescription(),
+        e.getCreatedAt());
   }
 
   private String generateAccountNumber() {

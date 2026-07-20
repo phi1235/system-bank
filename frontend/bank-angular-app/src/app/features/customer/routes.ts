@@ -20,6 +20,11 @@ export const CUSTOMER_ROUTES: Routes = [
         loadComponent: () => import('./accounts/accounts.component').then((m) => m.AccountsComponent),
       },
       {
+        path: 'accounts/:id/statement',
+        canActivate: [permissionGuard([PERMISSIONS.IB_ACCOUNTS_VIEW])],
+        loadComponent: () => import('./statement/statement.component').then((m) => m.StatementComponent),
+      },
+      {
         path: 'payments/transfer',
         canActivate: [permissionGuard([PERMISSIONS.IB_TRANSFER_VIEW])],
         loadComponent: () => import('./transfer/transfer.component').then((m) => m.TransferComponent),
