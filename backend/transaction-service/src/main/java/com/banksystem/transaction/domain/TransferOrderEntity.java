@@ -61,6 +61,10 @@ public class TransferOrderEntity {
   @Column(name = "credit_entry_ref", length = 64)
   private String creditEntryRef;
 
+  /** Ledger entry id of fee CREDIT on bank income account. */
+  @Column(name = "fee_entry_ref", length = 64)
+  private String feeEntryRef;
+
   @Column(name = "created_at", nullable = false)
   private Instant createdAt = Instant.now();
 
@@ -185,6 +189,14 @@ public class TransferOrderEntity {
 
   public void setCreditEntryRef(String creditEntryRef) {
     this.creditEntryRef = creditEntryRef;
+  }
+
+  public String getFeeEntryRef() {
+    return feeEntryRef;
+  }
+
+  public void setFeeEntryRef(String feeEntryRef) {
+    this.feeEntryRef = feeEntryRef;
   }
 
   public Instant getCreatedAt() {

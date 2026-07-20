@@ -11,9 +11,9 @@ import org.springframework.stereotype.Component;
  * Application policy: compute internal-transfer fee from principal amount.
  * Keeps fee formula out of controllers/services; unit-testable.
  *
- * <p>Skeleton formula (all config-driven, defaults free):
+ * <p>Formula (all config-driven, defaults free):
  * {@code fee = clamp(min, max, flat + amount * percent / 100)} rounded to 2 decimals HALF_UP.
- * Full GL fee posting (bank income account) is intentionally out of scope.
+ * GL posting of fee to bank income account is handled by {@link TransferFeeGlService}.
  */
 @Component
 public class TransferFeePolicy {
