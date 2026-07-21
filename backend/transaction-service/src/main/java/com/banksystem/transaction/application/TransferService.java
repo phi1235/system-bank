@@ -131,9 +131,43 @@ public class TransferService {
 
   @Transactional(readOnly = true)
   public PageResponse<TransferResponse> myHistory(UUID userId, int page, int size) {
-    Page<TransferOrderEntity> p =
-        transferOrderRepository.findByUserIdOrderByCreatedAtDesc(userId, PageRequest.of(page, size));
+    return myHistory(userId, page, size, null, null, null);
+  }
+
+  /**
+   * Customer transfer history with optional status and createdAt range filters.
+   * Invalid status strings yield an empty page (same as no matches), not 500.
+   */
+  @Transactional(readOnly = true)
+  public PageResponse<TransferResponse> myHistory(
+      UUID userId,
+      int page,
+      int size,
+      String status,
+      Instant from,
+      Instant to) {
+    if (from != null && to != null && from.isAfter(to)) {
+      throw new BusinessException(
+          "INVALID_DATE_RANGE", "from must be before or equal to to", HttpStatus.BAD_REQUEST);
+    }
+    TransferStatus st = parseStatusOrNull(status);
+    if (status != null && !status.isBlank() && st == null) {
+      return new PageResponse<>(List.of(), page, size, 0, 0);
+    }
+    Page<TransferOrderEntity> p = transferOrderRepository.searchMine(
+        userId, st, from, to, PageRequest.of(page, size));
     return mapPage(p);
+  }
+
+  private static TransferStatus parseStatusOrNull(String status) {
+    if (status == null || status.isBlank()) {
+      return null;
+    }
+    try {
+      return TransferStatus.valueOf(status.trim().toUpperCase());
+    } catch (IllegalArgumentException ex) {
+      return null;
+    }
   }
 
   @Transactional(readOnly = true)

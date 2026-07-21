@@ -8,6 +8,39 @@
   </a>
 </app-page-header>
 
+<mat-card class="filter-card">
+  <form class="filters" [formGroup]="filter" (ngSubmit)="applyFilters()">
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'COMMON.STATUS' | translate }}</mat-label>
+      <mat-select formControlName="status">
+        <mat-option value="">{{ 'CUSTOMER.HISTORY_STATUS_ALL' | translate }}</mat-option>
+        @for (s of statusOptions; track s) {
+          @if (s) {
+            <mat-option [value]="s">{{ s }}</mat-option>
+          }
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'CUSTOMER.HISTORY_FROM' | translate }}</mat-label>
+      <input matInput type="date" formControlName="from" />
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'CUSTOMER.HISTORY_TO' | translate }}</mat-label>
+      <input matInput type="date" formControlName="to" />
+    </mat-form-field>
+    <div class="filter-actions">
+      <button mat-flat-button color="primary" type="submit">
+        <mat-icon>filter_list</mat-icon>
+        {{ 'COMMON.FILTER' | translate }}
+      </button>
+      <button mat-stroked-button type="button" (click)="resetFilters()">
+        {{ 'CUSTOMER.HISTORY_RESET' | translate }}
+      </button>
+    </div>
+  </form>
+</mat-card>
+
 @if (loading$ | async) {
   <app-loading />
 }
@@ -78,7 +111,8 @@
 
     <mat-paginator
       [length]="(meta$ | async)?.totalElements || 0"
-      [pageSize]="10"
+      [pageIndex]="pageIndex"
+      [pageSize]="pageSize"
       [pageSizeOptions]="[10, 20, 50]"
       (page)="page($event)"
     />

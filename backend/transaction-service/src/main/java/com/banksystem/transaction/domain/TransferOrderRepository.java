@@ -17,6 +17,21 @@ public interface TransferOrderRepository extends JpaRepository<TransferOrderEnti
 
   @Query("""
       SELECT t FROM TransferOrderEntity t
+      WHERE t.userId = :userId
+        AND (:status IS NULL OR t.status = :status)
+        AND (:fromTs IS NULL OR t.createdAt >= :fromTs)
+        AND (:toTs IS NULL OR t.createdAt <= :toTs)
+      ORDER BY t.createdAt DESC
+      """)
+  Page<TransferOrderEntity> searchMine(
+      @Param("userId") UUID userId,
+      @Param("status") TransferStatus status,
+      @Param("fromTs") Instant fromTs,
+      @Param("toTs") Instant toTs,
+      Pageable pageable);
+
+  @Query("""
+      SELECT t FROM TransferOrderEntity t
       WHERE (:status IS NULL OR t.status = :status)
       ORDER BY t.createdAt DESC
       """)
