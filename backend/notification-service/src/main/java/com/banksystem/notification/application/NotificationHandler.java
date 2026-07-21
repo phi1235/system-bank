@@ -25,18 +25,21 @@ public class NotificationHandler {
   private final MockEmailSender emailSender;
   private final MockSmsSender smsSender;
   private final ObjectMapper objectMapper;
+  private final NotificationRealtimeHub realtimeHub;
 
   public NotificationHandler(
       ProcessedEventRepository processedEventRepository,
       NotificationLogRepository notificationLogRepository,
       MockEmailSender emailSender,
       MockSmsSender smsSender,
-      ObjectMapper objectMapper) {
+      ObjectMapper objectMapper,
+      NotificationRealtimeHub realtimeHub) {
     this.processedEventRepository = processedEventRepository;
     this.notificationLogRepository = notificationLogRepository;
     this.emailSender = emailSender;
     this.smsSender = smsSender;
     this.objectMapper = objectMapper;
+    this.realtimeHub = realtimeHub;
   }
 
   @Transactional
@@ -99,6 +102,19 @@ public class NotificationHandler {
       logEntity.setUserId(ownerUserId);
       logEntity.setCreatedAt(Instant.now());
       notificationLogRepository.save(logEntity);
+      if (ownerUserId != null) {
+        realtimeHub.publish(
+            ownerUserId,
+            new com.banksystem.notification.api.dto.NotificationDtos.NotificationItem(
+                logEntity.getId().toString(),
+                logEntity.getChannel(),
+                logEntity.getTemplate(),
+                logEntity.getStatus(),
+                logEntity.getBody() == null ? "" : logEntity.getBody(),
+                false,
+                null,
+                logEntity.getCreatedAt()));
+      }
 
       ProcessedEventEntity pe = new ProcessedEventEntity();
       pe.setEventId(eventId);

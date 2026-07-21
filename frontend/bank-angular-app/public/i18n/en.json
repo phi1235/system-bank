@@ -216,6 +216,7 @@
     "NOTIF_MARK_ALL_OK": "All notifications marked read",
     "NOTIF_READ": "Read",
     "NOTIF_UNREAD": "Unread",
+    "NOTIF_LIVE": "New notification: {{text}}",
     "HISTORY_STATUS_ALL": "All statuses",
     "HISTORY_FROM": "From date",
     "HISTORY_TO": "To date",

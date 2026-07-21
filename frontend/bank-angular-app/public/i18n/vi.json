@@ -216,6 +216,7 @@
     "NOTIF_MARK_ALL_OK": "Đã đánh dấu đọc tất cả",
     "NOTIF_READ": "Đã đọc",
     "NOTIF_UNREAD": "Chưa đọc",
+    "NOTIF_LIVE": "Thông báo mới: {{text}}",
     "HISTORY_STATUS_ALL": "Tất cả trạng thái",
     "HISTORY_FROM": "Từ ngày",
     "HISTORY_TO": "Đến ngày",

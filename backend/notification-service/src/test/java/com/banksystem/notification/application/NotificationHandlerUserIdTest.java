@@ -3,6 +3,7 @@ package com.banksystem.notification.application;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -21,18 +22,21 @@ class NotificationHandlerUserIdTest {
 
   private ProcessedEventRepository processedEventRepository;
   private NotificationLogRepository notificationLogRepository;
+  private NotificationRealtimeHub realtimeHub;
   private NotificationHandler handler;
 
   @BeforeEach
   void setUp() {
     processedEventRepository = mock(ProcessedEventRepository.class);
     notificationLogRepository = mock(NotificationLogRepository.class);
+    realtimeHub = mock(NotificationRealtimeHub.class);
     handler = new NotificationHandler(
         processedEventRepository,
         notificationLogRepository,
         mock(MockEmailSender.class),
         mock(MockSmsSender.class),
-        new ObjectMapper());
+        new ObjectMapper(),
+        realtimeHub);
   }
 
   @Test
@@ -64,6 +68,7 @@ class NotificationHandlerUserIdTest {
     verify(notificationLogRepository).save(cap.capture());
     assertEquals(userId, cap.getValue().getUserId());
     assertEquals("TRANSFER_COMPLETED", cap.getValue().getTemplate());
+    verify(realtimeHub).publish(eq(userId), any());
   }
 
   @Test

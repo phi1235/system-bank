@@ -23,7 +23,12 @@ class NotificationHandlerIdempotencyTest {
     when(processed.existsById(eventId)).thenReturn(true);
 
     NotificationHandler handler = new NotificationHandler(
-        processed, logs, mock(MockEmailSender.class), mock(MockSmsSender.class), new ObjectMapper());
+        processed,
+        logs,
+        mock(MockEmailSender.class),
+        mock(MockSmsSender.class),
+        new ObjectMapper(),
+        mock(NotificationRealtimeHub.class));
 
     String payload = "{\"eventId\":\"" + eventId + "\",\"eventType\":\"TRANSACTION_COMPLETED\",\"data\":{}}";
     assertDoesNotThrow(() -> handler.handle(payload));
