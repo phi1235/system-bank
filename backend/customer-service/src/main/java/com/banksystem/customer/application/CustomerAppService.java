@@ -69,6 +69,10 @@ public class CustomerAppService {
     if (req.phone() != null) {
       e.setPhone(req.phone());
     }
+    if (req.email() != null) {
+      // blank clears email; non-blank normalized like create()
+      e.setEmail(req.email().isBlank() ? null : req.email().trim().toLowerCase());
+    }
     if (req.address() != null) {
       e.setAddress(req.address());
     }

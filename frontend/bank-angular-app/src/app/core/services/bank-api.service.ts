@@ -34,7 +34,12 @@ export class BankApiService {
     return this.api.post('/customers/me', body);
   }
 
-  updateProfile(body: { fullName?: string; phone?: string; address?: string }): Observable<CustomerProfile> {
+  updateProfile(body: {
+    fullName?: string;
+    phone?: string;
+    email?: string;
+    address?: string;
+  }): Observable<CustomerProfile> {
     return this.api.put('/customers/me', body);
   }
 

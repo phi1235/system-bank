@@ -232,6 +232,7 @@
     "MFA_ENABLE": "Enable MFA",
     "PROFILE_CREATE_OK": "Profile created",
     "PROFILE_UPDATE_OK": "Profile updated",
+    "EMAIL_INVALID": "Enter a valid email",
     "MFA_SETUP_HINT": "Enter Authenticator code to enable MFA",
     "MFA_ENABLED_OK": "MFA enabled",
     "SESSIONS_TITLE": "Signed-in devices",

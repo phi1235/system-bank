@@ -232,6 +232,7 @@
     "MFA_ENABLE": "Bật MFA",
     "PROFILE_CREATE_OK": "Tạo hồ sơ OK",
     "PROFILE_UPDATE_OK": "Cập nhật hồ sơ OK",
+    "EMAIL_INVALID": "Email không hợp lệ",
     "MFA_SETUP_HINT": "Nhập mã từ Authenticator để bật MFA",
     "MFA_ENABLED_OK": "MFA đã bật",
     "SESSIONS_TITLE": "Thiết bị đang đăng nhập",
