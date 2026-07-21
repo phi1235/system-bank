@@ -17,11 +17,12 @@ spring:
   flyway:
     enabled: true
     placeholders:
-      # Bootstrap IDs for internal fee-income GL account and system user (from env or defaults).
-      # Must match what is seeded and what transaction-service expects via account number.
-      fee-income-id: ${FEE_INCOME_ACCOUNT_ID:00000000-0000-0000-0000-0000000000fe}
-      system-user-id: ${SYSTEM_INTERNAL_USER_ID:00000000-0000-0000-0000-000000000001}
-      fee-income-number: ${FEE_INCOME_ACCOUNT_NUMBER:1099999999}
+      # Bootstrap IDs for internal fee-income GL account and system user.
+      # Values come ONLY from env (infra/.env). No defaults in this pushed file.
+      # Must match TRANSFER_FEE_INCOME_ACCOUNT used by transaction-service.
+      fee-income-id: ${FEE_INCOME_ACCOUNT_ID}
+      system-user-id: ${SYSTEM_INTERNAL_USER_ID}
+      fee-income-number: ${FEE_INCOME_ACCOUNT_NUMBER}
 
 eureka:
   client:
