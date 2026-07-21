@@ -291,6 +291,9 @@ services:
       # Must match account-service seed (FEE_INCOME_ACCOUNT_NUMBER). Values only from infra/.env.
       TRANSFER_FEE_INCOME_ACCOUNT: ${TRANSFER_FEE_INCOME_ACCOUNT:?TRANSFER_FEE_INCOME_ACCOUNT must be set in infra/.env}
       FEE_INCOME_ACCOUNT_NUMBER: ${FEE_INCOME_ACCOUNT_NUMBER:?FEE_INCOME_ACCOUNT_NUMBER must be set in infra/.env}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_CONTAINER_PORT}
+      BENEFICIARY_CACHE_TTL_SECONDS: ${BENEFICIARY_CACHE_TTL_SECONDS:?BENEFICIARY_CACHE_TTL_SECONDS must be set in infra/.env}
       ZIPKIN_ENDPOINT: ${ZIPKIN_ENDPOINT}
     depends_on:
       postgres:
@@ -300,6 +303,8 @@ services:
       account-service:
         condition: service_healthy
       kafka:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:${TRANSACTION_SERVICE_PORT}/actuator/health | grep -q UP || exit 1"]

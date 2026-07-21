@@ -17,8 +17,10 @@ import com.banksystem.transaction.domain.BeneficiaryEntity;
 import com.banksystem.transaction.domain.BeneficiaryRepository;
 import com.banksystem.transaction.infrastructure.feign.AccountClient;
 import com.banksystem.transaction.infrastructure.feign.AccountClientDtos.AccountView;
+import com.banksystem.transaction.infrastructure.redis.BeneficiaryListCache;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,6 +30,7 @@ class BeneficiaryServiceTest {
 
   private BeneficiaryRepository repository;
   private AccountClient accountClient;
+  private BeneficiaryListCache listCache;
   private BeneficiaryService service;
   private final UUID userId = UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
 
@@ -35,7 +38,9 @@ class BeneficiaryServiceTest {
   void setUp() {
     repository = mock(BeneficiaryRepository.class);
     accountClient = mock(AccountClient.class);
-    service = new BeneficiaryService(repository, accountClient, "test-key");
+    listCache = mock(BeneficiaryListCache.class);
+    when(listCache.get(any())).thenReturn(Optional.empty());
+    service = new BeneficiaryService(repository, accountClient, listCache, "test-key");
   }
 
   @Test
@@ -68,6 +73,17 @@ class BeneficiaryServiceTest {
     assertEquals("1012345678", response.accountNumber());
     assertEquals(account.id(), response.accountId());
     verify(repository).save(any(BeneficiaryEntity.class));
+    verify(listCache).evict(userId);
+  }
+
+  @Test
+  void listMine_returnsCachedWhenPresent() {
+    var cached = List.of(new com.banksystem.transaction.api.dto.BeneficiaryDtos.BeneficiaryResponse(
+        "id", "Mom", "1012345678", null, "VND", true, Instant.now()));
+    when(listCache.get(userId)).thenReturn(Optional.of(cached));
+
+    assertEquals(cached, service.listMine(userId));
+    verify(repository, never()).findByUserIdAndActiveTrueOrderByNicknameAsc(any());
   }
 
   @Test
