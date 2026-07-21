@@ -106,11 +106,13 @@ export class NotificationBellComponent implements AfterViewInit, OnDestroy {
   onMenuOpened(): void {
     this.bindLive();
     this.reload();
-    // Material hard-caps .mat-mdc-menu-panel at 280px; force wide width after paint.
-    this.forcePanelWidth();
-    requestAnimationFrame(() => this.forcePanelWidth());
-    setTimeout(() => this.forcePanelWidth(), 0);
-    setTimeout(() => this.forcePanelWidth(), 80);
+    // Material hard-caps .mat-mdc-menu-panel at 280px and anchors left of the bell.
+    // Force wide width + right-align under the topbar edge.
+    this.forcePanelLayout();
+    requestAnimationFrame(() => this.forcePanelLayout());
+    setTimeout(() => this.forcePanelLayout(), 0);
+    setTimeout(() => this.forcePanelLayout(), 80);
+    setTimeout(() => this.forcePanelLayout(), 160);
   }
 
   onMenuClosed(): void {
@@ -118,26 +120,44 @@ export class NotificationBellComponent implements AfterViewInit, OnDestroy {
   }
 
   /**
-   * Force overlay + menu panel width. CSS alone can lose to Material's
-   * max-width:280px depending on cascade order / HMR timing.
+   * Force overlay + menu panel to a wide width and pin the right edge to the
+   * viewport (fills the right side of the topbar, not the empty left content area).
    */
-  private forcePanelWidth(): void {
-    const width = 'min(720px, calc(100vw - 1.25rem))';
+  private forcePanelLayout(): void {
+    const margin = 12;
+    const pxWidth = Math.min(720, Math.max(280, window.innerWidth - margin * 2));
+    const widthCss = `${pxWidth}px`;
+
     const panel =
       (document.querySelector('.mat-mdc-menu-panel.notif-dropdown-panel') as HTMLElement | null) ??
       (document.querySelector('.mat-mdc-menu-panel:has(.notif-panel)') as HTMLElement | null);
     if (!panel) {
       return;
     }
-    panel.style.setProperty('width', width, 'important');
-    panel.style.setProperty('min-width', width, 'important');
-    panel.style.setProperty('max-width', width, 'important');
+
+    panel.style.setProperty('width', widthCss, 'important');
+    panel.style.setProperty('min-width', widthCss, 'important');
+    panel.style.setProperty('max-width', widthCss, 'important');
 
     const pane = panel.closest('.cdk-overlay-pane') as HTMLElement | null;
     if (pane) {
-      pane.style.setProperty('width', width, 'important');
-      pane.style.setProperty('min-width', width, 'important');
-      pane.style.setProperty('max-width', width, 'important');
+      pane.style.setProperty('width', widthCss, 'important');
+      pane.style.setProperty('min-width', widthCss, 'important');
+      pane.style.setProperty('max-width', widthCss, 'important');
+
+      // Right-align to viewport: expand toward the right edge of the screen.
+      const rect = pane.getBoundingClientRect();
+      const targetLeft = Math.max(margin, window.innerWidth - pxWidth - margin);
+      const deltaX = targetLeft - rect.left;
+      if (Math.abs(deltaX) > 0.5) {
+        const computedLeft = Number.parseFloat(getComputedStyle(pane).left);
+        if (Number.isFinite(computedLeft)) {
+          pane.style.setProperty('left', `${computedLeft + deltaX}px`, 'important');
+        } else {
+          pane.style.setProperty('left', `${targetLeft}px`, 'important');
+        }
+        pane.style.setProperty('right', 'auto', 'important');
+      }
     }
 
     const content = panel.querySelector('.mat-mdc-menu-content') as HTMLElement | null;

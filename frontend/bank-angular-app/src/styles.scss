@@ -274,22 +274,22 @@ code {
 /*
  * Notification bell dropdown (CDK overlay — must be global).
  * Angular Material hard-caps .mat-mdc-menu-panel at max-width:280px.
- * Override with fixed min/max on the panel itself (not width:100% of a narrow pane).
+ * Width + right-edge pin are also applied in TS on open (layout direction).
  */
 .cdk-overlay-container .cdk-overlay-pane.notif-dropdown-overlay,
 .cdk-overlay-container .cdk-overlay-pane:has(.notif-dropdown-panel),
 .cdk-overlay-container .cdk-overlay-pane:has(.notif-panel) {
-  width: min(720px, calc(100vw - 1.25rem)) !important;
-  min-width: min(720px, calc(100vw - 1.25rem)) !important;
-  max-width: min(720px, calc(100vw - 1.25rem)) !important;
+  width: min(720px, calc(100vw - 1.5rem)) !important;
+  min-width: min(720px, calc(100vw - 1.5rem)) !important;
+  max-width: min(720px, calc(100vw - 1.5rem)) !important;
 }
 
 .cdk-overlay-container .mat-mdc-menu-panel.notif-dropdown-panel,
 .cdk-overlay-container .mat-mdc-menu-panel:has(.notif-panel) {
   /* Beat Material's max-width:280px */
-  min-width: min(720px, calc(100vw - 1.25rem)) !important;
-  max-width: min(720px, calc(100vw - 1.25rem)) !important;
-  width: min(720px, calc(100vw - 1.25rem)) !important;
+  min-width: min(720px, calc(100vw - 1.5rem)) !important;
+  max-width: min(720px, calc(100vw - 1.5rem)) !important;
+  width: min(720px, calc(100vw - 1.5rem)) !important;
   max-height: min(36rem, 78vh) !important;
   overflow-x: hidden !important;
   overflow-y: hidden !important;
