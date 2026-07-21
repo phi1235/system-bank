@@ -41,6 +41,7 @@ public final class SecurityHeaders {
   public static final String PERM_IB_CARDS_VIEW = "ib:cards:view";
   public static final String PERM_IB_WEALTH_VIEW = "ib:wealth:view";
   public static final String PERM_IB_SUPPORT_VIEW = "ib:support:view";
+  public static final String PERM_IB_NOTIFICATIONS_VIEW = "ib:notifications:view";
 
   private SecurityHeaders() {}
 }

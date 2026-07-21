@@ -2,11 +2,12 @@ package com.banksystem.notification.api;
 
 import com.banksystem.common.api.ApiResponse;
 import com.banksystem.common.api.PageResponse;
+import com.banksystem.common.security.RequirePermission;
+import com.banksystem.common.security.UserContext;
 import com.banksystem.notification.api.dto.NotificationDtos.NotificationItem;
 import com.banksystem.notification.api.dto.NotificationDtos.UnreadCountResponse;
 import com.banksystem.notification.application.NotificationInboxService;
 import com.banksystem.notification.application.NotificationRealtimeHub;
-import com.banksystem.notification.config.UserContext;
 import java.util.Map;
 import java.util.UUID;
 import org.springframework.http.MediaType;
@@ -20,6 +21,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 @RestController
 @RequestMapping("/api/v1/notifications")
+@RequirePermission("ib:notifications:view")
 public class NotificationController {
 
   private final NotificationInboxService inboxService;
@@ -35,14 +37,12 @@ public class NotificationController {
   public ApiResponse<PageResponse<NotificationItem>> myInbox(
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "20") int size) {
-    UserContext.requirePermission("ib:notifications:view");
     UUID userId = UserContext.requireUser().userId();
     return ApiResponse.ok(inboxService.myInbox(userId, page, Math.min(size, 100)));
   }
 
   @GetMapping("/unread-count")
   public ApiResponse<UnreadCountResponse> unreadCount() {
-    UserContext.requirePermission("ib:notifications:view");
     UUID userId = UserContext.requireUser().userId();
     return ApiResponse.ok(new UnreadCountResponse(inboxService.unreadCount(userId)));
   }
@@ -50,21 +50,18 @@ public class NotificationController {
   /** Server-sent events stream for live inbox updates (one-way push after Kafka consume). */
   @GetMapping(path = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
   public SseEmitter stream() {
-    UserContext.requirePermission("ib:notifications:view");
     UUID userId = UserContext.requireUser().userId();
     return realtimeHub.subscribe(userId);
   }
 
   @PostMapping("/{id}/read")
   public ApiResponse<NotificationItem> markRead(@PathVariable UUID id) {
-    UserContext.requirePermission("ib:notifications:view");
     UUID userId = UserContext.requireUser().userId();
     return ApiResponse.ok(inboxService.markRead(userId, id));
   }
 
   @PostMapping("/read-all")
   public ApiResponse<Map<String, Integer>> markAllRead() {
-    UserContext.requirePermission("ib:notifications:view");
     UUID userId = UserContext.requireUser().userId();
     int updated = inboxService.markAllRead(userId);
     return ApiResponse.ok(Map.of("updated", updated));

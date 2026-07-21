@@ -2,12 +2,13 @@ package com.banksystem.customer.api;
 
 import com.banksystem.common.api.ApiResponse;
 import com.banksystem.common.api.PageResponse;
+import com.banksystem.common.security.RequirePermission;
+import com.banksystem.common.security.UserContext;
 import com.banksystem.customer.api.dto.CustomerDtos.CreateProfileRequest;
 import com.banksystem.customer.api.dto.CustomerDtos.CustomerResponse;
 import com.banksystem.customer.api.dto.CustomerDtos.KycUpdateRequest;
 import com.banksystem.customer.api.dto.CustomerDtos.UpdateProfileRequest;
 import com.banksystem.customer.application.CustomerAppService;
-import com.banksystem.customer.config.UserContext;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -50,18 +51,18 @@ public class CustomerController {
   }
 
   @GetMapping({"/customers", "/admin/customers"})
+  @RequirePermission("customers:list:view")
   public ApiResponse<PageResponse<CustomerResponse>> list(
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "20") int size,
       @RequestParam(required = false) String q) {
-    UserContext.requirePermission("customers:list:view");
     return ApiResponse.ok(service.list(q, page, Math.min(size, 100)));
   }
 
   @PatchMapping({"/customers/{id}/kyc", "/admin/customers/{id}/kyc"})
+  @RequirePermission("customers:kyc:decide")
   public ApiResponse<CustomerResponse> kyc(
       @PathVariable UUID id, @Valid @RequestBody KycUpdateRequest req) {
-    UserContext.requirePermission("customers:kyc:decide");
     return ApiResponse.ok(service.updateKyc(id, req));
   }
 }

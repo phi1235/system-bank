@@ -1,10 +1,13 @@
-package com.banksystem.customer.config;
+package com.banksystem.common.security;
 
 import com.banksystem.common.exception.BusinessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 
+/**
+ * Request-scoped access to the gateway principal set by {@link RequestAuthFilter}.
+ */
 public final class UserContext {
   private UserContext() {}
 
@@ -20,14 +23,11 @@ public final class UserContext {
     return gu;
   }
 
-  public static void requireAdmin() {
-    requirePermission("customers:list:view");
-  }
-
   public static void requirePermission(String permission) {
     GatewayUser u = requireUser();
     if (!u.hasPermission(permission)) {
-      throw new BusinessException("FORBIDDEN", "Missing permission: " + permission, HttpStatus.FORBIDDEN);
+      throw new BusinessException(
+          "FORBIDDEN", "Missing permission: " + permission, HttpStatus.FORBIDDEN);
     }
   }
 }

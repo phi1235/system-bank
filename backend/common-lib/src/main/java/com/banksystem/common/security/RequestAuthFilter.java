@@ -1,6 +1,5 @@
-package com.banksystem.customer.config;
+package com.banksystem.common.security;
 
-import com.banksystem.common.security.SecurityHeaders;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -9,12 +8,21 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+/**
+ * Parses trusted gateway identity headers into a request-scoped {@link GatewayUser}.
+ * Services already scan {@code com.banksystem}, so this filter is auto-registered.
+ */
 @Component
+@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
+@Order(Ordered.HIGHEST_PRECEDENCE + 20)
 public class RequestAuthFilter extends OncePerRequestFilter {
 
   public static final String ATTR = "gatewayUser";
@@ -32,6 +40,7 @@ public class RequestAuthFilter extends OncePerRequestFilter {
         RequestContextHolder.currentRequestAttributes()
             .setAttribute(ATTR, user, RequestAttributes.SCOPE_REQUEST);
       } catch (IllegalArgumentException ignored) {
+        // invalid user id header — leave unauthenticated
       }
     }
     filterChain.doFilter(request, response);
