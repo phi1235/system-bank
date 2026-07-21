@@ -16,6 +16,7 @@ public final class CustomerDtos {
   public record UpdateProfileRequest(
       String fullName,
       String phone,
+      String email,
       String address
   ) {}
 

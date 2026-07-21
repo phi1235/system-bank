@@ -69,7 +69,7 @@ export class ProfileComponent implements OnInit {
   form = this.fb.nonNullable.group({
     fullName: ['', Validators.required],
     phone: [''],
-    email: [''],
+    email: ['', Validators.email],
     nationalId: [''],
     address: [''],
   });
@@ -148,6 +148,7 @@ export class ProfileComponent implements OnInit {
         .updateProfile({
           fullName: v.fullName,
           phone: v.phone || undefined,
+          email: v.email?.trim() ? v.email.trim() : '',
           address: v.address || undefined,
         })
         .subscribe({
