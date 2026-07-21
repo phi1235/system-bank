@@ -17,6 +17,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class NotificationInboxService {
 
+  public static final String AUDIENCE_CUSTOMER = "CUSTOMER";
+  public static final String AUDIENCE_OPS = "OPS";
+
   private final NotificationLogRepository repository;
 
   public NotificationInboxService(NotificationLogRepository repository) {
@@ -27,9 +30,7 @@ public class NotificationInboxService {
   public PageResponse<NotificationItem> myInbox(UUID userId, int page, int size) {
     Page<NotificationLogEntity> p =
         repository.findByUserIdOrderByCreatedAtDesc(userId, PageRequest.of(page, size));
-    List<NotificationItem> items = p.getContent().stream().map(this::toItem).toList();
-    return new PageResponse<>(
-        items, p.getNumber(), p.getSize(), p.getTotalElements(), p.getTotalPages());
+    return toPage(p);
   }
 
   @Transactional(readOnly = true)
@@ -43,6 +44,41 @@ public class NotificationInboxService {
         .findByIdAndUserId(id, userId)
         .orElseThrow(() -> new BusinessException(
             "NOTIFICATION_NOT_FOUND", "Notification not found", HttpStatus.NOT_FOUND));
+    return markReadEntity(e);
+  }
+
+  @Transactional
+  public int markAllRead(UUID userId) {
+    return repository.markAllRead(userId);
+  }
+
+  @Transactional(readOnly = true)
+  public PageResponse<NotificationItem> opsInbox(int page, int size) {
+    Page<NotificationLogEntity> p =
+        repository.findByAudienceOrderByCreatedAtDesc(AUDIENCE_OPS, PageRequest.of(page, size));
+    return toPage(p);
+  }
+
+  @Transactional(readOnly = true)
+  public long opsUnreadCount() {
+    return repository.countByAudienceAndReadAtIsNull(AUDIENCE_OPS);
+  }
+
+  @Transactional
+  public NotificationItem markOpsRead(UUID id) {
+    NotificationLogEntity e = repository
+        .findByIdAndAudience(id, AUDIENCE_OPS)
+        .orElseThrow(() -> new BusinessException(
+            "NOTIFICATION_NOT_FOUND", "Ops notification not found", HttpStatus.NOT_FOUND));
+    return markReadEntity(e);
+  }
+
+  @Transactional
+  public int markAllOpsRead() {
+    return repository.markAllReadByAudience(AUDIENCE_OPS);
+  }
+
+  private NotificationItem markReadEntity(NotificationLogEntity e) {
     if (e.getReadAt() == null) {
       e.setReadAt(Instant.now());
       e = repository.save(e);
@@ -50,9 +86,10 @@ public class NotificationInboxService {
     return toItem(e);
   }
 
-  @Transactional
-  public int markAllRead(UUID userId) {
-    return repository.markAllRead(userId);
+  private PageResponse<NotificationItem> toPage(Page<NotificationLogEntity> p) {
+    List<NotificationItem> items = p.getContent().stream().map(this::toItem).toList();
+    return new PageResponse<>(
+        items, p.getNumber(), p.getSize(), p.getTotalElements(), p.getTotalPages());
   }
 
   private NotificationItem toItem(NotificationLogEntity e) {

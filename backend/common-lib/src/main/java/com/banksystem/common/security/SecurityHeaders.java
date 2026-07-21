@@ -27,6 +27,7 @@ public final class SecurityHeaders {
   public static final String PERM_RBAC_USERS_ASSIGN = "rbac:users:assign";
   public static final String PERM_RBAC_ROLES_MANAGE = "rbac:roles:manage";
   public static final String PERM_RISK_VIEW = "risk:view";
+  public static final String PERM_NOTIFICATIONS_OPS_VIEW = "notifications:ops:view";
 
   /* ── Internet Banking (customer portal) ── */
   public static final String PERM_IB_HOME_VIEW = "ib:home:view";

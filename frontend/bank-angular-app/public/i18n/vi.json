@@ -40,7 +40,8 @@
     "ADMIN_AUDIT": "Audit",
     "ADMIN_RBAC": "RBAC",
     "ADMIN_RISK": "Risk",
-    "ADMIN_USERS": "Người dùng"
+    "ADMIN_USERS": "Người dùng",
+    "ADMIN_NOTIFICATIONS": "Cảnh báo"
   },
   "AUTH": {
     "IB_BRAND": "Internet Banking",
@@ -283,6 +284,17 @@
   },
   "ADMIN": {
     "SHELL_TITLE": "Operations Console",
+    "NOTIF_TITLE": "Cảnh báo vận hành",
+    "NOTIF_SUB": "{{unread}} chưa xử lý",
+    "NOTIF_EMPTY": "Chưa có cảnh báo. Transfer failed sẽ hiện tại đây.",
+    "NOTIF_LOAD_FAIL": "Không tải cảnh báo",
+    "NOTIF_ACTION_FAIL": "Không cập nhật cảnh báo",
+    "NOTIF_MARK_READ": "Đã xử lý",
+    "NOTIF_MARK_ALL": "Xử lý tất cả",
+    "NOTIF_MARK_ALL_OK": "Đã đánh dấu xử lý tất cả",
+    "NOTIF_READ": "Đã xử lý",
+    "NOTIF_UNREAD": "Mở",
+    "NOTIF_LIVE": "Cảnh báo ops: {{text}}",
     "BO_TITLE": "Back Office",
     "BO_SUB": "Bank System Ops",
     "ROLE_ADMIN": "ADMIN",
