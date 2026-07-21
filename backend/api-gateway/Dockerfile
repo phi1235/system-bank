@@ -1,16 +1,22 @@
 # syntax=docker/dockerfile:1
 FROM maven:3.9.9-eclipse-temurin-21-alpine AS build
 WORKDIR /workspace
+
 COPY pom.xml .
-COPY common-lib common-lib
-COPY discovery-server discovery-server
-COPY api-gateway api-gateway
-COPY auth-service auth-service
-COPY customer-service customer-service
-COPY account-service account-service
-COPY transaction-service transaction-service
-COPY notification-service notification-service
-RUN mvn -q -pl api-gateway -am package -DskipTests
+COPY common-lib/pom.xml common-lib/
+COPY discovery-server/pom.xml discovery-server/
+COPY api-gateway/pom.xml api-gateway/
+COPY auth-service/pom.xml auth-service/
+COPY customer-service/pom.xml customer-service/
+COPY account-service/pom.xml account-service/
+COPY transaction-service/pom.xml transaction-service/
+COPY notification-service/pom.xml notification-service/
+
+COPY common-lib/src common-lib/src
+COPY api-gateway/src api-gateway/src
+
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn -q -pl api-gateway -am package -DskipTests
 
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app

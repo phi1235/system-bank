@@ -140,10 +140,33 @@ Docker Compose fails before startup when a required secret or `KAFKA_CLUSTER_ID`
 
 ### 2. Start infrastructure and services
 
+**Full stack** (build/run all Java service images):
+
 ```bash
 docker compose -f infra/docker-compose.yml --env-file infra/.env config --quiet
 docker compose -f infra/docker-compose.yml --env-file infra/.env up -d --build
 ```
+
+**Faster day-to-day loop** — infra only, run Spring Boot on the host/IDE:
+
+```bash
+docker compose -f infra/docker-compose.dev.yml --env-file infra/.env up -d
+# then: mvn -pl auth-service -am spring-boot:run  (from backend/)
+```
+
+**Rebuild a single service image** (avoid full-stack rebuild):
+
+```bash
+docker compose -f infra/docker-compose.yml --env-file infra/.env build auth-service
+docker compose -f infra/docker-compose.yml --env-file infra/.env up -d auth-service
+```
+
+Dockerfiles under `backend/*/Dockerfile` use:
+- `backend/.dockerignore` (skip `target/`, IDE noise)
+- POM-first layers + copy only that service’s sources (plus `common-lib` when needed)
+- BuildKit Maven cache (`RUN --mount=type=cache,target=/root/.m2`)
+
+Requires **Docker BuildKit** (Compose v2 / modern Docker Desktop — on by default).
 
 On first Postgres boot (empty volume), DBs are created via `infra/postgres/init-databases.sql`.  
 Schemas are applied by **Flyway** when each service starts.

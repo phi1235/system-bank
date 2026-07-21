@@ -1,0 +1,133 @@
+# Dev infrastructure only — no Java service image builds.
+# Use when running Spring Boot services on the host / IDE for a fast edit-run loop.
+#
+# From repo root:
+#   docker compose -f infra/docker-compose.dev.yml --env-file infra/.env up -d
+#
+# Then point local application configs at:
+#   Postgres 127.0.0.1:${POSTGRES_HOST_PORT} (default host port often 5433)
+#   Redis    127.0.0.1:${REDIS_HOST_PORT}
+#   Kafka    127.0.0.1:${KAFKA_HOST_PORT}
+#   Zipkin   http://127.0.0.1:${ZIPKIN_HOST_PORT}
+#
+# Full stack (images for all services):
+#   docker compose -f infra/docker-compose.yml --env-file infra/.env up -d --build
+# Rebuild one service only:
+#   docker compose -f infra/docker-compose.yml --env-file infra/.env build auth-service
+
+name: bank-system-dev
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: bank-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in infra/.env}
+      POSTGRES_DB: ${POSTGRES_DEFAULT_DB}
+    ports:
+      - "${HOST_BIND_ADDRESS}:${POSTGRES_HOST_PORT}:${POSTGRES_CONTAINER_PORT}"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./postgres/init-databases.sql:/docker-entrypoint-initdb.d/01-init-databases.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - bank-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: bank-redis
+    ports:
+      - "${HOST_BIND_ADDRESS}:${REDIS_HOST_PORT}:${REDIS_CONTAINER_PORT}"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - bank-net
+
+  kafka:
+    image: apache/kafka:3.8.0
+    container_name: bank-kafka
+    ports:
+      - "${HOST_BIND_ADDRESS}:${KAFKA_HOST_PORT}:${KAFKA_BROKER_PORT}"
+    environment:
+      KAFKA_NODE_ID: ${KAFKA_NODE_ID}
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:${KAFKA_BROKER_PORT},CONTROLLER://:${KAFKA_CONTROLLER_PORT}
+      # Host-run services need localhost advertised; in-container consumers use compose service DNS.
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:${KAFKA_HOST_PORT}
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:${KAFKA_CONTROLLER_PORT}
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: ${KAFKA_OFFSETS_REPLICATION_FACTOR}
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: ${KAFKA_TRANSACTION_REPLICATION_FACTOR}
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: ${KAFKA_TRANSACTION_MIN_ISR}
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: ${KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS}
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: ${KAFKA_AUTO_CREATE_TOPICS_ENABLE}
+      CLUSTER_ID: ${KAFKA_CLUSTER_ID:?KAFKA_CLUSTER_ID must be set in infra/.env}
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:${KAFKA_BROKER_PORT} --list || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 40s
+    networks:
+      - bank-net
+
+  zipkin:
+    image: openzipkin/zipkin:3.4
+    container_name: bank-zipkin
+    ports:
+      - "${HOST_BIND_ADDRESS}:${ZIPKIN_HOST_PORT}:${ZIPKIN_CONTAINER_PORT}"
+    networks:
+      - bank-net
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: bank-prometheus
+    ports:
+      - "${HOST_BIND_ADDRESS}:${PROMETHEUS_HOST_PORT}:${PROMETHEUS_CONTAINER_PORT}"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheusdata:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-lifecycle
+    networks:
+      - bank-net
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: bank-grafana
+    ports:
+      - "${HOST_BIND_ADDRESS}:${GRAFANA_HOST_PORT}:${GRAFANA_CONTAINER_PORT}"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD must be set in infra/.env}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafanadata:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+    networks:
+      - bank-net
+
+networks:
+  bank-net:
+    driver: bridge
+
+volumes:
+  pgdata:
+  redisdata:
+  prometheusdata:
+  grafanadata:
