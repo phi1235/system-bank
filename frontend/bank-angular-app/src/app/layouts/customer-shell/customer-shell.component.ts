@@ -42,6 +42,7 @@ export class CustomerShellComponent {
   canSupport$ = this.store.select(selectHasPermission(PERMISSIONS.IB_SUPPORT_VIEW));
   canProfile$ = this.store.select(selectHasPermission(PERMISSIONS.IB_PROFILE_VIEW));
   canHistory$ = this.store.select(selectHasPermission(PERMISSIONS.IB_HISTORY_VIEW));
+  canNotifications$ = this.store.select(selectHasPermission(PERMISSIONS.IB_NOTIFICATIONS_VIEW));
 
   logout(): void {
     this.store.dispatch(AuthActions.logout());

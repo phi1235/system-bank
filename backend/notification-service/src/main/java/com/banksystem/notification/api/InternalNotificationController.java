@@ -51,6 +51,8 @@ public class InternalNotificationController {
         "template", e.getTemplate(),
         "status", e.getStatus(),
         "body", e.getBody() == null ? "" : e.getBody(),
+        "userId", e.getUserId() == null ? "" : e.getUserId().toString(),
+        "readAt", e.getReadAt() == null ? "" : e.getReadAt().toString(),
         "createdAt", e.getCreatedAt().toString()
     );
   }

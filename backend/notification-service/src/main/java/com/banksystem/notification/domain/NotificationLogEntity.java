@@ -32,6 +32,13 @@ public class NotificationLogEntity {
   @Column(columnDefinition = "TEXT")
   private String body;
 
+  /** Owning customer user id for IB inbox (nullable for legacy / system rows). */
+  @Column(name = "user_id")
+  private UUID userId;
+
+  @Column(name = "read_at")
+  private Instant readAt;
+
   @Column(name = "created_at", nullable = false)
   private Instant createdAt = Instant.now();
 
@@ -89,6 +96,22 @@ public class NotificationLogEntity {
 
   public void setBody(String body) {
     this.body = body;
+  }
+
+  public UUID getUserId() {
+    return userId;
+  }
+
+  public void setUserId(UUID userId) {
+    this.userId = userId;
+  }
+
+  public Instant getReadAt() {
+    return readAt;
+  }
+
+  public void setReadAt(Instant readAt) {
+    this.readAt = readAt;
   }
 
   public Instant getCreatedAt() {

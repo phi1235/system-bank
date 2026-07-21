@@ -63,7 +63,11 @@ public class NotificationHandler {
 
       String eventType = text(root, "eventType");
       JsonNode data = root.path("data");
-      String userId = text(data, "userId");
+      String userIdStr = text(data, "userId");
+      if (userIdStr == null || userIdStr.isBlank()) {
+        userIdStr = text(root, "userId");
+      }
+      UUID ownerUserId = parseUuidOrNull(userIdStr);
       String transactionId = text(data, "transactionId");
       String amount = data.path("amount").asText("0");
       String currency = text(data, "currency");
@@ -73,7 +77,7 @@ public class NotificationHandler {
 
       String recipient = text(root, "recipientEmail");
       if (recipient == null || recipient.isBlank()) {
-        recipient = "user-" + (userId == null ? "unknown" : userId) + "@bank.local";
+        recipient = "user-" + (userIdStr == null ? "unknown" : userIdStr) + "@bank.local";
       }
 
       boolean success = eventType != null && eventType.contains("COMPLETED");
@@ -92,6 +96,7 @@ public class NotificationHandler {
       logEntity.setTemplate(template);
       logEntity.setStatus("SENT");
       logEntity.setBody(body);
+      logEntity.setUserId(ownerUserId);
       logEntity.setCreatedAt(Instant.now());
       notificationLogRepository.save(logEntity);
 
@@ -137,5 +142,16 @@ public class NotificationHandler {
       return null;
     }
     return v.asText();
+  }
+
+  private static UUID parseUuidOrNull(String raw) {
+    if (raw == null || raw.isBlank()) {
+      return null;
+    }
+    try {
+      return UUID.fromString(raw.trim());
+    } catch (IllegalArgumentException ex) {
+      return null;
+    }
   }
 }

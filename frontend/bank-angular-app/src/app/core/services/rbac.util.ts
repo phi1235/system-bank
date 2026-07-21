@@ -34,6 +34,7 @@ export const PERMISSIONS = {
   IB_TRANSFER_VIEW: 'ib:transfer:view',
   IB_TRANSFER_EXECUTE: 'ib:transfer:execute',
   IB_HISTORY_VIEW: 'ib:history:view',
+  IB_NOTIFICATIONS_VIEW: 'ib:notifications:view',
   IB_PROFILE_VIEW: 'ib:profile:view',
   IB_PROFILE_EDIT: 'ib:profile:edit',
   IB_PROFILE_MFA: 'ib:profile:mfa',

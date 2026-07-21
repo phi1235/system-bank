@@ -106,3 +106,15 @@ export interface OutboxCounts {
   published: number;
   dead: number;
 }
+
+/** Customer IB notification inbox item (delivery log scoped to user). */
+export interface NotificationItem {
+  id: string;
+  channel: string;
+  template: string;
+  status: string;
+  body: string;
+  read: boolean;
+  readAt: string | null;
+  createdAt: string;
+}
