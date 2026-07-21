@@ -1,0 +1,102 @@
+.meta {
+  display: grid;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 8rem 1fr;
+  gap: 0.5rem;
+  align-items: start;
+  font-size: 0.92rem;
+}
+
+.row.fail span:last-child {
+  color: #b71c1c;
+}
+
+.k {
+  opacity: 0.7;
+}
+
+.money {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.chip {
+  display: inline-block;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: #eceff1;
+  width: fit-content;
+}
+
+.chip.sm {
+  font-size: 0.7rem;
+}
+
+.chip.ok {
+  background: #e8f5e9;
+  color: #1b5e20;
+}
+
+.chip.warn {
+  background: #fff8e1;
+  color: #f57f17;
+}
+
+.chip.bad {
+  background: #ffebee;
+  color: #b71c1c;
+}
+
+.steps-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+}
+
+.steps {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.step-head {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.step-meta {
+  font-size: 0.8rem;
+  opacity: 0.65;
+  margin-top: 0.15rem;
+}
+
+.step-detail {
+  font-size: 0.85rem;
+  opacity: 0.85;
+  margin-top: 0.2rem;
+  word-break: break-word;
+}
+
+.empty {
+  opacity: 0.7;
+  margin: 0;
+}
+
+code {
+  font-size: 0.8rem;
+  word-break: break-all;
+}
+
+mat-dialog-content {
+  min-width: min(480px, 85vw);
+  max-width: 560px;
+}
