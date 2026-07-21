@@ -62,29 +62,35 @@ export class TransfersEffects {
   history$ = createEffect(() =>
     this.actions$.pipe(
       ofType(TransfersActions.loadHistory),
-      exhaustMap(({ page, size }) =>
-        this.api.myTransfers(page ?? 0, size ?? 20).pipe(
-          map((p) => {
-            // backend may return content or items
-            const items = (p as any).items ?? (p as any).content ?? [];
-            return TransfersActions.loadHistorySuccess({
-              page: {
-                items,
-                page: (p as any).page ?? (p as any).number ?? 0,
-                size: (p as any).size ?? size ?? 20,
-                totalElements: (p as any).totalElements ?? items.length,
-                totalPages: (p as any).totalPages ?? 1,
-              },
-            });
-          }),
-          catchError((err) =>
-            of(
-              TransfersActions.loadHistoryFailure({
-                error: err?.error?.error?.message || this.i18n.instant('CUSTOMER.HISTORY_FAIL'),
-              }),
+      exhaustMap(({ page, size, status, from, to }) =>
+        this.api
+          .myTransfers(page ?? 0, size ?? 20, {
+            status: status || undefined,
+            from: from || undefined,
+            to: to || undefined,
+          })
+          .pipe(
+            map((p) => {
+              // backend may return content or items
+              const items = (p as any).items ?? (p as any).content ?? [];
+              return TransfersActions.loadHistorySuccess({
+                page: {
+                  items,
+                  page: (p as any).page ?? (p as any).number ?? 0,
+                  size: (p as any).size ?? size ?? 20,
+                  totalElements: (p as any).totalElements ?? items.length,
+                  totalPages: (p as any).totalPages ?? 1,
+                },
+              });
+            }),
+            catchError((err) =>
+              of(
+                TransfersActions.loadHistoryFailure({
+                  error: err?.error?.error?.message || this.i18n.instant('CUSTOMER.HISTORY_FAIL'),
+                }),
+              ),
             ),
           ),
-        ),
       ),
     ),
   );

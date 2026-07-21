@@ -12,8 +12,10 @@ import com.banksystem.transaction.domain.AuditLogEntity;
 import com.banksystem.transaction.domain.AuditLogRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -47,9 +49,17 @@ public class TransferController {
   @GetMapping("/transactions/transfers")
   public ApiResponse<PageResponse<TransferResponse>> myTransfers(
       @RequestParam(defaultValue = "0") int page,
-      @RequestParam(defaultValue = "20") int size) {
+      @RequestParam(defaultValue = "20") int size,
+      @RequestParam(required = false) String status,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to) {
     return ApiResponse.ok(transferService.myHistory(
-        UserContext.requireUser().userId(), page, Math.min(size, 100)));
+        UserContext.requireUser().userId(),
+        page,
+        Math.min(size, 100),
+        status,
+        from,
+        to));
   }
 
   @GetMapping("/transactions/transfers/{id}")

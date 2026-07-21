@@ -110,8 +110,22 @@ export class BankApiService {
     });
   }
 
-  myTransfers(page = 0, size = 20): Observable<PageResponse<Transfer>> {
-    return this.api.get('/transactions/transfers', { page, size });
+  myTransfers(
+    page = 0,
+    size = 20,
+    params?: {
+      status?: string;
+      from?: string;
+      to?: string;
+    },
+  ): Observable<PageResponse<Transfer>> {
+    return this.api.get('/transactions/transfers', {
+      page,
+      size,
+      status: params?.status,
+      from: params?.from,
+      to: params?.to,
+    });
   }
 
   getTransfer(id: string): Observable<Transfer> {

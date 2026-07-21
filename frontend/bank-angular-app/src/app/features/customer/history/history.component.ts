@@ -1,10 +1,14 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
@@ -29,6 +33,7 @@ import {
   standalone: true,
   imports: [
     CommonModule,
+    ReactiveFormsModule,
     RouterLink,
     MatButtonModule,
     MatCardModule,
@@ -37,6 +42,9 @@ import {
     MatPaginatorModule,
     MatTooltipModule,
     MatDialogModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
     PageHeaderComponent,
     LoadingComponent,
     MoneyVndPipe,
@@ -51,19 +59,51 @@ export class HistoryComponent implements OnInit {
   private readonly dialog = inject(MatDialog);
   private readonly toast = inject(ToastService);
   private readonly i18n = inject(TranslateService);
+  private readonly fb = inject(FormBuilder);
 
   rows$ = this.store.select(selectTransferHistory);
   loading$ = this.store.select(selectTransferLoading);
   meta$ = this.store.select(selectTransferPageMeta);
   cols = ['createdAt', 'description', 'amount', 'feeAmount', 'status', 'transactionId', 'actions'];
   openingId: string | null = null;
+  pageIndex = 0;
+  pageSize = 10;
+
+  readonly statusOptions = [
+    '',
+    'COMPLETED',
+    'FAILED',
+    'PENDING',
+    'DEBITED',
+    'COMPENSATING',
+    'COMPENSATED',
+  ];
+
+  filter = this.fb.nonNullable.group({
+    status: [''],
+    from: [''],
+    to: [''],
+  });
 
   ngOnInit(): void {
-    this.store.dispatch(TransfersActions.loadHistory({ page: 0, size: 10 }));
+    this.reload();
+  }
+
+  applyFilters(): void {
+    this.pageIndex = 0;
+    this.reload();
+  }
+
+  resetFilters(): void {
+    this.filter.reset({ status: '', from: '', to: '' });
+    this.pageIndex = 0;
+    this.reload();
   }
 
   page(e: PageEvent): void {
-    this.store.dispatch(TransfersActions.loadHistory({ page: e.pageIndex, size: e.pageSize }));
+    this.pageIndex = e.pageIndex;
+    this.pageSize = e.pageSize;
+    this.reload();
   }
 
   openDetail(row: Transfer): void {
@@ -85,5 +125,28 @@ export class HistoryComponent implements OnInit {
         this.toast.error(this.i18n.instant('TRANSFER_DETAIL.LOAD_FAIL'));
       },
     });
+  }
+
+  private reload(): void {
+    const f = this.filter.getRawValue();
+    this.store.dispatch(
+      TransfersActions.loadHistory({
+        page: this.pageIndex,
+        size: this.pageSize,
+        status: f.status || undefined,
+        from: this.toInstantStart(f.from),
+        to: this.toInstantEnd(f.to),
+      }),
+    );
+  }
+
+  private toInstantStart(date: string): string | undefined {
+    if (!date) return undefined;
+    return `${date}T00:00:00.000Z`;
+  }
+
+  private toInstantEnd(date: string): string | undefined {
+    if (!date) return undefined;
+    return `${date}T23:59:59.999Z`;
   }
 }

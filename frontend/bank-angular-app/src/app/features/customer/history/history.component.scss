@@ -1,3 +1,21 @@
+.filter-card {
+  margin-bottom: 1rem;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  align-items: center;
+}
+
+.filter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
 .history-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
