@@ -19,6 +19,7 @@ import { AuthApiService } from '../../../core/services/auth-api.service';
 import { BankApiService } from '../../../core/services/bank-api.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { selectHasPermission, selectUser } from '../../../store/auth/auth.selectors';
+import { AuthActions } from '../../../store/auth/auth.actions';
 import { CustomerProfile } from '../../../core/models/domain.model';
 import { AuthSession, MfaSetupResponse } from '../../../core/models/auth.model';
 import { PERMISSIONS } from '../../../core/services/rbac.util';
@@ -58,6 +59,7 @@ export class ProfileComponent implements OnInit {
   needsCreate = false;
   mfaSetup: MfaSetupResponse | null = null;
   loading = false;
+  changingPassword = false;
 
   sessions: AuthSession[] = [];
   sessionsLoading = false;
@@ -74,6 +76,12 @@ export class ProfileComponent implements OnInit {
 
   mfaForm = this.fb.nonNullable.group({
     code: ['', [Validators.required, Validators.pattern(/^\d{6}$/)]],
+  });
+
+  passwordForm = this.fb.nonNullable.group({
+    currentPassword: ['', Validators.required],
+    newPassword: ['', [Validators.required, Validators.minLength(8)]],
+    confirmPassword: ['', Validators.required],
   });
 
   ngOnInit(): void {
@@ -168,6 +176,38 @@ export class ProfileComponent implements OnInit {
         this.mfaSetup = null;
       },
     });
+  }
+
+  changePassword(): void {
+    if (this.passwordForm.invalid || this.changingPassword) {
+      this.passwordForm.markAllAsTouched();
+      return;
+    }
+    const v = this.passwordForm.getRawValue();
+    if (v.newPassword !== v.confirmPassword) {
+      this.toast.error(this.i18n.instant('AUTH.PWD_MISMATCH'));
+      return;
+    }
+    this.changingPassword = true;
+    this.authApi
+      .changePassword({ currentPassword: v.currentPassword, newPassword: v.newPassword })
+      .subscribe({
+        next: () => {
+          this.changingPassword = false;
+          this.passwordForm.reset();
+          this.toast.success(this.i18n.instant('CUSTOMER.CHANGE_PWD_OK'));
+          // Backend revokes all refresh sessions (including current) → re-login.
+          this.store.dispatch(AuthActions.logout());
+        },
+        error: (err) => {
+          this.changingPassword = false;
+          this.toast.error(
+            err?.error?.error?.message ||
+              err?.message ||
+              this.i18n.instant('CUSTOMER.CHANGE_PWD_FAIL'),
+          );
+        },
+      });
   }
 
   revokeSession(session: AuthSession): void {

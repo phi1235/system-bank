@@ -11,6 +11,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
+import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Mono;
 
 /** Signs the sanitized request target and authenticated identity for downstream services. */
@@ -20,6 +21,7 @@ public class GatewaySignatureFilter implements GlobalFilter, Ordered {
   private final String secret;
   private final Clock clock;
 
+  @Autowired
   public GatewaySignatureFilter(@Value("${bank.gateway.signing-secret}") String secret) {
     this(secret, Clock.systemUTC());
   }

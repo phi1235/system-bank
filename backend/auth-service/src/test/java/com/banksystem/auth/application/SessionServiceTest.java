@@ -100,4 +100,22 @@ class SessionServiceTest {
     verify(sessionStore).delete(userId, "jti-2");
     verify(sessionStore).delete(userId, "jti-3");
   }
+
+  @Test
+  void revokeAll_revokesEverySession() {
+    Instant now = Instant.now();
+    when(sessionStore.listByUser(userId)).thenReturn(List.of(
+        new SessionMeta("jti-1", userId, "1.1.1.1", "Chrome", now, now.plusSeconds(3600)),
+        new SessionMeta("jti-2", userId, "2.2.2.2", "Firefox", now, now.plusSeconds(3600))
+    ));
+
+    int n = service.revokeAll(userId);
+
+    assertEquals(2, n);
+    verify(tokenStore).deleteRefresh("jti-1");
+    verify(tokenStore).deleteRefresh("jti-2");
+    verify(sessionStore).delete(userId, "jti-1");
+    verify(sessionStore).delete(userId, "jti-2");
+    verify(auditLogRepository).save(any());
+  }
 }

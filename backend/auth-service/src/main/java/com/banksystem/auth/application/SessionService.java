@@ -89,6 +89,21 @@ public class SessionService {
     return count;
   }
 
+  /**
+   * Revoke every refresh session for the user (e.g. after password change).
+   * Returns how many sessions were revoked.
+   */
+  public int revokeAll(UUID userId) {
+    List<SessionMeta> sessions = sessionStore.listByUser(userId);
+    for (SessionMeta meta : sessions) {
+      revokeMeta(meta);
+    }
+    if (!sessions.isEmpty()) {
+      audit(userId, "SESSION_REVOKE_ALL", null, "count=" + sessions.size());
+    }
+    return sessions.size();
+  }
+
   /** Best-effort cleanup when the user logs out the current browser. */
   public void forget(UUID userId, String refreshJti) {
     if (refreshJti == null || refreshJti.isBlank()) {

@@ -46,16 +46,19 @@ public class PasswordResetService {
   private final PasswordResetTicketRepository ticketRepository;
   private final AuthAuditLogRepository auditLogRepository;
   private final BoundPasswordEncoder passwordEncoder;
+  private final SessionService sessionService;
 
   public PasswordResetService(
       UserRepository userRepository,
       PasswordResetTicketRepository ticketRepository,
       AuthAuditLogRepository auditLogRepository,
-      BoundPasswordEncoder passwordEncoder) {
+      BoundPasswordEncoder passwordEncoder,
+      SessionService sessionService) {
     this.userRepository = userRepository;
     this.ticketRepository = ticketRepository;
     this.auditLogRepository = auditLogRepository;
     this.passwordEncoder = passwordEncoder;
+    this.sessionService = sessionService;
   }
 
   @Transactional
@@ -157,6 +160,8 @@ public class PasswordResetService {
     user.setLockedReason(null);
     user.setUpdatedAt(Instant.now());
     userRepository.save(user);
+    // Force re-login everywhere after admin-issued password
+    sessionService.revokeAll(user.getId());
 
     String ticketId = null;
     if (ticketOrNull != null) {
@@ -224,6 +229,7 @@ public class PasswordResetService {
         : req.reason().trim());
     user.setUpdatedAt(Instant.now());
     userRepository.save(user);
+    sessionService.revokeAll(targetUserId);
     audit(adminId, "USER_LOCKED", null, "target=" + user.getUsername() + ",reason=" + user.getLockedReason());
   }
 
@@ -255,7 +261,9 @@ public class PasswordResetService {
     user.setMustChangePassword(false);
     user.setUpdatedAt(Instant.now());
     userRepository.save(user);
-    audit(userId, "PASSWORD_CHANGED", null, "forcedOrSelf=true");
+    // Invalidate every refresh session so stolen tokens cannot be reused after password change.
+    int revoked = sessionService.revokeAll(userId);
+    audit(userId, "PASSWORD_CHANGED", null, "forcedOrSelf=true,revokedSessions=" + revoked);
   }
 
   private void validatePassword(String password) {
