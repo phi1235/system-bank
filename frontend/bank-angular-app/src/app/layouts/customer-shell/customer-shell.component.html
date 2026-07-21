@@ -28,6 +28,20 @@
     </nav>
     <div class="header-actions">
       <app-lang-switcher />
+      @if (canNotifications$ | async) {
+        <a
+          mat-icon-button
+          class="notif-btn"
+          routerLink="/customer/notifications"
+          [matBadge]="(unread$ | async) || null"
+          [matBadgeHidden]="!((unread$ | async) || 0)"
+          matBadgeColor="warn"
+          matBadgeSize="small"
+          [attr.aria-label]="'NAV.NOTIFICATIONS' | translate"
+        >
+          <mat-icon>notifications</mat-icon>
+        </a>
+      }
       @if (canTransfer$ | async) {
         <a mat-flat-button color="primary" class="cta" routerLink="/customer/payments/transfer">
           {{ 'NAV.TRANSFER' | translate }}

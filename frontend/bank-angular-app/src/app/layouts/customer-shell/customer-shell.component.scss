@@ -19,6 +19,14 @@
   color: var(--color-text-inverse);
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
 }
+
+.notif-btn {
+  color: inherit;
+
+  mat-icon {
+    color: inherit;
+  }
+}
 .brand {
   display: flex;
   align-items: center;

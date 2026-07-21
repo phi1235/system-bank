@@ -5,24 +5,30 @@ import com.banksystem.common.api.PageResponse;
 import com.banksystem.notification.api.dto.NotificationDtos.NotificationItem;
 import com.banksystem.notification.api.dto.NotificationDtos.UnreadCountResponse;
 import com.banksystem.notification.application.NotificationInboxService;
+import com.banksystem.notification.application.NotificationRealtimeHub;
 import com.banksystem.notification.config.UserContext;
 import java.util.Map;
 import java.util.UUID;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 @RestController
 @RequestMapping("/api/v1/notifications")
 public class NotificationController {
 
   private final NotificationInboxService inboxService;
+  private final NotificationRealtimeHub realtimeHub;
 
-  public NotificationController(NotificationInboxService inboxService) {
+  public NotificationController(
+      NotificationInboxService inboxService, NotificationRealtimeHub realtimeHub) {
     this.inboxService = inboxService;
+    this.realtimeHub = realtimeHub;
   }
 
   @GetMapping
@@ -39,6 +45,14 @@ public class NotificationController {
     UserContext.requirePermission("ib:notifications:view");
     UUID userId = UserContext.requireUser().userId();
     return ApiResponse.ok(new UnreadCountResponse(inboxService.unreadCount(userId)));
+  }
+
+  /** Server-sent events stream for live inbox updates (one-way push after Kafka consume). */
+  @GetMapping(path = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+  public SseEmitter stream() {
+    UserContext.requirePermission("ib:notifications:view");
+    UUID userId = UserContext.requireUser().userId();
+    return realtimeHub.subscribe(userId);
   }
 
   @PostMapping("/{id}/read")
