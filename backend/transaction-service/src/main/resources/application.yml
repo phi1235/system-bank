@@ -16,6 +16,10 @@ spring:
       hibernate.jdbc.time_zone: UTC
   flyway:
     enabled: true
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP}
     producer:
@@ -60,6 +64,9 @@ bank:
     max-clock-skew-seconds: ${GATEWAY_MAX_CLOCK_SKEW_SECONDS}
   internal:
     account-api-key: ${ACCOUNT_INTERNAL_API_KEY}
+  beneficiary:
+    # Redis TTL for GET /transactions/beneficiaries (seconds). Set in infra/.env.
+    cache-ttl-seconds: ${BENEFICIARY_CACHE_TTL_SECONDS}
   saga:
     fail-credit: ${SAGA_FAIL_CREDIT}
   kafka:

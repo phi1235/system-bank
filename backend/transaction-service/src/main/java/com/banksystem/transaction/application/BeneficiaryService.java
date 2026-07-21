@@ -9,6 +9,7 @@ import com.banksystem.transaction.domain.BeneficiaryEntity;
 import com.banksystem.transaction.domain.BeneficiaryRepository;
 import com.banksystem.transaction.infrastructure.feign.AccountClient;
 import com.banksystem.transaction.infrastructure.feign.AccountClientDtos.AccountView;
+import com.banksystem.transaction.infrastructure.redis.BeneficiaryListCache;
 import feign.FeignException;
 import java.time.Instant;
 import java.util.List;
@@ -24,22 +25,30 @@ public class BeneficiaryService {
 
   private final BeneficiaryRepository beneficiaryRepository;
   private final AccountClient accountClient;
+  private final BeneficiaryListCache listCache;
   private final String internalApiKey;
 
   public BeneficiaryService(
       BeneficiaryRepository beneficiaryRepository,
       AccountClient accountClient,
+      BeneficiaryListCache listCache,
       @Value("${bank.internal.account-api-key}") String internalApiKey) {
     this.beneficiaryRepository = beneficiaryRepository;
     this.accountClient = accountClient;
+    this.listCache = listCache;
     this.internalApiKey = internalApiKey;
   }
 
   @Transactional(readOnly = true)
   public List<BeneficiaryResponse> listMine(UUID userId) {
-    return beneficiaryRepository.findByUserIdAndActiveTrueOrderByNicknameAsc(userId).stream()
-        .map(this::toResponse)
-        .toList();
+    return listCache.get(userId).orElseGet(() -> {
+      List<BeneficiaryResponse> items =
+          beneficiaryRepository.findByUserIdAndActiveTrueOrderByNicknameAsc(userId).stream()
+              .map(this::toResponse)
+              .toList();
+      listCache.put(userId, items);
+      return items;
+    });
   }
 
   @Transactional
@@ -70,7 +79,9 @@ public class BeneficiaryService {
     entity.setUpdatedAt(Instant.now());
 
     try {
-      return toResponse(beneficiaryRepository.save(entity));
+      BeneficiaryResponse saved = toResponse(beneficiaryRepository.save(entity));
+      listCache.evict(userId);
+      return saved;
     } catch (DataIntegrityViolationException ex) {
       throw new BusinessException(
           "BENEFICIARY_EXISTS",
@@ -84,7 +95,9 @@ public class BeneficiaryService {
     BeneficiaryEntity entity = requireOwned(userId, id);
     entity.setNickname(normalizeNickname(req.nickname()));
     entity.setUpdatedAt(Instant.now());
-    return toResponse(beneficiaryRepository.save(entity));
+    BeneficiaryResponse saved = toResponse(beneficiaryRepository.save(entity));
+    listCache.evict(userId);
+    return saved;
   }
 
   @Transactional
@@ -96,6 +109,7 @@ public class BeneficiaryService {
     entity.setActive(false);
     entity.setUpdatedAt(Instant.now());
     beneficiaryRepository.save(entity);
+    listCache.evict(userId);
   }
 
   private BeneficiaryEntity requireOwned(UUID userId, UUID id) {
