@@ -10,6 +10,16 @@
     <mat-icon>arrow_back</mat-icon>
     {{ 'NAV.ACCOUNTS' | translate }}
   </a>
+  <button
+    mat-flat-button
+    color="primary"
+    type="button"
+    (click)="exportCsv()"
+    [disabled]="!accountId || exporting || loading"
+  >
+    <mat-icon>download</mat-icon>
+    {{ 'CUSTOMER.STATEMENT_EXPORT_CSV' | translate }}
+  </button>
   <a mat-button routerLink="/customer/history">{{ 'NAV.HISTORY' | translate }}</a>
 </app-page-header>
 

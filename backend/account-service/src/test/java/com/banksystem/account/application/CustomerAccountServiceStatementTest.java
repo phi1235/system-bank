@@ -99,6 +99,43 @@ class CustomerAccountServiceStatementTest {
     assertEquals("CREDIT", page.items().getFirst().entryType());
   }
 
+  @Test
+  void exportCsv_includesBomHeaderAndEscapedDescription() {
+    AccountEntity account = account(ownerId);
+    when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
+
+    LedgerEntryEntity withComma = entry("DEBIT", "1000.00");
+    withComma.setDescription("Transfer, \"internal\"");
+    when(ledgerEntryRepository.search(eq(accountId), isNull(), isNull(), isNull(), any(Pageable.class)))
+        .thenReturn(new PageImpl<>(List.of(withComma, entry("CREDIT", "500.00"))));
+
+    GatewayUser owner = user(ownerId, List.of("ib:accounts:view"));
+    byte[] csv = service.exportStatementCsv(
+        LedgerStatementQuery.of(accountId, 0, LedgerStatementQuery.MAX_EXPORT_ROWS, null, null, null),
+        owner);
+
+    assertEquals((byte) 0xEF, csv[0]);
+    assertEquals((byte) 0xBB, csv[1]);
+    assertEquals((byte) 0xBF, csv[2]);
+    String text = new String(csv, java.nio.charset.StandardCharsets.UTF_8);
+    assertTrue(text.contains("createdAt,entryType,amount,signedAmount,referenceId,description"));
+    assertTrue(text.contains("-1000.00"));
+    // CSV escapes: "Transfer, ""internal"""
+    assertTrue(text.contains("\"Transfer, \"\"internal\"\"\""));
+  }
+
+  @Test
+  void exportCsv_forbidsOtherCustomer() {
+    AccountEntity account = account(ownerId);
+    when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
+    GatewayUser stranger = user(otherId, List.of("ib:accounts:view"));
+
+    BusinessException ex = assertThrows(BusinessException.class,
+        () -> service.exportStatementCsv(
+            LedgerStatementQuery.of(accountId, 0, 20, null, null, null), stranger));
+    assertEquals("FORBIDDEN", ex.getCode());
+  }
+
   private AccountEntity account(UUID userId) {
     AccountEntity a = new AccountEntity();
     a.setId(accountId);

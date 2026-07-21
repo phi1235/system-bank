@@ -54,6 +54,7 @@ export class StatementComponent implements OnInit {
   account: Account | null = null;
   rows: LedgerEntry[] = [];
   loading = false;
+  exporting = false;
   pageIndex = 0;
   pageSize = 20;
   totalElements = 0;
@@ -104,6 +105,42 @@ export class StatementComponent implements OnInit {
     this.pageIndex = ev.pageIndex;
     this.pageSize = ev.pageSize;
     this.load();
+  }
+
+  exportCsv(): void {
+    if (!this.accountId || this.exporting) return;
+    this.exporting = true;
+    const f = this.filter.getRawValue();
+    this.api
+      .exportAccountStatementCsv(this.accountId, {
+        entryType: f.entryType || undefined,
+        from: this.toInstantStart(f.from),
+        to: this.toInstantEnd(f.to),
+      })
+      .subscribe({
+        next: (blob) => {
+          this.exporting = false;
+          const name =
+            (this.account?.accountNumber
+              ? `statement-${this.account.accountNumber}`
+              : `statement-${this.accountId}`) + '.csv';
+          this.downloadBlob(blob, name);
+          this.toast.success(this.i18n.instant('CUSTOMER.STATEMENT_EXPORT_OK'));
+        },
+        error: () => {
+          this.exporting = false;
+          this.toast.error(this.i18n.instant('CUSTOMER.STATEMENT_EXPORT_FAIL'));
+        },
+      });
+  }
+
+  private downloadBlob(blob: Blob, filename: string): void {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   load(): void {

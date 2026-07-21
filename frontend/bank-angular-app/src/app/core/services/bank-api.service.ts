@@ -70,6 +70,21 @@ export class BankApiService {
     });
   }
 
+  exportAccountStatementCsv(
+    accountId: string,
+    params?: {
+      entryType?: string;
+      from?: string;
+      to?: string;
+    },
+  ): Observable<Blob> {
+    return this.api.getBlob(`/accounts/${accountId}/statement/export.csv`, {
+      entryType: params?.entryType,
+      from: params?.from,
+      to: params?.to,
+    });
+  }
+
   freezeAccount(id: string): Observable<Account> {
     return this.api.post(`/admin/accounts/${id}/freeze`, {});
   }
