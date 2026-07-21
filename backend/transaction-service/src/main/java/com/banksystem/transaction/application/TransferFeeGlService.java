@@ -30,12 +30,14 @@ public class TransferFeeGlService {
   public TransferFeeGlService(
       AccountClient accountClient,
       @Value("${bank.internal.account-api-key}") String internalApiKey,
-      @Value("${bank.transfer.fee.income-account-number:1099999999}") String incomeAccountNumber) {
+      @Value("${bank.transfer.fee.income-account-number}") String incomeAccountNumber) {
     this.accountClient = accountClient;
     this.internalApiKey = internalApiKey;
-    this.incomeAccountNumber = incomeAccountNumber == null || incomeAccountNumber.isBlank()
-        ? "1099999999"
-        : incomeAccountNumber.trim();
+    if (incomeAccountNumber == null || incomeAccountNumber.isBlank()) {
+      throw new IllegalStateException(
+          "bank.transfer.fee.income-account-number must be set (env TRANSFER_FEE_INCOME_ACCOUNT / FEE_INCOME_ACCOUNT_NUMBER)");
+    }
+    this.incomeAccountNumber = incomeAccountNumber.trim();
   }
 
   /** @return true when fee must be posted to GL for this order */

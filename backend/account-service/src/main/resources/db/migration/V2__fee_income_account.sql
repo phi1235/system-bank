@@ -1,5 +1,6 @@
 -- Bank fee income (internal) account for transfer fee GL posting.
--- Fixed ids so transaction-service can resolve by account number (config default 1099999999).
+-- IDs provided via Flyway placeholders (see account-service application.yml + infra/.env).
+-- This avoids hardcoding UUIDs in public source while keeping bootstrap deterministic per environment.
 INSERT INTO accounts (
   id,
   user_id,
@@ -11,9 +12,9 @@ INSERT INTO accounts (
   created_at,
   updated_at
 ) VALUES (
-  '00000000-0000-0000-0000-0000000000fe',
-  '00000000-0000-0000-0000-000000000001',
-  '1099999999',
+  '${fee-income-id}',
+  '${system-user-id}',
+  '${fee-income-number}',
   'INTERNAL',
   'VND',
   0,
