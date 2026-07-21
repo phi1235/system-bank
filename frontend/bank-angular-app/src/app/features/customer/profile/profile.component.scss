@@ -5,8 +5,28 @@
   align-items: start;
 }
 
+.password-card,
 .sessions-card {
   grid-column: 1 / -1;
+}
+
+.password-card form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem 1rem;
+  align-items: start;
+  margin-top: 0.75rem;
+}
+
+.password-card button[type='submit'] {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+
+@media (max-width: 900px) {
+  .password-card form {
+    grid-template-columns: 1fr;
+  }
 }
 
 .sessions-head {

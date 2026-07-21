@@ -69,6 +69,28 @@
     }
   </mat-card>
 
+  <mat-card class="password-card">
+    <h3>{{ 'CUSTOMER.CHANGE_PWD_TITLE' | translate }}</h3>
+    <p class="hint">{{ 'CUSTOMER.CHANGE_PWD_HINT' | translate }}</p>
+    <form [formGroup]="passwordForm" (ngSubmit)="changePassword()">
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>{{ 'AUTH.CURRENT_PASSWORD' | translate }}</mat-label>
+        <input matInput type="password" formControlName="currentPassword" autocomplete="current-password" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>{{ 'AUTH.NEW_PASSWORD' | translate }}</mat-label>
+        <input matInput type="password" formControlName="newPassword" autocomplete="new-password" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>{{ 'AUTH.CONFIRM_PASSWORD' | translate }}</mat-label>
+        <input matInput type="password" formControlName="confirmPassword" autocomplete="new-password" />
+      </mat-form-field>
+      <button mat-flat-button color="primary" type="submit" [disabled]="changingPassword">
+        {{ 'CUSTOMER.CHANGE_PWD_SUBMIT' | translate }}
+      </button>
+    </form>
+  </mat-card>
+
   <mat-card class="sessions-card">
     <div class="sessions-head">
       <div>
