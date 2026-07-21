@@ -3,6 +3,7 @@ package com.banksystem.auth.api.dto;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import java.time.Instant;
 import java.util.List;
 
 public final class AuthDtos {
@@ -68,5 +69,15 @@ public final class AuthDtos {
       boolean staff,
       boolean mustChangePassword,
       boolean enabled
+  ) {}
+
+  /** Active refresh session (device/browser) for the signed-in user. */
+  public record SessionResponse(
+      String id,
+      String ip,
+      String userAgent,
+      Instant createdAt,
+      Instant expiresAt,
+      boolean current
   ) {}
 }

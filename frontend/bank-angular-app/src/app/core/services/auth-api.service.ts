@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import {
+  AuthSession,
   LoginRequest,
   LoginResponse,
   MeResponse,
@@ -12,10 +13,12 @@ import {
 } from '../models/auth.model';
 import { PageResponse } from '../models/api.model';
 import { ApiService } from './api.service';
+import { TokenService } from './token.service';
 
 @Injectable({ providedIn: 'root' })
 export class AuthApiService {
   private readonly api = inject(ApiService);
+  private readonly tokens = inject(TokenService);
 
   register(body: RegisterRequest): Observable<{ userId: string; username: string }> {
     return this.api.post('/auth/register', body);
@@ -30,7 +33,20 @@ export class AuthApiService {
   }
 
   logout(): Observable<unknown> {
-    return this.api.post('/auth/logout', {});
+    const refreshToken = this.tokens.getRefreshToken();
+    return this.api.post('/auth/logout', refreshToken ? { refreshToken } : {});
+  }
+
+  listSessions(): Observable<AuthSession[]> {
+    return this.api.get('/auth/sessions');
+  }
+
+  revokeSession(id: string): Observable<{ status: string }> {
+    return this.api.delete(`/auth/sessions/${encodeURIComponent(id)}`);
+  }
+
+  revokeOtherSessions(): Observable<{ status: string; revoked: number }> {
+    return this.api.post('/auth/sessions/revoke-others', {});
   }
 
   me(): Observable<MeResponse> {

@@ -36,6 +36,7 @@ public class AuthService {
   private final BoundPasswordEncoder boundPasswordEncoder;
   private final JwtService jwtService;
   private final TokenStore tokenStore;
+  private final SessionService sessionService;
   private final MfaService mfaService;
   private final RbacService rbacService;
   private final int maxFailures;
@@ -47,6 +48,7 @@ public class AuthService {
       BoundPasswordEncoder boundPasswordEncoder,
       JwtService jwtService,
       TokenStore tokenStore,
+      SessionService sessionService,
       MfaService mfaService,
       RbacService rbacService,
       @Value("${bank.security.login-max-failures:5}") int maxFailures,
@@ -56,6 +58,7 @@ public class AuthService {
     this.boundPasswordEncoder = boundPasswordEncoder;
     this.jwtService = jwtService;
     this.tokenStore = tokenStore;
+    this.sessionService = sessionService;
     this.mfaService = mfaService;
     this.rbacService = rbacService;
     this.maxFailures = maxFailures;
@@ -94,7 +97,7 @@ public class AuthService {
   }
 
   @Transactional(readOnly = true)
-  public LoginResponse login(LoginRequest req, String ip) {
+  public LoginResponse login(LoginRequest req, String ip, String userAgent) {
     if (tokenStore.getLoginFail(ip) >= maxFailures) {
       throw new BusinessException("LOGIN_LOCKED",
           "Too many failed attempts. Try again later.", HttpStatus.TOO_MANY_REQUESTS);
@@ -125,13 +128,13 @@ public class AuthService {
       return LoginResponse.mfaRequired(mfaToken);
     }
 
-    TokenPair pair = issueAndStore(user);
+    TokenPair pair = issueAndStore(user, ip, userAgent);
     audit(user.getId(), "LOGIN_SUCCESS", ip, null);
     return LoginResponse.tokens(toTokenResponse(pair, user.isMustChangePassword()), user.isMustChangePassword());
   }
 
   @Transactional(readOnly = true)
-  public TokenResponse verifyMfa(MfaVerifyRequest req, String ip) {
+  public TokenResponse verifyMfa(MfaVerifyRequest req, String ip, String userAgent) {
     Claims claims;
     try {
       claims = jwtService.parse(req.mfaToken());
@@ -151,13 +154,13 @@ public class AuthService {
       audit(userId, "MFA_VERIFY_FAILED", ip, null);
       throw new BusinessException("INVALID_MFA_CODE", "Invalid MFA code", HttpStatus.UNAUTHORIZED);
     }
-    TokenPair pair = issueAndStore(user);
+    TokenPair pair = issueAndStore(user, ip, userAgent);
     audit(userId, "MFA_VERIFY_SUCCESS", ip, null);
     return toTokenResponse(pair, user.isMustChangePassword());
   }
 
   @Transactional(readOnly = true)
-  public TokenResponse refresh(RefreshRequest req) {
+  public TokenResponse refresh(RefreshRequest req, String ip, String userAgent) {
     Claims claims;
     try {
       claims = jwtService.parse(req.refreshToken());
@@ -175,31 +178,48 @@ public class AuthService {
         .orElseThrow(() -> new BusinessException("INVALID_REFRESH", "Refresh session not found",
             HttpStatus.UNAUTHORIZED));
 
-    // rotate
+    // rotate: drop old refresh session metadata + store new one
     tokenStore.deleteRefresh(jti);
     tokenStore.blacklist(jti, jwtService.remainingTtlSeconds(claims));
+    sessionService.forget(userId, jti);
 
     UserEntity user = userRepository.findById(userId)
         .orElseThrow(() -> new BusinessException("USER_NOT_FOUND", "User not found",
             HttpStatus.NOT_FOUND));
-    TokenPair pair = issueAndStore(user);
-    audit(userId, "TOKEN_REFRESH", null, null);
+    TokenPair pair = issueAndStore(user, ip, userAgent);
+    audit(userId, "TOKEN_REFRESH", ip, null);
     return toTokenResponse(pair, user.isMustChangePassword());
   }
 
-  public void logout(String accessToken) {
-    if (accessToken == null || accessToken.isBlank()) {
-      return;
+  public void logout(String accessToken, String refreshToken) {
+    UUID userId = null;
+    if (accessToken != null && !accessToken.isBlank()) {
+      try {
+        Claims claims = jwtService.parse(accessToken);
+        String jti = claims.getId();
+        tokenStore.blacklist(jti, jwtService.remainingTtlSeconds(claims));
+        userId = UUID.fromString(claims.getSubject());
+        audit(userId, "LOGOUT", null, "jti=" + jti);
+      } catch (Exception ignored) {
+        // already invalid
+      }
     }
-    try {
-      Claims claims = jwtService.parse(accessToken);
-      String jti = claims.getId();
-      tokenStore.blacklist(jti, jwtService.remainingTtlSeconds(claims));
-      // best-effort: if client also sends refresh later it won't work after rotate
-      UUID userId = UUID.fromString(claims.getSubject());
-      audit(userId, "LOGOUT", null, "jti=" + jti);
-    } catch (Exception ignored) {
-      // already invalid
+    if (refreshToken != null && !refreshToken.isBlank()) {
+      try {
+        Claims refreshClaims = jwtService.parse(refreshToken);
+        if (jwtService.isType(refreshClaims, JwtService.TYPE_REFRESH)) {
+          UUID refreshUser = UUID.fromString(refreshClaims.getSubject());
+          String refreshJti = refreshClaims.getId();
+          sessionService.forget(refreshUser, refreshJti);
+          tokenStore.blacklist(refreshJti, jwtService.remainingTtlSeconds(refreshClaims));
+          if (userId == null) {
+            userId = refreshUser;
+            audit(userId, "LOGOUT", null, "refreshJti=" + refreshJti);
+          }
+        }
+      } catch (Exception ignored) {
+        // already invalid
+      }
     }
   }
 
@@ -241,9 +261,11 @@ public class AuthService {
             HttpStatus.NOT_FOUND));
   }
 
-  private TokenPair issueAndStore(UserEntity user) {
+  private TokenPair issueAndStore(UserEntity user, String ip, String userAgent) {
     TokenPair pair = jwtService.issueSessionTokens(user);
     tokenStore.storeRefresh(pair.refreshJti(), user.getId(), pair.refreshTtlSeconds());
+    sessionService.trackRefreshSession(
+        pair.refreshJti(), user.getId(), ip, userAgent, pair.refreshTtlSeconds());
     return pair;
   }
 

@@ -68,4 +68,60 @@
       </div>
     }
   </mat-card>
+
+  <mat-card class="sessions-card">
+    <div class="sessions-head">
+      <div>
+        <h3>{{ 'CUSTOMER.SESSIONS_TITLE' | translate }}</h3>
+        <p class="hint">{{ 'CUSTOMER.SESSIONS_HINT' | translate }}</p>
+      </div>
+      <button
+        mat-stroked-button
+        color="warn"
+        type="button"
+        [disabled]="revokingOthers || sessionsLoading || sessions.length <= 1"
+        (click)="revokeOthers()"
+      >
+        {{ 'CUSTOMER.SESSIONS_REVOKE_OTHERS' | translate }}
+      </button>
+    </div>
+
+    @if (sessionsLoading) {
+      <p class="hint">{{ 'COMMON.LOADING' | translate }}</p>
+    } @else if (!sessions.length) {
+      <p class="hint">{{ 'CUSTOMER.SESSIONS_EMPTY' | translate }}</p>
+    } @else {
+      <ul class="session-list">
+        @for (s of sessions; track s.id) {
+          <li class="session-item" [class.current]="s.current">
+            <div class="session-main">
+              <div class="session-title">
+                <mat-icon>devices</mat-icon>
+                <strong>{{ agentLabel(s.userAgent) }}</strong>
+                @if (s.current) {
+                  <span class="badge">{{ 'CUSTOMER.SESSIONS_CURRENT' | translate }}</span>
+                }
+              </div>
+              <div class="session-meta">
+                <span>{{ 'CUSTOMER.SESSIONS_IP' | translate }}: {{ s.ip || '—' }}</span>
+                <span>{{ 'CUSTOMER.SESSIONS_CREATED' | translate }}: {{ s.createdAt | date: 'short' }}</span>
+                <span>{{ 'CUSTOMER.SESSIONS_EXPIRES' | translate }}: {{ s.expiresAt | date: 'short' }}</span>
+              </div>
+            </div>
+            @if (!s.current) {
+              <button
+                mat-button
+                color="warn"
+                type="button"
+                [disabled]="revokingId === s.id"
+                (click)="revokeSession(s)"
+              >
+                {{ 'CUSTOMER.SESSIONS_REVOKE' | translate }}
+              </button>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </mat-card>
 </div>
