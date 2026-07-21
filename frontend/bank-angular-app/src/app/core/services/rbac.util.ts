@@ -27,6 +27,7 @@ export const PERMISSIONS = {
   RISK_VIEW: 'risk:view',
   USERS_PASSWORD_RESET: 'users:password:reset',
   USERS_LOCK_EXECUTE: 'users:lock:execute',
+  NOTIFICATIONS_OPS_VIEW: 'notifications:ops:view',
   // Internet Banking (customer)
   IB_HOME_VIEW: 'ib:home:view',
   IB_ACCOUNTS_VIEW: 'ib:accounts:view',

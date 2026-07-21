@@ -1,0 +1,73 @@
+<button
+  mat-icon-button
+  type="button"
+  class="notif-btn"
+  [matMenuTriggerFor]="panel"
+  (menuOpened)="onMenuOpened()"
+  (menuClosed)="onMenuClosed()"
+  [matBadge]="(unread$ | async) || null"
+  [matBadgeHidden]="!((unread$ | async) || 0)"
+  matBadgeColor="warn"
+  matBadgeSize="small"
+  [attr.aria-label]="titleKey | translate"
+>
+  <mat-icon>notifications</mat-icon>
+</button>
+
+<mat-menu #panel="matMenu" panelClass="notif-dropdown-panel" xPosition="before" yPosition="below">
+  <div class="notif-panel" (click)="stopClose($event)" (keydown)="$event.stopPropagation()">
+    <header class="panel-head">
+      <div class="titles">
+        <strong>{{ titleKey | translate }}</strong>
+        @if (unread > 0) {
+          <span class="badge-count">{{ unread }}</span>
+        }
+      </div>
+      <button
+        mat-button
+        type="button"
+        class="mark-all"
+        [disabled]="markingAll || unread === 0"
+        (click)="markAll($event)"
+      >
+        {{ markAllKey | translate }}
+      </button>
+    </header>
+
+    @if (loading && !loadedOnce) {
+      <div class="panel-state">
+        <mat-spinner diameter="28" />
+      </div>
+    } @else if (!items.length) {
+      <div class="panel-state empty">
+        <mat-icon>notifications_none</mat-icon>
+        <p>{{ emptyKey | translate }}</p>
+      </div>
+    } @else {
+      <ul class="panel-list">
+        @for (n of items; track n.id) {
+          <li
+            class="panel-item"
+            [class.unread]="!n.read"
+            [class.bad]="isBad(n)"
+            (click)="markRead(n, $event)"
+          >
+            <div class="icon-wrap" [class.bad]="isBad(n)" [class.ok]="n.template === 'TRANSFER_COMPLETED'">
+              <mat-icon>{{ iconFor(n) }}</mat-icon>
+            </div>
+            <div class="body">
+              <div class="row">
+                <span class="template">{{ n.template }}</span>
+                <time>{{ n.createdAt | date: 'medium' }}</time>
+              </div>
+              <p class="text">{{ n.body }}</p>
+            </div>
+            @if (!n.read) {
+              <span class="dot" aria-hidden="true"></span>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </div>
+</mat-menu>

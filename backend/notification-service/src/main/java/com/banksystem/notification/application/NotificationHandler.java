@@ -1,5 +1,6 @@
 package com.banksystem.notification.application;
 
+import com.banksystem.notification.api.dto.NotificationDtos.NotificationItem;
 import com.banksystem.notification.domain.NotificationLogEntity;
 import com.banksystem.notification.domain.NotificationLogRepository;
 import com.banksystem.notification.domain.ProcessedEventEntity;
@@ -7,7 +8,6 @@ import com.banksystem.notification.domain.ProcessedEventRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
-import java.util.Map;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -100,20 +100,29 @@ public class NotificationHandler {
       logEntity.setStatus("SENT");
       logEntity.setBody(body);
       logEntity.setUserId(ownerUserId);
+      logEntity.setAudience(NotificationInboxService.AUDIENCE_CUSTOMER);
       logEntity.setCreatedAt(Instant.now());
       notificationLogRepository.save(logEntity);
       if (ownerUserId != null) {
-        realtimeHub.publish(
-            ownerUserId,
-            new com.banksystem.notification.api.dto.NotificationDtos.NotificationItem(
-                logEntity.getId().toString(),
-                logEntity.getChannel(),
-                logEntity.getTemplate(),
-                logEntity.getStatus(),
-                logEntity.getBody() == null ? "" : logEntity.getBody(),
-                false,
-                null,
-                logEntity.getCreatedAt()));
+        realtimeHub.publish(ownerUserId, toItem(logEntity));
+      }
+
+      // Staff ops alert for failures (shared inbox, not user-scoped)
+      if (!success) {
+        NotificationLogEntity ops = new NotificationLogEntity();
+        ops.setId(UUID.randomUUID());
+        // Deterministic secondary event id so reprocessing stays unique under unique(event_id)
+        ops.setEventId(UUID.nameUUIDFromBytes(("ops:" + eventId).getBytes()));
+        ops.setChannel("OPS");
+        ops.setRecipient("ops@bank.local");
+        ops.setTemplate("OPS_TRANSFER_FAILED");
+        ops.setStatus("OPEN");
+        ops.setBody(buildOpsBody(transactionId, amount, currency, ownerUserId, finalStatus, failureReason));
+        ops.setUserId(null);
+        ops.setAudience(NotificationInboxService.AUDIENCE_OPS);
+        ops.setCreatedAt(Instant.now());
+        notificationLogRepository.save(ops);
+        realtimeHub.publishOps(toItem(ops));
       }
 
       ProcessedEventEntity pe = new ProcessedEventEntity();
@@ -132,6 +141,18 @@ public class NotificationHandler {
     }
   }
 
+  private static NotificationItem toItem(NotificationLogEntity e) {
+    return new NotificationItem(
+        e.getId().toString(),
+        e.getChannel(),
+        e.getTemplate(),
+        e.getStatus(),
+        e.getBody() == null ? "" : e.getBody(),
+        false,
+        null,
+        e.getCreatedAt());
+  }
+
   private String buildBody(
       boolean success,
       String transactionId,
@@ -147,6 +168,21 @@ public class NotificationHandler {
     return "Your transfer " + transactionId + " ended as " + (finalStatus == null ? "FAILED" : finalStatus)
         + ". Reason: " + (failureReason == null ? "n/a" : failureReason)
         + ". Amount: " + amount + " " + currency;
+  }
+
+  private String buildOpsBody(
+      String transactionId,
+      String amount,
+      String currency,
+      UUID ownerUserId,
+      String finalStatus,
+      String failureReason) {
+    return "Transfer failed"
+        + " txn=" + (transactionId == null ? "n/a" : transactionId)
+        + " amount=" + amount + " " + (currency == null ? "" : currency)
+        + " userId=" + (ownerUserId == null ? "n/a" : ownerUserId)
+        + " status=" + (finalStatus == null ? "FAILED" : finalStatus)
+        + " reason=" + (failureReason == null ? "n/a" : failureReason);
   }
 
   private String text(JsonNode node, String field) {

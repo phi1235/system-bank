@@ -40,7 +40,8 @@
     "ADMIN_AUDIT": "Audit",
     "ADMIN_RBAC": "RBAC",
     "ADMIN_RISK": "Risk",
-    "ADMIN_USERS": "Users"
+    "ADMIN_USERS": "Users",
+    "ADMIN_NOTIFICATIONS": "Alerts"
   },
   "AUTH": {
     "IB_BRAND": "Internet Banking",
@@ -283,6 +284,17 @@
   },
   "ADMIN": {
     "SHELL_TITLE": "Operations Console",
+    "NOTIF_TITLE": "Ops alerts",
+    "NOTIF_SUB": "{{unread}} open",
+    "NOTIF_EMPTY": "No ops alerts yet. Failed transfers will appear here.",
+    "NOTIF_LOAD_FAIL": "Could not load ops alerts",
+    "NOTIF_ACTION_FAIL": "Could not update alert",
+    "NOTIF_MARK_READ": "Acknowledge",
+    "NOTIF_MARK_ALL": "Acknowledge all",
+    "NOTIF_MARK_ALL_OK": "All ops alerts acknowledged",
+    "NOTIF_READ": "Acknowledged",
+    "NOTIF_UNREAD": "Open",
+    "NOTIF_LIVE": "Ops alert: {{text}}",
     "BO_TITLE": "Back Office",
     "BO_SUB": "Bank System Ops",
     "ROLE_ADMIN": "ADMIN",

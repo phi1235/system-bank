@@ -37,6 +37,23 @@ export class BankApiService {
     return this.api.post('/notifications/read-all', {});
   }
 
+  // Notifications (admin ops shared inbox)
+  adminOpsNotifications(page = 0, size = 20): Observable<PageResponse<NotificationItem>> {
+    return this.api.get('/admin/notifications', { page, size });
+  }
+
+  adminOpsNotificationUnreadCount(): Observable<{ unread: number }> {
+    return this.api.get('/admin/notifications/unread-count');
+  }
+
+  markAdminOpsNotificationRead(id: string): Observable<NotificationItem> {
+    return this.api.post(`/admin/notifications/${id}/read`, {});
+  }
+
+  markAllAdminOpsNotificationsRead(): Observable<{ updated: number }> {
+    return this.api.post('/admin/notifications/read-all', {});
+  }
+
   // Customer profile
   getProfile(): Observable<CustomerProfile> {
     return this.api.get('/customers/me');

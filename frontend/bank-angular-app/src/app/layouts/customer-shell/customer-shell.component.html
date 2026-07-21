@@ -29,18 +29,7 @@
     <div class="header-actions">
       <app-lang-switcher />
       @if (canNotifications$ | async) {
-        <a
-          mat-icon-button
-          class="notif-btn"
-          routerLink="/customer/notifications"
-          [matBadge]="(unread$ | async) || null"
-          [matBadgeHidden]="!((unread$ | async) || 0)"
-          matBadgeColor="warn"
-          matBadgeSize="small"
-          [attr.aria-label]="'NAV.NOTIFICATIONS' | translate"
-        >
-          <mat-icon>notifications</mat-icon>
-        </a>
+        <app-notification-bell mode="customer" />
       }
       @if (canTransfer$ | async) {
         <a mat-flat-button color="primary" class="cta" routerLink="/customer/payments/transfer">
@@ -73,9 +62,6 @@
         }
         @if (canHistory$ | async) {
           <a mat-menu-item routerLink="/customer/history">{{ 'NAV.HISTORY' | translate }}</a>
-        }
-        @if (canNotifications$ | async) {
-          <a mat-menu-item routerLink="/customer/notifications">{{ 'NAV.NOTIFICATIONS' | translate }}</a>
         }
         <button mat-menu-item type="button" (click)="logout()">{{ 'COMMON.LOGOUT' | translate }}</button>
       </mat-menu>

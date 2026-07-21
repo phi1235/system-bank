@@ -68,6 +68,9 @@
         <span class="title">{{ 'ADMIN.SHELL_TITLE' | translate }}</span>
         <span class="spacer"></span>
         <app-lang-switcher />
+        @if (canOpsNotifications$ | async) {
+          <app-notification-bell mode="ops" />
+        }
         <span class="env">{{ 'COMMON.DEV' | translate }}</span>
         <span class="role">{{ roleBadge$ | async }}</span>
         <span class="user">{{ username$ | async }}</span>

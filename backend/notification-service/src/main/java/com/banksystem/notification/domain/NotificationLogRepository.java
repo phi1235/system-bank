@@ -28,4 +28,18 @@ public interface NotificationLogRepository extends JpaRepository<NotificationLog
       WHERE n.userId = :userId AND n.readAt IS NULL
       """)
   int markAllRead(@Param("userId") UUID userId);
+
+  Page<NotificationLogEntity> findByAudienceOrderByCreatedAtDesc(String audience, Pageable pageable);
+
+  Optional<NotificationLogEntity> findByIdAndAudience(UUID id, String audience);
+
+  long countByAudienceAndReadAtIsNull(String audience);
+
+  @Modifying(clearAutomatically = true, flushAutomatically = true)
+  @Query("""
+      UPDATE NotificationLogEntity n
+      SET n.readAt = CURRENT_TIMESTAMP
+      WHERE n.audience = :audience AND n.readAt IS NULL
+      """)
+  int markAllReadByAudience(@Param("audience") String audience);
 }

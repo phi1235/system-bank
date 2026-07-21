@@ -14,7 +14,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 /**
- * In-process fan-out for customer notification SSE streams.
+ * In-process fan-out for notification SSE streams.
+ * User channel = customer IB inbox; ops channel = shared staff alerts.
  * Single-instance only; multi-replica would need Redis pub/sub later.
  */
 @Component
@@ -25,6 +26,7 @@ public class NotificationRealtimeHub {
 
   private final ObjectMapper objectMapper;
   private final Map<UUID, CopyOnWriteArrayList<SseEmitter>> emittersByUser = new ConcurrentHashMap<>();
+  private final CopyOnWriteArrayList<SseEmitter> opsEmitters = new CopyOnWriteArrayList<>();
 
   public NotificationRealtimeHub(ObjectMapper objectMapper) {
     // Spring Boot ObjectMapper already has JavaTimeModule; copy + register keeps unit tests safe too.
@@ -41,7 +43,24 @@ public class NotificationRealtimeHub {
     emitter.onError(ex -> cleanup.run());
 
     try {
-      emitter.send(SseEmitter.event().name("connected").data(Map.of("ok", true)));
+      emitter.send(SseEmitter.event().name("connected").data(Map.of("ok", true, "channel", "user")));
+    } catch (IOException ex) {
+      cleanup.run();
+    }
+    return emitter;
+  }
+
+  public SseEmitter subscribeOps() {
+    SseEmitter emitter = new SseEmitter(TIMEOUT_MS);
+    opsEmitters.add(emitter);
+
+    Runnable cleanup = () -> removeOps(emitter);
+    emitter.onCompletion(cleanup);
+    emitter.onTimeout(cleanup);
+    emitter.onError(ex -> cleanup.run());
+
+    try {
+      emitter.send(SseEmitter.event().name("connected").data(Map.of("ok", true, "channel", "ops")));
     } catch (IOException ex) {
       cleanup.run();
     }
@@ -53,6 +72,17 @@ public class NotificationRealtimeHub {
       return;
     }
     List<SseEmitter> emitters = emittersByUser.get(userId);
+    sendAll(emitters, item, "userId=" + userId);
+  }
+
+  public void publishOps(NotificationItem item) {
+    if (item == null) {
+      return;
+    }
+    sendAll(opsEmitters, item, "ops");
+  }
+
+  private void sendAll(List<SseEmitter> emitters, NotificationItem item, String label) {
     if (emitters == null || emitters.isEmpty()) {
       return;
     }
@@ -60,14 +90,19 @@ public class NotificationRealtimeHub {
     try {
       json = objectMapper.writeValueAsString(item);
     } catch (Exception ex) {
-      log.warn("Failed to serialize notification for SSE userId={}: {}", userId, ex.getMessage());
+      log.warn("Failed to serialize notification for SSE {}: {}", label, ex.getMessage());
       return;
     }
     for (SseEmitter emitter : emitters) {
       try {
         emitter.send(SseEmitter.event().name("notification").data(json));
       } catch (Exception ex) {
-        remove(userId, emitter);
+        if (label.startsWith("userId=")) {
+          UUID userId = UUID.fromString(label.substring("userId=".length()));
+          remove(userId, emitter);
+        } else {
+          removeOps(emitter);
+        }
         try {
           emitter.completeWithError(ex);
         } catch (Exception ignored) {
@@ -86,5 +121,9 @@ public class NotificationRealtimeHub {
     if (list.isEmpty()) {
       emittersByUser.remove(userId, list);
     }
+  }
+
+  private void removeOps(SseEmitter emitter) {
+    opsEmitters.remove(emitter);
   }
 }
