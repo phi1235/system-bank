@@ -1,0 +1,29 @@
+# Keep Docker build context small and stable for layer caching.
+**/.git
+**/.gitignore
+**/.gitattributes
+**/target
+**/bin
+**/out
+**/.idea
+**/.vscode
+**/*.iml
+**/.classpath
+**/.project
+**/.settings
+**/*~
+**/*.swp
+**/*.log
+**/dependency-reduced-pom.xml
+**/.DS_Store
+**/Thumbs.db
+
+# Docs / tests not needed for package -DskipTests image builds
+**/*README*
+**/*readme*
+**/docs
+**/*.md
+
+# Local IDE / OS noise
+**/.env
+**/.env.*
