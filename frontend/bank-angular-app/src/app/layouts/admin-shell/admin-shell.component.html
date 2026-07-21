@@ -61,6 +61,12 @@
             <span matListItemTitle>{{ 'NAV.ADMIN_RISK' | translate }}</span>
           </a>
         }
+        @if (canOpsNotifications$ | async) {
+          <a mat-list-item routerLink="/admin/notifications" routerLinkActive="active">
+            <mat-icon matListItemIcon>notifications</mat-icon>
+            <span matListItemTitle>{{ 'NAV.ADMIN_NOTIFICATIONS' | translate }}</span>
+          </a>
+        }
       </mat-nav-list>
     </mat-sidenav>
     <mat-sidenav-content>
@@ -68,6 +74,20 @@
         <span class="title">{{ 'ADMIN.SHELL_TITLE' | translate }}</span>
         <span class="spacer"></span>
         <app-lang-switcher />
+        @if (canOpsNotifications$ | async) {
+          <a
+            mat-icon-button
+            class="notif-btn"
+            routerLink="/admin/notifications"
+            [matBadge]="(unread$ | async) || null"
+            [matBadgeHidden]="!((unread$ | async) || 0)"
+            matBadgeColor="warn"
+            matBadgeSize="small"
+            [attr.aria-label]="'NAV.ADMIN_NOTIFICATIONS' | translate"
+          >
+            <mat-icon>notifications</mat-icon>
+          </a>
+        }
         <span class="env">{{ 'COMMON.DEV' | translate }}</span>
         <span class="role">{{ roleBadge$ | async }}</span>
         <span class="user">{{ username$ | async }}</span>

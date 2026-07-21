@@ -37,6 +37,12 @@ spring:
           # SSE stream stays open; avoid default response timeout cutting the pipe.
           metadata:
             response-timeout: 0
+        - id: admin-routes-notifications
+          uri: lb://NOTIFICATION-SERVICE
+          predicates:
+            - Path=/api/v1/admin/notifications/**
+          metadata:
+            response-timeout: 0
         - id: admin-routes-rbac
           uri: lb://AUTH-SERVICE
           predicates:

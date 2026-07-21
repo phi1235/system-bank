@@ -33,4 +33,24 @@ class NotificationRealtimeHubTest {
     assertDoesNotThrow(() -> hub.publish(null, item));
     assertDoesNotThrow(() -> hub.publish(userId, null));
   }
+
+  @Test
+  void opsSubscribeAndPublishDoesNotThrow() {
+    NotificationRealtimeHub hub = new NotificationRealtimeHub(new ObjectMapper());
+    SseEmitter emitter = hub.subscribeOps();
+    assertNotNull(emitter);
+
+    NotificationItem item = new NotificationItem(
+        UUID.randomUUID().toString(),
+        "OPS",
+        "OPS_TRANSFER_FAILED",
+        "OPEN",
+        "transfer failed",
+        false,
+        null,
+        Instant.parse("2026-07-21T10:00:00Z"));
+
+    assertDoesNotThrow(() -> hub.publishOps(item));
+    assertDoesNotThrow(() -> hub.publishOps(null));
+  }
 }

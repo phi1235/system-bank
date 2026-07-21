@@ -32,9 +32,15 @@ public class NotificationLogEntity {
   @Column(columnDefinition = "TEXT")
   private String body;
 
-  /** Owning customer user id for IB inbox (nullable for legacy / system rows). */
+  /** Owning customer user id for IB inbox (nullable for legacy / system / OPS rows). */
   @Column(name = "user_id")
   private UUID userId;
+
+  /**
+   * Inbox audience: {@code CUSTOMER} (user-scoped IB) or {@code OPS} (shared staff alerts).
+   */
+  @Column(name = "audience", nullable = false, length = 20)
+  private String audience = "CUSTOMER";
 
   @Column(name = "read_at")
   private Instant readAt;
@@ -104,6 +110,14 @@ public class NotificationLogEntity {
 
   public void setUserId(UUID userId) {
     this.userId = userId;
+  }
+
+  public String getAudience() {
+    return audience;
+  }
+
+  public void setAudience(String audience) {
+    this.audience = audience;
   }
 
   public Instant getReadAt() {
