@@ -45,6 +45,17 @@ export class ApiService {
     );
   }
 
+  /** Binary/download GET (no ApiResponse unwrap). */
+  getBlob(
+    path: string,
+    params?: Record<string, string | number | boolean | undefined>,
+  ): Observable<Blob> {
+    return this.http.get(this.url(path), {
+      params: this.toParams(params),
+      responseType: 'blob',
+    });
+  }
+
   private url(path: string): string {
     return path.startsWith('http') ? path : `${this.base}${path.startsWith('/') ? path : '/' + path}`;
   }

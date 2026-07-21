@@ -114,4 +114,26 @@ public class CustomerAccountService {
         page.getTotalElements(),
         page.getTotalPages());
   }
+
+  /**
+   * Export ledger lines as CSV (UTF-8 BOM for Excel). Same filters as statement, newest first,
+   * hard-capped at {@link LedgerStatementQuery#MAX_EXPORT_ROWS}.
+   */
+  @Transactional(readOnly = true)
+  public byte[] exportStatementCsv(LedgerStatementQuery query, GatewayUser user) {
+    access.requireOwnedOrStaff(query.accountId(), user);
+    String type = query.entryType() == null ? null : query.entryType().name();
+    int limit = Math.min(Math.max(query.size(), 1), LedgerStatementQuery.MAX_EXPORT_ROWS);
+    PageRequest pageable = PageRequest.of(
+        0,
+        limit,
+        Sort.by(Sort.Direction.DESC, "createdAt"));
+    Page<LedgerEntryEntity> page = ledgerEntryRepository.search(
+        query.accountId(),
+        type,
+        query.from(),
+        query.to(),
+        pageable);
+    return StatementCsvWriter.write(page.getContent());
+  }
 }

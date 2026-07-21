@@ -12,6 +12,8 @@ public final class LedgerStatementQuery {
 
   public static final int DEFAULT_SIZE = 20;
   public static final int MAX_SIZE = 100;
+  /** Cap for CSV export (non-secret product knob). */
+  public static final int MAX_EXPORT_ROWS = 5_000;
 
   private final UUID accountId;
   private final int page;

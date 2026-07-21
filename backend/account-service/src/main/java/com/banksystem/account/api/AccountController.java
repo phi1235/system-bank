@@ -12,7 +12,9 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -68,5 +70,25 @@ public class AccountController {
       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to) {
     LedgerStatementQuery query = LedgerStatementQuery.of(id, page, size, entryType, from, to);
     return ApiResponse.ok(service.statement(query, UserContext.requireUser()));
+  }
+
+  /**
+   * Download account ledger as CSV (same filters as statement; max
+   * {@link LedgerStatementQuery#MAX_EXPORT_ROWS} rows).
+   */
+  @GetMapping(value = "/{id}/statement/export.csv", produces = "text/csv")
+  public ResponseEntity<byte[]> exportStatementCsv(
+      @PathVariable UUID id,
+      @RequestParam(required = false) String entryType,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to) {
+    LedgerStatementQuery query =
+        LedgerStatementQuery.of(id, 0, LedgerStatementQuery.MAX_EXPORT_ROWS, entryType, from, to);
+    byte[] csv = service.exportStatementCsv(query, UserContext.requireUser());
+    String filename = "statement-" + id + ".csv";
+    return ResponseEntity.ok()
+        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+        .contentType(new MediaType("text", "csv", java.nio.charset.StandardCharsets.UTF_8))
+        .body(csv);
   }
 }
