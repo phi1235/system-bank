@@ -12,8 +12,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplicat
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
-import org.springframework.web.context.request.RequestAttributes;
-import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
@@ -37,8 +35,8 @@ public class RequestAuthFilter extends OncePerRequestFilter {
       List<String> permissions = splitCsv(request.getHeader(SecurityHeaders.USER_PERMISSIONS));
       try {
         GatewayUser user = new GatewayUser(UUID.fromString(userId), roles, permissions);
-        RequestContextHolder.currentRequestAttributes()
-            .setAttribute(ATTR, user, RequestAttributes.SCOPE_REQUEST);
+        // Use servlet request attributes — RequestContextHolder is not always bound yet in filters.
+        request.setAttribute(ATTR, user);
       } catch (IllegalArgumentException ignored) {
         // invalid user id header — leave unauthenticated
       }
