@@ -63,3 +63,13 @@ export interface MfaSetupResponse {
   otpauthUri: string;
   secret: string;
 }
+
+/** Active refresh session (device / browser). */
+export interface AuthSession {
+  id: string;
+  ip: string | null;
+  userAgent: string | null;
+  createdAt: string;
+  expiresAt: string;
+  current: boolean;
+}
