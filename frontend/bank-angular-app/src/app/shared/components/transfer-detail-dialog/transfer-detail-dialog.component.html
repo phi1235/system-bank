@@ -1,0 +1,80 @@
+<h2 mat-dialog-title>{{ 'TRANSFER_DETAIL.TITLE' | translate }}</h2>
+<mat-dialog-content>
+  @if (detail; as d) {
+    <div class="meta">
+      <div class="row">
+        <span class="k">{{ 'COMMON.STATUS' | translate }}</span>
+        <span
+          class="chip"
+          [class.ok]="d.transfer.status === 'COMPLETED'"
+          [class.warn]="d.transfer.status === 'PENDING' || d.transfer.status === 'COMPENSATED'"
+          [class.bad]="d.transfer.status === 'FAILED'"
+          >{{ d.transfer.status }}</span
+        >
+      </div>
+      <div class="row">
+        <span class="k">{{ 'COMMON.AMOUNT' | translate }}</span>
+        <span class="money">{{ d.transfer.amount | moneyVnd: d.transfer.currency }}</span>
+      </div>
+      <div class="row">
+        <span class="k">{{ 'CUSTOMER.FEE' | translate }}</span>
+        <span class="money">{{ (d.transfer.feeAmount || 0) | moneyVnd: d.transfer.currency }}</span>
+      </div>
+      <div class="row">
+        <span class="k">{{ 'TRANSFER_DETAIL.TO' | translate }}</span>
+        <span>{{ d.transfer.toAccountNumber || '—' }}</span>
+      </div>
+      <div class="row">
+        <span class="k">{{ 'COMMON.TIME' | translate }}</span>
+        <span>{{ d.transfer.createdAt | date: 'medium' }}</span>
+      </div>
+      <div class="row">
+        <span class="k">{{ 'TRANSFER_DETAIL.ID' | translate }}</span>
+        <code>{{ d.transfer.transactionId }}</code>
+      </div>
+      @if (d.transfer.failureReason) {
+        <div class="row fail">
+          <span class="k">{{ 'TRANSFER_DETAIL.FAILURE' | translate }}</span>
+          <span>{{ d.transfer.failureReason }}</span>
+        </div>
+      }
+      @if (d.transfer.description) {
+        <div class="row">
+          <span class="k">{{ 'CUSTOMER.HISTORY_DESC' | translate }}</span>
+          <span>{{ d.transfer.description }}</span>
+        </div>
+      }
+    </div>
+
+    <h3 class="steps-title">{{ 'TRANSFER_DETAIL.STEPS' | translate }}</h3>
+    @if (d.steps.length === 0) {
+      <p class="empty">{{ 'TRANSFER_DETAIL.NO_STEPS' | translate }}</p>
+    } @else {
+      <ol class="steps">
+        @for (s of d.steps; track s.id) {
+          <li>
+            <div class="step-head">
+              <strong>{{ s.step }}</strong>
+              <span
+                class="chip sm"
+                [class.ok]="s.status === 'SUCCESS'"
+                [class.warn]="s.status !== 'SUCCESS' && s.status !== 'FAILED'"
+                [class.bad]="s.status === 'FAILED'"
+                >{{ s.status }}</span
+              >
+            </div>
+            <div class="step-meta">{{ s.createdAt | date: 'short' }}</div>
+            @if (s.detail) {
+              <div class="step-detail">{{ s.detail }}</div>
+            }
+          </li>
+        }
+      </ol>
+    }
+  }
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-flat-button color="primary" type="button" mat-dialog-close>
+    {{ 'COMMON.CLOSE' | translate }}
+  </button>
+</mat-dialog-actions>
