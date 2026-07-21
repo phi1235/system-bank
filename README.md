@@ -232,6 +232,17 @@ Credentials come from `infra/.env` (not hardcoded in application source).
 
 Set `ADMIN_SEED_ENABLED=false` after bootstrap if you no longer want auto-seed.
 
+### Local demo data (optional)
+
+After the stack is up and Flyway has migrated, load sample users/accounts/transfers:
+
+```powershell
+.\infra\scripts\seed-demo-data.ps1
+```
+
+Seeded non-admin password: `Demo1234!` (e.g. `alice`, `bob`, `testuser`, `opsadmin`).  
+Does **not** overwrite `admin` password. See `infra/scripts/demo-seed/README.md`.
+
 Internal debug APIs require:
 
 ```http
