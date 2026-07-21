@@ -1,9 +1,19 @@
+import { Overlay, OverlayModule, OverlayRef } from '@angular/cdk/overlay';
+import { TemplatePortal } from '@angular/cdk/portal';
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, Input, OnDestroy, ViewChild, inject } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  Input,
+  OnDestroy,
+  TemplateRef,
+  ViewChild,
+  ViewContainerRef,
+  inject,
+} from '@angular/core';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatMenu, MatMenuModule } from '@angular/material/menu';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { Subscription } from 'rxjs';
@@ -16,40 +26,49 @@ import { ToastService } from '../../../core/services/toast.service';
 export type NotificationBellMode = 'customer' | 'ops';
 
 /**
- * Header notification bell + dropdown panel (app-style popover).
- * Loads a recent page when opened; mark-read / mark-all in place.
+ * Header notification bell + wide dropdown.
+ * Uses CDK Overlay with global right-edge positioning (not mat-menu),
+ * so the panel is free of Material's 280px cap and expands under the top-right header.
  */
 @Component({
   selector: 'app-notification-bell',
   standalone: true,
   imports: [
     CommonModule,
+    OverlayModule,
     MatBadgeModule,
     MatButtonModule,
     MatIconModule,
-    MatMenuModule,
     MatProgressSpinnerModule,
     TranslateModule,
   ],
   templateUrl: './notification-bell.component.html',
   styleUrl: './notification-bell.component.scss',
 })
-export class NotificationBellComponent implements AfterViewInit, OnDestroy {
+export class NotificationBellComponent implements OnDestroy {
   @Input({ required: true }) mode!: NotificationBellMode;
-  @ViewChild('panel') private menu?: MatMenu;
+  @ViewChild('triggerBtn', { read: ElementRef }) private triggerBtn?: ElementRef<HTMLElement>;
+  @ViewChild('panelTpl') private panelTpl?: TemplateRef<unknown>;
 
   private readonly api = inject(BankApiService);
   private readonly toast = inject(ToastService);
   private readonly i18n = inject(TranslateService);
   private readonly customerStream = inject(NotificationStreamService);
   private readonly opsStream = inject(OpsNotificationStreamService);
+  private readonly overlay = inject(Overlay);
+  private readonly vcr = inject(ViewContainerRef);
   private liveSub?: Subscription;
+  private overlayRef?: OverlayRef;
+  private backdropSub?: Subscription;
 
   items: NotificationItem[] = [];
   loading = false;
   markingAll = false;
   loadedOnce = false;
+  open = false;
   private readonly pageSize = 12;
+  private readonly panelMaxWidth = 720;
+  private readonly edgeMargin = 12;
 
   get unread$() {
     return this.mode === 'ops' ? this.opsStream.unreadCount$ : this.customerStream.unreadCount$;
@@ -87,92 +106,67 @@ export class NotificationBellComponent implements AfterViewInit, OnDestroy {
     return this.mode === 'ops' ? 'ADMIN.NOTIF_MARK_ALL_OK' : 'CUSTOMER.NOTIF_MARK_ALL_OK';
   }
 
-  ngAfterViewInit(): void {
-    // Material 19: overlayPanelClass is not a template input; set on the pane host.
-    if (this.menu) {
-      this.menu.overlayPanelClass = 'notif-dropdown-overlay';
-    }
-  }
-
   ngOnDestroy(): void {
     this.liveSub?.unsubscribe();
+    this.closePanel();
   }
 
-  /** Keep menu open when clicking inside the panel. */
-  stopClose(event: MouseEvent): void {
-    event.stopPropagation();
+  togglePanel(event?: MouseEvent): void {
+    event?.stopPropagation();
+    if (this.open) {
+      this.closePanel();
+      return;
+    }
+    this.openPanel();
   }
 
-  onMenuOpened(): void {
-    this.bindLive();
-    this.reload();
-    // Material hard-caps .mat-mdc-menu-panel at 280px and anchors left of the bell.
-    // Force wide width + right-align under the topbar edge.
-    this.forcePanelLayout();
-    requestAnimationFrame(() => this.forcePanelLayout());
-    setTimeout(() => this.forcePanelLayout(), 0);
-    setTimeout(() => this.forcePanelLayout(), 80);
-    setTimeout(() => this.forcePanelLayout(), 160);
-  }
-
-  onMenuClosed(): void {
-    // keep list cached; live sub stays for badge updates while shell is alive
-  }
-
-  /**
-   * Force overlay + menu panel to a wide width and pin the right edge to the
-   * viewport (fills the right side of the topbar, not the empty left content area).
-   */
-  private forcePanelLayout(): void {
-    const margin = 12;
-    const pxWidth = Math.min(720, Math.max(280, window.innerWidth - margin * 2));
-    const widthCss = `${pxWidth}px`;
-
-    const panel =
-      (document.querySelector('.mat-mdc-menu-panel.notif-dropdown-panel') as HTMLElement | null) ??
-      (document.querySelector('.mat-mdc-menu-panel:has(.notif-panel)') as HTMLElement | null);
-    if (!panel) {
+  openPanel(): void {
+    if (!this.panelTpl || this.open) {
       return;
     }
 
-    panel.style.setProperty('width', widthCss, 'important');
-    panel.style.setProperty('min-width', widthCss, 'important');
-    panel.style.setProperty('max-width', widthCss, 'important');
+    const margin = this.edgeMargin;
+    const width = Math.min(this.panelMaxWidth, Math.max(320, window.innerWidth - margin * 2));
+    const triggerBottom = this.triggerBtn?.nativeElement.getBoundingClientRect().bottom ?? 56;
+    const top = Math.round(triggerBottom + 8);
 
-    const pane = panel.closest('.cdk-overlay-pane') as HTMLElement | null;
-    if (pane) {
-      pane.style.setProperty('width', widthCss, 'important');
-      pane.style.setProperty('min-width', widthCss, 'important');
-      pane.style.setProperty('max-width', widthCss, 'important');
+    // Global strategy pins to viewport right edge — expands left from the screen edge.
+    const positionStrategy = this.overlay
+      .position()
+      .global()
+      .right(`${margin}px`)
+      .top(`${top}px`);
 
-      // Right-align to viewport: expand toward the right edge of the screen.
-      const rect = pane.getBoundingClientRect();
-      const targetLeft = Math.max(margin, window.innerWidth - pxWidth - margin);
-      const deltaX = targetLeft - rect.left;
-      if (Math.abs(deltaX) > 0.5) {
-        const computedLeft = Number.parseFloat(getComputedStyle(pane).left);
-        if (Number.isFinite(computedLeft)) {
-          pane.style.setProperty('left', `${computedLeft + deltaX}px`, 'important');
-        } else {
-          pane.style.setProperty('left', `${targetLeft}px`, 'important');
-        }
-        pane.style.setProperty('right', 'auto', 'important');
+    this.overlayRef = this.overlay.create({
+      positionStrategy,
+      scrollStrategy: this.overlay.scrollStrategies.reposition(),
+      width,
+      maxWidth: `calc(100vw - ${margin * 2}px)`,
+      hasBackdrop: true,
+      backdropClass: 'cdk-overlay-transparent-backdrop',
+      panelClass: 'notif-dropdown-overlay',
+      disposeOnNavigation: true,
+    });
+
+    this.overlayRef.attach(new TemplatePortal(this.panelTpl, this.vcr));
+    this.backdropSub = this.overlayRef.backdropClick().subscribe(() => this.closePanel());
+    this.overlayRef.keydownEvents().subscribe((e) => {
+      if (e.key === 'Escape') {
+        this.closePanel();
       }
-    }
+    });
 
-    const content = panel.querySelector('.mat-mdc-menu-content') as HTMLElement | null;
-    if (content) {
-      content.style.setProperty('width', '100%', 'important');
-      content.style.setProperty('max-width', 'none', 'important');
-      content.style.setProperty('padding', '0', 'important');
-    }
+    this.open = true;
+    this.bindLive();
+    this.reload();
+  }
 
-    const inner = panel.querySelector('.notif-panel') as HTMLElement | null;
-    if (inner) {
-      inner.style.setProperty('width', '100%', 'important');
-      inner.style.setProperty('min-width', '100%', 'important');
-      inner.style.setProperty('max-width', 'none', 'important');
-    }
+  closePanel(): void {
+    this.backdropSub?.unsubscribe();
+    this.backdropSub = undefined;
+    this.overlayRef?.dispose();
+    this.overlayRef = undefined;
+    this.open = false;
   }
 
   markRead(item: NotificationItem, event?: MouseEvent): void {

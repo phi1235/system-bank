@@ -2,27 +2,28 @@
   mat-icon-button
   type="button"
   class="notif-btn"
-  [matMenuTriggerFor]="panel"
-  (menuOpened)="onMenuOpened()"
-  (menuClosed)="onMenuClosed()"
+  #triggerBtn
+  (click)="togglePanel($event)"
   [matBadge]="(unread$ | async) || null"
   [matBadgeHidden]="!((unread$ | async) || 0)"
   matBadgeColor="warn"
   matBadgeSize="small"
   [attr.aria-label]="titleKey | translate"
+  [attr.aria-expanded]="open"
+  aria-haspopup="true"
 >
   <mat-icon>notifications</mat-icon>
 </button>
 
-<mat-menu
-  #panel="matMenu"
-  class="notif-dropdown-panel"
-  backdropClass="notif-dropdown-backdrop"
-  xPosition="before"
-  yPosition="below"
-  [overlapTrigger]="false"
->
-  <div class="notif-panel" (click)="stopClose($event)" (keydown)="$event.stopPropagation()">
+<!-- Rendered into CDK Overlay at viewport right edge (not under the bell). -->
+<ng-template #panelTpl>
+  <div
+    class="notif-panel"
+    role="menu"
+    [attr.aria-label]="titleKey | translate"
+    (click)="$event.stopPropagation()"
+    (keydown)="$event.stopPropagation()"
+  >
     <header class="panel-head">
       <div class="titles">
         <strong>{{ titleKey | translate }}</strong>
@@ -77,4 +78,4 @@
       </ul>
     }
   </div>
-</mat-menu>
+</ng-template>
