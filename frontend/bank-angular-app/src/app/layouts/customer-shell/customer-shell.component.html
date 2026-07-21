@@ -60,6 +60,9 @@
         @if (canHistory$ | async) {
           <a mat-menu-item routerLink="/customer/history">{{ 'NAV.HISTORY' | translate }}</a>
         }
+        @if (canNotifications$ | async) {
+          <a mat-menu-item routerLink="/customer/notifications">{{ 'NAV.NOTIFICATIONS' | translate }}</a>
+        }
         <button mat-menu-item type="button" (click)="logout()">{{ 'COMMON.LOGOUT' | translate }}</button>
       </mat-menu>
     </div>

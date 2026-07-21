@@ -7,6 +7,7 @@ import {
   Beneficiary,
   CustomerProfile,
   LedgerEntry,
+  NotificationItem,
   OutboxCounts,
   OutboxEvent,
   Transfer,
@@ -18,6 +19,23 @@ import { ApiService } from './api.service';
 @Injectable({ providedIn: 'root' })
 export class BankApiService {
   private readonly api = inject(ApiService);
+
+  // Notifications (customer inbox)
+  myNotifications(page = 0, size = 20): Observable<PageResponse<NotificationItem>> {
+    return this.api.get('/notifications', { page, size });
+  }
+
+  notificationUnreadCount(): Observable<{ unread: number }> {
+    return this.api.get('/notifications/unread-count');
+  }
+
+  markNotificationRead(id: string): Observable<NotificationItem> {
+    return this.api.post(`/notifications/${id}/read`, {});
+  }
+
+  markAllNotificationsRead(): Observable<{ updated: number }> {
+    return this.api.post('/notifications/read-all', {});
+  }
 
   // Customer profile
   getProfile(): Observable<CustomerProfile> {

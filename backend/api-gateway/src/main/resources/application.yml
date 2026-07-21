@@ -30,6 +30,10 @@ spring:
           uri: lb://TRANSACTION-SERVICE
           predicates:
             - Path=/api/v1/transactions/**
+        - id: notification-service
+          uri: lb://NOTIFICATION-SERVICE
+          predicates:
+            - Path=/api/v1/notifications/**
         - id: admin-routes-rbac
           uri: lb://AUTH-SERVICE
           predicates:
