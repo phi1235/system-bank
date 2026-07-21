@@ -273,16 +273,19 @@ code {
 
 /* Notification bell dropdown (CDK overlay — must be global) */
 .notif-dropdown-panel.mat-mdc-menu-panel {
-  /* Wider panel; cap by viewport so it never forces page horizontal scroll */
-  width: min(28rem, calc(100vw - 1.5rem)) !important;
-  min-width: min(28rem, calc(100vw - 1.5rem)) !important;
-  max-width: min(28rem, calc(100vw - 1.5rem)) !important;
-  max-height: min(32rem, 72vh) !important;
+  /* Match admin topbar density: wider body text, still viewport-safe */
+  width: min(40rem, calc(100vw - 2rem)) !important;
+  min-width: min(40rem, calc(100vw - 2rem)) !important;
+  max-width: min(40rem, calc(100vw - 2rem)) !important;
+  max-height: min(36rem, 78vh) !important;
   overflow-x: hidden !important;
   overflow-y: hidden !important;
-  border-radius: 0.75rem !important;
+  border-radius: 0.85rem !important;
   padding: 0 !important;
   box-sizing: border-box !important;
+  box-shadow:
+    0 18px 40px rgba(15, 23, 42, 0.14),
+    0 4px 12px rgba(15, 23, 42, 0.08) !important;
 }
 
 .notif-dropdown-panel .mat-mdc-menu-content {
