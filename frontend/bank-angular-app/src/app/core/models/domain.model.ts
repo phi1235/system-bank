@@ -33,6 +33,19 @@ export interface Transfer {
   createdAt: string;
 }
 
+export interface SagaStep {
+  id: string;
+  step: string;
+  status: string;
+  detail: string | null;
+  createdAt: string;
+}
+
+export interface TransferDetail {
+  transfer: Transfer;
+  steps: SagaStep[];
+}
+
 export interface TransferRequest {
   fromAccountId: string;
   toAccountNumber: string;

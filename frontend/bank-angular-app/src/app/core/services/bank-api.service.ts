@@ -10,6 +10,7 @@ import {
   OutboxCounts,
   OutboxEvent,
   Transfer,
+  TransferDetail,
   TransferRequest,
 } from '../models/domain.model';
 import { ApiService } from './api.service';
@@ -100,6 +101,11 @@ export class BankApiService {
 
   getTransfer(id: string): Observable<Transfer> {
     return this.api.get(`/transactions/transfers/${id}`);
+  }
+
+  /** Transfer order + ordered saga steps (owner or staff). */
+  getTransferDetail(id: string): Observable<TransferDetail> {
+    return this.api.get(`/transactions/transfers/${id}/detail`);
   }
 
   // Beneficiaries (internal transfer address book)
