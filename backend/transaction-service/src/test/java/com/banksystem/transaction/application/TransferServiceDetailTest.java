@@ -7,7 +7,7 @@ import static org.mockito.Mockito.when;
 
 import com.banksystem.common.exception.BusinessException;
 import com.banksystem.transaction.api.dto.TransferDtos.TransferDetailResponse;
-import com.banksystem.transaction.config.GatewayUser;
+import com.banksystem.common.security.GatewayUser;
 import com.banksystem.transaction.domain.AuditLogRepository;
 import com.banksystem.transaction.domain.SagaStepLogEntity;
 import com.banksystem.transaction.domain.SagaStepLogRepository;

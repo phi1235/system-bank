@@ -7,7 +7,7 @@ import com.banksystem.transaction.api.dto.TransferDtos.SagaStepResponse;
 import com.banksystem.transaction.api.dto.TransferDtos.TransferDetailResponse;
 import com.banksystem.transaction.api.dto.TransferDtos.TransferRequest;
 import com.banksystem.transaction.api.dto.TransferDtos.TransferResponse;
-import com.banksystem.transaction.config.GatewayUser;
+import com.banksystem.common.security.GatewayUser;
 import com.banksystem.transaction.domain.AuditLogEntity;
 import com.banksystem.transaction.domain.AuditLogRepository;
 import com.banksystem.transaction.domain.SagaStepLogEntity;

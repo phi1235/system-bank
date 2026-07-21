@@ -1,6 +1,6 @@
 package com.banksystem.account.application;
 
-import com.banksystem.account.config.GatewayUser;
+import com.banksystem.common.security.GatewayUser;
 import com.banksystem.account.domain.AccountEntity;
 import com.banksystem.account.domain.AccountRepository;
 import com.banksystem.account.domain.AccountStatus;

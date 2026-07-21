@@ -2,12 +2,13 @@ package com.banksystem.transaction.api;
 
 import com.banksystem.common.api.ApiResponse;
 import com.banksystem.common.api.PageResponse;
+import com.banksystem.common.security.RequirePermission;
+import com.banksystem.common.security.UserContext;
 import com.banksystem.transaction.api.dto.TransferDtos.AuditResponse;
 import com.banksystem.transaction.api.dto.TransferDtos.TransferDetailResponse;
 import com.banksystem.transaction.api.dto.TransferDtos.TransferRequest;
 import com.banksystem.transaction.api.dto.TransferDtos.TransferResponse;
 import com.banksystem.transaction.application.TransferService;
-import com.banksystem.transaction.config.UserContext;
 import com.banksystem.transaction.domain.AuditLogEntity;
 import com.banksystem.transaction.domain.AuditLogRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -74,19 +75,19 @@ public class TransferController {
   }
 
   @GetMapping({"/admin/transfers", "/transactions/admin/transfers"})
+  @RequirePermission("transactions:list:view")
   public ApiResponse<PageResponse<TransferResponse>> adminTransfers(
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "20") int size,
       @RequestParam(required = false) String status) {
-    UserContext.requirePermission("transactions:list:view");
     return ApiResponse.ok(transferService.adminList(status, page, Math.min(size, 100)));
   }
 
   @GetMapping({"/admin/audit-logs", "/transactions/admin/audit-logs"})
+  @RequirePermission("audit:list:view")
   public ApiResponse<PageResponse<AuditResponse>> auditLogs(
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "20") int size) {
-    UserContext.requirePermission("audit:list:view");
     var p = auditLogRepository.findAllByOrderByCreatedAtDesc(PageRequest.of(page, Math.min(size, 100)));
     var items = p.getContent().stream().map(this::toAudit).toList();
     return ApiResponse.ok(new PageResponse<>(items, p.getNumber(), p.getSize(),

@@ -5,7 +5,7 @@ import com.banksystem.transaction.api.dto.BeneficiaryDtos.BeneficiaryResponse;
 import com.banksystem.transaction.api.dto.BeneficiaryDtos.CreateBeneficiaryRequest;
 import com.banksystem.transaction.api.dto.BeneficiaryDtos.UpdateBeneficiaryRequest;
 import com.banksystem.transaction.application.BeneficiaryService;
-import com.banksystem.transaction.config.UserContext;
+import com.banksystem.common.security.UserContext;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;

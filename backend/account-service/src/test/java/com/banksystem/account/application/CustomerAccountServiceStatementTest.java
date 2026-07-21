@@ -10,7 +10,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.banksystem.account.application.query.LedgerStatementQuery;
-import com.banksystem.account.config.GatewayUser;
+import com.banksystem.common.security.GatewayUser;
 import com.banksystem.account.domain.AccountEntity;
 import com.banksystem.account.domain.AccountRepository;
 import com.banksystem.account.domain.LedgerEntryEntity;

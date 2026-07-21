@@ -2,11 +2,11 @@ package com.banksystem.transaction.api;
 
 import com.banksystem.common.api.ApiResponse;
 import com.banksystem.common.api.PageResponse;
+import com.banksystem.common.security.RequirePermission;
 import com.banksystem.transaction.api.dto.OutboxDtos.OutboxCountsResponse;
 import com.banksystem.transaction.api.dto.OutboxDtos.OutboxEventResponse;
 import com.banksystem.transaction.application.OutboxAdminService;
 import com.banksystem.transaction.application.query.OutboxListQuery;
-import com.banksystem.transaction.config.UserContext;
 import java.util.UUID;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping("/api/v1/admin/outbox")
+@RequirePermission("transactions:list:view")
 public class AdminOutboxController {
 
   private final OutboxAdminService service;
@@ -34,26 +35,22 @@ public class AdminOutboxController {
       @RequestParam(required = false) String status,
       @RequestParam(required = false) Integer page,
       @RequestParam(required = false) Integer size) {
-    UserContext.requirePermission("transactions:list:view");
     return ApiResponse.ok(service.list(OutboxListQuery.of(status, page, size)));
   }
 
   @GetMapping("/counts")
   public ApiResponse<OutboxCountsResponse> counts() {
-    UserContext.requirePermission("transactions:list:view");
     return ApiResponse.ok(service.counts());
   }
 
   @GetMapping("/{id}")
   public ApiResponse<OutboxEventResponse> get(@PathVariable UUID id) {
-    UserContext.requirePermission("transactions:list:view");
     return ApiResponse.ok(service.get(id));
   }
 
   /** Re-queue a DEAD event for another publish cycle. */
   @PostMapping("/{id}/replay")
   public ApiResponse<OutboxEventResponse> replay(@PathVariable UUID id) {
-    UserContext.requirePermission("transactions:list:view");
     return ApiResponse.ok(service.replay(id));
   }
 }

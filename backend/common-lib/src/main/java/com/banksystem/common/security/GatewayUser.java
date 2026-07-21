@@ -1,9 +1,13 @@
-package com.banksystem.transaction.config;
+package com.banksystem.common.security;
 
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
+/**
+ * Identity propagated from API Gateway via trusted headers
+ * ({@link SecurityHeaders#USER_ID}, roles, permissions).
+ */
 public record GatewayUser(UUID userId, List<String> roles, List<String> permissions) {
 
   public GatewayUser {

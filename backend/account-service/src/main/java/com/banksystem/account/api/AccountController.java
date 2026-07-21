@@ -5,7 +5,7 @@ import com.banksystem.account.api.dto.AccountDtos.LedgerEntryResponse;
 import com.banksystem.account.api.dto.AccountDtos.OpenAccountRequest;
 import com.banksystem.account.application.CustomerAccountService;
 import com.banksystem.account.application.query.LedgerStatementQuery;
-import com.banksystem.account.config.UserContext;
+import com.banksystem.common.security.UserContext;
 import com.banksystem.common.api.ApiResponse;
 import com.banksystem.common.api.PageResponse;
 import java.time.Instant;
