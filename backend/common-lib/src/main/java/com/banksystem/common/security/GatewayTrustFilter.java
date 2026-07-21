@@ -12,6 +12,7 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /** Rejects public API calls that were not signed by the API Gateway. */
@@ -24,6 +25,7 @@ public class GatewayTrustFilter extends OncePerRequestFilter {
   private final long maxClockSkewMillis;
   private final Clock clock;
 
+  @Autowired
   public GatewayTrustFilter(
       @Value("${bank.gateway.signing-secret}") String secret,
       @Value("${bank.gateway.max-clock-skew-seconds:30}") long maxClockSkewSeconds) {
