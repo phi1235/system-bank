@@ -271,30 +271,25 @@ code {
   color: var(--color-danger);
 }
 
-/* Notification bell dropdown (CDK overlay — must be global) */
-/* Width must be set on the overlay pane; Material menu defaults ~280px. */
-.cdk-overlay-pane.notif-dropdown-overlay {
-  width: min(48rem, calc(100vw - 1.25rem)) !important;
-  min-width: min(48rem, calc(100vw - 1.25rem)) !important;
-  max-width: min(48rem, calc(100vw - 1.25rem)) !important;
+/*
+ * Notification bell dropdown (CDK overlay — must be global).
+ * Angular Material hard-caps .mat-mdc-menu-panel at max-width:280px.
+ * Override with fixed min/max on the panel itself (not width:100% of a narrow pane).
+ */
+.cdk-overlay-container .cdk-overlay-pane.notif-dropdown-overlay,
+.cdk-overlay-container .cdk-overlay-pane:has(.notif-dropdown-panel),
+.cdk-overlay-container .cdk-overlay-pane:has(.notif-panel) {
+  width: min(720px, calc(100vw - 1.25rem)) !important;
+  min-width: min(720px, calc(100vw - 1.25rem)) !important;
+  max-width: min(720px, calc(100vw - 1.25rem)) !important;
 }
 
-/* Fallback if overlayPanelClass is missing (older builds). */
-.cdk-overlay-pane:has(.notif-dropdown-panel) {
-  width: min(48rem, calc(100vw - 1.25rem)) !important;
-  min-width: min(48rem, calc(100vw - 1.25rem)) !important;
-  max-width: min(48rem, calc(100vw - 1.25rem)) !important;
-}
-
-.mat-mdc-menu-panel.notif-dropdown-panel {
-  /* Fill the overlay pane end-to-end (no empty right strip). */
-  --mat-menu-container-width: 100%;
-  --mat-menu-container-min-width: 100%;
-  --mat-menu-container-max-width: none;
-  --mat-menu-item-label-text-size: 0.9rem;
-  width: 100% !important;
-  min-width: 100% !important;
-  max-width: none !important;
+.cdk-overlay-container .mat-mdc-menu-panel.notif-dropdown-panel,
+.cdk-overlay-container .mat-mdc-menu-panel:has(.notif-panel) {
+  /* Beat Material's max-width:280px */
+  min-width: min(720px, calc(100vw - 1.25rem)) !important;
+  max-width: min(720px, calc(100vw - 1.25rem)) !important;
+  width: min(720px, calc(100vw - 1.25rem)) !important;
   max-height: min(36rem, 78vh) !important;
   overflow-x: hidden !important;
   overflow-y: hidden !important;
@@ -306,8 +301,8 @@ code {
     0 4px 12px rgba(15, 23, 42, 0.08) !important;
 }
 
-.mat-mdc-menu-panel.notif-dropdown-panel .mat-mdc-menu-content,
-.mat-mdc-menu-panel.notif-dropdown-panel .mdc-menu-surface {
+.cdk-overlay-container .mat-mdc-menu-panel.notif-dropdown-panel .mat-mdc-menu-content,
+.cdk-overlay-container .mat-mdc-menu-panel:has(.notif-panel) .mat-mdc-menu-content {
   display: block !important;
   padding: 0 !important;
   width: 100% !important;
@@ -317,8 +312,8 @@ code {
   box-sizing: border-box !important;
 }
 
-.mat-mdc-menu-panel.notif-dropdown-panel .mat-mdc-menu-content > *,
-.mat-mdc-menu-panel.notif-dropdown-panel .notif-panel {
+.cdk-overlay-container .mat-mdc-menu-panel.notif-dropdown-panel .notif-panel,
+.cdk-overlay-container .mat-mdc-menu-panel:has(.notif-panel) .notif-panel {
   display: flex !important;
   flex-direction: column !important;
   width: 100% !important;
@@ -328,11 +323,11 @@ code {
   box-sizing: border-box !important;
 }
 
-.mat-mdc-menu-panel.notif-dropdown-panel .panel-list,
-.mat-mdc-menu-panel.notif-dropdown-panel .panel-item,
-.mat-mdc-menu-panel.notif-dropdown-panel .panel-head,
-.mat-mdc-menu-panel.notif-dropdown-panel .body,
-.mat-mdc-menu-panel.notif-dropdown-panel .text {
+.cdk-overlay-container .notif-panel .panel-list,
+.cdk-overlay-container .notif-panel .panel-item,
+.cdk-overlay-container .notif-panel .panel-head,
+.cdk-overlay-container .notif-panel .body,
+.cdk-overlay-container .notif-panel .text {
   width: 100% !important;
   max-width: 100% !important;
   box-sizing: border-box !important;

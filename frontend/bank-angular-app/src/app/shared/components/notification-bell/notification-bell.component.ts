@@ -106,10 +106,53 @@ export class NotificationBellComponent implements AfterViewInit, OnDestroy {
   onMenuOpened(): void {
     this.bindLive();
     this.reload();
+    // Material hard-caps .mat-mdc-menu-panel at 280px; force wide width after paint.
+    this.forcePanelWidth();
+    requestAnimationFrame(() => this.forcePanelWidth());
+    setTimeout(() => this.forcePanelWidth(), 0);
+    setTimeout(() => this.forcePanelWidth(), 80);
   }
 
   onMenuClosed(): void {
     // keep list cached; live sub stays for badge updates while shell is alive
+  }
+
+  /**
+   * Force overlay + menu panel width. CSS alone can lose to Material's
+   * max-width:280px depending on cascade order / HMR timing.
+   */
+  private forcePanelWidth(): void {
+    const width = 'min(720px, calc(100vw - 1.25rem))';
+    const panel =
+      (document.querySelector('.mat-mdc-menu-panel.notif-dropdown-panel') as HTMLElement | null) ??
+      (document.querySelector('.mat-mdc-menu-panel:has(.notif-panel)') as HTMLElement | null);
+    if (!panel) {
+      return;
+    }
+    panel.style.setProperty('width', width, 'important');
+    panel.style.setProperty('min-width', width, 'important');
+    panel.style.setProperty('max-width', width, 'important');
+
+    const pane = panel.closest('.cdk-overlay-pane') as HTMLElement | null;
+    if (pane) {
+      pane.style.setProperty('width', width, 'important');
+      pane.style.setProperty('min-width', width, 'important');
+      pane.style.setProperty('max-width', width, 'important');
+    }
+
+    const content = panel.querySelector('.mat-mdc-menu-content') as HTMLElement | null;
+    if (content) {
+      content.style.setProperty('width', '100%', 'important');
+      content.style.setProperty('max-width', 'none', 'important');
+      content.style.setProperty('padding', '0', 'important');
+    }
+
+    const inner = panel.querySelector('.notif-panel') as HTMLElement | null;
+    if (inner) {
+      inner.style.setProperty('width', '100%', 'important');
+      inner.style.setProperty('min-width', '100%', 'important');
+      inner.style.setProperty('max-width', 'none', 'important');
+    }
   }
 
   markRead(item: NotificationItem, event?: MouseEvent): void {
