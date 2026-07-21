@@ -1,9 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnDestroy, inject } from '@angular/core';
+import { AfterViewInit, Component, Input, OnDestroy, ViewChild, inject } from '@angular/core';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatMenuModule } from '@angular/material/menu';
+import { MatMenu, MatMenuModule } from '@angular/material/menu';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { Subscription } from 'rxjs';
@@ -34,8 +34,9 @@ export type NotificationBellMode = 'customer' | 'ops';
   templateUrl: './notification-bell.component.html',
   styleUrl: './notification-bell.component.scss',
 })
-export class NotificationBellComponent implements OnDestroy {
+export class NotificationBellComponent implements AfterViewInit, OnDestroy {
   @Input({ required: true }) mode!: NotificationBellMode;
+  @ViewChild('panel') private menu?: MatMenu;
 
   private readonly api = inject(BankApiService);
   private readonly toast = inject(ToastService);
@@ -84,6 +85,13 @@ export class NotificationBellComponent implements OnDestroy {
 
   get markAllOkKey(): string {
     return this.mode === 'ops' ? 'ADMIN.NOTIF_MARK_ALL_OK' : 'CUSTOMER.NOTIF_MARK_ALL_OK';
+  }
+
+  ngAfterViewInit(): void {
+    // Material 19: overlayPanelClass is not a template input; set on the pane host.
+    if (this.menu) {
+      this.menu.overlayPanelClass = 'notif-dropdown-overlay';
+    }
   }
 
   ngOnDestroy(): void {

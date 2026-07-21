@@ -12,8 +12,8 @@
   flex-direction: column;
   box-sizing: border-box;
   width: 100%;
+  min-width: 100%;
   max-width: 100%;
-  min-width: 0;
   max-height: min(36rem, 78vh);
   overflow-x: hidden;
   overflow-y: hidden;
@@ -113,6 +113,7 @@
   overflow-x: hidden;
   overflow-y: auto;
   flex: 1;
+  width: 100%;
   min-height: 0;
   min-width: 0;
 }

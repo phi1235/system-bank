@@ -14,7 +14,14 @@
   <mat-icon>notifications</mat-icon>
 </button>
 
-<mat-menu #panel="matMenu" panelClass="notif-dropdown-panel" xPosition="before" yPosition="below">
+<mat-menu
+  #panel="matMenu"
+  class="notif-dropdown-panel"
+  backdropClass="notif-dropdown-backdrop"
+  xPosition="before"
+  yPosition="below"
+  [overlapTrigger]="false"
+>
   <div class="notif-panel" (click)="stopClose($event)" (keydown)="$event.stopPropagation()">
     <header class="panel-head">
       <div class="titles">

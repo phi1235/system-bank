@@ -272,11 +272,29 @@ code {
 }
 
 /* Notification bell dropdown (CDK overlay — must be global) */
-.notif-dropdown-panel.mat-mdc-menu-panel {
-  /* Match admin topbar density: wider body text, still viewport-safe */
-  width: min(40rem, calc(100vw - 2rem)) !important;
-  min-width: min(40rem, calc(100vw - 2rem)) !important;
-  max-width: min(40rem, calc(100vw - 2rem)) !important;
+/* Width must be set on the overlay pane; Material menu defaults ~280px. */
+.cdk-overlay-pane.notif-dropdown-overlay {
+  width: min(48rem, calc(100vw - 1.25rem)) !important;
+  min-width: min(48rem, calc(100vw - 1.25rem)) !important;
+  max-width: min(48rem, calc(100vw - 1.25rem)) !important;
+}
+
+/* Fallback if overlayPanelClass is missing (older builds). */
+.cdk-overlay-pane:has(.notif-dropdown-panel) {
+  width: min(48rem, calc(100vw - 1.25rem)) !important;
+  min-width: min(48rem, calc(100vw - 1.25rem)) !important;
+  max-width: min(48rem, calc(100vw - 1.25rem)) !important;
+}
+
+.mat-mdc-menu-panel.notif-dropdown-panel {
+  /* Fill the overlay pane end-to-end (no empty right strip). */
+  --mat-menu-container-width: 100%;
+  --mat-menu-container-min-width: 100%;
+  --mat-menu-container-max-width: none;
+  --mat-menu-item-label-text-size: 0.9rem;
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: none !important;
   max-height: min(36rem, 78vh) !important;
   overflow-x: hidden !important;
   overflow-y: hidden !important;
@@ -288,18 +306,35 @@ code {
     0 4px 12px rgba(15, 23, 42, 0.08) !important;
 }
 
-.notif-dropdown-panel .mat-mdc-menu-content {
+.mat-mdc-menu-panel.notif-dropdown-panel .mat-mdc-menu-content,
+.mat-mdc-menu-panel.notif-dropdown-panel .mdc-menu-surface {
+  display: block !important;
   padding: 0 !important;
   width: 100% !important;
-  max-width: 100% !important;
+  min-width: 100% !important;
+  max-width: none !important;
   overflow-x: hidden !important;
   box-sizing: border-box !important;
 }
 
-.notif-dropdown-panel .mat-mdc-menu-content > * {
-  max-width: 100% !important;
-  min-width: 0 !important;
+.mat-mdc-menu-panel.notif-dropdown-panel .mat-mdc-menu-content > *,
+.mat-mdc-menu-panel.notif-dropdown-panel .notif-panel {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: none !important;
   overflow-x: hidden !important;
+  box-sizing: border-box !important;
+}
+
+.mat-mdc-menu-panel.notif-dropdown-panel .panel-list,
+.mat-mdc-menu-panel.notif-dropdown-panel .panel-item,
+.mat-mdc-menu-panel.notif-dropdown-panel .panel-head,
+.mat-mdc-menu-panel.notif-dropdown-panel .body,
+.mat-mdc-menu-panel.notif-dropdown-panel .text {
+  width: 100% !important;
+  max-width: 100% !important;
   box-sizing: border-box !important;
 }
 
