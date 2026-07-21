@@ -86,8 +86,9 @@ bank:
       percent: ${TRANSFER_FEE_PERCENT:0}
       min: ${TRANSFER_FEE_MIN:0}
       max: ${TRANSFER_FEE_MAX:50000}
-      # Seeded in account-service V2__fee_income_account.sql
-      income-account-number: ${TRANSFER_FEE_INCOME_ACCOUNT:1099999999}
+      # Seeded in account-service V2__fee_income_account.sql (must match FEE_INCOME_ACCOUNT_NUMBER).
+      # Value only from env (infra/.env) — no default in this pushed file.
+      income-account-number: ${TRANSFER_FEE_INCOME_ACCOUNT}
 
 management:
   endpoints:

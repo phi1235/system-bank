@@ -16,6 +16,13 @@ spring:
       hibernate.jdbc.time_zone: UTC
   flyway:
     enabled: true
+    placeholders:
+      # Bootstrap IDs for internal fee-income GL account and system user.
+      # Values come ONLY from env (infra/.env). No defaults in this pushed file.
+      # Must match TRANSFER_FEE_INCOME_ACCOUNT used by transaction-service.
+      fee-income-id: ${FEE_INCOME_ACCOUNT_ID}
+      system-user-id: ${SYSTEM_INTERNAL_USER_ID}
+      fee-income-number: ${FEE_INCOME_ACCOUNT_NUMBER}
 
 eureka:
   client:
