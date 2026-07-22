@@ -289,7 +289,8 @@
     "QUOTE_REMAINING_TODAY": "Remaining today",
     "QUOTE_MAX_TX": "Max per transfer",
     "QUOTE_NOTE": "Spent today {{spent}} / daily limit {{daily}} ({{zone}}).",
-    "CONFIRM_TITLE": "Confirm transfer"
+    "CONFIRM_TITLE": "Confirm transfer",
+    "TRANSFER_STATUS_REASON": "Transfer {{status}}: {{reason}}"
   },
   "ADMIN": {
     "SHELL_TITLE": "Operations Console",
@@ -584,5 +585,27 @@
     "ID": "Transaction ID",
     "FAILURE": "Failure reason",
     "LOAD_FAIL": "Could not load transfer detail"
+  },
+  "TRANSFER_ERROR": {
+    "INSUFFICIENT_BALANCE": "Insufficient balance (including fee). Please check available funds.",
+    "TRANSFER_LIMIT_EXCEEDED": "Amount exceeds the per-transfer limit.",
+    "DAILY_LIMIT_EXCEEDED": "This transfer would exceed your daily limit.",
+    "ACCOUNT_FROZEN": "The account is not active (frozen/closed).",
+    "ACCOUNT_NOT_FOUND": "Account not found. Please check the account number.",
+    "INVALID_AMOUNT": "Invalid amount. Please enter a positive amount.",
+    "SAME_ACCOUNT": "Cannot transfer to the same account.",
+    "FORBIDDEN": "You do not have permission for this action.",
+    "IDEMPOTENCY_REQUIRED": "Missing request key. Please try again.",
+    "IDEMPOTENCY_CONFLICT": "This request key was reused with different data.",
+    "TRANSFER_NOT_FOUND": "Transfer not found.",
+    "INVALID_DATE_RANGE": "Invalid date range: start must be before end.",
+    "SAGA_INJECTED_FAIL": "Transfer failed during processing (demo failure).",
+    "FEE_GL_FAILED": "Could not post transfer fee. The transfer was rolled back.",
+    "ACCOUNT_SERVICE_ERROR": "Account service is temporarily unavailable. Please try again.",
+    "DEBIT_ERROR": "Could not debit the source account.",
+    "COMPENSATION_PARTIAL": "Transfer failed and may need operations review (partial compensation).",
+    "VALIDATION_ERROR": "Invalid transfer request. Please check the form.",
+    "INTERNAL_ERROR": "Unexpected server error. Please try again later.",
+    "TRANSFER_FAILED": "Transfer could not be completed."
   }
 }

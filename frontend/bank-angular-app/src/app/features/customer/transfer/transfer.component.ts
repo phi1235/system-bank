@@ -17,6 +17,7 @@ import {
   ConfirmDialogComponent,
   ConfirmDialogData,
 } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { FriendlyTransferErrorPipe } from '../../../shared/pipes/friendly-transfer-error.pipe';
 import { MoneyVndPipe } from '../../../shared/pipes/money-vnd.pipe';
 import { PERMISSIONS } from '../../../core/services/rbac.util';
 import { BankApiService } from '../../../core/services/bank-api.service';
@@ -47,6 +48,7 @@ import { selectHasPermission } from '../../../store/auth/auth.selectors';
     MatDialogModule,
     PageHeaderComponent,
     MoneyVndPipe,
+    FriendlyTransferErrorPipe,
     TranslateModule,
   ],
   templateUrl: './transfer.component.html',

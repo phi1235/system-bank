@@ -5,6 +5,10 @@ import { of } from 'rxjs';
 import { catchError, exhaustMap, map } from 'rxjs/operators';
 import { BankApiService } from '../../core/services/bank-api.service';
 import { ToastService } from '../../core/services/toast.service';
+import {
+  parseTransferError,
+  transferErrorI18nKey,
+} from '../../core/utils/transfer-error.util';
 import { AccountsActions } from '../accounts/accounts.actions';
 import { TransfersActions } from './transfers.actions';
 
@@ -24,8 +28,16 @@ export class TransfersEffects {
             if (transfer.status === 'COMPLETED') {
               this.toast.success(this.i18n.instant('CUSTOMER.TRANSFER_OK'));
             } else {
+              const reason = this.friendlyReason(transfer.failureReason);
               this.toast.info(
-                this.i18n.instant('CUSTOMER.TRANSFER_STATUS', { status: transfer.status }),
+                reason
+                  ? this.i18n.instant('CUSTOMER.TRANSFER_STATUS_REASON', {
+                      status: transfer.status,
+                      reason,
+                    })
+                  : this.i18n.instant('CUSTOMER.TRANSFER_STATUS', {
+                      status: transfer.status,
+                    }),
               );
             }
             return TransfersActions.createSuccess({ transfer });
@@ -33,10 +45,7 @@ export class TransfersEffects {
           catchError((err) =>
             of(
               TransfersActions.createFailure({
-                error:
-                  err?.error?.error?.message ||
-                  err?.message ||
-                  this.i18n.instant('CUSTOMER.TRANSFER_FAIL'),
+                error: this.friendlyCreateError(err),
               }),
             ),
           ),
@@ -58,6 +67,33 @@ export class TransfersEffects {
       map(() => TransfersActions.loadHistory({ page: 0, size: 20 })),
     ),
   );
+
+  private friendlyCreateError(err: any): string {
+    const apiCode = err?.error?.error?.code as string | undefined;
+    const apiMsg = err?.error?.error?.message as string | undefined;
+    return (
+      this.friendlyReason(apiMsg || err?.message, apiCode) ||
+      this.i18n.instant('CUSTOMER.TRANSFER_FAIL')
+    );
+  }
+
+  private friendlyReason(
+    reason: string | null | undefined,
+    apiCode?: string | null,
+  ): string {
+    const parsed = parseTransferError(reason, apiCode);
+    if (!parsed.raw && !parsed.code) {
+      return '';
+    }
+    const key = transferErrorI18nKey(parsed.code);
+    if (key) {
+      const t = this.i18n.instant(key);
+      if (t && t !== key) {
+        return t;
+      }
+    }
+    return parsed.detail || parsed.raw;
+  }
 
   history$ = createEffect(() =>
     this.actions$.pipe(

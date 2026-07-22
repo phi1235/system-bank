@@ -64,12 +64,12 @@ public class TransferSagaOrchestrator {
       transferOrderRepository.save(order);
       step(order.getId(), "DEBIT_SOURCE", "SUCCESS", "ledger=" + debit.ledgerEntryId());
     } catch (BusinessException ex) {
-      markFailed(order, ex.getCode() + ": " + ex.getMessage());
+      markFailed(order, formatReason(ex));
       step(order.getId(), "DEBIT_SOURCE", "FAILED", ex.getMessage());
       enqueueFailed(order);
       return order;
     } catch (Exception ex) {
-      markFailed(order, "DEBIT_ERROR: " + ex.getMessage());
+      markFailed(order, formatReason("DEBIT_ERROR", ex.getMessage()));
       step(order.getId(), "DEBIT_SOURCE", "FAILED", ex.getMessage());
       enqueueFailed(order);
       return order;
@@ -89,7 +89,7 @@ public class TransferSagaOrchestrator {
     } catch (Exception ex) {
       log.warn("Credit failed for transfer {}, compensating", order.getId());
       step(order.getId(), "CREDIT_DEST", "FAILED", ex.getMessage());
-      compensateSourceOnly(order, ex.getMessage());
+      compensateSourceOnly(order, formatReason(ex));
       return order;
     }
 
@@ -104,7 +104,7 @@ public class TransferSagaOrchestrator {
       } catch (Exception ex) {
         log.warn("Fee GL failed for transfer {}, reversing dest and refunding source", order.getId());
         step(order.getId(), "CREDIT_FEE_INCOME", "FAILED", ex.getMessage());
-        compensateAfterDestCredit(order, ex.getMessage());
+        compensateAfterDestCredit(order, formatReason(ex));
         return order;
       }
     } else {
@@ -270,6 +270,28 @@ public class TransferSagaOrchestrator {
     }
     return new BusinessException("ACCOUNT_SERVICE_ERROR", body == null ? e.getMessage() : body,
         HttpStatus.UNPROCESSABLE_ENTITY);
+  }
+
+  /** Prefer "CODE: message" so clients can map business codes to i18n. */
+  static String formatReason(Throwable ex) {
+    if (ex instanceof BusinessException be) {
+      return formatReason(be.getCode(), be.getMessage());
+    }
+    String msg = ex == null ? null : ex.getMessage();
+    return formatReason("TRANSFER_FAILED", msg);
+  }
+
+  static String formatReason(String code, String message) {
+    String c = code == null || code.isBlank() ? "TRANSFER_FAILED" : code.trim();
+    String m = message == null ? "" : message.trim();
+    if (m.isEmpty()) {
+      return c;
+    }
+    // Avoid double-prefix when message already starts with CODE:
+    if (m.regionMatches(true, 0, c + ":", 0, c.length() + 1)) {
+      return m;
+    }
+    return c + ": " + m;
   }
 
   private void markFailed(TransferOrderEntity order, String reason) {

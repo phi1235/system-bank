@@ -289,7 +289,8 @@
     "QUOTE_REMAINING_TODAY": "Còn lại trong ngày",
     "QUOTE_MAX_TX": "Tối đa / giao dịch",
     "QUOTE_NOTE": "Đã chi hôm nay {{spent}} / hạn mức ngày {{daily}} ({{zone}}).",
-    "CONFIRM_TITLE": "Xác nhận chuyển tiền"
+    "CONFIRM_TITLE": "Xác nhận chuyển tiền",
+    "TRANSFER_STATUS_REASON": "Chuyển tiền {{status}}: {{reason}}"
   },
   "ADMIN": {
     "SHELL_TITLE": "Operations Console",
@@ -584,5 +585,27 @@
     "ID": "Mã giao dịch",
     "FAILURE": "Lý do lỗi",
     "LOAD_FAIL": "Không tải được chi tiết giao dịch"
+  },
+  "TRANSFER_ERROR": {
+    "INSUFFICIENT_BALANCE": "Số dư không đủ (gồm phí). Vui lòng kiểm tra số dư khả dụng.",
+    "TRANSFER_LIMIT_EXCEEDED": "Số tiền vượt hạn mức mỗi giao dịch.",
+    "DAILY_LIMIT_EXCEEDED": "Giao dịch này sẽ vượt hạn mức trong ngày.",
+    "ACCOUNT_FROZEN": "Tài khoản không hoạt động (bị đóng băng/đóng).",
+    "ACCOUNT_NOT_FOUND": "Không tìm thấy tài khoản. Vui lòng kiểm tra số tài khoản.",
+    "INVALID_AMOUNT": "Số tiền không hợp lệ. Vui lòng nhập số dương.",
+    "SAME_ACCOUNT": "Không thể chuyển tới cùng một tài khoản.",
+    "FORBIDDEN": "Anh không có quyền thực hiện thao tác này.",
+    "IDEMPOTENCY_REQUIRED": "Thiếu mã yêu cầu. Vui lòng thử lại.",
+    "IDEMPOTENCY_CONFLICT": "Mã yêu cầu đã dùng với dữ liệu khác.",
+    "TRANSFER_NOT_FOUND": "Không tìm thấy giao dịch.",
+    "INVALID_DATE_RANGE": "Khoảng ngày không hợp lệ: từ phải trước đến.",
+    "SAGA_INJECTED_FAIL": "Giao dịch thất bại khi xử lý (lỗi demo).",
+    "FEE_GL_FAILED": "Không hạch toán được phí. Giao dịch đã được hoàn tác.",
+    "ACCOUNT_SERVICE_ERROR": "Dịch vụ tài khoản tạm thời gián đoạn. Vui lòng thử lại.",
+    "DEBIT_ERROR": "Không trừ được tiền tài khoản nguồn.",
+    "COMPENSATION_PARTIAL": "Giao dịch thất bại và có thể cần vận hành kiểm tra (hoàn tiền một phần).",
+    "VALIDATION_ERROR": "Yêu cầu chuyển tiền không hợp lệ. Vui lòng kiểm tra form.",
+    "INTERNAL_ERROR": "Lỗi hệ thống. Vui lòng thử lại sau.",
+    "TRANSFER_FAILED": "Không hoàn tất được giao dịch chuyển tiền."
   }
 }

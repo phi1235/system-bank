@@ -35,7 +35,7 @@
       @if (d.transfer.failureReason) {
         <div class="row fail">
           <span class="k">{{ 'TRANSFER_DETAIL.FAILURE' | translate }}</span>
-          <span>{{ d.transfer.failureReason }}</span>
+          <span>{{ d.transfer.failureReason | friendlyTransferError }}</span>
         </div>
       }
       @if (d.transfer.description) {
