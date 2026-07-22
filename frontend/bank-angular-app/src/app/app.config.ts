@@ -8,6 +8,7 @@ import { provideStoreDevtools } from '@ngrx/store-devtools';
 import { routes } from './app.routes';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { refreshInterceptor } from './core/interceptors/refresh.interceptor';
+import { correlationInterceptor } from './core/interceptors/correlation.interceptor';
 import { errorInterceptor } from './core/interceptors/error.interceptor';
 import { provideAppI18n } from './core/i18n/translate.providers';
 import { NotificationStreamService } from './core/services/notification-stream.service';
@@ -23,7 +24,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
-    provideHttpClient(withInterceptors([authInterceptor, refreshInterceptor, errorInterceptor])),
+    provideHttpClient(withInterceptors([correlationInterceptor, authInterceptor, refreshInterceptor, errorInterceptor])),
     provideAnimationsAsync(),
     ...provideAppI18n(),
     // Explicit root providers so admin/customer notification bells always resolve DI
