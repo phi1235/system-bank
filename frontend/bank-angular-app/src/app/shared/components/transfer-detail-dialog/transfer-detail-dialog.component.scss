@@ -96,6 +96,36 @@ code {
   word-break: break-all;
 }
 
+.id-cell {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.15rem;
+  min-width: 0;
+
+  code {
+    flex: 1;
+    min-width: 0;
+    padding-top: 0.35rem;
+  }
+
+  button {
+    flex-shrink: 0;
+  }
+}
+
+.actions {
+  flex-wrap: wrap;
+  gap: 0.35rem;
+
+  button mat-icon {
+    margin-right: 0.25rem;
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    vertical-align: middle;
+  }
+}
+
 mat-dialog-content {
   min-width: min(480px, 85vw);
   max-width: 560px;

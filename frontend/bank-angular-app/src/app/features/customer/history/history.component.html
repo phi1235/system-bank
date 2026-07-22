@@ -96,17 +96,40 @@
         <ng-container matColumnDef="actions">
           <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.ACTIONS' | translate }}</th>
           <td mat-cell *matCellDef="let t">
-            <button
-              mat-icon-button
-              type="button"
-              color="primary"
-              (click)="openDetail(t)"
-              [disabled]="openingId === t.transactionId"
-              [attr.aria-label]="'TRANSFER_DETAIL.OPEN' | translate"
-              [matTooltip]="'TRANSFER_DETAIL.OPEN' | translate"
-            >
-              <mat-icon>info</mat-icon>
-            </button>
+            <div class="action-btns">
+              <button
+                mat-icon-button
+                type="button"
+                color="primary"
+                (click)="openDetail(t)"
+                [disabled]="openingId === t.transactionId"
+                [attr.aria-label]="'TRANSFER_DETAIL.OPEN' | translate"
+                [matTooltip]="'TRANSFER_DETAIL.OPEN' | translate"
+              >
+                <mat-icon>info</mat-icon>
+              </button>
+              <button
+                mat-icon-button
+                type="button"
+                (click)="copyId(t)"
+                [attr.aria-label]="'CUSTOMER.HISTORY_COPY_ID' | translate"
+                [matTooltip]="'CUSTOMER.HISTORY_COPY_ID' | translate"
+              >
+                <mat-icon>content_copy</mat-icon>
+              </button>
+              @if (canRetry(t)) {
+                <button
+                  mat-icon-button
+                  type="button"
+                  color="accent"
+                  (click)="retry(t)"
+                  [attr.aria-label]="'CUSTOMER.HISTORY_RETRY' | translate"
+                  [matTooltip]="'CUSTOMER.HISTORY_RETRY' | translate"
+                >
+                  <mat-icon>replay</mat-icon>
+                </button>
+              }
+            </div>
           </td>
         </ng-container>
         <tr mat-header-row *matHeaderRowDef="cols"></tr>

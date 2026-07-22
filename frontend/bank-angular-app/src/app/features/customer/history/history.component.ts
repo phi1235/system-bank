@@ -11,12 +11,17 @@ import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { Store } from '@ngrx/store';
 import { Transfer } from '../../../core/models/domain.model';
 import { BankApiService } from '../../../core/services/bank-api.service';
 import { ToastService } from '../../../core/services/toast.service';
+import {
+  canRetryTransfer,
+  copyText,
+  transferRetryQueryParams,
+} from '../../../core/utils/transfer-receipt.util';
 import { LoadingComponent } from '../../../shared/components/loading/loading.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { TransferDetailDialogComponent } from '../../../shared/components/transfer-detail-dialog/transfer-detail-dialog.component';
@@ -64,6 +69,7 @@ export class HistoryComponent implements OnInit {
   private readonly toast = inject(ToastService);
   private readonly i18n = inject(TranslateService);
   private readonly fb = inject(FormBuilder);
+  private readonly router = inject(Router);
 
   rows$ = this.store.select(selectTransferHistory);
   loading$ = this.store.select(selectTransferLoading);
@@ -133,6 +139,29 @@ export class HistoryComponent implements OnInit {
         this.openingId = null;
         this.toast.error(this.i18n.instant('TRANSFER_DETAIL.LOAD_FAIL'));
       },
+    });
+  }
+
+  canRetry(row: Transfer): boolean {
+    return canRetryTransfer(row?.status);
+  }
+
+  async copyId(row: Transfer): Promise<void> {
+    if (!row?.transactionId) {
+      return;
+    }
+    const ok = await copyText(row.transactionId);
+    this.toast[ok ? 'success' : 'error'](
+      this.i18n.instant(ok ? 'TRANSFER_DETAIL.COPY_ID_OK' : 'TRANSFER_DETAIL.COPY_ID_FAIL'),
+    );
+  }
+
+  retry(row: Transfer): void {
+    if (!row || !canRetryTransfer(row.status)) {
+      return;
+    }
+    void this.router.navigate(['/customer/payments/transfer'], {
+      queryParams: transferRetryQueryParams(row),
     });
   }
 

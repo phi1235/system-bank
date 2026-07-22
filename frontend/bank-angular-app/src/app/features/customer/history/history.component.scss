@@ -35,6 +35,13 @@
 
 .full { width: 100%; }
 
+.action-btns {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 0;
+}
+
 .desc {
   font-weight: 500;
   max-width: 28ch;

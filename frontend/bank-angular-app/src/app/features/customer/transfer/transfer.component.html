@@ -7,6 +7,12 @@
   <mat-card class="form-card">
     <h3>{{ 'CUSTOMER.TRANSFER_FORM' | translate }}</h3>
     <form [formGroup]="form" (ngSubmit)="submit()">
+      @if (retryPrefill) {
+        <div class="retry-banner" role="status">
+          <mat-icon>replay</mat-icon>
+          <span>{{ 'CUSTOMER.TRANSFER_RETRY_BANNER' | translate }}</span>
+        </div>
+      }
       <mat-form-field appearance="outline" class="full">
         <mat-label>{{ 'CUSTOMER.FROM_ACCOUNT' | translate }}</mat-label>
         <mat-select formControlName="fromAccountId">
@@ -231,9 +237,34 @@
         } @else {
           <p class="result-hint">{{ 'CUSTOMER.RESULT_PENDING_HINT' | translate }}</p>
         }
-        <a mat-stroked-button routerLink="/customer/history" class="full-btn">
-          {{ 'NAV.HISTORY' | translate }}
-        </a>
+        <div class="result-actions">
+          <button
+            mat-stroked-button
+            type="button"
+            (click)="copyLastId(t)"
+            [matTooltip]="'CUSTOMER.RESULT_COPY_ID' | translate"
+          >
+            <mat-icon>content_copy</mat-icon>
+            {{ 'CUSTOMER.RESULT_COPY_ID' | translate }}
+          </button>
+          <button mat-stroked-button type="button" (click)="copyLastReceipt(t)">
+            <mat-icon>content_paste</mat-icon>
+            {{ 'CUSTOMER.RESULT_COPY_RECEIPT' | translate }}
+          </button>
+          <button mat-stroked-button type="button" (click)="openLastDetail(t)">
+            <mat-icon>info</mat-icon>
+            {{ 'CUSTOMER.RESULT_OPEN_DETAIL' | translate }}
+          </button>
+          @if (canRetry(t.status)) {
+            <button mat-flat-button color="primary" type="button" (click)="retryLast(t)">
+              <mat-icon>replay</mat-icon>
+              {{ 'CUSTOMER.RESULT_RETRY' | translate }}
+            </button>
+          }
+          <a mat-stroked-button routerLink="/customer/history" class="full-btn">
+            {{ 'NAV.HISTORY' | translate }}
+          </a>
+        </div>
       </mat-card>
     }
 
