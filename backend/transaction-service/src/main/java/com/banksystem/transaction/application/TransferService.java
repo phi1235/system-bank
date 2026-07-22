@@ -334,7 +334,10 @@ public class TransferService {
         e.getCurrency(),
         e.getDescription(),
         e.getFailureReason(),
-        e.getCreatedAt()
+        e.getCreatedAt(),
+        "INTERNAL",
+        "SYSTEM_BANK",
+        null
     );
   }
 

@@ -5,7 +5,27 @@
 
 <div class="layout" [class.has-result]="(last$ | async) !== null">
   <mat-card class="form-card">
-    <h3>{{ 'CUSTOMER.TRANSFER_FORM' | translate }}</h3>
+    <div class="transfer-tabs">
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeTab === 'INTERNAL'"
+        (click)="switchTab('INTERNAL')"
+      >
+        <mat-icon>domain</mat-icon>
+        <span>{{ 'TRANSFER.TAB_INTERNAL' | translate }}</span>
+      </button>
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeTab === 'INTERBANK'"
+        (click)="switchTab('INTERBANK')"
+      >
+        <mat-icon>account_balance</mat-icon>
+        <span>{{ 'TRANSFER.TAB_INTERBANK' | translate }}</span>
+      </button>
+    </div>
+
     <form [formGroup]="form" (ngSubmit)="submit()">
       @if (retryPrefill) {
         <div class="retry-banner" role="status">
@@ -41,6 +61,21 @@
         </div>
       }
 
+      @if (activeTab === 'INTERBANK') {
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>{{ 'TRANSFER.BANK_SELECT_LABEL' | translate }}</mat-label>
+          <mat-icon matPrefix>account_balance</mat-icon>
+          <mat-select [value]="selectedBankCode" (selectionChange)="onBankChange($event.value)">
+            <mat-option value="">{{ 'TRANSFER.BANK_SELECT_PLACEHOLDER' | translate }}</mat-option>
+            @for (b of banks; track b.bankCode) {
+              <mat-option [value]="b.bankCode" [disabled]="b.isInternal">
+                {{ b.shortName }} — {{ b.fullName }}
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      }
+
       <mat-form-field appearance="outline" class="full">
         <mat-label>{{ 'CUSTOMER.TRANSFER_PICK_BENEFICIARY' | translate }}</mat-label>
         <mat-icon matPrefix>contacts</mat-icon>
@@ -61,6 +96,7 @@
           <mat-hint>{{ 'CUSTOMER.TRANSFER_BENEFICIARY_EMPTY' | translate }}</mat-hint>
         }
       </mat-form-field>
+
       <mat-form-field appearance="outline" class="full">
         <mat-label>{{ 'CUSTOMER.TO_ACCOUNT' | translate }}</mat-label>
         <input
@@ -77,11 +113,31 @@
           <mat-error>{{ 'CUSTOMER.TO_ACCOUNT_PATTERN' | translate }}</mat-error>
         }
       </mat-form-field>
+
+      <!-- Recipient Inquiry Badge -->
+      @if (inquiryLoading) {
+        <div class="inquiry-badge loading">
+          <mat-icon class="spin">sync</mat-icon>
+          <span>{{ 'INQUIRY.SEARCHING' | translate }}</span>
+        </div>
+      } @else if (inquiryResult) {
+        <div class="inquiry-badge success">
+          <mat-icon>check_circle</mat-icon>
+          <span>{{ 'INQUIRY.OWNER' | translate }}: <strong>{{ inquiryResult.accountName }}</strong></span>
+        </div>
+      } @else if (inquiryError) {
+        <div class="inquiry-badge error">
+          <mat-icon>error_outline</mat-icon>
+          <span>{{ inquiryError }}</span>
+        </div>
+      }
+
       <div class="beneficiary-link">
         <a routerLink="/customer/payments/beneficiaries">
           {{ 'CUSTOMER.TRANSFER_MANAGE_BENEFICIARIES' | translate }}
         </a>
       </div>
+
       <div class="row-2">
         <mat-form-field appearance="outline" class="full">
           <mat-label>{{ 'CUSTOMER.AMOUNT_VND' | translate }}</mat-label>

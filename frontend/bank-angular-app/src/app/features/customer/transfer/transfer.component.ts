@@ -10,6 +10,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatTabsModule } from '@angular/material/tabs';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { Store } from '@ngrx/store';
 import { Subscription, debounceTime, distinctUntilChanged, filter, take } from 'rxjs';
@@ -26,7 +27,7 @@ import { MoneyVndPipe } from '../../../shared/pipes/money-vnd.pipe';
 import { PERMISSIONS } from '../../../core/services/rbac.util';
 import { BankApiService } from '../../../core/services/bank-api.service';
 import { ToastService } from '../../../core/services/toast.service';
-import { Beneficiary, Transfer, TransferQuote } from '../../../core/models/domain.model';
+import { AccountInquiryResponse, BankItem, Beneficiary, Transfer, TransferQuote } from '../../../core/models/domain.model';
 import {
   buildTransferReceiptText,
   canRetryTransfer,
@@ -62,6 +63,7 @@ import { selectHasPermission } from '../../../store/auth/auth.selectors';
     MatIconModule,
     MatDialogModule,
     MatTooltipModule,
+    MatTabsModule,
     PageHeaderComponent,
     MoneyVndPipe,
     FriendlyTransferErrorPipe,
@@ -82,6 +84,7 @@ export class TransferComponent implements OnInit, OnDestroy {
   private readonly dialog = inject(MatDialog);
   private readonly toast = inject(ToastService);
   private amountSub?: Subscription;
+  private toAccSub?: Subscription;
   private quoteReq = 0;
 
   accounts$ = this.store.select(selectAccounts);
@@ -90,20 +93,27 @@ export class TransferComponent implements OnInit, OnDestroy {
   error$ = this.store.select(selectTransferError);
   canExecute$ = this.store.select(selectHasPermission(PERMISSIONS.IB_TRANSFER_EXECUTE));
 
+  banks: BankItem[] = [];
+  selectedBankCode = 'SYSTEM_BANK';
+  activeTab: 'INTERNAL' | 'INTERBANK' = 'INTERNAL';
+
+  inquiryLoading = false;
+  inquiryResult: AccountInquiryResponse | null = null;
+  inquiryError: string | null = null;
+
   beneficiaries: Beneficiary[] = [];
   selectedBeneficiaryId = '';
   quote: TransferQuote | null = null;
   quoteLoading = false;
   quoteError: string | null = null;
   noActiveSource = false;
-  /** Shown when form was prefilled from a failed transfer retry. */
   retryPrefill = false;
   private detailOpening = false;
   private accountsSub?: Subscription;
 
   form = this.fb.nonNullable.group({
     fromAccountId: ['', Validators.required],
-    toAccountNumber: ['', [Validators.required, Validators.pattern(/^\d{8,14}$/)]],
+    toAccountNumber: ['', [Validators.required, Validators.pattern(/^\d{6,19}$/)]],
     amount: [0, [Validators.required, Validators.min(1)]],
     description: [''],
   });
@@ -112,6 +122,7 @@ export class TransferComponent implements OnInit, OnDestroy {
     this.form.patchValue({ description: this.i18n.instant('CUSTOMER.DEFAULT_DESC') });
     this.store.dispatch(AccountsActions.load());
     this.store.dispatch(TransfersActions.clearStatus());
+    this.loadBanks();
     this.loadBeneficiaries();
     this.applyQueryPrefill();
     this.refreshQuote();
@@ -119,9 +130,8 @@ export class TransferComponent implements OnInit, OnDestroy {
     this.accountsSub = this.accounts$.subscribe((accounts) => {
       const list = accounts || [];
       const active = list.filter((a) => a.status === 'ACTIVE');
-      // Show CTA when user has no ACTIVE source (none yet, or all frozen).
       this.noActiveSource = active.length === 0;
-      if (active.length === 1 && !this.form.controls.fromAccountId.value) {
+      if (active.length > 0 && !this.form.controls.fromAccountId.value) {
         this.form.patchValue({ fromAccountId: active[0].id });
       }
     });
@@ -129,11 +139,80 @@ export class TransferComponent implements OnInit, OnDestroy {
     this.amountSub = this.form.controls.amount.valueChanges
       .pipe(debounceTime(300), distinctUntilChanged())
       .subscribe(() => this.refreshQuote());
+
+    this.toAccSub = this.form.controls.toAccountNumber.valueChanges
+      .pipe(debounceTime(400), distinctUntilChanged())
+      .subscribe(() => this.performInquiry());
   }
 
   ngOnDestroy(): void {
     this.amountSub?.unsubscribe();
+    this.toAccSub?.unsubscribe();
     this.accountsSub?.unsubscribe();
+  }
+
+  loadBanks(): void {
+    this.api.listBanks().subscribe({
+      next: (res) => {
+        this.banks = res || [];
+      },
+      error: () => {
+        this.banks = [
+          { bankCode: 'SYSTEM_BANK', shortName: 'SystemBank', fullName: 'Ngân hàng Nội bộ SystemBank', bin: '970499', logoUrl: '', napasSupported: true, isInternal: true },
+          { bankCode: '970415', shortName: 'VietinBank', fullName: 'Ngân hàng TMCP Công thương VN', bin: '970415', logoUrl: '', napasSupported: true, isInternal: false }
+        ];
+      }
+    });
+  }
+
+  switchTab(tab: 'INTERNAL' | 'INTERBANK'): void {
+    this.activeTab = tab;
+    if (tab === 'INTERNAL') {
+      this.selectedBankCode = 'SYSTEM_BANK';
+    } else {
+      this.selectedBankCode = '';
+    }
+    this.inquiryResult = null;
+    this.inquiryError = null;
+    if (this.selectedBankCode) {
+      this.performInquiry();
+    }
+  }
+
+  onBankChange(bankCode: string): void {
+    this.selectedBankCode = bankCode;
+    this.inquiryResult = null;
+    this.inquiryError = null;
+    if (this.selectedBankCode) {
+      this.performInquiry();
+    }
+  }
+
+  performInquiry(): void {
+    if (this.activeTab === 'INTERBANK' && !this.selectedBankCode) {
+      this.inquiryResult = null;
+      this.inquiryError = null;
+      return;
+    }
+    const accNum = this.form.controls.toAccountNumber.value?.trim();
+    if (!accNum || accNum.length < 6) {
+      this.inquiryResult = null;
+      this.inquiryError = null;
+      return;
+    }
+    this.inquiryLoading = true;
+    this.inquiryError = null;
+    this.api.accountInquiry({ bankCode: this.selectedBankCode, accountNumber: accNum }).subscribe({
+      next: (res) => {
+        this.inquiryLoading = false;
+        this.inquiryResult = res;
+      },
+      error: (err) => {
+        this.inquiryLoading = false;
+        this.inquiryResult = null;
+        this.inquiryError = err?.error?.message || this.i18n.instant('ERRORS.ACCOUNT_NOT_FOUND');
+      }
+    });
   }
 
   loadBeneficiaries(): void {
@@ -158,6 +237,7 @@ export class TransferComponent implements OnInit, OnDestroy {
     const found = this.beneficiaries.find((b) => b.id === id);
     if (found) {
       this.form.patchValue({ toAccountNumber: found.accountNumber });
+      this.performInquiry();
     }
   }
 
@@ -228,7 +308,6 @@ export class TransferComponent implements OnInit, OnDestroy {
     this.applyTransferPrefill(t);
     this.retryPrefill = true;
     this.toast.success(this.i18n.instant('CUSTOMER.RESULT_RETRY_HINT'));
-    // Keep URL shareable for refresh
     void this.router.navigate([], {
       relativeTo: this.route,
       queryParams: transferRetryQueryParams(t),
@@ -245,13 +324,18 @@ export class TransferComponent implements OnInit, OnDestroy {
     const amount = Number(v.amount);
     const fee = this.quote?.feeAmount ?? 0;
     const total = this.quote?.totalDebit ?? amount;
+
+    const bankObj = this.banks.find((b) => b.bankCode === this.selectedBankCode);
+    const bankName = bankObj ? bankObj.shortName : 'SystemBank';
+    const recipientName = this.inquiryResult ? this.inquiryResult.accountName : '';
+
     const data: ConfirmDialogData = {
       title: this.i18n.instant('CUSTOMER.CONFIRM_TITLE'),
       message: this.i18n.instant('CUSTOMER.CONFIRM_MSG', {
         amount: amount.toLocaleString('vi-VN'),
         fee: Number(fee).toLocaleString('vi-VN'),
         total: Number(total).toLocaleString('vi-VN'),
-        to: v.toAccountNumber,
+        to: v.toAccountNumber + (recipientName ? ` (${recipientName} - ${bankName})` : ''),
         desc: v.description || '',
       }),
       confirmLabel: this.i18n.instant('CUSTOMER.CONFIRM_TRANSFER'),
@@ -271,6 +355,9 @@ export class TransferComponent implements OnInit, OnDestroy {
               amount,
               description: v.description || undefined,
               currency: 'VND',
+              transferType: this.activeTab,
+              targetBankCode: this.selectedBankCode,
+              targetAccountName: recipientName || undefined,
             },
             idempotencyKey: key,
           }),
@@ -298,7 +385,6 @@ export class TransferComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** Prefill from ?to= deep-link or full retry query (from/to/amount/desc/retry). */
   private applyQueryPrefill(): void {
     const q = this.route.snapshot.queryParamMap;
     const to = q.get('to');
@@ -314,7 +400,7 @@ export class TransferComponent implements OnInit, OnDestroy {
       description: string;
     }> = {};
 
-    if (to && /^\d{8,14}$/.test(to)) {
+    if (to && /^\d{6,19}$/.test(to)) {
       patch.toAccountNumber = to;
     }
     if (from) {
@@ -335,7 +421,6 @@ export class TransferComponent implements OnInit, OnDestroy {
     }
     this.retryPrefill = isRetry && !!(patch.toAccountNumber || patch.amount);
 
-    // If from is not yet in loaded accounts, still set; select will show when available.
     if (from) {
       this.accounts$.pipe(take(1)).subscribe((accounts) => {
         const exists = (accounts || []).some((a) => a.id === from);

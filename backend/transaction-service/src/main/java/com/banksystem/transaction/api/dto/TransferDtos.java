@@ -16,7 +16,10 @@ public final class TransferDtos {
       @NotBlank String toAccountNumber,
       @NotNull @DecimalMin("0.01") BigDecimal amount,
       String description,
-      String currency
+      String currency,
+      String transferType,
+      String targetBankCode,
+      String targetAccountName
   ) {}
 
   public record TransferResponse(
@@ -30,7 +33,10 @@ public final class TransferDtos {
       String currency,
       String description,
       String failureReason,
-      Instant createdAt
+      Instant createdAt,
+      String transferType,
+      String targetBankCode,
+      String targetAccountName
   ) {}
 
   /**

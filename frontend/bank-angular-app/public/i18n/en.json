@@ -903,6 +903,30 @@
     "INTERNAL_ERROR": "Unexpected server error. Please try again later.",
     "VALIDATION_ERROR": "Invalid request parameters. Please verify input."
   },
+  "TRANSFER": {
+    "TAB_INTERNAL": "Internal Transfer SystemBank",
+    "TAB_INTERBANK": "Interbank Transfer 24/7 (NAPAS)",
+    "BANK_SELECT_LABEL": "Destination Bank (NAPAS 24/7)",
+    "BANK_SELECT_PLACEHOLDER": "-- Please select Destination Bank --"
+  },
+  "INQUIRY": {
+    "SEARCHING": "Searching recipient account holder name...",
+    "OWNER": "Account Holder"
+  },
+  "SANDBOX": {
+    "TITLE": "Email / SMS / OTP Log (Dev Sandbox)",
+    "SUBTITLE": "Aggregated verification emails, SMS alerts, and generated OTP codes for dev testing",
+    "SEARCH_PLACEHOLDER": "Search by email, phone, OTP or template...",
+    "CHANNEL_ALL": "All Channels",
+    "CHANNEL_EMAIL": "Email",
+    "CHANNEL_SMS": "SMS",
+    "CHANNEL_OTP": "OTP Code",
+    "RECIPIENT": "Recipient (Email/Phone)",
+    "TEMPLATE": "Notification Template",
+    "BODY": "Body Content / OTP",
+    "TIME": "Created At",
+    "COPY_OTP": "Copy OTP"
+  },
   "TRANSFER_DETAIL": {
     "TITLE": "Transfer detail",
     "OPEN": "Detail",

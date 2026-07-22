@@ -903,6 +903,30 @@
     "INTERNAL_ERROR": "Hệ thống tạm thời gián đoạn. Vui lòng thử lại sau.",
     "VALIDATION_ERROR": "Dữ liệu nhập vào không hợp lệ. Vui lòng kiểm tra lại."
   },
+  "TRANSFER": {
+    "TAB_INTERNAL": "Chuyển tiền Nội bộ SystemBank",
+    "TAB_INTERBANK": "Chuyển tiền Liên ngân hàng 24/7 (NAPAS)",
+    "BANK_SELECT_LABEL": "Ngân hàng nhận (NAPAS 24/7)",
+    "BANK_SELECT_PLACEHOLDER": "-- Vui lòng chọn Ngân hàng nhận --"
+  },
+  "INQUIRY": {
+    "SEARCHING": "Đang tra cứu tên chủ tài khoản thụ hưởng...",
+    "OWNER": "Chủ tài khoản"
+  },
+  "SANDBOX": {
+    "TITLE": "Nhật ký Email / SMS / Mã OTP (Dev Sandbox)",
+    "SUBTITLE": "Tổng hợp email xác thực, tin nhắn SMS và mã OTP tự động tạo để test hệ thống",
+    "SEARCH_PLACEHOLDER": "Tìm theo email, SĐT, mã OTP hoặc template...",
+    "CHANNEL_ALL": "Tất cả kênh",
+    "CHANNEL_EMAIL": "Email",
+    "CHANNEL_SMS": "SMS",
+    "CHANNEL_OTP": "Mã OTP",
+    "RECIPIENT": "Người nhận (Email/SĐT)",
+    "TEMPLATE": "Mẫu thông báo",
+    "BODY": "Nội dung / Mã OTP",
+    "TIME": "Thời gian tạo",
+    "COPY_OTP": "Sao chép OTP"
+  },
   "TRANSFER_DETAIL": {
     "TITLE": "Chi tiết chuyển tiền",
     "OPEN": "Chi tiết",

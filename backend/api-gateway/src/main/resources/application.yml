@@ -29,7 +29,7 @@ spring:
         - id: transaction-service
           uri: lb://TRANSACTION-SERVICE
           predicates:
-            - Path=/api/v1/transactions/**
+            - Path=/api/v1/transactions/**,/api/v1/banks
         # SSE first (more specific) so /** does not swallow the stream path.
         # response-timeout: 0 aborts JSON bodies as empty 200 — use a long positive ms for SSE only.
         - id: notification-service-stream

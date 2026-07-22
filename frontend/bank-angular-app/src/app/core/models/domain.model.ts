@@ -58,12 +58,38 @@ export interface TransferDetail {
   steps: SagaStep[];
 }
 
+export interface BankItem {
+  bankCode: string;
+  shortName: string;
+  fullName: string;
+  bin: string;
+  logoUrl: string;
+  napasSupported: boolean;
+  isInternal: boolean;
+}
+
+export interface AccountInquiryRequest {
+  bankCode?: string;
+  accountNumber: string;
+}
+
+export interface AccountInquiryResponse {
+  bankCode: string;
+  accountNumber: string;
+  accountName: string;
+  isInternal: boolean;
+  accountId?: string | null;
+}
+
 export interface TransferRequest {
   fromAccountId: string;
   toAccountNumber: string;
   amount: number;
   description?: string;
   currency?: string;
+  transferType?: 'INTERNAL' | 'INTERBANK' | string;
+  targetBankCode?: string;
+  targetAccountName?: string;
 }
 
 /** Pre-transfer fee + daily limit remaining preview (includes fee formula breakdown). */

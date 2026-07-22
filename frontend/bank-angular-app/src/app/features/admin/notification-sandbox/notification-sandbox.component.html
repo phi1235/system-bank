@@ -1,0 +1,98 @@
+<app-page-header
+  [title]="'SANDBOX.TITLE' | translate"
+  [subtitle]="'SANDBOX.SUBTITLE' | translate"
+/>
+
+<mat-card class="sandbox-card">
+  <div class="filters" [formGroup]="filterForm">
+    <mat-form-field appearance="outline" class="search-field">
+      <mat-label>{{ 'SANDBOX.SEARCH_PLACEHOLDER' | translate }}</mat-label>
+      <mat-icon matPrefix>search</mat-icon>
+      <input matInput formControlName="q" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="channel-field">
+      <mat-label>Kênh thông báo</mat-label>
+      <mat-icon matPrefix>tune</mat-icon>
+      <mat-select formControlName="channel">
+        <mat-option value="ALL">{{ 'SANDBOX.CHANNEL_ALL' | translate }}</mat-option>
+        <mat-option value="EMAIL">{{ 'SANDBOX.CHANNEL_EMAIL' | translate }}</mat-option>
+        <mat-option value="SMS">{{ 'SANDBOX.CHANNEL_SMS' | translate }}</mat-option>
+        <mat-option value="OTP">{{ 'SANDBOX.CHANNEL_OTP' | translate }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <table mat-table [dataSource]="items" class="full-table">
+    <ng-container matColumnDef="channel">
+      <th mat-header-cell *matHeaderCellDef>Kênh</th>
+      <td mat-cell *matCellDef="let item">
+        <span class="channel-chip" [class.email]="item.channel === 'EMAIL'" [class.sms]="item.channel === 'SMS'">
+          <mat-icon>{{ item.channel === 'EMAIL' ? 'email' : (item.channel === 'SMS' ? 'sms' : 'lock_clock') }}</mat-icon>
+          {{ item.channel }}
+        </span>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="recipient">
+      <th mat-header-cell *matHeaderCellDef>{{ 'SANDBOX.RECIPIENT' | translate }}</th>
+      <td mat-cell *matCellDef="let item">
+        <strong>{{ item.recipient }}</strong>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="template">
+      <th mat-header-cell *matHeaderCellDef>{{ 'SANDBOX.TEMPLATE' | translate }}</th>
+      <td mat-cell *matCellDef="let item">
+        <span class="template-code">{{ item.template }}</span>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="body">
+      <th mat-header-cell *matHeaderCellDef>{{ 'SANDBOX.BODY' | translate }}</th>
+      <td mat-cell *matCellDef="let item">
+        <div class="body-box">
+          @if (extractOtp(item.body); as otp) {
+            <span class="otp-badge"><mat-icon>key</mat-icon> OTP: <strong>{{ otp }}</strong></span>
+          }
+          <span>{{ item.body }}</span>
+        </div>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="createdAt">
+      <th mat-header-cell *matHeaderCellDef>{{ 'SANDBOX.TIME' | translate }}</th>
+      <td mat-cell *matCellDef="let item">
+        {{ item.createdAt | date: 'dd/MM/yyyy HH:mm:ss' }}
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="actions">
+      <th mat-header-cell *matHeaderCellDef>Thao tác</th>
+      <td mat-cell *matCellDef="let item">
+        <button mat-stroked-button type="button" (click)="copyBody(item)">
+          <mat-icon>content_copy</mat-icon>
+          {{ extractOtp(item.body) ? ('SANDBOX.COPY_OTP' | translate) : 'Copy' }}
+        </button>
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+  </table>
+
+  @if (!items.length && !loading) {
+    <div class="empty-state">
+      <mat-icon>mark_email_unread</mat-icon>
+      <p>Chưa có nhật ký Email / SMS / OTP nào được ghi nhận.</p>
+    </div>
+  }
+
+  <mat-paginator
+    [length]="totalElements"
+    [pageSize]="pageSize"
+    [pageIndex]="pageIndex"
+    [pageSizeOptions]="[10, 20, 50]"
+    (page)="onPageChange($event)"
+  />
+</mat-card>

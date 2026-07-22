@@ -62,6 +62,10 @@ export const ADMIN_ROUTES: Routes = [
         ],
         loadComponent: () => import('./users/users.component').then((m) => m.AdminUsersComponent),
       },
+      {
+        path: 'notifications/sandbox',
+        loadComponent: () => import('./notification-sandbox/notification-sandbox.component').then((m) => m.NotificationSandboxComponent),
+      },
     ],
   },
 ];
