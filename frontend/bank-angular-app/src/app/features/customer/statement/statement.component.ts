@@ -1,7 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -49,6 +49,7 @@ import { Account, LedgerEntry } from '../../../core/models/domain.model';
 })
 export class StatementComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly api = inject(BankApiService);
   private readonly toast = inject(ToastService);
   private readonly i18n = inject(TranslateService);
@@ -56,6 +57,7 @@ export class StatementComponent implements OnInit {
 
   accountId = '';
   account: Account | null = null;
+  accounts: Account[] = [];
   rows: LedgerEntry[] = [];
   loading = false;
   exporting = false;
@@ -63,6 +65,7 @@ export class StatementComponent implements OnInit {
   pageSize = 20;
   totalElements = 0;
   cols = ['createdAt', 'entryType', 'description', 'amount', 'referenceId'];
+  activeQuick: '7d' | '30d' | '90d' | 'month' | null = null;
 
   filter = this.fb.nonNullable.group({
     entryType: [''],
@@ -71,13 +74,23 @@ export class StatementComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.accountId = this.route.snapshot.paramMap.get('id') || '';
-    if (!this.accountId) {
-      this.toast.error(this.i18n.instant('CUSTOMER.STATEMENT_NO_ACCOUNT'));
-      return;
-    }
-    this.loadAccount();
-    this.load();
+    this.loadAccountList();
+    this.route.paramMap.subscribe((params) => {
+      const id = params.get('id') || '';
+      if (id === this.accountId && this.account) {
+        return;
+      }
+      this.accountId = id;
+      this.pageIndex = 0;
+      this.rows = [];
+      this.totalElements = 0;
+      if (!this.accountId) {
+        this.account = null;
+        return;
+      }
+      this.loadAccount();
+      this.load();
+    });
   }
 
   get hasActiveFilters(): boolean {
@@ -85,7 +98,30 @@ export class StatementComponent implements OnInit {
     return !!(f.entryType || f.from || f.to);
   }
 
+  get missingAccount(): boolean {
+    return !this.accountId;
+  }
+
+  loadAccountList(): void {
+    this.api.listAccounts().subscribe({
+      next: (list) => {
+        this.accounts = list || [];
+        // Deep-link missing /id → auto-pick single account
+        if (!this.accountId && this.accounts.length === 1) {
+          this.switchAccount(this.accounts[0].id);
+        }
+      },
+      error: () => {
+        this.accounts = [];
+      },
+    });
+  }
+
   loadAccount(): void {
+    if (!this.accountId) {
+      this.account = null;
+      return;
+    }
     this.api.getAccount(this.accountId).subscribe({
       next: (a) => (this.account = a),
       error: () => {
@@ -94,13 +130,45 @@ export class StatementComponent implements OnInit {
     });
   }
 
+  switchAccount(id: string): void {
+    if (!id || id === this.accountId) {
+      return;
+    }
+    this.activeQuick = null;
+    // paramMap subscription reloads account + ledger for the new id
+    void this.router.navigate(['/customer/accounts', id, 'statement']);
+  }
+
   applyFilters(): void {
+    if (!this.validateRange()) {
+      return;
+    }
+    this.activeQuick = null;
     this.pageIndex = 0;
     this.load();
   }
 
   resetFilters(): void {
     this.filter.reset({ entryType: '', from: '', to: '' });
+    this.activeQuick = null;
+    this.pageIndex = 0;
+    this.load();
+  }
+
+  applyQuickRange(kind: '7d' | '30d' | '90d' | 'month'): void {
+    const today = this.localDate(new Date());
+    let from: string;
+    if (kind === 'month') {
+      const now = new Date();
+      from = this.localDate(new Date(now.getFullYear(), now.getMonth(), 1));
+    } else {
+      const days = kind === '7d' ? 7 : kind === '30d' ? 30 : 90;
+      const d = new Date();
+      d.setDate(d.getDate() - (days - 1));
+      from = this.localDate(d);
+    }
+    this.filter.patchValue({ from, to: today });
+    this.activeQuick = kind;
     this.pageIndex = 0;
     this.load();
   }
@@ -111,8 +179,25 @@ export class StatementComponent implements OnInit {
     this.load();
   }
 
+  async copyRef(ref: string | null | undefined): Promise<void> {
+    if (!ref) {
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(ref);
+      this.toast.success(this.i18n.instant('CUSTOMER.STATEMENT_COPY_OK'));
+    } catch {
+      this.toast.error(this.i18n.instant('CUSTOMER.STATEMENT_COPY_FAIL'));
+    }
+  }
+
   exportCsv(): void {
-    if (!this.accountId || this.exporting) return;
+    if (!this.accountId || this.exporting) {
+      return;
+    }
+    if (!this.validateRange()) {
+      return;
+    }
     this.exporting = true;
     const f = this.filter.getRawValue();
     this.api
@@ -131,9 +216,13 @@ export class StatementComponent implements OnInit {
           this.downloadBlob(blob, name);
           this.toast.success(this.i18n.instant('CUSTOMER.STATEMENT_EXPORT_OK'));
         },
-        error: () => {
+        error: (err) => {
           this.exporting = false;
-          this.toast.error(this.i18n.instant('CUSTOMER.STATEMENT_EXPORT_FAIL'));
+          this.toast.error(
+            err instanceof HttpErrorResponse
+              ? resolveHttpErrorMessage(err, this.i18n)
+              : this.i18n.instant('CUSTOMER.STATEMENT_EXPORT_FAIL'),
+          );
         },
       });
   }
@@ -148,7 +237,12 @@ export class StatementComponent implements OnInit {
   }
 
   load(): void {
-    if (!this.accountId) return;
+    if (!this.accountId) {
+      return;
+    }
+    if (!this.validateRange(false)) {
+      return;
+    }
     this.loading = true;
     const f = this.filter.getRawValue();
     this.api
@@ -180,14 +274,37 @@ export class StatementComponent implements OnInit {
       });
   }
 
+  /** Validate from <= to. toast=true shows user message. */
+  private validateRange(toast = true): boolean {
+    const f = this.filter.getRawValue();
+    if (f.from && f.to && f.from > f.to) {
+      if (toast) {
+        this.toast.error(this.i18n.instant('CUSTOMER.STATEMENT_INVALID_RANGE'));
+      }
+      return false;
+    }
+    return true;
+  }
+
+  private localDate(d: Date): string {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
   /** Local date yyyy-mm-dd → start of day UTC ISO */
   private toInstantStart(date: string | undefined): string | undefined {
-    if (!date) return undefined;
+    if (!date) {
+      return undefined;
+    }
     return `${date}T00:00:00.000Z`;
   }
 
   private toInstantEnd(date: string | undefined): string | undefined {
-    if (!date) return undefined;
+    if (!date) {
+      return undefined;
+    }
     return `${date}T23:59:59.999Z`;
   }
 }
