@@ -9,6 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -23,10 +24,13 @@ import {
   PromptDialogComponent,
   PromptDialogData,
 } from '../../../shared/components/prompt-dialog/prompt-dialog.component';
+import { UserDetailDialogComponent } from '../../../shared/components/user-detail-dialog/user-detail-dialog.component';
 import { AuthApiService } from '../../../core/services/auth-api.service';
 import { BankApiService, RbacStaffUser } from '../../../core/services/bank-api.service';
 import { PERMISSIONS } from '../../../core/services/rbac.util';
 import { ToastService } from '../../../core/services/toast.service';
+import { resolveHttpErrorMessage } from '../../../core/utils/http-error.util';
+import { copyText } from '../../../core/utils/transfer-receipt.util';
 import { selectHasPermission, selectUser } from '../../../store/auth/auth.selectors';
 
 @Component({
@@ -42,6 +46,7 @@ import { selectHasPermission, selectUser } from '../../../store/auth/auth.select
     MatIconModule,
     MatInputModule,
     MatProgressSpinnerModule,
+    MatSelectModule,
     MatTableModule,
     MatPaginatorModule,
     MatTooltipModule,
@@ -61,7 +66,6 @@ export class AdminUsersComponent implements OnInit {
 
   canReset$ = this.store.select(selectHasPermission(PERMISSIONS.USERS_PASSWORD_RESET));
   canLock$ = this.store.select(selectHasPermission(PERMISSIONS.USERS_LOCK_EXECUTE));
-  /** Current signed-in admin userId — cannot lock / blind-reset self */
   meUserId$ = this.store.select(selectUser).pipe(map((u) => u?.userId ?? null));
   meUserId: string | null = null;
 
@@ -70,15 +74,23 @@ export class AdminUsersComponent implements OnInit {
   pageSize = 20;
   totalElements = 0;
   q = '';
+  userId = '';
+  /** '' | 'true' | 'false' */
+  enabledFilter = '';
   cols = ['username', 'email', 'roles', 'status', 'actions'];
   loading = false;
   busyId: string | null = null;
+  openingId: string | null = null;
 
   ngOnInit(): void {
     this.meUserId$.subscribe((id) => {
       this.meUserId = id;
     });
     this.load();
+  }
+
+  get hasActiveFilters(): boolean {
+    return !!(this.q.trim() || this.userId.trim() || this.enabledFilter);
   }
 
   isSelf(u: RbacStaffUser): boolean {
@@ -90,25 +102,83 @@ export class AdminUsersComponent implements OnInit {
     this.load();
   }
 
+  clearFilters(): void {
+    this.q = '';
+    this.userId = '';
+    this.enabledFilter = '';
+    this.pageIndex = 0;
+    this.load();
+  }
+
   load(): void {
     this.loading = true;
-    this.bankApi.rbacUsers(this.pageIndex, this.pageSize, this.q || undefined).subscribe({
-      next: (p) => {
-        this.rows = p.items || [];
-        this.totalElements = p.totalElements ?? this.rows.length;
-        this.loading = false;
+    const enabled =
+      this.enabledFilter === 'true' ? true : this.enabledFilter === 'false' ? false : undefined;
+    this.bankApi
+      .rbacUsers(this.pageIndex, this.pageSize, {
+        q: this.q.trim() || undefined,
+        enabled,
+        userId: this.userId.trim() || undefined,
+      })
+      .subscribe({
+        next: (p) => {
+          this.rows = p.items || [];
+          this.totalElements = p.totalElements ?? this.rows.length;
+          this.loading = false;
+        },
+        error: (err) => {
+          this.rows = [];
+          this.totalElements = 0;
+          this.loading = false;
+          this.toast.error(
+            resolveHttpErrorMessage(err, this.i18n) ||
+              this.i18n.instant('ADMIN.USERS_LOAD_FAIL'),
+          );
+        },
+      });
+  }
+
+  openDetail(u: RbacStaffUser, event?: Event): void {
+    event?.stopPropagation();
+    if (!u?.userId || this.openingId) {
+      return;
+    }
+    this.openingId = u.userId;
+    this.bankApi.rbacUserDetail(u.userId).subscribe({
+      next: (user) => {
+        this.openingId = null;
+        this.dialog.open(UserDetailDialogComponent, {
+          data: { user },
+          width: '600px',
+          maxWidth: '95vw',
+        });
       },
       error: () => {
-        this.rows = [];
-        this.totalElements = 0;
-        this.loading = false;
-        this.toast.error(this.i18n.instant('ADMIN.USERS_LOAD_FAIL'));
+        this.openingId = null;
+        this.dialog.open(UserDetailDialogComponent, {
+          data: { user: u },
+          width: '600px',
+          maxWidth: '95vw',
+        });
       },
     });
   }
 
-  /** Direct blind reset — confirm dialog only, no second checker. */
-  resetPassword(u: RbacStaffUser): void {
+  async copyUserId(u: RbacStaffUser, event?: Event): Promise<void> {
+    event?.stopPropagation();
+    if (!u?.userId) {
+      return;
+    }
+    const ok = await copyText(u.userId);
+    if (ok) {
+      this.toast.success(this.i18n.instant('ADMIN.USERS_COPY_ID_OK'));
+    } else {
+      this.toast.error(this.i18n.instant('ADMIN.USERS_COPY_FAIL'));
+    }
+  }
+
+  resetPassword(u: RbacStaffUser, event?: Event): void {
+    event?.stopPropagation();
     if (this.isSelf(u)) {
       this.toast.error(this.i18n.instant('ADMIN.CANNOT_ACT_SELF'));
       return;
@@ -138,13 +208,15 @@ export class AdminUsersComponent implements OnInit {
         error: (err) => {
           this.busyId = null;
           this.toast.error(
-            err?.error?.error?.message || this.i18n.instant('ADMIN.PWD_FULFILL_FAIL'),
+            resolveHttpErrorMessage(err, this.i18n) ||
+              this.i18n.instant('ADMIN.PWD_FULFILL_FAIL'),
           );
         },
       });
   }
 
-  toggleLock(u: RbacStaffUser): void {
+  toggleLock(u: RbacStaffUser, event?: Event): void {
+    event?.stopPropagation();
     if (this.isSelf(u)) {
       this.toast.error(this.i18n.instant('ADMIN.CANNOT_LOCK_SELF'));
       return;
@@ -187,7 +259,9 @@ export class AdminUsersComponent implements OnInit {
         },
         error: (err) => {
           this.busyId = null;
-          this.toast.error(err?.error?.error?.message || this.i18n.instant('ADMIN.LOCK_FAIL'));
+          this.toast.error(
+            resolveHttpErrorMessage(err, this.i18n) || this.i18n.instant('ADMIN.LOCK_FAIL'),
+          );
         },
       });
   }
@@ -217,7 +291,9 @@ export class AdminUsersComponent implements OnInit {
         },
         error: (err) => {
           this.busyId = null;
-          this.toast.error(err?.error?.error?.message || this.i18n.instant('ADMIN.UNLOCK_FAIL'));
+          this.toast.error(
+            resolveHttpErrorMessage(err, this.i18n) || this.i18n.instant('ADMIN.UNLOCK_FAIL'),
+          );
         },
       });
   }
@@ -227,5 +303,4 @@ export class AdminUsersComponent implements OnInit {
     this.pageSize = e.pageSize;
     this.load();
   }
-
 }

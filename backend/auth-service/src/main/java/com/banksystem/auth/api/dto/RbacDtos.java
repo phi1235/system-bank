@@ -38,7 +38,8 @@ public final class RbacDtos {
       boolean enabled,
       boolean mustChangePassword,
       String lockedReason,
-      boolean openResetTicket
+      boolean openResetTicket,
+      java.time.Instant createdAt
   ) {}
 
   public record AssignRolesRequest(@NotEmpty List<String> roles) {}

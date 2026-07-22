@@ -354,8 +354,22 @@ export class BankApiService {
     return this.api.put(`/admin/rbac/roles/${code}/permissions`, { permissions });
   }
 
-  rbacUsers(page = 0, size = 20, q?: string): Observable<PageResponse<RbacStaffUser>> {
-    return this.api.get('/admin/rbac/users', { page, size, q });
+  rbacUsers(
+    page = 0,
+    size = 20,
+    filters?: { q?: string; enabled?: boolean; userId?: string },
+  ): Observable<PageResponse<RbacStaffUser>> {
+    return this.api.get('/admin/rbac/users', {
+      page,
+      size,
+      q: filters?.q,
+      enabled: filters?.enabled,
+      userId: filters?.userId,
+    });
+  }
+
+  rbacUserDetail(userId: string): Observable<RbacStaffUser> {
+    return this.api.get(`/admin/rbac/users/${userId}`);
   }
 
   assignRoles(userId: string, roles: string[]): Observable<RbacStaffUser> {
@@ -399,4 +413,5 @@ export interface RbacStaffUser {
   mustChangePassword?: boolean;
   lockedReason?: string | null;
   openResetTicket?: boolean;
+  createdAt?: string | null;
 }

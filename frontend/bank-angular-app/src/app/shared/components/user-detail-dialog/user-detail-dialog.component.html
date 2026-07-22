@@ -1,0 +1,98 @@
+<h2 mat-dialog-title>{{ 'ADMIN.USERS_DETAIL_TITLE' | translate }}</h2>
+
+<mat-dialog-content class="body">
+  <div class="grid">
+    <div class="field">
+      <span class="k">{{ 'AUTH.USERNAME' | translate }}</span>
+      <span class="v strong">{{ user.username }}</span>
+    </div>
+    <div class="field">
+      <span class="k">{{ 'COMMON.STATUS' | translate }}</span>
+      <span class="v">
+        <span class="chip" [class.ok]="user.enabled" [class.bad]="!user.enabled">
+          {{
+            user.enabled
+              ? ('ADMIN.USER_ACTIVE' | translate)
+              : ('ADMIN.USER_LOCKED' | translate)
+          }}
+        </span>
+      </span>
+    </div>
+    <div class="field">
+      <span class="k">{{ 'ADMIN.EMAIL' | translate }}</span>
+      <div class="row">
+        <span class="v">{{ user.email || '—' }}</span>
+        @if (user.email) {
+          <button
+            mat-icon-button
+            type="button"
+            (click)="copyField(user.email, 'ADMIN.USERS_COPY_EMAIL_OK')"
+            [matTooltip]="'ADMIN.USERS_COPY_EMAIL' | translate"
+          >
+            <mat-icon>content_copy</mat-icon>
+          </button>
+        }
+      </div>
+    </div>
+    <div class="field">
+      <span class="k">{{ 'ADMIN.USERS_CREATED' | translate }}</span>
+      <span class="v">{{ user.createdAt ? (user.createdAt | date: 'medium') : '—' }}</span>
+    </div>
+    <div class="field">
+      <span class="k">{{ 'ADMIN.USERS_STAFF' | translate }}</span>
+      <span class="v">{{
+        user.staff ? ('COMMON.YES' | translate) : ('COMMON.NO' | translate)
+      }}</span>
+    </div>
+    <div class="field">
+      <span class="k">{{ 'ADMIN.USERS_MUST_CHANGE' | translate }}</span>
+      <span class="v">{{
+        user.mustChangePassword ? ('COMMON.YES' | translate) : ('COMMON.NO' | translate)
+      }}</span>
+    </div>
+    <div class="field">
+      <span class="k">{{ 'ADMIN.USERS_OPEN_TICKET' | translate }}</span>
+      <span class="v">{{
+        user.openResetTicket ? ('COMMON.YES' | translate) : ('COMMON.NO' | translate)
+      }}</span>
+    </div>
+
+    <div class="field wide">
+      <span class="k">{{ 'ADMIN.USERS_USER_ID' | translate }}</span>
+      <div class="row">
+        <code class="v mono">{{ user.userId }}</code>
+        <button
+          mat-icon-button
+          type="button"
+          (click)="copyField(user.userId, 'ADMIN.USERS_COPY_ID_OK')"
+          [matTooltip]="'ADMIN.USERS_COPY_ID' | translate"
+        >
+          <mat-icon>content_copy</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    <div class="field wide">
+      <span class="k">{{ 'ADMIN.ROLE' | translate }}</span>
+      <span class="v">{{ rolesText }}</span>
+    </div>
+
+    <div class="field wide">
+      <span class="k">{{ 'ADMIN.USERS_PERMISSIONS' | translate }}</span>
+      <span class="v perms">{{ permissionsText }}</span>
+    </div>
+
+    @if (!user.enabled && user.lockedReason) {
+      <div class="field wide">
+        <span class="k">{{ 'ADMIN.USERS_LOCKED_REASON' | translate }}</span>
+        <span class="v err">{{ user.lockedReason }}</span>
+      </div>
+    }
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-flat-button color="primary" type="button" (click)="close()">
+    {{ 'COMMON.CLOSE' | translate }}
+  </button>
+</mat-dialog-actions>

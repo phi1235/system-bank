@@ -103,9 +103,18 @@ public class RbacController {
       @AuthenticationPrincipal UserPrincipal principal,
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "20") int size,
-      @RequestParam(required = false) String q) {
+      @RequestParam(required = false) String q,
+      @RequestParam(required = false) Boolean enabled,
+      @RequestParam(required = false) String userId) {
     requireUsersAssign(principal);
-    return ApiResponse.ok(rbacService.listUsers(page, size, q));
+    return ApiResponse.ok(rbacService.listUsers(page, size, q, enabled, userId));
+  }
+
+  @GetMapping("/users/{userId}")
+  public ApiResponse<StaffUserDto> user(
+      @AuthenticationPrincipal UserPrincipal principal, @PathVariable UUID userId) {
+    requireUsersAssign(principal);
+    return ApiResponse.ok(rbacService.getUser(userId));
   }
 
   @PutMapping("/users/{userId}/roles")
