@@ -42,7 +42,7 @@
             [class.ok]="account.status === 'ACTIVE'"
             [class.bad]="account.status === 'FROZEN'"
           >
-            {{ account.status }}
+            {{ account.status | enumLabel:'ACCOUNT_STATUS' }}
           </span>
         </div>
       </div>
@@ -56,8 +56,8 @@
       <mat-label>{{ 'CUSTOMER.STATEMENT_TYPE' | translate }}</mat-label>
       <mat-select formControlName="entryType">
         <mat-option value="">{{ 'CUSTOMER.STATEMENT_TYPE_ALL' | translate }}</mat-option>
-        <mat-option value="CREDIT">CREDIT</mat-option>
-        <mat-option value="DEBIT">DEBIT</mat-option>
+        <mat-option value="CREDIT">{{ 'LEDGER_ENTRY.CREDIT' | translate }}</mat-option>
+        <mat-option value="DEBIT">{{ 'LEDGER_ENTRY.DEBIT' | translate }}</mat-option>
       </mat-select>
     </mat-form-field>
     <mat-form-field appearance="outline">
@@ -114,7 +114,7 @@
               [class.ok]="r.entryType === 'CREDIT'"
               [class.bad]="r.entryType === 'DEBIT'"
             >
-              {{ r.entryType }}
+              {{ r.entryType | enumLabel:'LEDGER_ENTRY' }}
             </span>
           </td>
         </ng-container>

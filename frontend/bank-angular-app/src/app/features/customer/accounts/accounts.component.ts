@@ -11,6 +11,7 @@ import { Store } from '@ngrx/store';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { LoadingComponent } from '../../../shared/components/loading/loading.component';
 import { MoneyVndPipe } from '../../../shared/pipes/money-vnd.pipe';
+import { EnumLabelPipe } from '../../../shared/pipes/enum-label.pipe';
 import { PERMISSIONS } from '../../../core/services/rbac.util';
 import { AccountsActions } from '../../../store/accounts/accounts.actions';
 import { selectAccounts, selectAccountsLoading } from '../../../store/accounts/accounts.selectors';
@@ -30,6 +31,7 @@ import { selectHasPermission } from '../../../store/auth/auth.selectors';
     PageHeaderComponent,
     LoadingComponent,
     MoneyVndPipe,
+    EnumLabelPipe,
     TranslateModule,
   ],
   templateUrl: './accounts.component.html',

@@ -21,9 +21,9 @@
           <mat-label>{{ 'ADMIN.STATUS' | translate }}</mat-label>
           <mat-select formControlName="status">
             <mat-option value="">{{ 'ADMIN.STATUS_ALL' | translate }}</mat-option>
-            <mat-option value="ACTIVE">ACTIVE</mat-option>
-            <mat-option value="FROZEN">FROZEN</mat-option>
-            <mat-option value="CLOSED">CLOSED</mat-option>
+            <mat-option value="ACTIVE">{{ 'ACCOUNT_STATUS.ACTIVE' | translate }}</mat-option>
+            <mat-option value="FROZEN">{{ 'ACCOUNT_STATUS.FROZEN' | translate }}</mat-option>
+            <mat-option value="CLOSED">{{ 'ACCOUNT_STATUS.CLOSED' | translate }}</mat-option>
           </mat-select>
         </mat-form-field>
 
@@ -67,7 +67,7 @@
                 [class.bad]="row.status === 'FROZEN'"
                 [class.warn]="row.status === 'CLOSED'"
               >
-                {{ row.status }}
+                {{ row.status | enumLabel:'ACCOUNT_STATUS' }}
               </span>
             </td>
           </ng-container>
@@ -110,7 +110,7 @@
             [class.bad]="selected.status === 'FROZEN'"
             [class.warn]="selected.status === 'CLOSED'"
           >
-            {{ selected.status }}
+            {{ selected.status | enumLabel:'ACCOUNT_STATUS' }}
           </span>
         </div>
         <div class="acc-num">{{ selected.accountNumber }}</div>
@@ -129,7 +129,7 @@
           </div>
           <div>
             <span class="k">{{ 'ADMIN.TYPE' | translate }}</span>
-            <span class="v">{{ selected.accountType }}</span>
+            <span class="v">{{ selected.accountType | enumLabel:'ACCOUNT_TYPE' }}</span>
           </div>
         </div>
         <div class="acts">

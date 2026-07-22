@@ -9,6 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { EnumLabelPipe } from '../../../shared/pipes/enum-label.pipe';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { filter, switchMap } from 'rxjs';
 import { OutboxCounts, OutboxEvent } from '../../../core/models/domain.model';
@@ -36,6 +37,7 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
     MatDialogModule,
     PageHeaderComponent,
     TranslateModule,
+    EnumLabelPipe,
   ],
   templateUrl: './outbox.component.html',
   styleUrl: './outbox.component.scss',

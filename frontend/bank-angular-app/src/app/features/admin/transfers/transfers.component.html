@@ -6,9 +6,9 @@
     <mat-label>{{ 'COMMON.STATUS' | translate }}</mat-label>
     <mat-select [(ngModel)]="status">
       <mat-option value="">{{ 'COMMON.ALL' | translate }}</mat-option>
-      <mat-option value="COMPLETED">COMPLETED</mat-option>
-      <mat-option value="FAILED">FAILED</mat-option>
-      <mat-option value="COMPENSATED">COMPENSATED</mat-option>
+      <mat-option value="COMPLETED">{{ 'COMPLETED' | transferStatus }}</mat-option>
+      <mat-option value="FAILED">{{ 'FAILED' | transferStatus }}</mat-option>
+      <mat-option value="COMPENSATED">{{ 'COMPENSATED' | transferStatus }}</mat-option>
     </mat-select>
   </mat-form-field>
   <button mat-flat-button color="primary" type="button" (click)="load()">{{ 'ADMIN.FILTER' | translate }}</button>
@@ -33,7 +33,7 @@
             [class.ok]="t.status === 'COMPLETED'"
             [class.warn]="t.status === 'COMPENSATED' || t.status === 'PENDING'"
             [class.bad]="t.status === 'FAILED'"
-          >{{ t.status }}</span>
+          >{{ t.status | transferStatus }}</span>
         </td>
       </ng-container>
       <ng-container matColumnDef="fromAccountId">

@@ -15,6 +15,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { LoadingComponent } from '../../../shared/components/loading/loading.component';
 import { MoneyVndPipe } from '../../../shared/pipes/money-vnd.pipe';
+import { EnumLabelPipe } from '../../../shared/pipes/enum-label.pipe';
 import { BankApiService } from '../../../core/services/bank-api.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { Account, LedgerEntry } from '../../../core/models/domain.model';
@@ -38,6 +39,7 @@ import { Account, LedgerEntry } from '../../../core/models/domain.model';
     PageHeaderComponent,
     LoadingComponent,
     MoneyVndPipe,
+    EnumLabelPipe,
     TranslateModule,
   ],
   templateUrl: './statement.component.html',

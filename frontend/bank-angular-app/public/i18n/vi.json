@@ -640,5 +640,23 @@
     "COMPENSATING": "Đang hoàn",
     "COMPENSATED": "Đã hoàn",
     "SUCCESS": "Thành công"
+  },
+  "ACCOUNT_STATUS": {
+    "ACTIVE": "Hoạt động",
+    "FROZEN": "Đóng băng",
+    "CLOSED": "Đã đóng"
+  },
+  "ACCOUNT_TYPE": {
+    "PAYMENT": "Thanh toán",
+    "SAVINGS": "Tiết kiệm"
+  },
+  "OUTBOX_STATUS": {
+    "PENDING": "Chờ gửi",
+    "PUBLISHED": "Đã gửi",
+    "DEAD": "Thất bại (DEAD)"
+  },
+  "LEDGER_ENTRY": {
+    "CREDIT": "Ghi có",
+    "DEBIT": "Ghi nợ"
   }
 }
