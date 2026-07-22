@@ -1,0 +1,32 @@
+<h2 mat-dialog-title>{{ data.title }}</h2>
+<mat-dialog-content>
+  @if (data.message) {
+    <p class="msg">{{ data.message }}</p>
+  }
+  <form [formGroup]="form" (ngSubmit)="submit()" class="prompt-form">
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>{{ data.label || ('COMMON.REASON' | translate) }}</mat-label>
+      <input
+        matInput
+        formControlName="value"
+        [placeholder]="data.placeholder || ''"
+        [attr.maxlength]="data.maxLength || null"
+        autocomplete="off"
+      />
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="cancel()">
+    {{ data.cancelLabel || ('COMMON.CANCEL' | translate) }}
+  </button>
+  <button
+    mat-flat-button
+    type="button"
+    [color]="data.destructive ? 'warn' : 'primary'"
+    (click)="submit()"
+    [disabled]="form.invalid"
+  >
+    {{ data.confirmLabel || ('COMMON.OK' | translate) }}
+  </button>
+</mat-dialog-actions>

@@ -19,7 +19,8 @@
     "PLACEHOLDER_HINT": "This feature is on the roadmap — placeholder route for product-grade IA.",
     "PLACEHOLDER_MVP": "Does not affect MVP flows (accounts · transfer · history).",
     "LANG_VI": "Tiếng Việt",
-    "LANG_EN": "English"
+    "LANG_EN": "English",
+    "REASON": "Reason"
   },
   "NAV": {
     "HOME": "Overview",
@@ -287,7 +288,8 @@
     "QUOTE_TOTAL_DEBIT": "Total debit",
     "QUOTE_REMAINING_TODAY": "Remaining today",
     "QUOTE_MAX_TX": "Max per transfer",
-    "QUOTE_NOTE": "Spent today {{spent}} / daily limit {{daily}} ({{zone}})."
+    "QUOTE_NOTE": "Spent today {{spent}} / daily limit {{daily}} ({{zone}}).",
+    "CONFIRM_TITLE": "Confirm transfer"
   },
   "ADMIN": {
     "SHELL_TITLE": "Operations Console",
@@ -557,7 +559,18 @@
     "USERS_NO_ACT": "No action permission",
     "SCR_USERS": "BO · User management",
     "CANNOT_LOCK_SELF": "You cannot lock your own account",
-    "CANNOT_ACT_SELF": "You cannot reset password / act on your own account this way"
+    "CANNOT_ACT_SELF": "You cannot reset password / act on your own account this way",
+    "PWD_FULFILL_TITLE": "Issue temporary password",
+    "LOCK_TITLE": "Lock login · {{user}}",
+    "UNLOCK_TITLE": "Unlock login · {{user}}",
+    "LOCK_REASON_PLACEHOLDER": "Optional note for audit trail",
+    "LOCK_REASON_DEFAULT": "Locked by admin",
+    "FREEZE_TITLE": "Freeze account",
+    "FREEZE_CONFIRM": "Freeze account {{account}}? Customer transfers from this account will fail.",
+    "FREEZE_FAIL": "Freeze failed",
+    "UNFREEZE_TITLE": "Unfreeze account",
+    "UNFREEZE_CONFIRM": "Unfreeze account {{account}} and restore ACTIVE status?",
+    "UNFREEZE_FAIL": "Unfreeze failed"
   },
   "ERRORS": {
     "GENERIC": "System error"

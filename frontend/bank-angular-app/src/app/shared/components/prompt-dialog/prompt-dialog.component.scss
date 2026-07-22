@@ -1,0 +1,15 @@
+.msg {
+  margin: 0 0 0.75rem;
+  line-height: 1.5;
+  max-width: 48ch;
+  text-wrap: pretty;
+  color: var(--color-text-secondary, #475569);
+}
+
+.prompt-form {
+  margin-top: 0.25rem;
+}
+
+.full {
+  width: 100%;
+}

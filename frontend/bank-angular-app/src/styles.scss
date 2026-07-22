@@ -253,12 +253,29 @@ mat-card {
   &.bad { background: #fee2e2; color: #991b1b; }
 }
 
+/* Toasts: force top-right, above shells/panels (Material snackbar defaults can sit bottom). */
+.cdk-overlay-container .cdk-overlay-pane:has(.app-toast),
+.cdk-overlay-container .cdk-global-overlay-wrapper:has(.app-toast) {
+  justify-content: flex-end !important;
+  align-items: flex-start !important;
+}
+
+.app-toast.mat-mdc-snack-bar-container,
+.mat-mdc-snack-bar-container.app-toast {
+  margin: 1rem 1rem 0 0 !important;
+  max-width: min(420px, calc(100vw - 2rem));
+}
+
 .toast-success {
   --mdc-snackbar-container-color: #0d9f6e;
   --mdc-snackbar-supporting-text-color: #fff;
 }
 .toast-error {
   --mdc-snackbar-container-color: #dc2626;
+  --mdc-snackbar-supporting-text-color: #fff;
+}
+.toast-info {
+  --mdc-snackbar-container-color: #0f2744;
   --mdc-snackbar-supporting-text-color: #fff;
 }
 
