@@ -87,6 +87,45 @@
               <span class="v">{{ quote.maxPerTransaction | moneyVnd: quote.currency }}</span>
             </div>
           </div>
+
+          @if (quote.feeEnabled) {
+            <div class="fee-breakdown">
+              <div class="fee-breakdown-title">{{ 'CUSTOMER.FEE_BREAKDOWN_TITLE' | translate }}</div>
+              <ul class="fee-breakdown-list">
+                <li>
+                  <span>{{ 'CUSTOMER.FEE_FLAT' | translate }}</span>
+                  <span>{{ (quote.feeFlat ?? 0) | moneyVnd: quote.currency }}</span>
+                </li>
+                <li>
+                  <span>
+                    {{ 'CUSTOMER.FEE_PERCENT' | translate: { percent: quote.feePercent ?? 0 } }}
+                  </span>
+                  <span>{{ (quote.feePercentAmount ?? 0) | moneyVnd: quote.currency }}</span>
+                </li>
+                <li class="sub">
+                  <span>{{ 'CUSTOMER.FEE_RAW' | translate }}</span>
+                  <span>{{ (quote.feeRawBeforeClamp ?? quote.feeAmount) | moneyVnd: quote.currency }}</span>
+                </li>
+                <li class="bounds">
+                  <span>{{ 'CUSTOMER.FEE_BOUNDS' | translate }}</span>
+                  <span>
+                    {{ (quote.feeMin ?? 0) | moneyVnd: quote.currency }}
+                    –
+                    {{ (quote.feeMax ?? 0) | moneyVnd: quote.currency }}
+                  </span>
+                </li>
+              </ul>
+              @if (quote.feeCappedByMin) {
+                <p class="fee-cap">{{ 'CUSTOMER.FEE_CAPPED_MIN' | translate }}</p>
+              }
+              @if (quote.feeCappedByMax) {
+                <p class="fee-cap">{{ 'CUSTOMER.FEE_CAPPED_MAX' | translate }}</p>
+              }
+            </div>
+          } @else {
+            <p class="quote-note">{{ 'CUSTOMER.FEE_DISABLED' | translate }}</p>
+          }
+
           <p class="quote-note">
             {{
               'CUSTOMER.QUOTE_NOTE'

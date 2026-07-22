@@ -54,7 +54,7 @@ export interface TransferRequest {
   currency?: string;
 }
 
-/** Pre-transfer fee + daily limit remaining preview. */
+/** Pre-transfer fee + daily limit remaining preview (includes fee formula breakdown). */
 export interface TransferQuote {
   amount: number;
   feeAmount: number;
@@ -66,6 +66,18 @@ export interface TransferQuote {
   currency: string;
   dailyLimitZone: string;
   feeEnabled: boolean;
+  /** Flat fee component from config (VND). */
+  feeFlat?: number;
+  /** Percent of principal (e.g. 0.1 = 0.1%). */
+  feePercent?: number;
+  /** Computed percent portion for this amount. */
+  feePercentAmount?: number;
+  feeMin?: number;
+  feeMax?: number;
+  /** flat + percentAmount before min/max clamp. */
+  feeRawBeforeClamp?: number;
+  feeCappedByMin?: boolean;
+  feeCappedByMax?: boolean;
 }
 
 /** Account ledger line (DEBIT/CREDIT), not transfer-order history. */

@@ -84,6 +84,79 @@ public class TransferFeePolicy {
     return percent;
   }
 
+  public BigDecimal minFee() {
+    return minFee;
+  }
+
+  public BigDecimal maxFee() {
+    return maxFee;
+  }
+
+  /**
+   * Full fee breakdown for quote UX (flat + % parts, clamp bounds, final fee).
+   * Same formula as {@link #calculate(BigDecimal)}.
+   */
+  public FeeBreakdown breakdown(BigDecimal principal) {
+    if (principal == null || principal.compareTo(BigDecimal.ZERO) <= 0) {
+      throw new BusinessException("INVALID_AMOUNT", "Amount must be positive", HttpStatus.BAD_REQUEST);
+    }
+    if (!enabled) {
+      BigDecimal zero = BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+      return new FeeBreakdown(
+          false,
+          flat.setScale(2, RoundingMode.HALF_UP),
+          percent,
+          zero,
+          minFee.setScale(2, RoundingMode.HALF_UP),
+          maxFee.setScale(2, RoundingMode.HALF_UP),
+          zero,
+          zero,
+          false,
+          false);
+    }
+    BigDecimal percentAmount = principal
+        .multiply(percent)
+        .divide(new BigDecimal("100"), 8, RoundingMode.HALF_UP)
+        .setScale(2, RoundingMode.HALF_UP);
+    BigDecimal raw = flat.add(percentAmount).setScale(2, RoundingMode.HALF_UP);
+    BigDecimal fee = raw;
+    boolean cappedByMin = false;
+    boolean cappedByMax = false;
+    if (fee.compareTo(minFee) < 0) {
+      fee = minFee.setScale(2, RoundingMode.HALF_UP);
+      cappedByMin = true;
+    }
+    if (fee.compareTo(maxFee) > 0) {
+      fee = maxFee.setScale(2, RoundingMode.HALF_UP);
+      cappedByMax = true;
+      cappedByMin = false;
+    }
+    return new FeeBreakdown(
+        true,
+        flat.setScale(2, RoundingMode.HALF_UP),
+        percent,
+        percentAmount,
+        minFee.setScale(2, RoundingMode.HALF_UP),
+        maxFee.setScale(2, RoundingMode.HALF_UP),
+        raw,
+        fee,
+        cappedByMin,
+        cappedByMax);
+  }
+
+  /** Immutable fee formula snapshot for customer quote UI. */
+  public record FeeBreakdown(
+      boolean enabled,
+      BigDecimal flat,
+      BigDecimal percent,
+      BigDecimal percentAmount,
+      BigDecimal minFee,
+      BigDecimal maxFee,
+      BigDecimal rawBeforeClamp,
+      BigDecimal feeAmount,
+      boolean cappedByMin,
+      boolean cappedByMax) {}
+
   private static BigDecimal nullToZero(BigDecimal v) {
     return v == null ? BigDecimal.ZERO : v;
   }

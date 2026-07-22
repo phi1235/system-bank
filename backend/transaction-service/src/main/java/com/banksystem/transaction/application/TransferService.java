@@ -73,9 +73,26 @@ public class TransferService {
     }
     BigDecimal fee = BigDecimal.ZERO.setScale(2);
     BigDecimal total = principal.setScale(2);
+    BigDecimal feeFlat = transferFeePolicy.flat().setScale(2);
+    BigDecimal feePercent = transferFeePolicy.percent();
+    BigDecimal feePercentAmount = BigDecimal.ZERO.setScale(2);
+    BigDecimal feeMin = transferFeePolicy.minFee().setScale(2);
+    BigDecimal feeMax = transferFeePolicy.maxFee().setScale(2);
+    BigDecimal feeRaw = BigDecimal.ZERO.setScale(2);
+    boolean cappedByMin = false;
+    boolean cappedByMax = false;
     if (principal.compareTo(BigDecimal.ZERO) > 0) {
-      fee = transferFeePolicy.calculate(principal);
-      total = transferFeePolicy.totalDebit(principal);
+      TransferFeePolicy.FeeBreakdown b = transferFeePolicy.breakdown(principal);
+      fee = b.feeAmount();
+      total = principal.add(fee).setScale(2);
+      feeFlat = b.flat();
+      feePercent = b.percent();
+      feePercentAmount = b.percentAmount();
+      feeMin = b.minFee();
+      feeMax = b.maxFee();
+      feeRaw = b.rawBeforeClamp();
+      cappedByMin = b.cappedByMin();
+      cappedByMax = b.cappedByMax();
     }
     BigDecimal spent = transferLimitPolicy.spentToday(userId);
     BigDecimal remaining = transferLimitPolicy.remainingToday(userId);
@@ -89,7 +106,15 @@ public class TransferService {
         remaining,
         "VND",
         transferLimitPolicy.dailyLimitZone().getId(),
-        transferFeePolicy.enabled());
+        transferFeePolicy.enabled(),
+        feeFlat,
+        feePercent,
+        feePercentAmount,
+        feeMin,
+        feeMax,
+        feeRaw,
+        cappedByMin,
+        cappedByMax);
   }
 
   public TransferResponse transfer(GatewayUser user, String idempotencyKey, TransferRequest req, String ip) {

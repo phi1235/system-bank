@@ -36,6 +36,9 @@ public final class TransferDtos {
   /**
    * Pre-transfer quote for customer UX: fee preview + remaining daily limit.
    * Does not create an order; read-only.
+   *
+   * <p>Fee breakdown (flat + percent + min/max clamp) is exposed so the customer app can
+   * show how the fee was computed without hardcoding formula on the FE.
    */
   public record TransferQuoteResponse(
       BigDecimal amount,
@@ -47,7 +50,19 @@ public final class TransferDtos {
       BigDecimal remainingToday,
       String currency,
       String dailyLimitZone,
-      boolean feeEnabled
+      boolean feeEnabled,
+      /** Config flat fee component (VND). */
+      BigDecimal feeFlat,
+      /** Config percent of principal (e.g. 0.1 = 0.1%). */
+      BigDecimal feePercent,
+      /** Computed percent portion for this amount (before min/max clamp). */
+      BigDecimal feePercentAmount,
+      BigDecimal feeMin,
+      BigDecimal feeMax,
+      /** flat + percentAmount before min/max clamp. */
+      BigDecimal feeRawBeforeClamp,
+      boolean feeCappedByMin,
+      boolean feeCappedByMax
   ) {}
 
   /** Single saga step log line for transfer lifecycle visibility. */

@@ -71,6 +71,14 @@ class TransferServiceQuoteTest {
     assertEquals("VND", q.currency());
     assertEquals("Asia/Bangkok", q.dailyLimitZone());
     assertTrue(q.feeEnabled());
+    assertEquals(new BigDecimal("1000.00"), q.feeFlat());
+    assertEquals(new BigDecimal("0.1"), q.feePercent());
+    assertEquals(new BigDecimal("1000.00"), q.feePercentAmount());
+    assertEquals(new BigDecimal("0.00"), q.feeMin());
+    assertEquals(new BigDecimal("50000.00"), q.feeMax());
+    assertEquals(new BigDecimal("2000.00"), q.feeRawBeforeClamp());
+    assertEquals(false, q.feeCappedByMin());
+    assertEquals(false, q.feeCappedByMax());
   }
 
   @Test
