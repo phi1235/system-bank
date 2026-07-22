@@ -9,11 +9,22 @@ import org.springframework.data.repository.query.Param;
 
 public interface CustomerRepository extends JpaRepository<CustomerEntity, UUID> {
 
+  /**
+   * Admin customer search. Callers pass boolean flags so optional filters never rely on
+   * untyped NULL string binds for equality checks.
+   */
   @Query("""
       SELECT c FROM CustomerEntity c
-      WHERE (:q IS NULL OR :q = ''
-        OR LOWER(c.fullName) LIKE LOWER(CONCAT('%', :q, '%'))
-        OR LOWER(c.email) LIKE LOWER(CONCAT('%', :q, '%')))
+      WHERE (:hasQ = false
+          OR LOWER(c.fullName) LIKE LOWER(CONCAT('%', :q, '%'))
+          OR LOWER(c.email) LIKE LOWER(CONCAT('%', :q, '%')))
+        AND (:hasKyc = false OR c.kycStatus = :kycStatus)
+      ORDER BY c.updatedAt DESC
       """)
-  Page<CustomerEntity> search(@Param("q") String q, Pageable pageable);
+  Page<CustomerEntity> search(
+      @Param("hasQ") boolean hasQ,
+      @Param("q") String q,
+      @Param("hasKyc") boolean hasKyc,
+      @Param("kycStatus") String kycStatus,
+      Pageable pageable);
 }

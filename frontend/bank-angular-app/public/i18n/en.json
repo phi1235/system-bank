@@ -411,7 +411,7 @@
     "HANDLE": "Handle",
     "MODULES_TITLE": "Modules",
     "CUSTOMERS_TITLE": "Customers",
-    "CUSTOMERS_SUB": "List + KYC update",
+    "CUSTOMERS_SUB": "Search customers and decide KYC with confirmation",
     "EMPTY_CUSTOMERS": "No customers yet — reload or seed data.",
     "FULL_NAME": "Full name",
     "EMAIL": "Email",
@@ -420,7 +420,7 @@
     "VERIFY": "Verify",
     "REJECT": "Reject",
     "PENDING": "Pending",
-    "KYC_OK": "KYC → {{status}}",
+    "KYC_OK": "KYC updated to {{status}}",
     "ACCOUNTS_TITLE": "Accounts",
     "ACCOUNTS_SUB": "List / search by account number, account UUID or owner user · Freeze / Unfreeze",
     "ACCOUNT_ID": "Account ID (UUID)",
@@ -583,7 +583,7 @@
     "RBAC_NOTE_1": "SUPER_ADMIN / ADMIN — full catalog + rbac:manage.",
     "RBAC_NOTE_2": "SUPPORT — customers:read, no freeze.",
     "RBAC_NOTE_3": "CUSTOMER cannot open Back Office (no staff permissions).",
-    "NO_PERM_KYC": "Missing customers:kyc_decide",
+    "NO_PERM_KYC": "Missing customers:kyc:decide — KYC actions disabled.",
     "NO_PERM_FREEZE": "Missing accounts:freeze — freeze/unfreeze disabled.",
     "ROLE": "Role",
     "DESC": "Description",
@@ -680,7 +680,30 @@
     "AUDIT_HELP_BODY": "Each row is an immutable staff-visible event written by transaction-service.",
     "AUDIT_HELP_1": "Click a row (or the info icon) to open full ids and metadata.",
     "AUDIT_HELP_2": "Filter by action TRANSFER_CREATE or resource type TRANSFER for money flows.",
-    "AUDIT_HELP_3": "Date range uses UTC day bounds from the date pickers."
+    "AUDIT_HELP_3": "Date range uses UTC day bounds from the date pickers.",
+    "CUSTOMERS_SEARCH_PH": "Name or email",
+    "CUSTOMERS_FILTER_HINT": "Filter PENDING to work the review queue. Actions ask for confirmation first.",
+    "CUSTOMERS_TOTAL": "{{total}} customer(s)",
+    "CUSTOMERS_EMPTY_FILTERED": "No customers match these filters",
+    "CUSTOMERS_EMPTY_FILTERED_HINT": "Try clearing search or KYC status.",
+    "CUSTOMERS_EMPTY_HINT": "Customers appear after self-registration creates a profile.",
+    "CUSTOMERS_HELP_TITLE": "KYC decisions",
+    "CUSTOMERS_HELP_BODY": "Status changes call the customer-service KYC API and may notify ops.",
+    "CUSTOMERS_HELP_1": "Verify only after identity checks look good.",
+    "CUSTOMERS_HELP_2": "Reject or reset to Pending when more review is needed.",
+    "CUSTOMERS_HELP_3": "Current status button is disabled so you do not re-apply the same state.",
+    "KYC_VERIFIED_TITLE": "Verify KYC",
+    "KYC_VERIFIED_CONFIRM": "Mark {{name}} as {{status}}?",
+    "KYC_VERIFIED_ACTION": "Verify",
+    "KYC_REJECTED_TITLE": "Reject KYC",
+    "KYC_REJECTED_CONFIRM": "Mark {{name}} as {{status}}?",
+    "KYC_REJECTED_ACTION": "Reject",
+    "KYC_PENDING_TITLE": "Reset KYC to pending",
+    "KYC_PENDING_CONFIRM": "Set {{name}} back to {{status}}?",
+    "KYC_PENDING_ACTION": "Set pending",
+    "KYC_VERIFY_HINT": "Approve this customer KYC",
+    "KYC_REJECT_HINT": "Reject this customer KYC",
+    "KYC_PENDING_HINT": "Move back to pending review"
   },
   "ERRORS": {
     "GENERIC": "Something went wrong. Please try again.",
@@ -703,7 +726,10 @@
     "TOO_MANY_REQUESTS": "Too many requests. Please wait a moment and try again.",
     "AUDIT_NOT_FOUND": "Audit event was not found.",
     "INVALID_DATE_RANGE": "The end date must be on or after the start date.",
-    "INVALID_ACTOR_ID": "Actor must be a valid user id (UUID)."
+    "INVALID_ACTOR_ID": "Actor must be a valid user id (UUID).",
+    "INVALID_KYC_STATUS": "KYC status must be Pending, Verified, or Rejected.",
+    "CUSTOMER_NOT_FOUND": "Customer was not found.",
+    "PROFILE_EXISTS": "Customer profile already exists."
   },
   "TRANSFER_DETAIL": {
     "TITLE": "Transfer detail",
@@ -791,5 +817,10 @@
     "OPS_ACCOUNT_FROZEN": "Ops: account frozen",
     "OPS_ACCOUNT_UNFROZEN": "Ops: account unfrozen",
     "OPS_KYC_UPDATED": "Ops: KYC updated"
+  },
+  "KYC_STATUS": {
+    "PENDING": "Pending review",
+    "VERIFIED": "Verified",
+    "REJECTED": "Rejected"
   }
 }

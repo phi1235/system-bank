@@ -214,8 +214,13 @@ export class BankApiService {
   }
 
   // Admin
-  listCustomers(page = 0, size = 20, q?: string): Observable<PageResponse<CustomerProfile>> {
-    return this.api.get('/admin/customers', { page, size, q });
+  listCustomers(
+    page = 0,
+    size = 20,
+    q?: string,
+    kycStatus?: string,
+  ): Observable<PageResponse<CustomerProfile>> {
+    return this.api.get('/admin/customers', { page, size, q, kycStatus });
   }
 
   updateKyc(id: string, kycStatus: string): Observable<CustomerProfile> {
