@@ -2,40 +2,121 @@
   [title]="'CUSTOMER.HOME_TITLE' | translate"
   [subtitle]="'CUSTOMER.HOME_HELLO' | translate: { name: (username$ | async) || '' }"
 >
-  <a mat-flat-button color="primary" routerLink="/customer/payments/transfer">
-    <mat-icon>swap_horiz</mat-icon>
-    {{ 'NAV.TRANSFER' | translate }}
-  </a>
+  <div class="home-actions">
+    <button
+      mat-stroked-button
+      type="button"
+      (click)="refresh()"
+      [disabled]="refreshing || (accountsLoading$ | async)"
+    >
+      <mat-icon>refresh</mat-icon>
+      {{ 'CUSTOMER.HOME_REFRESH' | translate }}
+    </button>
+    @if (canTransfer$ | async) {
+      <a
+        mat-flat-button
+        color="primary"
+        routerLink="/customer/payments/transfer"
+        [queryParams]="transferQuery(accounts$ | async)"
+      >
+        <mat-icon>swap_horiz</mat-icon>
+        {{ 'NAV.TRANSFER' | translate }}
+      </a>
+    }
+  </div>
 </app-page-header>
 
-@if (loading$ | async) {
+@if ((accountsLoading$ | async) && !(accounts$ | async)?.length) {
   <app-loading />
 } @else {
   <div class="home">
+    @if (!(hasActiveSource(accounts$ | async)) && (accounts$ | async)?.length) {
+      <div class="alert warn" role="status">
+        <mat-icon>ac_unit</mat-icon>
+        <div>
+          <strong>{{ 'CUSTOMER.HOME_NO_ACTIVE_TITLE' | translate }}</strong>
+          <p>{{ 'CUSTOMER.HOME_NO_ACTIVE_HINT' | translate }}</p>
+        </div>
+        <a mat-stroked-button routerLink="/customer/accounts">{{ 'NAV.ACCOUNTS' | translate }}</a>
+      </div>
+    }
+
+    @if (frozenAccounts(accounts$ | async).length) {
+      <div class="alert frozen" role="status">
+        <mat-icon>lock</mat-icon>
+        <div>
+          <strong>{{ 'CUSTOMER.HOME_FROZEN_TITLE' | translate }}</strong>
+          <p>
+            {{
+              'CUSTOMER.HOME_FROZEN_HINT'
+                | translate: { count: frozenAccounts(accounts$ | async).length }
+            }}
+          </p>
+        </div>
+        <a mat-stroked-button routerLink="/customer/accounts">{{ 'CUSTOMER.HOME_VIEW_ACCOUNTS' | translate }}</a>
+      </div>
+    }
+
     <section class="stats">
       <mat-card class="hero">
         <div class="label">{{ 'CUSTOMER.TOTAL_BALANCE' | translate }}</div>
         <div class="amount">{{ total$ | async | moneyVnd }}</div>
         <div class="meta">
-          {{ 'CUSTOMER.HOME_ACCOUNTS_META' | translate: { count: ((accounts$ | async) || []).length } }}
+          {{
+            'CUSTOMER.HOME_ACCOUNTS_META'
+              | translate: { count: (accounts$ | async)?.length || 0 }
+          }}
+          ·
+          {{
+            'CUSTOMER.HOME_ACTIVE_META'
+              | translate: { count: activeAccounts(accounts$ | async).length }
+          }}
         </div>
         <div class="actions">
           <a mat-stroked-button routerLink="/customer/accounts">{{ 'NAV.ACCOUNTS' | translate }}</a>
-          <a mat-stroked-button routerLink="/customer/history">{{ 'NAV.HISTORY' | translate }}</a>
+          @if (canHistory$ | async) {
+            <a mat-stroked-button routerLink="/customer/history">{{ 'NAV.HISTORY' | translate }}</a>
+          }
+          @if (canNotif$ | async) {
+            <a mat-stroked-button routerLink="/customer/notifications">
+              {{ 'NAV.NOTIFICATIONS' | translate }}
+              @if (unreadCount !== null && unreadCount > 0) {
+                <span class="badge">{{ unreadCount }}</span>
+              }
+            </a>
+          }
         </div>
       </mat-card>
 
       <mat-card class="stat">
         <div class="stat-icon"><mat-icon>account_balance_wallet</mat-icon></div>
         <div class="label">{{ 'CUSTOMER.YOUR_ACCOUNTS' | translate }}</div>
-        <div class="value">{{ ((accounts$ | async) || []).length }}</div>
-        <div class="meta">{{ 'CUSTOMER.HOME_ACCOUNTS_HINT' | translate }}</div>
+        <div class="value">{{ (accounts$ | async)?.length || 0 }}</div>
+        <div class="meta">
+          {{
+            'CUSTOMER.HOME_ACTIVE_META'
+              | translate: { count: activeAccounts(accounts$ | async).length }
+          }}
+          @if (frozenAccounts(accounts$ | async).length) {
+            ·
+            {{
+              'CUSTOMER.HOME_FROZEN_META'
+                | translate: { count: frozenAccounts(accounts$ | async).length }
+            }}
+          }
+        </div>
       </mat-card>
 
       <mat-card class="stat">
         <div class="stat-icon teal"><mat-icon>receipt_long</mat-icon></div>
         <div class="label">{{ 'CUSTOMER.RECENT_TX' | translate }}</div>
-        <div class="value">{{ ((recent$ | async) || []).length }}</div>
+        <div class="value">
+          @if (historyLoading$ | async) {
+            …
+          } @else {
+            {{ (historyMeta$ | async)?.totalElements ?? ((recent$ | async) || []).length }}
+          }
+        </div>
         <div class="meta">{{ 'CUSTOMER.HOME_TX_HINT' | translate }}</div>
       </mat-card>
     </section>
@@ -43,35 +124,58 @@
     <mat-card class="quick-card">
       <h3>{{ 'CUSTOMER.QUICK_ACTIONS' | translate }}</h3>
       <div class="quick-actions">
-        <a class="quick" routerLink="/customer/payments/transfer">
-          <mat-icon>swap_horiz</mat-icon>
-          <strong>{{ 'NAV.TRANSFER' | translate }}</strong>
-          <span>{{ 'CUSTOMER.QUICK_TRANSFER_HINT' | translate }}</span>
-        </a>
+        @if (canTransfer$ | async) {
+          <a
+            class="quick"
+            routerLink="/customer/payments/transfer"
+            [queryParams]="transferQuery(accounts$ | async)"
+            [class.disabled-look]="!hasActiveSource(accounts$ | async)"
+          >
+            <mat-icon>swap_horiz</mat-icon>
+            <strong>{{ 'NAV.TRANSFER' | translate }}</strong>
+            <span>{{ 'CUSTOMER.QUICK_TRANSFER_HINT' | translate }}</span>
+          </a>
+        }
         <a class="quick" routerLink="/customer/accounts">
           <mat-icon>account_balance</mat-icon>
           <strong>{{ 'NAV.ACCOUNTS' | translate }}</strong>
           <span>{{ 'CUSTOMER.QUICK_ACCOUNTS_HINT' | translate }}</span>
         </a>
-        <a class="quick" routerLink="/customer/history">
-          <mat-icon>history</mat-icon>
-          <strong>{{ 'NAV.HISTORY' | translate }}</strong>
-          <span>{{ 'CUSTOMER.QUICK_HISTORY_HINT' | translate }}</span>
+        @if (canHistory$ | async) {
+          <a class="quick" routerLink="/customer/history">
+            <mat-icon>history</mat-icon>
+            <strong>{{ 'NAV.HISTORY' | translate }}</strong>
+            <span>{{ 'CUSTOMER.QUICK_HISTORY_HINT' | translate }}</span>
+          </a>
+        }
+        <a class="quick" routerLink="/customer/payments/beneficiaries">
+          <mat-icon>contacts</mat-icon>
+          <strong>{{ 'NAV.BENEFICIARIES' | translate }}</strong>
+          <span>
+            @if (beneficiaryCount !== null) {
+              {{ 'CUSTOMER.HOME_BENEFICIARY_META' | translate: { count: beneficiaryCount } }}
+            } @else {
+              {{ 'CUSTOMER.QUICK_BENEFICIARY_HINT' | translate }}
+            }
+          </span>
         </a>
+        @if (canNotif$ | async) {
+          <a class="quick" routerLink="/customer/notifications">
+            <mat-icon>notifications</mat-icon>
+            <strong>{{ 'NAV.NOTIFICATIONS' | translate }}</strong>
+            <span>
+              @if (unreadCount !== null) {
+                {{ 'CUSTOMER.HOME_UNREAD_META' | translate: { count: unreadCount } }}
+              } @else {
+                {{ 'CUSTOMER.QUICK_NOTIF_HINT' | translate }}
+              }
+            </span>
+          </a>
+        }
         <a class="quick" routerLink="/customer/profile">
           <mat-icon>person</mat-icon>
           <strong>{{ 'NAV.PROFILE' | translate }}</strong>
           <span>{{ 'CUSTOMER.QUICK_PROFILE_HINT' | translate }}</span>
-        </a>
-        <a class="quick muted" routerLink="/customer/cards">
-          <mat-icon>credit_card</mat-icon>
-          <strong>{{ 'NAV.CARDS' | translate }}</strong>
-          <span>{{ 'COMMON.COMING_SOON' | translate }}</span>
-        </a>
-        <a class="quick muted" routerLink="/customer/support">
-          <mat-icon>support_agent</mat-icon>
-          <strong>{{ 'NAV.SUPPORT' | translate }}</strong>
-          <span>{{ 'COMMON.COMING_SOON' | translate }}</span>
         </a>
       </div>
     </mat-card>
@@ -82,45 +186,160 @@
           <h3>{{ 'CUSTOMER.YOUR_ACCOUNTS' | translate }}</h3>
           <a routerLink="/customer/accounts">{{ 'CUSTOMER.VIEW_ALL' | translate }}</a>
         </div>
-        @for (a of accounts$ | async; track a.id) {
-          <div class="row">
+        @for (a of previewAccounts(accounts$ | async); track a.id) {
+          <div class="row account-row" [class.frozen]="a.status === 'FROZEN'">
             <div class="row-left">
-              <div class="ico-acc"><mat-icon>payments</mat-icon></div>
+              <div class="ico-acc" [class.frozen]="a.status === 'FROZEN'">
+                <mat-icon>{{ a.status === 'FROZEN' ? 'ac_unit' : 'payments' }}</mat-icon>
+              </div>
               <div>
-                <div class="num">{{ a.accountNumber | accountMask }}</div>
-                <div class="row-meta">{{ a.accountType | enumLabel:'ACCOUNT_TYPE' }} · {{ a.status | enumLabel:'ACCOUNT_STATUS' }}</div>
+                <div class="num">
+                  {{ a.accountNumber | accountMask }}
+                  <button
+                    mat-icon-button
+                    type="button"
+                    class="icon-mini"
+                    [matTooltip]="'CUSTOMER.ACCOUNTS_COPY' | translate"
+                    (click)="copyAccountNumber(a, $event)"
+                  >
+                    <mat-icon>content_copy</mat-icon>
+                  </button>
+                </div>
+                <div class="row-meta">
+                  {{ a.accountType | enumLabel: 'ACCOUNT_TYPE' }} ·
+                  {{ a.status | enumLabel: 'ACCOUNT_STATUS' }}
+                </div>
               </div>
             </div>
-            <div class="bal">{{ a.balance | moneyVnd: a.currency }}</div>
+            <div class="row-right">
+              <div class="bal">{{ a.balance | moneyVnd: a.currency }}</div>
+              <div class="row-actions">
+                @if (a.status === 'ACTIVE' && (canTransfer$ | async)) {
+                  <a
+                    mat-button
+                    color="primary"
+                    [routerLink]="['/customer/payments/transfer']"
+                    [queryParams]="{ from: a.id }"
+                  >
+                    {{ 'NAV.TRANSFER' | translate }}
+                  </a>
+                }
+                <a mat-button [routerLink]="['/customer/accounts', a.id, 'statement']">
+                  {{ 'CUSTOMER.HOME_STATEMENT' | translate }}
+                </a>
+              </div>
+            </div>
           </div>
         } @empty {
-          <p class="empty">
-            {{ 'CUSTOMER.NO_ACCOUNTS' | translate }}
-            <a routerLink="/customer/accounts">{{ 'CUSTOMER.OPEN_NOW' | translate }}</a>
-          </p>
+          <div class="empty-block">
+            <p class="empty">{{ 'CUSTOMER.NO_ACCOUNTS' | translate }}</p>
+            <p class="empty-hint">{{ 'CUSTOMER.HOME_EMPTY_ACCOUNTS_HINT' | translate }}</p>
+            <div class="empty-actions">
+              @if (canOpenAccount$ | async) {
+                <a mat-flat-button color="primary" routerLink="/customer/accounts">
+                  {{ 'CUSTOMER.OPEN_NOW' | translate }}
+                </a>
+              } @else {
+                <span class="empty-hint">{{ 'CUSTOMER.HOME_NO_OPEN_PERM' | translate }}</span>
+              }
+            </div>
+          </div>
         }
       </mat-card>
 
       <mat-card class="panel">
         <div class="panel-head">
           <h3>{{ 'CUSTOMER.RECENT_TX' | translate }}</h3>
-          <a routerLink="/customer/history">{{ 'CUSTOMER.VIEW_ALL' | translate }}</a>
+          @if (canHistory$ | async) {
+            <a routerLink="/customer/history">{{ 'CUSTOMER.VIEW_ALL' | translate }}</a>
+          }
         </div>
-        @for (t of recent$ | async; track t.transactionId) {
-          <div class="row">
-            <div class="row-left">
-              <div class="ico-tx" [class.ok]="t.status === 'COMPLETED'" [class.warn]="t.status !== 'COMPLETED'">
-                <mat-icon>{{ t.status === 'COMPLETED' ? 'check_circle' : 'schedule' }}</mat-icon>
+        @if (historyLoading$ | async) {
+          <p class="empty">{{ 'CUSTOMER.HOME_LOADING_TX' | translate }}</p>
+        } @else {
+          @for (t of recent$ | async; track t.transactionId) {
+            <div class="row tx-row">
+              <div class="row-left">
+                <div
+                  class="ico-tx"
+                  [class.ok]="t.status === 'COMPLETED'"
+                  [class.warn]="t.status !== 'COMPLETED'"
+                  [class.bad]="t.status === 'FAILED' || t.status === 'COMPENSATED'"
+                >
+                  <mat-icon>
+                    {{
+                      t.status === 'COMPLETED'
+                        ? 'check_circle'
+                        : t.status === 'FAILED' || t.status === 'COMPENSATED'
+                          ? 'error'
+                          : 'schedule'
+                    }}
+                  </mat-icon>
+                </div>
+                <div>
+                  <div class="num">
+                    {{ t.description || ('NAV.TRANSFER' | translate) }}
+                  </div>
+                  <div class="row-meta">
+                    {{ t.status | transferStatus }} · {{ t.createdAt | date: 'short' }}
+                    @if (t.toAccountNumber) {
+                      · → {{ t.toAccountNumber }}
+                    }
+                  </div>
+                </div>
               </div>
-              <div>
-                <div class="num">{{ t.description || ('NAV.TRANSFER' | translate) }}</div>
-                <div class="row-meta">{{ t.status | transferStatus }} · {{ t.createdAt | date: 'short' }}</div>
+              <div class="row-right">
+                <div class="bal">{{ t.amount | moneyVnd: t.currency }}</div>
+                <div class="row-actions">
+                  <button
+                    mat-icon-button
+                    type="button"
+                    [matTooltip]="'CUSTOMER.HISTORY_COPY_ID' | translate"
+                    (click)="copyTransferId(t, $event)"
+                  >
+                    <mat-icon>content_copy</mat-icon>
+                  </button>
+                  <button
+                    mat-icon-button
+                    type="button"
+                    [matTooltip]="'TRANSFER_DETAIL.TITLE' | translate"
+                    [disabled]="openingId === t.transactionId"
+                    (click)="openDetail(t, $event)"
+                  >
+                    <mat-icon>info</mat-icon>
+                  </button>
+                  @if (canRetry(t) && (canTransfer$ | async)) {
+                    <button
+                      mat-icon-button
+                      type="button"
+                      color="primary"
+                      [matTooltip]="'CUSTOMER.HISTORY_RETRY' | translate"
+                      (click)="retry(t, $event)"
+                    >
+                      <mat-icon>replay</mat-icon>
+                    </button>
+                  }
+                </div>
               </div>
             </div>
-            <div class="bal">{{ t.amount | moneyVnd: t.currency }}</div>
-          </div>
-        } @empty {
-          <p class="empty">{{ 'CUSTOMER.NO_TX' | translate }}</p>
+          } @empty {
+            <div class="empty-block">
+              <p class="empty">{{ 'CUSTOMER.NO_TX' | translate }}</p>
+              <p class="empty-hint">{{ 'CUSTOMER.NO_TX_HINT' | translate }}</p>
+              <div class="empty-actions">
+                @if (canTransfer$ | async) {
+                  <a
+                    mat-flat-button
+                    color="primary"
+                    routerLink="/customer/payments/transfer"
+                    [queryParams]="transferQuery(accounts$ | async)"
+                  >
+                    {{ 'NAV.TRANSFER' | translate }}
+                  </a>
+                }
+              </div>
+            </div>
+          }
         }
       </mat-card>
     </section>
