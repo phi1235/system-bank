@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
@@ -50,6 +51,7 @@ export class AdminTransfersComponent implements OnInit {
   private readonly dialog = inject(MatDialog);
   private readonly toast = inject(ToastService);
   private readonly i18n = inject(TranslateService);
+  private readonly route = inject(ActivatedRoute);
 
   rows: Transfer[] = [];
   pageIndex = 0;
@@ -83,6 +85,10 @@ export class AdminTransfersComponent implements OnInit {
   ];
 
   ngOnInit(): void {
+    const st = (this.route.snapshot.queryParamMap.get('status') || '').toUpperCase();
+    if (this.statusOptions.includes(st)) {
+      this.status = st;
+    }
     this.load();
   }
 

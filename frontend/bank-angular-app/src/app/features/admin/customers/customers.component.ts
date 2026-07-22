@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -58,6 +59,7 @@ export class AdminCustomersComponent implements OnInit {
   private readonly i18n = inject(TranslateService);
   private readonly store = inject(Store);
   private readonly dialog = inject(MatDialog);
+  private readonly route = inject(ActivatedRoute);
 
   rows: CustomerProfile[] = [];
   pageIndex = 0;
@@ -73,6 +75,10 @@ export class AdminCustomersComponent implements OnInit {
   readonly kycOptions: Array<'' | KycStatus> = ['', 'PENDING', 'VERIFIED', 'REJECTED'];
 
   ngOnInit(): void {
+    const kyc = (this.route.snapshot.queryParamMap.get('kycStatus') || '').toUpperCase();
+    if (kyc === 'PENDING' || kyc === 'VERIFIED' || kyc === 'REJECTED') {
+      this.kycStatus = kyc;
+    }
     this.load();
   }
 
