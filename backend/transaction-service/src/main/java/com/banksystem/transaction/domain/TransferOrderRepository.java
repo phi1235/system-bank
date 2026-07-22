@@ -15,16 +15,22 @@ public interface TransferOrderRepository extends JpaRepository<TransferOrderEnti
 
   Page<TransferOrderEntity> findByUserIdOrderByCreatedAtDesc(UUID userId, Pageable pageable);
 
+  /**
+   * History search. Callers must pass non-null from/to bounds (use epoch/far-future when
+   * the UI omits a range). Optional status uses a boolean flag so Postgres never sees an
+   * untyped NULL enum/timestamp bind ({@code could not determine data type of parameter}).
+   */
   @Query("""
       SELECT t FROM TransferOrderEntity t
       WHERE t.userId = :userId
-        AND (:status IS NULL OR t.status = :status)
-        AND (:fromTs IS NULL OR t.createdAt >= :fromTs)
-        AND (:toTs IS NULL OR t.createdAt <= :toTs)
+        AND (:hasStatus = false OR t.status = :status)
+        AND t.createdAt >= :fromTs
+        AND t.createdAt <= :toTs
       ORDER BY t.createdAt DESC
       """)
   Page<TransferOrderEntity> searchMine(
       @Param("userId") UUID userId,
+      @Param("hasStatus") boolean hasStatus,
       @Param("status") TransferStatus status,
       @Param("fromTs") Instant fromTs,
       @Param("toTs") Instant toTs,
