@@ -55,8 +55,9 @@ public class CustomerController {
   public ApiResponse<PageResponse<CustomerResponse>> list(
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "20") int size,
-      @RequestParam(required = false) String q) {
-    return ApiResponse.ok(service.list(q, page, Math.min(size, 100)));
+      @RequestParam(required = false) String q,
+      @RequestParam(required = false) String kycStatus) {
+    return ApiResponse.ok(service.list(q, kycStatus, page, size));
   }
 
   @PatchMapping({"/customers/{id}/kyc", "/admin/customers/{id}/kyc"})

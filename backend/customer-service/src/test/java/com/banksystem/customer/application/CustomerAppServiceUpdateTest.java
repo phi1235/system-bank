@@ -111,6 +111,19 @@ class CustomerAppServiceUpdateTest {
     verify(opsAlertPublisher, never()).kycUpdated(any(), any());
   }
 
+  @Test
+  void updateKyc_rejectsInvalidStatus() {
+    CustomerEntity existing = baseEntity();
+    when(repository.findById(userId)).thenReturn(Optional.of(existing));
+
+    var ex =
+        org.junit.jupiter.api.Assertions.assertThrows(
+            com.banksystem.common.exception.BusinessException.class,
+            () -> service.updateKyc(userId, new KycUpdateRequest("UNKNOWN")));
+    assertEquals("INVALID_KYC_STATUS", ex.getCode());
+    verify(repository, never()).save(any());
+  }
+
   private CustomerEntity baseEntity() {
     CustomerEntity e = new CustomerEntity();
     e.setId(userId);

@@ -1,22 +1,33 @@
-import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
-import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatInputModule } from '@angular/material/input';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
-import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { Store } from '@ngrx/store';
+import { filter, switchMap } from 'rxjs';
+import { CustomerProfile } from '../../../core/models/domain.model';
 import { BankApiService } from '../../../core/services/bank-api.service';
 import { PERMISSIONS } from '../../../core/services/rbac.util';
 import { ToastService } from '../../../core/services/toast.service';
-import { CustomerProfile } from '../../../core/models/domain.model';
-import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { Store } from '@ngrx/store';
+import { resolveHttpErrorMessage } from '../../../core/utils/http-error.util';
+import {
+  ConfirmDialogComponent,
+  ConfirmDialogData,
+} from '../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { EnumLabelPipe } from '../../../shared/pipes/enum-label.pipe';
 import { selectHasPermission } from '../../../store/auth/auth.selectors';
+
+type KycStatus = 'PENDING' | 'VERIFIED' | 'REJECTED';
 
 @Component({
   selector: 'app-admin-customers',
@@ -32,7 +43,10 @@ import { selectHasPermission } from '../../../store/auth/auth.selectors';
     MatIconModule,
     MatInputModule,
     MatSelectModule,
+    MatDialogModule,
+    MatTooltipModule,
     PageHeaderComponent,
+    EnumLabelPipe,
     TranslateModule,
   ],
   templateUrl: './customers.component.html',
@@ -43,41 +57,63 @@ export class AdminCustomersComponent implements OnInit {
   private readonly toast = inject(ToastService);
   private readonly i18n = inject(TranslateService);
   private readonly store = inject(Store);
+  private readonly dialog = inject(MatDialog);
+
   rows: CustomerProfile[] = [];
   pageIndex = 0;
   pageSize = 20;
   totalElements = 0;
+  loading = false;
+  busyId: string | null = null;
   q = '';
+  kycStatus = '';
   cols = ['fullName', 'email', 'phone', 'kycStatus', 'actions'];
   canKyc$ = this.store.select(selectHasPermission(PERMISSIONS.CUSTOMERS_KYC_DECIDE));
 
-  ngOnInit(): void { this.load(); }
+  readonly kycOptions: Array<'' | KycStatus> = ['', 'PENDING', 'VERIFIED', 'REJECTED'];
+
+  ngOnInit(): void {
+    this.load();
+  }
+
+  get hasActiveFilters(): boolean {
+    return !!(this.q.trim() || this.kycStatus);
+  }
 
   applyFilters(): void {
     this.pageIndex = 0;
     this.load();
   }
 
-  load(): void {
-    this.api.listCustomers(this.pageIndex, this.pageSize, this.q || undefined).subscribe({
-      next: (p) => {
-        this.rows = p.items || [];
-        this.totalElements = p.totalElements ?? this.rows.length;
-      },
-      error: () => {
-        this.rows = [];
-        this.totalElements = 0;
-      },
-    });
+  clearFilters(): void {
+    this.q = '';
+    this.kycStatus = '';
+    this.pageIndex = 0;
+    this.load();
   }
 
-  setKyc(c: CustomerProfile, kycStatus: string): void {
-    this.api.updateKyc(c.id, kycStatus).subscribe({
-      next: (u) => {
-        this.rows = this.rows.map((x) => (x.id === u.id ? u : x));
-        this.toast.success(this.i18n.instant('ADMIN.KYC_OK', { status: kycStatus }));
-      },
-    });
+  load(): void {
+    this.loading = true;
+    this.api
+      .listCustomers(
+        this.pageIndex,
+        this.pageSize,
+        this.q.trim() || undefined,
+        this.kycStatus || undefined,
+      )
+      .subscribe({
+        next: (p) => {
+          this.rows = p.items || [];
+          this.totalElements = p.totalElements ?? this.rows.length;
+          this.loading = false;
+        },
+        error: (err) => {
+          this.rows = [];
+          this.totalElements = 0;
+          this.loading = false;
+          this.toast.error(resolveHttpErrorMessage(err, this.i18n));
+        },
+      });
   }
 
   page(e: PageEvent): void {
@@ -86,4 +122,52 @@ export class AdminCustomersComponent implements OnInit {
     this.load();
   }
 
+  setKyc(c: CustomerProfile, next: KycStatus): void {
+    if (!c?.id || this.busyId || c.kycStatus === next) {
+      return;
+    }
+    const label = this.i18n.instant(`KYC_STATUS.${next}`);
+    const data: ConfirmDialogData = {
+      title: this.i18n.instant(`ADMIN.KYC_${next}_TITLE`),
+      message: this.i18n.instant(`ADMIN.KYC_${next}_CONFIRM`, {
+        name: c.fullName || c.email || c.id,
+        status: label,
+      }),
+      confirmLabel: this.i18n.instant(`ADMIN.KYC_${next}_ACTION`),
+      destructive: next === 'REJECTED',
+    };
+
+    this.dialog
+      .open(ConfirmDialogComponent, { data, width: '460px' })
+      .afterClosed()
+      .pipe(
+        filter(Boolean),
+        switchMap(() => {
+          this.busyId = c.id;
+          return this.api.updateKyc(c.id, next);
+        }),
+      )
+      .subscribe({
+        next: (u) => {
+          this.busyId = null;
+          this.rows = this.rows.map((x) => (x.id === u.id ? u : x));
+          this.toast.success(
+            this.i18n.instant('ADMIN.KYC_OK', {
+              status: this.i18n.instant(`KYC_STATUS.${u.kycStatus}`),
+            }),
+          );
+        },
+        error: (err) => {
+          this.busyId = null;
+          // Interceptor toasts HTTP errors; keep local friendly fallback if needed.
+          if (!err?.status) {
+            this.toast.error(resolveHttpErrorMessage(err, this.i18n));
+          }
+        },
+      });
+  }
+
+  canAct(c: CustomerProfile, next: KycStatus): boolean {
+    return !!c && c.kycStatus !== next && this.busyId !== c.id;
+  }
 }

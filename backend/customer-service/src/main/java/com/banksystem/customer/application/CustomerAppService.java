@@ -87,10 +87,28 @@ public class CustomerAppService {
   }
 
   @Transactional(readOnly = true)
-  public PageResponse<CustomerResponse> list(String q, int page, int size) {
-    Page<CustomerEntity> p = repository.search(q, PageRequest.of(page, size));
-    List<CustomerResponse> items = p.getContent().stream().map(this::toResponse).toList();
-    return new PageResponse<>(items, p.getNumber(), p.getSize(), p.getTotalElements(), p.getTotalPages());
+  public PageResponse<CustomerResponse> list(String q, String kycStatus, int page, int size) {
+    String qTrim = q == null ? "" : q.trim();
+    boolean hasQ = !qTrim.isEmpty();
+    String kyc = kycStatus == null ? "" : kycStatus.trim().toUpperCase();
+    boolean hasKyc = !kyc.isEmpty();
+    if (hasKyc && !KYC.contains(kyc)) {
+      throw new BusinessException(
+          "INVALID_KYC_STATUS",
+          "kycStatus must be PENDING|VERIFIED|REJECTED",
+          HttpStatus.BAD_REQUEST);
+    }
+    int p = Math.max(page, 0);
+    int s = size < 1 ? 20 : Math.min(size, 100);
+    Page<CustomerEntity> result =
+        repository.search(hasQ, hasQ ? qTrim : "", hasKyc, hasKyc ? kyc : "PENDING", PageRequest.of(p, s));
+    List<CustomerResponse> items = result.getContent().stream().map(this::toResponse).toList();
+    return new PageResponse<>(
+        items,
+        result.getNumber(),
+        result.getSize(),
+        result.getTotalElements(),
+        result.getTotalPages());
   }
 
   @Transactional
