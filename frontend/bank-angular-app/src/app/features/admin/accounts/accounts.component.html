@@ -120,6 +120,17 @@
               <button mat-button type="button" color="primary" (click)="openDetail(row, $event)">
                 {{ 'ADMIN.VIEW' | translate }}
               </button>
+              @if ((canTopUp$ | async) && row.status === 'ACTIVE') {
+                <button
+                  mat-stroked-button
+                  type="button"
+                  color="accent"
+                  (click)="openTopUp(row); $event.stopPropagation()"
+                >
+                  <mat-icon>add_circle_outline</mat-icon>
+                  {{ 'ADMIN.TOPUP_BTN' | translate }}
+                </button>
+              }
             </td>
           </ng-container>
 
@@ -236,6 +247,18 @@
           }
         </div>
         <div class="acts">
+          @if (canTopUp$ | async) {
+            <button
+              mat-flat-button
+              color="accent"
+              type="button"
+              (click)="openTopUp(selected)"
+              [disabled]="selected.status !== 'ACTIVE' || busyId === selected.id"
+            >
+              <mat-icon>add_circle_outline</mat-icon>
+              {{ 'ADMIN.TOPUP_BTN' | translate }}
+            </button>
+          }
           @if (canFreeze$ | async) {
             <button
               mat-stroked-button
