@@ -4,20 +4,16 @@ import com.banksystem.common.api.ApiResponse;
 import com.banksystem.common.api.PageResponse;
 import com.banksystem.common.security.RequirePermission;
 import com.banksystem.common.security.UserContext;
-import com.banksystem.transaction.api.dto.TransferDtos.AuditResponse;
 import com.banksystem.transaction.api.dto.TransferDtos.TransferDetailResponse;
 import com.banksystem.transaction.api.dto.TransferDtos.TransferQuoteResponse;
 import com.banksystem.transaction.api.dto.TransferDtos.TransferRequest;
 import com.banksystem.transaction.api.dto.TransferDtos.TransferResponse;
 import com.banksystem.transaction.application.TransferService;
-import com.banksystem.transaction.domain.AuditLogEntity;
-import com.banksystem.transaction.domain.AuditLogRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -33,11 +29,9 @@ import org.springframework.web.bind.annotation.RestController;
 public class TransferController {
 
   private final TransferService transferService;
-  private final AuditLogRepository auditLogRepository;
 
-  public TransferController(TransferService transferService, AuditLogRepository auditLogRepository) {
+  public TransferController(TransferService transferService) {
     this.transferService = transferService;
-    this.auditLogRepository = auditLogRepository;
   }
 
   @PostMapping("/transactions/transfers")
@@ -93,30 +87,6 @@ public class TransferController {
       @RequestParam(defaultValue = "20") int size,
       @RequestParam(required = false) String status) {
     return ApiResponse.ok(transferService.adminList(status, page, Math.min(size, 100)));
-  }
-
-  @GetMapping({"/admin/audit-logs", "/transactions/admin/audit-logs"})
-  @RequirePermission("audit:list:view")
-  public ApiResponse<PageResponse<AuditResponse>> auditLogs(
-      @RequestParam(defaultValue = "0") int page,
-      @RequestParam(defaultValue = "20") int size) {
-    var p = auditLogRepository.findAllByOrderByCreatedAtDesc(PageRequest.of(page, Math.min(size, 100)));
-    var items = p.getContent().stream().map(this::toAudit).toList();
-    return ApiResponse.ok(new PageResponse<>(items, p.getNumber(), p.getSize(),
-        p.getTotalElements(), p.getTotalPages()));
-  }
-
-  private AuditResponse toAudit(AuditLogEntity e) {
-    return new AuditResponse(
-        e.getId().toString(),
-        e.getActorUserId() == null ? null : e.getActorUserId().toString(),
-        e.getAction(),
-        e.getResourceType(),
-        e.getResourceId(),
-        e.getIp(),
-        e.getMetadata(),
-        e.getCreatedAt()
-    );
   }
 
   private String clientIp(HttpServletRequest request) {

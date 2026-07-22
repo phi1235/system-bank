@@ -226,8 +226,36 @@ export class BankApiService {
     return this.api.get('/admin/transfers', { page, size, status });
   }
 
-  auditLogs(page = 0, size = 20): Observable<PageResponse<AuditLog>> {
-    return this.api.get('/admin/audit-logs', { page, size });
+  /**
+   * Staff audit log list with optional filters.
+   * Dates as ISO-8601 Instant when provided.
+   */
+  auditLogs(
+    page = 0,
+    size = 20,
+    filters?: {
+      action?: string;
+      resourceType?: string;
+      actorUserId?: string;
+      resourceId?: string;
+      from?: string;
+      to?: string;
+    },
+  ): Observable<PageResponse<AuditLog>> {
+    return this.api.get('/admin/audit-logs', {
+      page,
+      size,
+      action: filters?.action,
+      resourceType: filters?.resourceType,
+      actorUserId: filters?.actorUserId,
+      resourceId: filters?.resourceId,
+      from: filters?.from,
+      to: filters?.to,
+    });
+  }
+
+  auditLogDetail(id: string): Observable<AuditLog> {
+    return this.api.get(`/admin/audit-logs/${id}`);
   }
 
   /** Staff outbox inspect/replay (default status DEAD on API). */
