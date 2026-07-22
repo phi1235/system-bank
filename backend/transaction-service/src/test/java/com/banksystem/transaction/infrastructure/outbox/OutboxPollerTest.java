@@ -10,6 +10,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.banksystem.transaction.application.OpsAlertPublisher;
 import com.banksystem.transaction.domain.OutboxEventEntity;
 import com.banksystem.transaction.domain.OutboxEventRepository;
 import com.banksystem.transaction.domain.OutboxStatus;
@@ -31,6 +32,7 @@ class OutboxPollerTest {
   private KafkaTemplate<String, String> kafkaTemplate;
   private OutboxRetryPolicy retryPolicy;
   private OutboxMetrics metrics;
+  private OpsAlertPublisher opsAlertPublisher;
   private OutboxPoller poller;
 
   @BeforeEach
@@ -39,12 +41,14 @@ class OutboxPollerTest {
     repository = mock(OutboxEventRepository.class);
     kafkaTemplate = mock(KafkaTemplate.class);
     metrics = mock(OutboxMetrics.class);
+    opsAlertPublisher = mock(OpsAlertPublisher.class);
     retryPolicy = new OutboxRetryPolicy(3, 1000, 60_000, Clock.fixed(NOW, ZoneOffset.UTC));
     poller = new OutboxPoller(
         repository,
         kafkaTemplate,
         retryPolicy,
         metrics,
+        opsAlertPublisher,
         50,
         "tx.completed",
         "tx.failed");
@@ -102,6 +106,20 @@ class OutboxPollerTest {
     assertNull(event.getPublishedAt());
     verify(repository).save(event);
     verify(metrics).incrementDead();
+    verify(opsAlertPublisher).outboxDead(event);
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void doesNotAlertOpsOnRetry() {
+    OutboxEventEntity event = pendingEvent("TRANSACTION_COMPLETED");
+    CompletableFuture<SendResult<String, String>> future = new CompletableFuture<>();
+    future.completeExceptionally(new RuntimeException("broker down"));
+    when(kafkaTemplate.send(anyString(), anyString(), anyString())).thenReturn(future);
+
+    poller.publishOne(event);
+
+    verify(opsAlertPublisher, never()).outboxDead(any());
   }
 
   @Test

@@ -23,14 +23,17 @@ public class AdminAccountService {
   private final AccountRepository accountRepository;
   private final AccountAccessService access;
   private final AccountMapper mapper;
+  private final OpsAlertPublisher opsAlertPublisher;
 
   public AdminAccountService(
       AccountRepository accountRepository,
       AccountAccessService access,
-      AccountMapper mapper) {
+      AccountMapper mapper,
+      OpsAlertPublisher opsAlertPublisher) {
     this.accountRepository = accountRepository;
     this.access = access;
     this.mapper = mapper;
+    this.opsAlertPublisher = opsAlertPublisher;
   }
 
   @Transactional(readOnly = true)
@@ -78,7 +81,9 @@ public class AdminAccountService {
     }
     a.setStatus(AccountStatus.FROZEN.name());
     a.setUpdatedAt(Instant.now());
-    return mapper.toResponse(accountRepository.save(a));
+    AccountEntity saved = accountRepository.save(a);
+    opsAlertPublisher.accountFrozen(saved);
+    return mapper.toResponse(saved);
   }
 
   @Transactional
@@ -94,7 +99,9 @@ public class AdminAccountService {
     }
     a.setStatus(AccountStatus.ACTIVE.name());
     a.setUpdatedAt(Instant.now());
-    return mapper.toResponse(accountRepository.save(a));
+    AccountEntity saved = accountRepository.save(a);
+    opsAlertPublisher.accountUnfrozen(saved);
+    return mapper.toResponse(saved);
   }
 
   private UUID tryParseUuid(String raw) {

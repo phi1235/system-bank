@@ -1,5 +1,6 @@
 package com.banksystem.transaction.infrastructure.outbox;
 
+import com.banksystem.transaction.application.OpsAlertPublisher;
 import com.banksystem.transaction.domain.OutboxEventEntity;
 import com.banksystem.transaction.domain.OutboxEventRepository;
 import java.util.List;
@@ -24,6 +25,7 @@ public class OutboxPoller {
   private final KafkaTemplate<String, String> kafkaTemplate;
   private final OutboxRetryPolicy retryPolicy;
   private final OutboxMetrics metrics;
+  private final OpsAlertPublisher opsAlertPublisher;
   private final int batchSize;
   private final String topicCompleted;
   private final String topicFailed;
@@ -33,6 +35,7 @@ public class OutboxPoller {
       KafkaTemplate<String, String> kafkaTemplate,
       OutboxRetryPolicy retryPolicy,
       OutboxMetrics metrics,
+      OpsAlertPublisher opsAlertPublisher,
       @Value("${bank.outbox.batch-size:50}") int batchSize,
       @Value("${bank.kafka.topic-completed}") String topicCompleted,
       @Value("${bank.kafka.topic-failed}") String topicFailed) {
@@ -40,6 +43,7 @@ public class OutboxPoller {
     this.kafkaTemplate = kafkaTemplate;
     this.retryPolicy = retryPolicy;
     this.metrics = metrics;
+    this.opsAlertPublisher = opsAlertPublisher;
     this.batchSize = batchSize;
     this.topicCompleted = topicCompleted;
     this.topicFailed = topicFailed;
@@ -86,6 +90,7 @@ public class OutboxPoller {
           event.getEventType(),
           attempts,
           message);
+      opsAlertPublisher.outboxDead(event);
       return;
     }
 

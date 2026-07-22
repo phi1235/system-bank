@@ -2,16 +2,22 @@ package com.banksystem.notification.api;
 
 import com.banksystem.common.api.ApiResponse;
 import com.banksystem.common.exception.BusinessException;
-import com.banksystem.common.security.SecurityHeaders;
 import com.banksystem.common.security.SecretVerifier;
+import com.banksystem.common.security.SecurityHeaders;
+import com.banksystem.notification.api.dto.NotificationDtos.NotificationItem;
+import com.banksystem.notification.api.dto.OpsAlertDtos.CreateOpsAlertRequest;
+import com.banksystem.notification.application.OpsAlertService;
 import com.banksystem.notification.domain.NotificationLogEntity;
 import com.banksystem.notification.domain.NotificationLogRepository;
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -22,12 +28,15 @@ import org.springframework.web.bind.annotation.RestController;
 public class InternalNotificationController {
 
   private final NotificationLogRepository repository;
+  private final OpsAlertService opsAlertService;
   private final String apiKey;
 
   public InternalNotificationController(
       NotificationLogRepository repository,
+      OpsAlertService opsAlertService,
       @Value("${bank.internal.api-key}") String apiKey) {
     this.repository = repository;
+    this.opsAlertService = opsAlertService;
     this.apiKey = apiKey;
   }
 
@@ -40,6 +49,15 @@ public class InternalNotificationController {
         ? repository.findTop50ByOrderByCreatedAtDesc()
         : repository.findByEventId(eventId).stream().toList();
     return ApiResponse.ok(rows.stream().map(this::map).toList());
+  }
+
+  /** Staff OPS alert from other services (outbox DEAD, freeze, KYC, ...). */
+  @PostMapping("/ops-alerts")
+  public ApiResponse<NotificationItem> createOpsAlert(
+      @Valid @RequestBody CreateOpsAlertRequest request,
+      @RequestHeader(value = SecurityHeaders.INTERNAL_API_KEY, required = false) String key) {
+    requireKey(key);
+    return ApiResponse.ok(opsAlertService.create(request));
   }
 
   private Map<String, Object> map(NotificationLogEntity e) {

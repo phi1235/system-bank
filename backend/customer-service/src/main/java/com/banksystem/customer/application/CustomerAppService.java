@@ -26,12 +26,15 @@ public class CustomerAppService {
   private static final Set<String> KYC = Set.of("PENDING", "VERIFIED", "REJECTED");
 
   private final CustomerRepository repository;
+  private final OpsAlertPublisher opsAlertPublisher;
   private final String aesKey;
 
   public CustomerAppService(
       CustomerRepository repository,
+      OpsAlertPublisher opsAlertPublisher,
       @Value("${bank.aes.secret-key}") String aesKey) {
     this.repository = repository;
+    this.opsAlertPublisher = opsAlertPublisher;
     this.aesKey = aesKey;
   }
 
@@ -52,7 +55,10 @@ public class CustomerAppService {
     }
     e.setCreatedAt(Instant.now());
     e.setUpdatedAt(Instant.now());
-    return toResponse(repository.save(e));
+    CustomerEntity saved = repository.save(e);
+    // New profile starts PENDING — surface to ops for review.
+    opsAlertPublisher.kycUpdated(saved, null);
+    return toResponse(saved);
   }
 
   @Transactional(readOnly = true)
@@ -94,9 +100,15 @@ public class CustomerAppService {
           HttpStatus.BAD_REQUEST);
     }
     CustomerEntity e = require(id);
+    String previous = e.getKycStatus();
+    if (req.kycStatus().equals(previous)) {
+      return toResponse(e);
+    }
     e.setKycStatus(req.kycStatus());
     e.setUpdatedAt(Instant.now());
-    return toResponse(repository.save(e));
+    CustomerEntity saved = repository.save(e);
+    opsAlertPublisher.kycUpdated(saved, previous);
+    return toResponse(saved);
   }
 
   @Transactional(readOnly = true)
