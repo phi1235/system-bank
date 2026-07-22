@@ -44,4 +44,19 @@ public final class AccountDtos {
       String description,
       Instant createdAt
   ) {}
+
+  public record TopUpRequest(
+      @NotNull @DecimalMin("0.01") BigDecimal amount,
+      String description
+  ) {}
+
+  public record TopUpResponse(
+      String accountId,
+      String accountNumber,
+      String ledgerEntryId,
+      String referenceId,
+      BigDecimal amount,
+      BigDecimal balanceAfter,
+      String channel
+  ) {}
 }

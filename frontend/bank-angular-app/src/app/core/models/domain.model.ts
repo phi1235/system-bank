@@ -10,6 +10,16 @@ export interface Account {
   updatedAt?: string;
 }
 
+export interface TopUpResponse {
+  accountId: string;
+  accountNumber: string;
+  ledgerEntryId: string;
+  referenceId: string;
+  amount: number;
+  balanceAfter: number;
+  channel: string;
+}
+
 export interface CustomerProfile {
   id: string;
   fullName: string;

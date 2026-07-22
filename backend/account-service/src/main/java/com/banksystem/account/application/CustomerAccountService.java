@@ -2,7 +2,11 @@ package com.banksystem.account.application;
 
 import com.banksystem.account.api.dto.AccountDtos.AccountResponse;
 import com.banksystem.account.api.dto.AccountDtos.LedgerEntryResponse;
+import com.banksystem.account.api.dto.AccountDtos.MoneyCommand;
+import com.banksystem.account.api.dto.AccountDtos.MoneyResult;
 import com.banksystem.account.api.dto.AccountDtos.OpenAccountRequest;
+import com.banksystem.account.api.dto.AccountDtos.TopUpRequest;
+import com.banksystem.account.api.dto.AccountDtos.TopUpResponse;
 import com.banksystem.account.application.query.LedgerStatementQuery;
 import com.banksystem.common.security.GatewayUser;
 import com.banksystem.account.domain.AccountEntity;
@@ -24,7 +28,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Customer-facing account use-cases (open, list, get, statement). */
+/** Customer-facing account use-cases (open, list, get, statement, top-up). */
 @Service
 public class CustomerAccountService {
 
@@ -33,8 +37,10 @@ public class CustomerAccountService {
   private final AccountAccessService access;
   private final AccountMapper mapper;
   private final AccountNumberGenerator accountNumbers;
+  private final AccountMoneyService moneyService;
   private final int maxPerUser;
   private final BigDecimal initialBalance;
+  private final BigDecimal maxTopUpAmount;
 
   public CustomerAccountService(
       AccountRepository accountRepository,
@@ -42,15 +48,19 @@ public class CustomerAccountService {
       AccountAccessService access,
       AccountMapper mapper,
       AccountNumberGenerator accountNumbers,
+      AccountMoneyService moneyService,
       @Value("${bank.account.max-per-user:3}") int maxPerUser,
-      @Value("${bank.account.initial-balance:1000000}") BigDecimal initialBalance) {
+      @Value("${bank.account.initial-balance:1000000}") BigDecimal initialBalance,
+      @Value("${bank.account.topup.max-amount:50000000}") BigDecimal maxTopUpAmount) {
     this.accountRepository = accountRepository;
     this.ledgerEntryRepository = ledgerEntryRepository;
     this.access = access;
     this.mapper = mapper;
     this.accountNumbers = accountNumbers;
+    this.moneyService = moneyService;
     this.maxPerUser = maxPerUser;
     this.initialBalance = initialBalance;
+    this.maxTopUpAmount = maxTopUpAmount;
   }
 
   @Transactional

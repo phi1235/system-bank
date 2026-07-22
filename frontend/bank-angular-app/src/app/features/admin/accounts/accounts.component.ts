@@ -17,6 +17,7 @@ import {
   ConfirmDialogComponent,
   ConfirmDialogData,
 } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { AdminTopUpDialogComponent } from './admin-top-up-dialog/admin-top-up-dialog.component';
 import { MoneyVndPipe } from '../../../shared/pipes/money-vnd.pipe';
 import { EnumLabelPipe } from '../../../shared/pipes/enum-label.pipe';
 import { BankApiService } from '../../../core/services/bank-api.service';
@@ -75,6 +76,7 @@ export class AdminAccountsComponent implements OnInit {
   }
   cols = ['accountNumber', 'accountType', 'userId', 'balance', 'status', 'actions'];
   canFreeze$ = this.store.select(selectHasPermission(PERMISSIONS.ACCOUNTS_FREEZE_EXECUTE));
+  canTopUp$ = this.store.select(selectHasPermission(PERMISSIONS.ACCOUNTS_TOPUP_EXECUTE));
 
   form = this.fb.nonNullable.group({
     q: [''],
@@ -251,6 +253,22 @@ export class AdminAccountsComponent implements OnInit {
           this.toast.error(resolveHttpErrorMessage(err, this.i18n));
         },
       });
+  }
+
+  openTopUp(account: Account = this.selected!): void {
+    if (!account) {
+      return;
+    }
+    const dialogRef = this.dialog.open(AdminTopUpDialogComponent, {
+      data: { account },
+      width: '460px',
+    });
+    dialogRef.afterClosed().subscribe((res) => {
+      if (res) {
+        this.openDetail(account);
+        this.load();
+      }
+    });
   }
 
   private patchRow(updated: Account): void {

@@ -9,13 +9,14 @@ import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { Store } from '@ngrx/store';
-import { filter } from 'rxjs';
+import { filter, take } from 'rxjs';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { LoadingComponent } from '../../../shared/components/loading/loading.component';
 import {
   ConfirmDialogComponent,
   ConfirmDialogData,
 } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { CustomerTopUpDialogComponent } from './customer-top-up-dialog/customer-top-up-dialog.component';
 import { MoneyVndPipe } from '../../../shared/pipes/money-vnd.pipe';
 import { EnumLabelPipe } from '../../../shared/pipes/enum-label.pipe';
 import { ToastService } from '../../../core/services/toast.service';
@@ -95,6 +96,25 @@ export class AccountsComponent implements OnInit {
       .subscribe(() => {
         this.store.dispatch(AccountsActions.open({ accountType: type }));
       });
+  }
+
+  openTopUp(a?: Account): void {
+    this.accounts$.pipe(take(1)).subscribe((accounts) => {
+      const active = (accounts || []).filter((item) => item.status === 'ACTIVE');
+      if (active.length === 0) {
+        this.toast.error(this.i18n.instant('CUSTOMER.TOPUP_NO_ACTIVE_ACCOUNTS'));
+        return;
+      }
+      const dialogRef = this.dialog.open(CustomerTopUpDialogComponent, {
+        data: { accounts, selectedAccountId: a?.id },
+        width: '460px',
+      });
+      dialogRef.afterClosed().subscribe((res) => {
+        if (res) {
+          this.refresh();
+        }
+      });
+    });
   }
 
   async copyAccountNumber(a: Account, event?: Event): Promise<void> {

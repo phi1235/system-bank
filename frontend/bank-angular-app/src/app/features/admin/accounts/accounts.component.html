@@ -236,6 +236,18 @@
           }
         </div>
         <div class="acts">
+          @if (canTopUp$ | async) {
+            <button
+              mat-flat-button
+              color="accent"
+              type="button"
+              (click)="openTopUp(selected)"
+              [disabled]="selected.status !== 'ACTIVE' || busyId === selected.id"
+            >
+              <mat-icon>add_circle_outline</mat-icon>
+              {{ 'ADMIN.TOPUP_BTN' | translate }}
+            </button>
+          }
           @if (canFreeze$ | async) {
             <button
               mat-stroked-button

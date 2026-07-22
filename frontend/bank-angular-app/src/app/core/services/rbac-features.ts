@@ -249,6 +249,12 @@ export const RBAC_SCREENS: RbacScreenDef[] = [
         label: 'Freeze / Unfreeze',
         actions: { execute: PERMISSIONS.ACCOUNTS_FREEZE_EXECUTE },
       },
+      {
+        id: 'topup',
+        labelKey: 'ADMIN.FEAT_ACC_TOPUP',
+        label: 'Nạp tiền tài khoản (Cash-in)',
+        actions: { execute: PERMISSIONS.ACCOUNTS_TOPUP_EXECUTE },
+      },
     ],
   },
   {

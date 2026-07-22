@@ -30,6 +30,7 @@ class CustomerAccountServiceStatementTest {
 
   private AccountRepository accountRepository;
   private LedgerEntryRepository ledgerEntryRepository;
+  private AccountMoneyService moneyService;
   private CustomerAccountService service;
 
   private final UUID ownerId = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
@@ -40,6 +41,7 @@ class CustomerAccountServiceStatementTest {
   void setUp() {
     accountRepository = mock(AccountRepository.class);
     ledgerEntryRepository = mock(LedgerEntryRepository.class);
+    moneyService = mock(AccountMoneyService.class);
     AccountAccessService access = new AccountAccessService(accountRepository);
     AccountMapper mapper = new AccountMapper();
     AccountNumberGenerator numbers = new AccountNumberGenerator(accountRepository);
@@ -49,8 +51,10 @@ class CustomerAccountServiceStatementTest {
         access,
         mapper,
         numbers,
+        moneyService,
         3,
-        new BigDecimal("1000000"));
+        new BigDecimal("1000000"),
+        new BigDecimal("50000000"));
   }
 
   @Test

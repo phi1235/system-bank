@@ -35,6 +35,8 @@ bank:
   account:
     max-per-user: ${ACCOUNT_MAX_PER_USER}
     initial-balance: ${ACCOUNT_INITIAL_BALANCE}
+    topup:
+      max-amount: 50000000
   gateway:
     signing-secret: ${GATEWAY_SIGNING_SECRET}
     max-clock-skew-seconds: ${GATEWAY_MAX_CLOCK_SKEW_SECONDS}

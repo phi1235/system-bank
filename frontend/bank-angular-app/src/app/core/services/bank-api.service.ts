@@ -10,6 +10,7 @@ import {
   NotificationItem,
   OutboxCounts,
   OutboxEvent,
+  TopUpResponse,
   Transfer,
   TransferDetail,
   TransferQuote,
@@ -143,6 +144,20 @@ export class BankApiService {
 
   unfreezeAccount(id: string): Observable<Account> {
     return this.api.post(`/admin/accounts/${id}/unfreeze`, {});
+  }
+
+  adminTopUp(
+    accountId: string,
+    body: { amount: number; description?: string },
+  ): Observable<TopUpResponse> {
+    return this.api.post(`/admin/accounts/${accountId}/top-up`, body);
+  }
+
+  customerTopUp(
+    accountId: string,
+    body: { amount: number; description?: string },
+  ): Observable<TopUpResponse> {
+    return this.api.post(`/accounts/${accountId}/top-up`, body);
   }
 
   /** Staff list/search: q = account number | account UUID | owner user UUID */

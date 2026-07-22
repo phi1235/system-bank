@@ -21,6 +21,7 @@ public final class SecurityHeaders {
   public static final String PERM_CUSTOMERS_KYC_DECIDE = "customers:kyc:decide";
   public static final String PERM_ACCOUNTS_LOOKUP_VIEW = "accounts:lookup:view";
   public static final String PERM_ACCOUNTS_FREEZE_EXECUTE = "accounts:freeze:execute";
+  public static final String PERM_ACCOUNTS_TOPUP_EXECUTE = "accounts:topup:execute";
   public static final String PERM_TX_LIST_VIEW = "transactions:list:view";
   public static final String PERM_AUDIT_LIST_VIEW = "audit:list:view";
   public static final String PERM_RBAC_ACCESS = "rbac:access";

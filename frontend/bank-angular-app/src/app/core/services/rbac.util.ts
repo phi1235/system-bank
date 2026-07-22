@@ -19,6 +19,7 @@ export const PERMISSIONS = {
   CUSTOMERS_KYC_DECIDE: 'customers:kyc:decide',
   ACCOUNTS_LOOKUP_VIEW: 'accounts:lookup:view',
   ACCOUNTS_FREEZE_EXECUTE: 'accounts:freeze:execute',
+  ACCOUNTS_TOPUP_EXECUTE: 'accounts:topup:execute',
   TX_LIST_VIEW: 'transactions:list:view',
   AUDIT_LIST_VIEW: 'audit:list:view',
   RBAC_ACCESS: 'rbac:access',

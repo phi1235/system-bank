@@ -1,0 +1,73 @@
+<h2 mat-dialog-title class="dialog-title">
+  <mat-icon color="primary">price_check</mat-icon>
+  <span>{{ 'ADMIN.TOPUP_TITLE' | translate }}</span>
+</h2>
+
+<mat-dialog-content class="dialog-body">
+  <div class="account-info-box">
+    <div class="info-row">
+      <span class="label">{{ 'ADMIN.NUMBER' | translate }}:</span>
+      <strong class="value mono">{{ data.account.accountNumber }}</strong>
+    </div>
+    <div class="info-row">
+      <span class="label">{{ 'ADMIN.BALANCE' | translate }}:</span>
+      <span class="value money">{{ data.account.balance | moneyVnd: data.account.currency }}</span>
+    </div>
+  </div>
+
+  <form [formGroup]="form" class="topup-form" (ngSubmit)="submit()">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>{{ 'ADMIN.TOPUP_AMOUNT' | translate }} (VND)</mat-label>
+      <input
+        matInput
+        type="number"
+        formControlName="amount"
+        placeholder="10000000"
+        step="1000000"
+      />
+      <span matSuffix>VND</span>
+      @if (form.controls.amount.touched && form.controls.amount.invalid) {
+        <mat-error>
+          @if (form.controls.amount.hasError('required')) {
+            {{ 'ADMIN.AMOUNT_REQUIRED' | translate }}
+          } @else if (form.controls.amount.hasError('min')) {
+            {{ 'ADMIN.TOPUP_MIN_ERR' | translate }}
+          } @else if (form.controls.amount.hasError('max')) {
+            {{ 'ADMIN.TOPUP_MAX_ERR' | translate }}
+          }
+        </mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>{{ 'ADMIN.TOPUP_NOTE' | translate }}</mat-label>
+      <textarea
+        matInput
+        formControlName="description"
+        [placeholder]="'ADMIN.TOPUP_NOTE_PH' | translate"
+        rows="3"
+        maxLength="200"
+      ></textarea>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="dialog-actions">
+  <button mat-stroked-button type="button" (click)="cancel()" [disabled]="loading">
+    {{ 'COMMON.CANCEL' | translate }}
+  </button>
+  <button
+    mat-flat-button
+    color="primary"
+    type="button"
+    (click)="submit()"
+    [disabled]="loading || form.invalid"
+  >
+    @if (loading) {
+      <mat-spinner diameter="18" class="btn-spinner" />
+    } @else {
+      <mat-icon>add_circle_outline</mat-icon>
+    }
+    <span>{{ 'ADMIN.TOPUP_CONFIRM' | translate }}</span>
+  </button>
+</mat-dialog-actions>

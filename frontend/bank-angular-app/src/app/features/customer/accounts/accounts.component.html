@@ -6,6 +6,10 @@
     <mat-icon>refresh</mat-icon>
     {{ 'CUSTOMER.ACCOUNTS_REFRESH' | translate }}
   </button>
+  <button mat-flat-button color="accent" type="button" (click)="openTopUp()">
+    <mat-icon>add_card</mat-icon>
+    {{ 'CUSTOMER.TOPUP_BTN' | translate }}
+  </button>
   @if (canOpen$ | async) {
     <button mat-stroked-button type="button" (click)="open('PAYMENT')">
       <mat-icon>add</mat-icon>
@@ -62,6 +66,15 @@
 
           <div class="acc-actions">
             @if (isActive(a)) {
+              <button
+                mat-flat-button
+                color="accent"
+                type="button"
+                (click)="openTopUp(a)"
+              >
+                <mat-icon>add_card</mat-icon>
+                {{ 'CUSTOMER.TOPUP_BTN' | translate }}
+              </button>
               <a
                 mat-stroked-button
                 [routerLink]="['/customer/payments/transfer']"
@@ -140,6 +153,16 @@
             </th>
             <td mat-cell *matCellDef="let a" class="acts">
               @if (isActive(a)) {
+                <button
+                  mat-icon-button
+                  color="accent"
+                  type="button"
+                  (click)="openTopUp(a)"
+                  [matTooltip]="'CUSTOMER.TOPUP_BTN' | translate"
+                  [attr.aria-label]="'CUSTOMER.TOPUP_BTN' | translate"
+                >
+                  <mat-icon>add_card</mat-icon>
+                </button>
                 <a
                   mat-icon-button
                   color="primary"

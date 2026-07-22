@@ -1,0 +1,94 @@
+<h2 mat-dialog-title class="dialog-title">
+  <mat-icon color="primary">add_card</mat-icon>
+  <span>{{ 'CUSTOMER.TOPUP_TITLE' | translate }}</span>
+</h2>
+
+<mat-dialog-content class="dialog-body">
+  <p class="subtitle">{{ 'CUSTOMER.TOPUP_SUB' | translate }}</p>
+
+  <form [formGroup]="form" class="topup-form" (ngSubmit)="submit()">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>{{ 'CUSTOMER.SELECT_ACCOUNT' | translate }}</mat-label>
+      <mat-select formControlName="accountId">
+        @for (acc of activeAccounts; track acc.id) {
+          <mat-option [value]="acc.id">
+            {{ acc.accountNumber }} ({{ acc.accountType | enumLabel: 'ACCOUNT_TYPE' }}) —
+            {{ acc.balance | moneyVnd: acc.currency }}
+          </mat-option>
+        }
+      </mat-select>
+      @if (form.controls.accountId.touched && form.controls.accountId.invalid) {
+        <mat-error>{{ 'CUSTOMER.ACCOUNT_REQUIRED' | translate }}</mat-error>
+      }
+    </mat-form-field>
+
+    <div class="preset-section">
+      <label class="preset-label">{{ 'CUSTOMER.TOPUP_PRESET_LABEL' | translate }}</label>
+      <div class="chips-group">
+        @for (p of presets; track p.value) {
+          <button
+            type="button"
+            class="preset-chip"
+            [class.active]="form.controls.amount.value === p.value"
+            (click)="selectPreset(p.value)"
+          >
+            {{ p.label }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>{{ 'CUSTOMER.TOPUP_AMOUNT' | translate }} (VND)</mat-label>
+      <input
+        matInput
+        type="number"
+        formControlName="amount"
+        placeholder="1000000"
+        step="100000"
+      />
+      <span matSuffix>VND</span>
+      @if (form.controls.amount.touched && form.controls.amount.invalid) {
+        <mat-error>
+          @if (form.controls.amount.hasError('required')) {
+            {{ 'CUSTOMER.AMOUNT_REQUIRED' | translate }}
+          } @else if (form.controls.amount.hasError('min')) {
+            {{ 'CUSTOMER.TOPUP_MIN_ERR' | translate }}
+          } @else if (form.controls.amount.hasError('max')) {
+            {{ 'CUSTOMER.TOPUP_MAX_ERR' | translate }}
+          }
+        </mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>{{ 'CUSTOMER.TOPUP_DESC' | translate }}</mat-label>
+      <input
+        matInput
+        formControlName="description"
+        [placeholder]="'CUSTOMER.TOPUP_DESC_PH' | translate"
+        maxLength="100"
+      />
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="dialog-actions">
+  <button mat-stroked-button type="button" (click)="cancel()" [disabled]="loading">
+    {{ 'COMMON.CANCEL' | translate }}
+  </button>
+  <button
+    mat-flat-button
+    color="primary"
+    type="button"
+    (click)="submit()"
+    [disabled]="loading || form.invalid"
+  >
+    @if (loading) {
+      <mat-spinner diameter="18" class="btn-spinner" />
+    } @else {
+      <mat-icon>account_balance_wallet</mat-icon>
+    }
+    <span>{{ 'CUSTOMER.TOPUP_CONFIRM' | translate }}</span>
+  </button>
+</mat-dialog-actions>
