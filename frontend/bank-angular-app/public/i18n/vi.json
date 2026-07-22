@@ -582,7 +582,8 @@
     "UNFREEZE_FAIL": "Mở đóng băng thất bại"
   },
   "ERRORS": {
-    "GENERIC": "Lỗi hệ thống"
+    "GENERIC": "Lỗi hệ thống",
+    "WITH_REF": "{{message}} (mã: {{ref}})"
   },
   "TRANSFER_DETAIL": {
     "TITLE": "Chi tiết chuyển tiền",

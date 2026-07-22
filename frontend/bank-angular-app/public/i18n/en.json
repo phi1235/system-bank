@@ -582,7 +582,8 @@
     "UNFREEZE_FAIL": "Unfreeze failed"
   },
   "ERRORS": {
-    "GENERIC": "System error"
+    "GENERIC": "System error",
+    "WITH_REF": "{{message}} (ref: {{ref}})"
   },
   "TRANSFER_DETAIL": {
     "TITLE": "Transfer detail",

@@ -3,6 +3,7 @@ import { inject, Injector } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, throwError } from 'rxjs';
 import { ToastService } from '../services/toast.service';
+import { CORRELATION_HEADER } from './correlation.interceptor';
 
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
   const injector = inject(Injector);
@@ -16,10 +17,10 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
       if (req.url.includes('/i18n/')) {
         return throwError(() => err);
       }
-      
+
       const toast = injector.get(ToastService);
       const i18n = injector.get(TranslateService);
-      
+
       const body = err.error;
       let msg = i18n.instant('ERRORS.GENERIC');
       if (body?.error?.message) {
@@ -32,6 +33,16 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
       } else if (err.message) {
         msg = err.status ? `${err.status}: ${err.statusText || err.message}` : err.message;
       }
+
+      const correlationId =
+        body?.meta?.correlationId ||
+        err.headers?.get(CORRELATION_HEADER) ||
+        req.headers.get(CORRELATION_HEADER) ||
+        null;
+      if (correlationId) {
+        msg = i18n.instant('ERRORS.WITH_REF', { message: msg, ref: correlationId });
+      }
+
       // don't toast every 401 during redirect
       if (err.status !== 401) {
         toast.error(msg);
@@ -40,4 +51,3 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
     }),
   );
 };
-
