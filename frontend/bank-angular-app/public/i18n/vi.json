@@ -448,8 +448,8 @@
     "FROZEN_OK": "Account FROZEN",
     "ACTIVE_OK": "Account ACTIVE",
     "TX_TITLE": "Transactions",
-    "TX_SUB": "Monitor transfer toàn hệ thống",
-    "EMPTY_TX": "Không có giao dịch theo bộ lọc hiện tại.",
+    "TX_SUB": "Theo dõi chuyển khoản theo status, id, tìm STK/mô tả và khoảng ngày",
+    "EMPTY_TX": "Chưa có giao dịch",
     "OUTBOX_TITLE": "Outbox",
     "OUTBOX_SUB": "Kafka outbox — xem DEAD và replay publish",
     "OUTBOX_PENDING": "Pending",
@@ -703,7 +703,22 @@
     "KYC_PENDING_ACTION": "Chờ duyệt",
     "KYC_VERIFY_HINT": "Duyệt KYC khách này",
     "KYC_REJECT_HINT": "Từ chối KYC khách này",
-    "KYC_PENDING_HINT": "Đưa về hàng chờ duyệt"
+    "KYC_PENDING_HINT": "Đưa về hàng chờ duyệt",
+    "TX_FILTER_HINT": "Transfer id phải là UUID đầy đủ. Search khớp số TK đích hoặc mô tả.",
+    "TX_TOTAL": "{{total}} giao dịch",
+    "TX_ID": "Mã giao dịch",
+    "TX_ID_PH": "UUID transfer đầy đủ",
+    "TX_SEARCH_PH": "Số TK hoặc mô tả",
+    "TX_FROM": "Từ ngày",
+    "TX_TO": "Đến ngày",
+    "TX_EMPTY_FILTERED": "Không có giao dịch khớp bộ lọc",
+    "TX_EMPTY_FILTERED_HINT": "Thử xóa bộ lọc hoặc nới khoảng ngày.",
+    "TX_EMPTY_HINT": "Giao dịch xuất hiện khi khách thực hiện chuyển khoản.",
+    "TX_HELP_TITLE": "Cách dùng",
+    "TX_HELP_BODY": "Staff xem transfer toàn hệ thống và mở chi tiết saga.",
+    "TX_HELP_1": "Lọc FAILED / COMPENSATED để rà soát lỗi.",
+    "TX_HELP_2": "Dán full UUID transfer để tìm đúng một giao dịch.",
+    "TX_HELP_3": "Bấm hàng hoặc Open detail để xem các bước saga."
   },
   "ERRORS": {
     "GENERIC": "Đã xảy ra lỗi. Vui lòng thử lại.",
@@ -729,7 +744,9 @@
     "INVALID_ACTOR_ID": "Actor phải là mã user hợp lệ (UUID).",
     "INVALID_KYC_STATUS": "Trạng thái KYC phải là Chờ duyệt, Đã xác minh hoặc Từ chối.",
     "CUSTOMER_NOT_FOUND": "Không tìm thấy khách hàng.",
-    "PROFILE_EXISTS": "Hồ sơ khách hàng đã tồn tại."
+    "PROFILE_EXISTS": "Hồ sơ khách hàng đã tồn tại.",
+    "INVALID_STATUS": "Trạng thái giao dịch không hợp lệ.",
+    "INVALID_TRANSFER_ID": "Mã giao dịch phải là UUID hợp lệ."
   },
   "TRANSFER_DETAIL": {
     "TITLE": "Chi tiết chuyển tiền",

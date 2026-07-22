@@ -227,8 +227,26 @@ export class BankApiService {
     return this.api.patch(`/admin/customers/${id}/kyc`, { kycStatus });
   }
 
-  adminTransfers(page = 0, size = 20, status?: string): Observable<PageResponse<Transfer>> {
-    return this.api.get('/admin/transfers', { page, size, status });
+  adminTransfers(
+    page = 0,
+    size = 20,
+    filters?: {
+      status?: string;
+      transferId?: string;
+      q?: string;
+      from?: string;
+      to?: string;
+    },
+  ): Observable<PageResponse<Transfer>> {
+    return this.api.get('/admin/transfers', {
+      page,
+      size,
+      status: filters?.status,
+      transferId: filters?.transferId,
+      q: filters?.q,
+      from: filters?.from,
+      to: filters?.to,
+    });
   }
 
   /**
