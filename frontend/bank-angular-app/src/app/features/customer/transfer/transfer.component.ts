@@ -1,7 +1,7 @@
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -9,21 +9,34 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { Store } from '@ngrx/store';
-import { Subscription, debounceTime, distinctUntilChanged, filter } from 'rxjs';
+import { Subscription, debounceTime, distinctUntilChanged, filter, take } from 'rxjs';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import {
   ConfirmDialogComponent,
   ConfirmDialogData,
 } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { TransferDetailDialogComponent } from '../../../shared/components/transfer-detail-dialog/transfer-detail-dialog.component';
 import { FriendlyTransferErrorPipe } from '../../../shared/pipes/friendly-transfer-error.pipe';
 import { EnumLabelPipe } from '../../../shared/pipes/enum-label.pipe';
 import { TransferStatusPipe } from '../../../shared/pipes/transfer-status.pipe';
 import { MoneyVndPipe } from '../../../shared/pipes/money-vnd.pipe';
 import { PERMISSIONS } from '../../../core/services/rbac.util';
 import { BankApiService } from '../../../core/services/bank-api.service';
-import { Beneficiary, TransferQuote } from '../../../core/models/domain.model';
+import { ToastService } from '../../../core/services/toast.service';
+import { Beneficiary, Transfer, TransferQuote } from '../../../core/models/domain.model';
+import {
+  buildTransferReceiptText,
+  canRetryTransfer,
+  copyText,
+  transferRetryQueryParams,
+} from '../../../core/utils/transfer-receipt.util';
+import {
+  parseTransferError,
+  transferErrorI18nKey,
+} from '../../../core/utils/transfer-error.util';
 import { AccountsActions } from '../../../store/accounts/accounts.actions';
 import { selectAccounts } from '../../../store/accounts/accounts.selectors';
 import { TransfersActions } from '../../../store/transfers/transfers.actions';
@@ -48,6 +61,7 @@ import { selectHasPermission } from '../../../store/auth/auth.selectors';
     MatButtonModule,
     MatIconModule,
     MatDialogModule,
+    MatTooltipModule,
     PageHeaderComponent,
     MoneyVndPipe,
     FriendlyTransferErrorPipe,
@@ -64,7 +78,9 @@ export class TransferComponent implements OnInit, OnDestroy {
   private readonly i18n = inject(TranslateService);
   private readonly api = inject(BankApiService);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly dialog = inject(MatDialog);
+  private readonly toast = inject(ToastService);
   private amountSub?: Subscription;
   private quoteReq = 0;
 
@@ -80,6 +96,9 @@ export class TransferComponent implements OnInit, OnDestroy {
   quoteLoading = false;
   quoteError: string | null = null;
   noActiveSource = false;
+  /** Shown when form was prefilled from a failed transfer retry. */
+  retryPrefill = false;
+  private detailOpening = false;
   private accountsSub?: Subscription;
 
   form = this.fb.nonNullable.group({
@@ -94,13 +113,8 @@ export class TransferComponent implements OnInit, OnDestroy {
     this.store.dispatch(AccountsActions.load());
     this.store.dispatch(TransfersActions.clearStatus());
     this.loadBeneficiaries();
+    this.applyQueryPrefill();
     this.refreshQuote();
-
-    const to = this.route.snapshot.queryParamMap.get('to');
-    if (to && /^\d{8,14}$/.test(to)) {
-      this.form.patchValue({ toAccountNumber: to });
-      // selectedBeneficiaryId synced after list loads in loadBeneficiaries()
-    }
 
     this.accountsSub = this.accounts$.subscribe((accounts) => {
       const list = accounts || [];
@@ -151,6 +165,75 @@ export class TransferComponent implements OnInit, OnDestroy {
     const current = this.form.controls.toAccountNumber.value;
     const match = this.beneficiaries.find((b) => b.accountNumber === current);
     this.selectedBeneficiaryId = match?.id ?? '';
+  }
+
+  canRetry(status: string | null | undefined): boolean {
+    return canRetryTransfer(status);
+  }
+
+  async copyLastId(t: Transfer): Promise<void> {
+    if (!t?.transactionId) {
+      return;
+    }
+    const ok = await copyText(t.transactionId);
+    this.toast[ok ? 'success' : 'error'](
+      this.i18n.instant(ok ? 'TRANSFER_DETAIL.COPY_ID_OK' : 'TRANSFER_DETAIL.COPY_ID_FAIL'),
+    );
+  }
+
+  async copyLastReceipt(t: Transfer): Promise<void> {
+    if (!t) {
+      return;
+    }
+    const statusKey = `TRANSFER_STATUS.${t.status}`;
+    const statusLabel = this.i18n.instant(statusKey);
+    const reasonLabel = t.failureReason ? this.friendlyReason(t.failureReason) : undefined;
+    const text = buildTransferReceiptText(t, this.i18n, {
+      statusLabel: statusLabel !== statusKey ? statusLabel : t.status,
+      reasonLabel,
+    });
+    const ok = await copyText(text);
+    this.toast[ok ? 'success' : 'error'](
+      this.i18n.instant(
+        ok ? 'TRANSFER_DETAIL.COPY_RECEIPT_OK' : 'TRANSFER_DETAIL.COPY_RECEIPT_FAIL',
+      ),
+    );
+  }
+
+  openLastDetail(t: Transfer): void {
+    if (!t?.transactionId || this.detailOpening) {
+      return;
+    }
+    this.detailOpening = true;
+    this.api.getTransferDetail(t.transactionId).subscribe({
+      next: (detail) => {
+        this.detailOpening = false;
+        this.dialog.open(TransferDetailDialogComponent, {
+          data: { detail },
+          width: '560px',
+          maxWidth: '95vw',
+        });
+      },
+      error: () => {
+        this.detailOpening = false;
+        this.toast.error(this.i18n.instant('TRANSFER_DETAIL.LOAD_FAIL'));
+      },
+    });
+  }
+
+  retryLast(t: Transfer): void {
+    if (!t || !canRetryTransfer(t.status)) {
+      return;
+    }
+    this.applyTransferPrefill(t);
+    this.retryPrefill = true;
+    this.toast.success(this.i18n.instant('CUSTOMER.RESULT_RETRY_HINT'));
+    // Keep URL shareable for refresh
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: transferRetryQueryParams(t),
+      replaceUrl: true,
+    });
   }
 
   submit(): void {
@@ -213,5 +296,76 @@ export class TransferComponent implements OnInit, OnDestroy {
         this.quoteError = this.i18n.instant('CUSTOMER.QUOTE_LOAD_FAIL');
       },
     });
+  }
+
+  /** Prefill from ?to= deep-link or full retry query (from/to/amount/desc/retry). */
+  private applyQueryPrefill(): void {
+    const q = this.route.snapshot.queryParamMap;
+    const to = q.get('to');
+    const from = q.get('from');
+    const amountRaw = q.get('amount');
+    const desc = q.get('desc');
+    const isRetry = q.get('retry') === '1';
+
+    const patch: Partial<{
+      fromAccountId: string;
+      toAccountNumber: string;
+      amount: number;
+      description: string;
+    }> = {};
+
+    if (to && /^\d{8,14}$/.test(to)) {
+      patch.toAccountNumber = to;
+    }
+    if (from) {
+      patch.fromAccountId = from;
+    }
+    if (amountRaw != null && amountRaw !== '') {
+      const amount = Number(amountRaw);
+      if (Number.isFinite(amount) && amount > 0) {
+        patch.amount = amount;
+      }
+    }
+    if (desc != null && desc !== '') {
+      patch.description = desc;
+    }
+
+    if (Object.keys(patch).length) {
+      this.form.patchValue(patch);
+    }
+    this.retryPrefill = isRetry && !!(patch.toAccountNumber || patch.amount);
+
+    // If from is not yet in loaded accounts, still set; select will show when available.
+    if (from) {
+      this.accounts$.pipe(take(1)).subscribe((accounts) => {
+        const exists = (accounts || []).some((a) => a.id === from);
+        if (exists) {
+          this.form.patchValue({ fromAccountId: from });
+        }
+      });
+    }
+  }
+
+  private applyTransferPrefill(t: Transfer): void {
+    this.form.patchValue({
+      fromAccountId: t.fromAccountId || '',
+      toAccountNumber: t.toAccountNumber || '',
+      amount: Number(t.amount) || 0,
+      description: t.description || this.i18n.instant('CUSTOMER.DEFAULT_DESC'),
+    });
+    this.onToAccountTyped();
+    this.refreshQuote();
+  }
+
+  private friendlyReason(reason: string): string {
+    const parsed = parseTransferError(reason);
+    const key = transferErrorI18nKey(parsed.code);
+    if (key) {
+      const translated = this.i18n.instant(key);
+      if (translated && translated !== key) {
+        return translated;
+      }
+    }
+    return parsed.detail || parsed.raw || reason;
   }
 }

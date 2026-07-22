@@ -28,9 +28,20 @@
         <span class="k">{{ 'COMMON.TIME' | translate }}</span>
         <span>{{ d.transfer.createdAt | date: 'medium' }}</span>
       </div>
-      <div class="row">
+      <div class="row id-row">
         <span class="k">{{ 'TRANSFER_DETAIL.ID' | translate }}</span>
-        <code>{{ d.transfer.transactionId }}</code>
+        <div class="id-cell">
+          <code>{{ d.transfer.transactionId }}</code>
+          <button
+            mat-icon-button
+            type="button"
+            (click)="copyId()"
+            [matTooltip]="'TRANSFER_DETAIL.COPY_ID' | translate"
+            [attr.aria-label]="'TRANSFER_DETAIL.COPY_ID' | translate"
+          >
+            <mat-icon>content_copy</mat-icon>
+          </button>
+        </div>
       </div>
       @if (d.transfer.failureReason) {
         <div class="row fail">
@@ -73,7 +84,17 @@
     }
   }
 </mat-dialog-content>
-<mat-dialog-actions align="end">
+<mat-dialog-actions align="end" class="actions">
+  <button mat-stroked-button type="button" (click)="copyReceipt()">
+    <mat-icon>content_paste</mat-icon>
+    {{ 'TRANSFER_DETAIL.COPY_RECEIPT' | translate }}
+  </button>
+  @if (canRetry) {
+    <button mat-stroked-button color="primary" type="button" (click)="retry()">
+      <mat-icon>replay</mat-icon>
+      {{ 'TRANSFER_DETAIL.RETRY' | translate }}
+    </button>
+  }
   <button mat-flat-button color="primary" type="button" mat-dialog-close>
     {{ 'COMMON.CLOSE' | translate }}
   </button>

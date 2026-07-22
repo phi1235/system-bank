@@ -276,6 +276,44 @@ button[type='submit'] {
   .full-btn {
     width: 100%;
   }
+
+  .result-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+
+    button,
+    a {
+      width: 100%;
+    }
+
+    mat-icon {
+      margin-right: 0.3rem;
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      vertical-align: middle;
+    }
+  }
+}
+
+.retry-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0 0 0.85rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 10px;
+  background: #fff8e1;
+  border: 1px solid #ffe082;
+  color: #6d4c00;
+  font-size: 0.88rem;
+  line-height: 1.45;
+
+  mat-icon {
+    flex-shrink: 0;
+    color: #f9a825;
+  }
 }
 
 .tips {
