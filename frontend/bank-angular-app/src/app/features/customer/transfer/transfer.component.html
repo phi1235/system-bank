@@ -3,8 +3,18 @@
   [subtitle]="'CUSTOMER.TRANSFER_SUB' | translate"
 />
 
-<div class="layout" [class.has-result]="(last$ | async) !== null">
-  <mat-card class="form-card">
+<div class="transfer-container" [class.has-result]="(last$ | async) !== null">
+  <!-- LEFT COLUMN: TRANSFER FORM -->
+  <mat-card class="transfer-form-card">
+    <div class="form-header">
+      <mat-icon class="header-icon">swap_horiz</mat-icon>
+      <div>
+        <h2>Chuyển tiền trực tuyến</h2>
+        <p class="sub">Chuyển tiền nhanh nội bộ SystemBank & Liên ngân hàng 24/7 NAPAS</p>
+      </div>
+    </div>
+
+    <!-- TAB SWITCHER -->
     <div class="transfer-tabs">
       <button
         type="button"
@@ -26,322 +36,299 @@
       </button>
     </div>
 
-    <form [formGroup]="form" (ngSubmit)="submit()">
+    <form [formGroup]="form" (ngSubmit)="submit()" class="transfer-form">
       @if (retryPrefill) {
         <div class="retry-banner" role="status">
           <mat-icon>replay</mat-icon>
           <span>{{ 'CUSTOMER.TRANSFER_RETRY_BANNER' | translate }}</span>
         </div>
       }
-      <mat-form-field appearance="outline" class="full">
-        <mat-label>{{ 'CUSTOMER.FROM_ACCOUNT' | translate }}</mat-label>
-        <mat-icon matPrefix>account_balance_wallet</mat-icon>
-        <mat-select formControlName="fromAccountId">
-          @for (a of accounts$ | async; track a.id) {
-            <mat-option [value]="a.id" [disabled]="a.status !== 'ACTIVE'">
-              {{ a.accountNumber }} — {{ a.balance | moneyVnd: a.currency }} ({{ a.status | enumLabel:'ACCOUNT_STATUS' }})
-            </mat-option>
-          }
-        </mat-select>
-        @if (form.controls.fromAccountId.touched && form.controls.fromAccountId.hasError('required')) {
-          <mat-error>{{ 'CUSTOMER.FIELD_REQUIRED' | translate }}</mat-error>
-        }
-      </mat-form-field>
 
-      @if (noActiveSource) {
-        <div class="empty-banner">
-          <mat-icon>account_balance</mat-icon>
-          <div>
-            <strong>{{ 'CUSTOMER.FROM_ACCOUNT_EMPTY' | translate }}</strong>
-            <p>{{ 'CUSTOMER.FROM_ACCOUNT_EMPTY_HINT' | translate }}</p>
-            <a mat-stroked-button routerLink="/customer/accounts">
-              {{ 'CUSTOMER.OPEN_ACCOUNT_CTA' | translate }}
-            </a>
-          </div>
+      <!-- STEP 1: SOURCE ACCOUNT -->
+      <div class="step-card">
+        <div class="step-header">
+          <span class="step-badge">1</span>
+          <h3>Tài khoản nguồn</h3>
         </div>
-      }
 
-      @if (activeTab === 'INTERBANK') {
-        <mat-form-field appearance="outline" class="full">
-          <mat-label>{{ 'TRANSFER.BANK_SELECT_LABEL' | translate }}</mat-label>
-          <mat-icon matPrefix>account_balance</mat-icon>
-          <mat-select [value]="selectedBankCode" (selectionChange)="onBankChange($event.value)">
-            <mat-option value="">{{ 'TRANSFER.BANK_SELECT_PLACEHOLDER' | translate }}</mat-option>
-            @for (b of banks; track b.bankCode) {
-              <mat-option [value]="b.bankCode" [disabled]="b.isInternal">
-                {{ b.shortName }} — {{ b.fullName }}
+        <mat-form-field appearance="outline" class="compact-field">
+          <mat-label>{{ 'CUSTOMER.FROM_ACCOUNT' | translate }}</mat-label>
+          <mat-icon matPrefix>account_balance_wallet</mat-icon>
+          <mat-select formControlName="fromAccountId">
+            @for (a of accounts$ | async; track a.id) {
+              <mat-option [value]="a.id" [disabled]="a.status !== 'ACTIVE'">
+                {{ a.accountNumber }} — {{ a.balance | moneyVnd: a.currency }} ({{ a.status | enumLabel:'ACCOUNT_STATUS' }})
               </mat-option>
             }
           </mat-select>
-        </mat-form-field>
-      }
-
-      <mat-form-field appearance="outline" class="full">
-        <mat-label>{{ 'CUSTOMER.TRANSFER_PICK_BENEFICIARY' | translate }}</mat-label>
-        <mat-icon matPrefix>contacts</mat-icon>
-        <mat-select
-          [value]="selectedBeneficiaryId"
-          (selectionChange)="onBeneficiaryPicked($event.value)"
-        >
-          <mat-option value="">{{ 'CUSTOMER.NONE' | translate }}</mat-option>
-          @for (b of beneficiaries; track b.id) {
-            <mat-option [value]="b.id">
-              {{ b.nickname }} — {{ b.accountNumber }}
-            </mat-option>
-          }
-        </mat-select>
-        @if (beneficiaries.length) {
-          <mat-hint>{{ 'CUSTOMER.BENEFICIARY_NONE_HINT' | translate }}</mat-hint>
-        } @else {
-          <mat-hint>{{ 'CUSTOMER.TRANSFER_BENEFICIARY_EMPTY' | translate }}</mat-hint>
-        }
-      </mat-form-field>
-
-      <mat-form-field appearance="outline" class="full">
-        <mat-label>{{ 'CUSTOMER.TO_ACCOUNT' | translate }}</mat-label>
-        <input
-          matInput
-          formControlName="toAccountNumber"
-          [placeholder]="'CUSTOMER.TO_PLACEHOLDER' | translate"
-          (input)="onToAccountTyped()"
-        />
-        <mat-icon matPrefix>person_outline</mat-icon>
-        @if (form.controls.toAccountNumber.touched && form.controls.toAccountNumber.hasError('required')) {
-          <mat-error>{{ 'CUSTOMER.FIELD_REQUIRED' | translate }}</mat-error>
-        }
-        @if (form.controls.toAccountNumber.touched && form.controls.toAccountNumber.hasError('pattern')) {
-          <mat-error>{{ 'CUSTOMER.TO_ACCOUNT_PATTERN' | translate }}</mat-error>
-        }
-      </mat-form-field>
-
-      <!-- Recipient Inquiry Badge -->
-      @if (inquiryLoading) {
-        <div class="inquiry-badge loading">
-          <mat-icon class="spin">sync</mat-icon>
-          <span>{{ 'INQUIRY.SEARCHING' | translate }}</span>
-        </div>
-      } @else if (inquiryResult) {
-        <div class="inquiry-badge success">
-          <mat-icon>check_circle</mat-icon>
-          <span>{{ 'INQUIRY.OWNER' | translate }}: <strong>{{ inquiryResult.accountName }}</strong></span>
-        </div>
-      } @else if (inquiryError) {
-        <div class="inquiry-badge error">
-          <mat-icon>error_outline</mat-icon>
-          <span>{{ inquiryError }}</span>
-        </div>
-      }
-
-      <div class="beneficiary-link">
-        <a routerLink="/customer/payments/beneficiaries">
-          {{ 'CUSTOMER.TRANSFER_MANAGE_BENEFICIARIES' | translate }}
-        </a>
-      </div>
-
-      <div class="row-2">
-        <mat-form-field appearance="outline" class="full">
-          <mat-label>{{ 'CUSTOMER.AMOUNT_VND' | translate }}</mat-label>
-          <mat-icon matPrefix>payments</mat-icon>
-          <input matInput type="number" formControlName="amount" />
-          <span matTextSuffix>₫</span>
-          @if (form.controls.amount.touched && form.controls.amount.hasError('required')) {
+          @if (form.controls.fromAccountId.touched && form.controls.fromAccountId.hasError('required')) {
             <mat-error>{{ 'CUSTOMER.FIELD_REQUIRED' | translate }}</mat-error>
           }
-          @if (form.controls.amount.touched && form.controls.amount.hasError('min')) {
-            <mat-error>{{ 'CUSTOMER.AMOUNT_MIN' | translate }}</mat-error>
-          }
         </mat-form-field>
-        <mat-form-field appearance="outline" class="full">
-          <mat-label>{{ 'CUSTOMER.DESCRIPTION' | translate }}</mat-label>
-          <mat-icon matPrefix>edit_note</mat-icon>
-          <input matInput formControlName="description" />
-        </mat-form-field>
-      </div>
 
-      <div class="quote-card" [class.loading]="quoteLoading">
-        <div class="quote-head">
-          <mat-icon>receipt_long</mat-icon>
-          <span>{{ 'CUSTOMER.QUOTE_TITLE' | translate }}</span>
-          @if (quoteLoading) {
-            <span class="quote-muted">{{ 'CUSTOMER.QUOTE_UPDATING' | translate }}</span>
-          }
-        </div>
-        @if (quoteError) {
-          <p class="quote-error">{{ quoteError }}</p>
-        } @else if (quote) {
-          <div class="quote-grid">
+        @if (noActiveSource) {
+          <div class="empty-banner">
+            <mat-icon>account_balance</mat-icon>
             <div>
-              <span class="k">{{ 'CUSTOMER.FEE' | translate }}</span>
-              <span class="v">{{ quote.feeAmount | moneyVnd: quote.currency }}</span>
-            </div>
-            <div>
-              <span class="k">{{ 'CUSTOMER.QUOTE_TOTAL_DEBIT' | translate }}</span>
-              <span class="v strong">{{ quote.totalDebit | moneyVnd: quote.currency }}</span>
-            </div>
-            <div>
-              <span class="k">{{ 'CUSTOMER.QUOTE_REMAINING_TODAY' | translate }}</span>
-              <span class="v">{{ quote.remainingToday | moneyVnd: quote.currency }}</span>
-            </div>
-            <div>
-              <span class="k">{{ 'CUSTOMER.QUOTE_MAX_TX' | translate }}</span>
-              <span class="v">{{ quote.maxPerTransaction | moneyVnd: quote.currency }}</span>
+              <strong>{{ 'CUSTOMER.FROM_ACCOUNT_EMPTY' | translate }}</strong>
+              <p>{{ 'CUSTOMER.FROM_ACCOUNT_EMPTY_HINT' | translate }}</p>
+              <a mat-stroked-button routerLink="/customer/accounts">
+                {{ 'CUSTOMER.OPEN_ACCOUNT_CTA' | translate }}
+              </a>
             </div>
           </div>
+        }
+      </div>
 
-          @if (quote.feeEnabled) {
-            <div class="fee-breakdown">
-              <div class="fee-breakdown-title">{{ 'CUSTOMER.FEE_BREAKDOWN_TITLE' | translate }}</div>
-              <ul class="fee-breakdown-list">
-                <li>
-                  <span>{{ 'CUSTOMER.FEE_FLAT' | translate }}</span>
-                  <span>{{ (quote.feeFlat ?? 0) | moneyVnd: quote.currency }}</span>
-                </li>
-                <li>
-                  <span>
-                    {{ 'CUSTOMER.FEE_PERCENT' | translate: { percent: quote.feePercent ?? 0 } }}
-                  </span>
-                  <span>{{ (quote.feePercentAmount ?? 0) | moneyVnd: quote.currency }}</span>
-                </li>
-                <li class="sub">
-                  <span>{{ 'CUSTOMER.FEE_RAW' | translate }}</span>
-                  <span>{{ (quote.feeRawBeforeClamp ?? quote.feeAmount) | moneyVnd: quote.currency }}</span>
-                </li>
-                <li class="bounds">
-                  <span>{{ 'CUSTOMER.FEE_BOUNDS' | translate }}</span>
-                  <span>
-                    {{ (quote.feeMin ?? 0) | moneyVnd: quote.currency }}
-                    –
-                    {{ (quote.feeMax ?? 0) | moneyVnd: quote.currency }}
-                  </span>
-                </li>
-              </ul>
-              @if (quote.feeCappedByMin) {
-                <p class="fee-cap">{{ 'CUSTOMER.FEE_CAPPED_MIN' | translate }}</p>
-              }
-              @if (quote.feeCappedByMax) {
-                <p class="fee-cap">{{ 'CUSTOMER.FEE_CAPPED_MAX' | translate }}</p>
-              }
-            </div>
-          } @else {
-            <p class="quote-note">{{ 'CUSTOMER.FEE_DISABLED' | translate }}</p>
+      <!-- STEP 2: RECIPIENT INFO -->
+      <div class="step-card">
+        <div class="step-header">
+          <span class="step-badge">2</span>
+          <h3>Thông tin người nhận</h3>
+        </div>
+
+        <div class="recipient-grid">
+          @if (activeTab === 'INTERBANK') {
+            <mat-form-field appearance="outline" class="compact-field">
+              <mat-label>{{ 'TRANSFER.BANK_SELECT_LABEL' | translate }}</mat-label>
+              <mat-icon matPrefix>account_balance</mat-icon>
+              <mat-select [value]="selectedBankCode" (selectionChange)="onBankChange($event.value)">
+                <mat-option value="">{{ 'TRANSFER.BANK_SELECT_PLACEHOLDER' | translate }}</mat-option>
+                @for (b of banks; track b.bankCode) {
+                  <mat-option [value]="b.bankCode" [disabled]="b.isInternal">
+                    {{ b.shortName }} — {{ b.fullName }}
+                  </mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
           }
 
-          <p class="quote-note">
-            {{
-              'CUSTOMER.QUOTE_NOTE'
-                | translate
-                  : {
-                      spent: (quote.spentToday | moneyVnd: quote.currency),
-                      daily: (quote.dailyLimit | moneyVnd: quote.currency),
-                      zone: quote.dailyLimitZone,
-                    }
-            }}
-          </p>
-        } @else if (!quoteLoading) {
-          <p class="quote-note">{{ 'CUSTOMER.QUOTE_PLACEHOLDER' | translate }}</p>
-        }
+          <div class="field-with-shortcut">
+            <mat-form-field appearance="outline" class="compact-field flex-grow">
+              <mat-label>{{ 'CUSTOMER.TRANSFER_PICK_BENEFICIARY' | translate }}</mat-label>
+              <mat-icon matPrefix>contacts</mat-icon>
+              <mat-select
+                [value]="selectedBeneficiaryId"
+                (selectionChange)="onBeneficiaryPicked($event.value)"
+              >
+                <mat-option value="">{{ 'CUSTOMER.NONE' | translate }}</mat-option>
+                @for (b of beneficiaries; track b.id) {
+                  <mat-option [value]="b.id">
+                    {{ b.nickname }} — {{ b.accountNumber }}
+                  </mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <a routerLink="/customer/payments/beneficiaries" class="shortcut-btn">
+              <mat-icon>manage_accounts</mat-icon>
+              <span>Danh bạ</span>
+            </a>
+          </div>
+
+          <mat-form-field appearance="outline" class="compact-field">
+            <mat-label>{{ 'CUSTOMER.TO_ACCOUNT' | translate }}</mat-label>
+            <input
+              matInput
+              formControlName="toAccountNumber"
+              [placeholder]="'CUSTOMER.TO_PLACEHOLDER' | translate"
+              (input)="onToAccountTyped()"
+            />
+            <mat-icon matPrefix>person_outline</mat-icon>
+            @if (form.controls.toAccountNumber.touched && form.controls.toAccountNumber.hasError('required')) {
+              <mat-error>{{ 'CUSTOMER.FIELD_REQUIRED' | translate }}</mat-error>
+            }
+            @if (form.controls.toAccountNumber.touched && form.controls.toAccountNumber.hasError('pattern')) {
+              <mat-error>{{ 'CUSTOMER.TO_ACCOUNT_PATTERN' | translate }}</mat-error>
+            }
+          </mat-form-field>
+
+          <!-- Recipient Inquiry Badge -->
+          @if (inquiryLoading) {
+            <div class="inquiry-badge loading">
+              <mat-icon class="spin">sync</mat-icon>
+              <span>{{ 'INQUIRY.SEARCHING' | translate }}</span>
+            </div>
+          } @else if (inquiryResult) {
+            <div class="inquiry-badge success">
+              <mat-icon>verified</mat-icon>
+              <div>
+                <span class="lbl">Chủ tài khoản thụ hưởng:</span>
+                <strong class="owner">{{ inquiryResult.accountName }}</strong>
+              </div>
+            </div>
+          } @else if (inquiryError) {
+            <div class="inquiry-badge error">
+              <mat-icon>error_outline</mat-icon>
+              <span>{{ inquiryError }}</span>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- STEP 3: AMOUNT & DESCRIPTION -->
+      <div class="step-card">
+        <div class="step-header">
+          <span class="step-badge">3</span>
+          <h3>Số tiền & Nội dung chuyển</h3>
+        </div>
+
+        <div class="row-2">
+          <mat-form-field appearance="outline" class="compact-field">
+            <mat-label>{{ 'CUSTOMER.AMOUNT_VND' | translate }}</mat-label>
+            <mat-icon matPrefix>payments</mat-icon>
+            <input
+              matInput
+              type="text"
+              [value]="formattedAmountDisplay"
+              (input)="onAmountInput($event)"
+              placeholder="0"
+              inputmode="numeric"
+            />
+            <span matTextSuffix>VND</span>
+            @if (amountFormattedHint) {
+              <mat-hint class="amount-words-hint">{{ amountFormattedHint }}</mat-hint>
+            }
+            @if (form.controls.amount.touched && form.controls.amount.hasError('required')) {
+              <mat-error>{{ 'CUSTOMER.FIELD_REQUIRED' | translate }}</mat-error>
+            }
+            @if (form.controls.amount.touched && form.controls.amount.hasError('min')) {
+              <mat-error>{{ 'CUSTOMER.AMOUNT_MIN' | translate }}</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="compact-field">
+            <mat-label>{{ 'CUSTOMER.DESCRIPTION' | translate }}</mat-label>
+            <mat-icon matPrefix>edit_note</mat-icon>
+            <input matInput formControlName="description" />
+          </mat-form-field>
+        </div>
       </div>
 
       @if (error$ | async; as err) {
-        <div class="err">{{ err }}</div>
+        <div class="err-box">{{ err }}</div>
       }
-      @if (canExecute$ | async) {
-        <button
-          mat-flat-button
-          color="primary"
-          type="submit"
-          [disabled]="(creating$ | async) || noActiveSource"
-        >
-          {{ (creating$ | async) ? ('CUSTOMER.PROCESSING' | translate) : ('CUSTOMER.CONFIRM_TRANSFER' | translate) }}
-        </button>
-      } @else {
-        <p class="err">{{ 'CUSTOMER.NO_PERM_TRANSFER' | translate }}</p>
-      }
+
+      <div class="form-actions">
+        @if (canExecute$ | async) {
+          <button
+            mat-flat-button
+            color="primary"
+            type="submit"
+            class="submit-btn"
+            [disabled]="(creating$ | async) || noActiveSource"
+          >
+            <mat-icon>send</mat-icon>
+            <span>{{ (creating$ | async) ? ('CUSTOMER.PROCESSING' | translate) : ('CUSTOMER.CONFIRM_TRANSFER' | translate) }}</span>
+          </button>
+        } @else {
+          <p class="err-box">{{ 'CUSTOMER.NO_PERM_TRANSFER' | translate }}</p>
+        }
+      </div>
     </form>
   </mat-card>
 
-  <aside class="side">
-    @if (last$ | async; as t) {
-      <mat-card class="result" [class.ok]="t.status === 'COMPLETED'" [class.warn]="t.status !== 'COMPLETED'">
-        <h3>{{ 'CUSTOMER.RESULT_TITLE' | translate }}</h3>
-        <div class="result-grid">
-          <div>
-            <span class="k">{{ 'CUSTOMER.RESULT_ID' | translate }}</span>
-            <span class="v mono">{{ t.transactionId }}</span>
+  <!-- RIGHT COLUMN: TRANSACTION SUMMARY & RECEIPT -->
+  <aside class="summary-side">
+    <mat-card class="summary-card" [class.loading]="quoteLoading">
+      <div class="summary-header">
+        <mat-icon>receipt_long</mat-icon>
+        <h3>Tóm tắt giao dịch</h3>
+        @if (quoteLoading) {
+          <span class="updating-tag">Đang tính...</span>
+        }
+      </div>
+
+      @if (quoteError) {
+        <div class="quote-error-box">{{ quoteError }}</div>
+      } @else if (quote) {
+        <div class="receipt-rows">
+          <div class="receipt-row">
+            <span class="label">Hình thức chuyển</span>
+            <span class="value badge-mode">{{ activeTab === 'INTERNAL' ? 'Nội bộ SystemBank' : 'Liên ngân hàng 24/7' }}</span>
           </div>
-          <div>
-            <span class="k">{{ 'CUSTOMER.RESULT_STATUS' | translate }}</span>
-            <span class="chip" [class.ok]="t.status === 'COMPLETED'" [class.bad]="t.status !== 'COMPLETED'">
+
+          @if (inquiryResult) {
+            <div class="receipt-row highlight">
+              <span class="label">Người nhận</span>
+              <span class="value owner">{{ inquiryResult.accountName }}</span>
+            </div>
+          }
+
+          <div class="receipt-row">
+            <span class="label">Số tiền chuyển</span>
+            <span class="value money">{{ form.controls.amount.value | moneyVnd }}</span>
+          </div>
+
+          <div class="receipt-row">
+            <span class="label">Phí giao dịch</span>
+            <span class="value fee">{{ quote.feeAmount | moneyVnd: quote.currency }}</span>
+          </div>
+
+          <div class="receipt-divider"></div>
+
+          <div class="receipt-row total">
+            <span class="label">Tổng trừ tài khoản</span>
+            <span class="value total-amount">{{ quote.totalDebit | moneyVnd: quote.currency }}</span>
+          </div>
+
+          <div class="limit-box">
+            <div class="limit-info">
+              <span>Hạn mức khả dụng trong ngày:</span>
+              <strong>{{ quote.remainingToday | moneyVnd: quote.currency }}</strong>
+            </div>
+            <div class="limit-bar">
+              <div class="limit-fill" [style.width.%]="((quote.dailyLimit - quote.remainingToday) / quote.dailyLimit) * 100"></div>
+            </div>
+            <div class="limit-sub">Tối đa 1 giao dịch: {{ quote.maxPerTransaction | moneyVnd: quote.currency }}</div>
+          </div>
+        </div>
+      } @else {
+        <div class="summary-placeholder">
+          <mat-icon>calculate</mat-icon>
+          <p>Nhập số tài khoản và số tiền để xem tóm tắt phí & hạn mức giao dịch real-time.</p>
+        </div>
+      }
+    </mat-card>
+
+    @if (last$ | async; as t) {
+      <mat-card class="result-card" [class.ok]="t.status === 'COMPLETED'" [class.warn]="t.status !== 'COMPLETED'">
+        <div class="result-header">
+          <mat-icon>{{ t.status === 'COMPLETED' ? 'check_circle' : 'error' }}</mat-icon>
+          <h3>Kết quả giao dịch</h3>
+        </div>
+        <div class="result-body">
+          <div class="result-item">
+            <span class="k">Mã giao dịch</span>
+            <strong class="v mono">{{ t.transactionId }}</strong>
+          </div>
+          <div class="result-item">
+            <span class="k">Trạng thái</span>
+            <span class="status-chip" [class.ok]="t.status === 'COMPLETED'" [class.bad]="t.status !== 'COMPLETED'">
               {{ t.status | transferStatus }}
             </span>
           </div>
-          <div>
-            <span class="k">{{ 'CUSTOMER.RESULT_AMOUNT' | translate }}</span>
-            <span class="v amount">{{ t.amount | moneyVnd: t.currency }}</span>
-          </div>
-          <div>
-            <span class="k">{{ 'CUSTOMER.FEE' | translate }}</span>
-            <span class="v amount">{{ (t.feeAmount || 0) | moneyVnd: t.currency }}</span>
+          <div class="result-item">
+            <span class="k">Số tiền thực trừ</span>
+            <strong class="v amount">{{ (t.amount + (t.feeAmount || 0)) | moneyVnd: t.currency }}</strong>
           </div>
           @if (t.failureReason) {
-            <div>
-              <span class="k">{{ 'CUSTOMER.RESULT_REASON' | translate }}</span>
-              <span class="v">{{ t.failureReason | friendlyTransferError }}</span>
+            <div class="result-item">
+              <span class="k">Lý do thất bại</span>
+              <span class="v reason">{{ t.failureReason | friendlyTransferError }}</span>
             </div>
           }
         </div>
-        @if (t.status === 'COMPLETED') {
-          <p class="result-hint ok">{{ 'CUSTOMER.RESULT_OK_HINT' | translate }}</p>
-        } @else if (t.status === 'FAILED' || t.status === 'COMPENSATED') {
-          <p class="result-hint bad">{{ 'CUSTOMER.RESULT_FAILED_HINT' | translate }}</p>
-        } @else {
-          <p class="result-hint">{{ 'CUSTOMER.RESULT_PENDING_HINT' | translate }}</p>
-        }
         <div class="result-actions">
-          <button
-            mat-stroked-button
-            type="button"
-            (click)="copyLastId(t)"
-            [matTooltip]="'CUSTOMER.RESULT_COPY_ID' | translate"
-          >
-            <mat-icon>content_copy</mat-icon>
-            {{ 'CUSTOMER.RESULT_COPY_ID' | translate }}
-          </button>
           <button mat-stroked-button type="button" (click)="copyLastReceipt(t)">
             <mat-icon>content_paste</mat-icon>
-            {{ 'CUSTOMER.RESULT_COPY_RECEIPT' | translate }}
+            Biên nhận
           </button>
           <button mat-stroked-button type="button" (click)="openLastDetail(t)">
             <mat-icon>info</mat-icon>
-            {{ 'CUSTOMER.RESULT_OPEN_DETAIL' | translate }}
+            Chi tiết
           </button>
-          @if (canRetry(t.status)) {
-            <button mat-flat-button color="primary" type="button" (click)="retryLast(t)">
-              <mat-icon>replay</mat-icon>
-              {{ 'CUSTOMER.RESULT_RETRY' | translate }}
-            </button>
-          }
-          <a mat-stroked-button routerLink="/customer/history" class="full-btn">
-            {{ 'NAV.HISTORY' | translate }}
-          </a>
         </div>
       </mat-card>
     }
-
-    <mat-card class="tips">
-      <h3>{{ 'CUSTOMER.TRANSFER_TIPS_TITLE' | translate }}</h3>
-      <ul>
-        <li>{{ 'CUSTOMER.TRANSFER_TIP_1' | translate }}</li>
-        <li>{{ 'CUSTOMER.TRANSFER_TIP_2' | translate }}</li>
-        <li>{{ 'CUSTOMER.TRANSFER_TIP_3' | translate }}</li>
-        <li>{{ 'CUSTOMER.TRANSFER_TIP_4' | translate }}</li>
-        <li>{{ 'CUSTOMER.TRANSFER_TIP_5' | translate }}</li>
-      </ul>
-    </mat-card>
-
-    <mat-card class="tips secondary">
-      <h3>{{ 'CUSTOMER.TRANSFER_NOTE_TITLE' | translate }}</h3>
-      <p>{{ 'CUSTOMER.TRANSFER_NOTE_BODY' | translate }}</p>
-    </mat-card>
   </aside>
 </div>

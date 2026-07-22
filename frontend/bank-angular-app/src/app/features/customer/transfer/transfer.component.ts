@@ -48,6 +48,8 @@ import {
 } from '../../../store/transfers/transfers.selectors';
 import { selectHasPermission } from '../../../store/auth/auth.selectors';
 
+import { formatVndAmountWithWords } from '../../../core/utils/vietnamese-number.util';
+
 @Component({
   selector: 'app-transfer',
   standalone: true,
@@ -110,6 +112,27 @@ export class TransferComponent implements OnInit, OnDestroy {
   retryPrefill = false;
   private detailOpening = false;
   private accountsSub?: Subscription;
+
+  formattedAmountDisplay = '';
+
+  get amountFormattedHint(): string {
+    return formatVndAmountWithWords(this.form.controls.amount.value);
+  }
+
+  onAmountInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    let raw = input.value || '';
+    let digits = raw.replace(/\D/g, '').replace(/^0+/, '');
+    const numValue = digits ? parseInt(digits, 10) : 0;
+
+    this.form.controls.amount.setValue(numValue);
+    this.formattedAmountDisplay = digits ? new Intl.NumberFormat('vi-VN').format(numValue) : '';
+    input.value = this.formattedAmountDisplay;
+  }
+
+  updateAmountDisplay(num: number): void {
+    this.formattedAmountDisplay = num > 0 ? new Intl.NumberFormat('vi-VN').format(num) : '';
+  }
 
   form = this.fb.nonNullable.group({
     fromAccountId: ['', Validators.required],
@@ -418,6 +441,9 @@ export class TransferComponent implements OnInit, OnDestroy {
 
     if (Object.keys(patch).length) {
       this.form.patchValue(patch);
+      if (patch.amount) {
+        this.updateAmountDisplay(patch.amount);
+      }
     }
     this.retryPrefill = isRetry && !!(patch.toAccountNumber || patch.amount);
 
@@ -432,12 +458,14 @@ export class TransferComponent implements OnInit, OnDestroy {
   }
 
   private applyTransferPrefill(t: Transfer): void {
+    const numAmt = Number(t.amount) || 0;
     this.form.patchValue({
       fromAccountId: t.fromAccountId || '',
       toAccountNumber: t.toAccountNumber || '',
-      amount: Number(t.amount) || 0,
+      amount: numAmt,
       description: t.description || this.i18n.instant('CUSTOMER.DEFAULT_DESC'),
     });
+    this.updateAmountDisplay(numAmt);
     this.onToAccountTyped();
     this.refreshQuote();
   }
