@@ -106,6 +106,55 @@
     line-height: 1.45;
   }
 
+  .fee-breakdown {
+    margin-top: 0.75rem;
+    padding-top: 0.65rem;
+    border-top: 1px dashed #c7d7ef;
+  }
+
+  .fee-breakdown-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-text-muted);
+    margin-bottom: 0.4rem;
+  }
+
+  .fee-breakdown-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+
+    li {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+      font-size: 0.82rem;
+      color: var(--color-text-secondary);
+      font-variant-numeric: tabular-nums;
+
+      &.sub {
+        color: var(--color-text-muted);
+      }
+
+      &.bounds {
+        font-size: 0.78rem;
+        color: var(--color-text-muted);
+      }
+    }
+  }
+
+  .fee-cap {
+    margin: 0.45rem 0 0;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #b45309;
+  }
+
   .quote-error {
     margin: 0;
     color: #b45309;

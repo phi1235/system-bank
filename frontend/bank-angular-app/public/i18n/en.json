@@ -290,7 +290,15 @@
     "QUOTE_MAX_TX": "Max per transfer",
     "QUOTE_NOTE": "Spent today {{spent}} / daily limit {{daily}} ({{zone}}).",
     "CONFIRM_TITLE": "Confirm transfer",
-    "TRANSFER_STATUS_REASON": "Transfer {{status}}: {{reason}}"
+    "TRANSFER_STATUS_REASON": "Transfer {{status}}: {{reason}}",
+    "FEE_BREAKDOWN_TITLE": "How fee is calculated",
+    "FEE_FLAT": "Flat fee",
+    "FEE_PERCENT": "Percent ({{percent}}%)",
+    "FEE_RAW": "Subtotal before min/max",
+    "FEE_BOUNDS": "Min – max fee",
+    "FEE_CAPPED_MIN": "Fee raised to the minimum.",
+    "FEE_CAPPED_MAX": "Fee capped at the maximum.",
+    "FEE_DISABLED": "No transfer fee for this product right now."
   },
   "ADMIN": {
     "SHELL_TITLE": "Operations Console",

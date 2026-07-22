@@ -290,7 +290,15 @@
     "QUOTE_MAX_TX": "Tối đa / giao dịch",
     "QUOTE_NOTE": "Đã chi hôm nay {{spent}} / hạn mức ngày {{daily}} ({{zone}}).",
     "CONFIRM_TITLE": "Xác nhận chuyển tiền",
-    "TRANSFER_STATUS_REASON": "Chuyển tiền {{status}}: {{reason}}"
+    "TRANSFER_STATUS_REASON": "Chuyển tiền {{status}}: {{reason}}",
+    "FEE_BREAKDOWN_TITLE": "Cách tính phí",
+    "FEE_FLAT": "Phí cố định",
+    "FEE_PERCENT": "Phần trăm ({{percent}}%)",
+    "FEE_RAW": "Tạm tính trước min/max",
+    "FEE_BOUNDS": "Phí min – max",
+    "FEE_CAPPED_MIN": "Phí đã được nâng lên mức tối thiểu.",
+    "FEE_CAPPED_MAX": "Phí đã bị giới hạn mức tối đa.",
+    "FEE_DISABLED": "Hiện không thu phí chuyển khoản nội bộ."
   },
   "ADMIN": {
     "SHELL_TITLE": "Operations Console",
