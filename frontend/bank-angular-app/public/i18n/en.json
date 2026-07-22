@@ -894,7 +894,14 @@
     "INVALID_USER_ID": "User id must be a valid UUID.",
     "USER_NOT_FOUND": "User was not found.",
     "INVALID_ACCOUNT_TYPE": "Invalid account type.",
-    "ACCOUNT_CLOSED": "Closed account cannot be changed."
+    "ACCOUNT_CLOSED": "Closed account cannot be changed.",
+    "SELF_TOPUP_FORBIDDEN": "Staff cannot credit their own personal account.",
+    "TOPUP_MAX_EXCEEDED": "Top-up amount exceeds maximum allowed limit (50,000,000 VND).",
+    "INVALID_AMOUNT": "Top-up amount is invalid (must be greater than 0).",
+    "ACCOUNT_FROZEN": "Account is inactive (frozen/closed) and cannot receive funds.",
+    "ACCOUNT_NOT_FOUND": "Account not found.",
+    "INTERNAL_ERROR": "Unexpected server error. Please try again later.",
+    "VALIDATION_ERROR": "Invalid request parameters. Please verify input."
   },
   "TRANSFER_DETAIL": {
     "TITLE": "Transfer detail",

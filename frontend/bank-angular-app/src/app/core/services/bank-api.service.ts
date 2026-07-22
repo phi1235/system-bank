@@ -153,13 +153,6 @@ export class BankApiService {
     return this.api.post(`/admin/accounts/${accountId}/top-up`, body);
   }
 
-  customerTopUp(
-    accountId: string,
-    body: { amount: number; description?: string },
-  ): Observable<TopUpResponse> {
-    return this.api.post(`/accounts/${accountId}/top-up`, body);
-  }
-
   /** Staff list/search: q = account number | account UUID | owner user UUID */
   adminListAccounts(
     page = 0,

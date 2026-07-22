@@ -10,6 +10,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { Account, TopUpResponse } from '../../../../core/models/domain.model';
 import { BankApiService } from '../../../../core/services/bank-api.service';
 import { ToastService } from '../../../../core/services/toast.service';
+import { resolveHttpErrorMessage } from '../../../../core/utils/http-error.util';
 import { MoneyVndPipe } from '../../../../shared/pipes/money-vnd.pipe';
 
 export interface AdminTopUpDialogData {
@@ -62,7 +63,7 @@ export class AdminTopUpDialogComponent {
       },
       error: (err) => {
         this.loading = false;
-        this.toast.error(err?.error?.message || this.i18n.instant('ADMIN.TOPUP_FAIL'));
+        this.toast.error(resolveHttpErrorMessage(err, this.i18n));
       },
     });
   }

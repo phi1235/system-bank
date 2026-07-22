@@ -894,7 +894,14 @@
     "INVALID_USER_ID": "Mã user phải là UUID hợp lệ.",
     "USER_NOT_FOUND": "Không tìm thấy user.",
     "INVALID_ACCOUNT_TYPE": "Loại tài khoản không hợp lệ.",
-    "ACCOUNT_CLOSED": "Tài khoản đã đóng, không thể thay đổi."
+    "ACCOUNT_CLOSED": "Tài khoản đã đóng, không thể thay đổi.",
+    "SELF_TOPUP_FORBIDDEN": "Cán bộ không được phép tự nạp tiền vào tài khoản cá nhân của chính mình.",
+    "TOPUP_MAX_EXCEEDED": "Số tiền nạp vượt quá hạn mức tối đa cho phép (50.000.000 VND).",
+    "INVALID_AMOUNT": "Số tiền nạp không hợp lệ (phải lớn hơn 0).",
+    "ACCOUNT_FROZEN": "Tài khoản không ở trạng thái hoạt động (bị khóa/đóng), không thể nạp tiền.",
+    "ACCOUNT_NOT_FOUND": "Không tìm thấy thông tin tài khoản.",
+    "INTERNAL_ERROR": "Hệ thống tạm thời gián đoạn. Vui lòng thử lại sau.",
+    "VALIDATION_ERROR": "Dữ liệu nhập vào không hợp lệ. Vui lòng kiểm tra lại."
   },
   "TRANSFER_DETAIL": {
     "TITLE": "Chi tiết chuyển tiền",

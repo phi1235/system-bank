@@ -154,7 +154,7 @@ public class AdminAccountService {
     }
 
     AccountEntity account = access.require(id);
-    if (actor != null && actor.userId() != null && account.getUserId().equals(actor.userId())) {
+    if (actor != null && actor.userId() != null && account.getUserId() != null && account.getUserId().equals(actor.userId())) {
       throw new BusinessException("SELF_TOPUP_FORBIDDEN", "Staff cannot credit their own account", HttpStatus.FORBIDDEN);
     }
     String referenceId = "ADMIN-TOPUP-" + UUID.randomUUID();

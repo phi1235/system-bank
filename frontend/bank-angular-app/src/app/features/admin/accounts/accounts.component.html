@@ -120,6 +120,17 @@
               <button mat-button type="button" color="primary" (click)="openDetail(row, $event)">
                 {{ 'ADMIN.VIEW' | translate }}
               </button>
+              @if ((canTopUp$ | async) && row.status === 'ACTIVE') {
+                <button
+                  mat-stroked-button
+                  type="button"
+                  color="accent"
+                  (click)="openTopUp(row); $event.stopPropagation()"
+                >
+                  <mat-icon>add_circle_outline</mat-icon>
+                  {{ 'ADMIN.TOPUP_BTN' | translate }}
+                </button>
+              }
             </td>
           </ng-container>
 
