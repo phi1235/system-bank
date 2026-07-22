@@ -6,6 +6,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -26,6 +27,7 @@ import { TransferStatusPipe } from '../../../shared/pipes/transfer-status.pipe';
     FormsModule,
     MatCardModule,
     MatTableModule,
+    MatPaginatorModule,
     MatButtonModule,
     MatFormFieldModule,
     MatSelectModule,
@@ -47,6 +49,9 @@ export class AdminTransfersComponent implements OnInit {
   private readonly i18n = inject(TranslateService);
 
   rows: Transfer[] = [];
+  pageIndex = 0;
+  pageSize = 20;
+  totalElements = 0;
   status = '';
   cols = ['createdAt', 'amount', 'status', 'fromAccountId', 'toAccountNumber', 'transactionId', 'actions'];
   openingId: string | null = null;
@@ -55,9 +60,21 @@ export class AdminTransfersComponent implements OnInit {
     this.load();
   }
 
+  applyFilters(): void {
+    this.pageIndex = 0;
+    this.load();
+  }
+
   load(): void {
-    this.api.adminTransfers(0, 50, this.status || undefined).subscribe({
-      next: (p) => (this.rows = p.items || []),
+    this.api.adminTransfers(this.pageIndex, this.pageSize, this.status || undefined).subscribe({
+      next: (p) => {
+        this.rows = p.items || [];
+        this.totalElements = p.totalElements ?? this.rows.length;
+      },
+      error: () => {
+        this.rows = [];
+        this.totalElements = 0;
+      },
     });
   }
 
@@ -81,4 +98,11 @@ export class AdminTransfersComponent implements OnInit {
       },
     });
   }
+
+  page(e: PageEvent): void {
+    this.pageIndex = e.pageIndex;
+    this.pageSize = e.pageSize;
+    this.load();
+  }
+
 }

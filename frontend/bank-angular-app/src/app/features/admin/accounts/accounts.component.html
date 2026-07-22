@@ -6,7 +6,7 @@
 <div class="layout">
   <div class="main-col">
     <mat-card class="filters-card">
-      <form class="filters" [formGroup]="form" (ngSubmit)="load()">
+      <form class="filters" [formGroup]="form" (ngSubmit)="applyFilters()">
         <mat-form-field appearance="outline" class="grow" subscriptSizing="dynamic">
           <mat-label>{{ 'ADMIN.ACCOUNT_SEARCH' | translate }}</mat-label>
           <input
@@ -96,6 +96,14 @@
           <p>{{ loading ? ('ADMIN.LOADING' | translate) : ('ADMIN.ACCOUNT_LIST_EMPTY' | translate) }}</p>
         </div>
       }
+      <mat-paginator
+        [length]="total"
+        [pageIndex]="pageIndex"
+        [pageSize]="pageSize"
+        [pageSizeOptions]="[10, 20, 50]"
+        (page)="page($event)"
+        [disabled]="loading"
+      />
     </mat-card>
   </div>
 

@@ -5,9 +5,9 @@
   <mat-form-field appearance="outline" class="search" subscriptSizing="dynamic">
     <mat-label>{{ 'COMMON.SEARCH' | translate }}</mat-label>
     <mat-icon matPrefix>search</mat-icon>
-    <input matInput [(ngModel)]="q" (keyup.enter)="load()" />
+    <input matInput [(ngModel)]="q" (keyup.enter)="applyFilters()" />
   </mat-form-field>
-  <button mat-flat-button color="primary" type="button" (click)="load()">{{ 'COMMON.SEARCH' | translate }}</button>
+  <button mat-flat-button color="primary" type="button" (click)="applyFilters()">{{ 'COMMON.SEARCH' | translate }}</button>
 </app-page-header>
 
 <mat-card class="table-card">
@@ -61,4 +61,11 @@
   @if (rows.length === 0) {
     <p class="empty">{{ 'ADMIN.EMPTY_CUSTOMERS' | translate }}</p>
   }
+  <mat-paginator
+    [length]="totalElements"
+    [pageIndex]="pageIndex"
+    [pageSize]="pageSize"
+    [pageSizeOptions]="[10, 20, 50]"
+    (page)="page($event)"
+  />
 </mat-card>

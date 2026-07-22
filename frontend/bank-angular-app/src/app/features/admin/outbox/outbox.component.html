@@ -11,7 +11,7 @@
       <mat-option value="PUBLISHED">{{ 'OUTBOX_STATUS.PUBLISHED' | translate }}</mat-option>
     </mat-select>
   </mat-form-field>
-  <button mat-flat-button color="primary" type="button" (click)="load()" [disabled]="loading">
+  <button mat-flat-button color="primary" type="button" (click)="applyFilters()" [disabled]="loading">
     <mat-icon>refresh</mat-icon>
     {{ 'ADMIN.FILTER' | translate }}
   </button>
@@ -101,4 +101,12 @@
   @if (!loading && rows.length === 0) {
     <p class="empty">{{ 'ADMIN.OUTBOX_EMPTY' | translate }}</p>
   }
+  <mat-paginator
+    [length]="totalElements"
+    [pageIndex]="pageIndex"
+    [pageSize]="pageSize"
+    [pageSizeOptions]="[10, 20, 50]"
+    (page)="page($event)"
+    [disabled]="loading"
+  />
 </mat-card>

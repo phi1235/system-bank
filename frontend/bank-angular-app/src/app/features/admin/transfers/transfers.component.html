@@ -12,7 +12,7 @@
       <mat-option value="COMPENSATED">{{ 'COMPENSATED' | transferStatus }}</mat-option>
     </mat-select>
   </mat-form-field>
-  <button mat-flat-button color="primary" type="button" (click)="load()">{{ 'ADMIN.FILTER' | translate }}</button>
+  <button mat-flat-button color="primary" type="button" (click)="applyFilters()">{{ 'ADMIN.FILTER' | translate }}</button>
 </app-page-header>
 
 <mat-card class="table-card">
@@ -73,4 +73,11 @@
   @if (rows.length === 0) {
     <p class="empty">{{ 'ADMIN.EMPTY_TX' | translate }}</p>
   }
+  <mat-paginator
+    [length]="totalElements"
+    [pageIndex]="pageIndex"
+    [pageSize]="pageSize"
+    [pageSizeOptions]="[10, 20, 50]"
+    (page)="page($event)"
+  />
 </mat-card>
