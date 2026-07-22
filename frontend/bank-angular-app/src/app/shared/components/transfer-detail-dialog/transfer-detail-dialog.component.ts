@@ -6,6 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { TranslateModule } from '@ngx-translate/core';
 import { TransferDetail } from '../../../core/models/domain.model';
 import { FriendlyTransferErrorPipe } from '../../pipes/friendly-transfer-error.pipe';
+import { TransferStatusPipe } from '../../pipes/transfer-status.pipe';
 import { MoneyVndPipe } from '../../pipes/money-vnd.pipe';
 
 export interface TransferDetailDialogData {
@@ -23,6 +24,7 @@ export interface TransferDetailDialogData {
     TranslateModule,
     MoneyVndPipe,
     FriendlyTransferErrorPipe,
+    TransferStatusPipe,
   ],
   templateUrl: './transfer-detail-dialog.component.html',
   styleUrl: './transfer-detail-dialog.component.scss',

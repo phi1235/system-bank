@@ -193,7 +193,7 @@
     "DESCRIPTION": "Nội dung",
     "DEFAULT_DESC": "Chuyen tien",
     "CONFIRM_TRANSFER": "Xác nhận chuyển",
-    "PROCESSING": "Đang xử lý...",
+    "PROCESSING": "Đang xử lý…",
     "RESULT_TITLE": "Kết quả giao dịch",
     "RESULT_ID": "ID",
     "RESULT_STATUS": "Status",
@@ -298,7 +298,22 @@
     "FEE_BOUNDS": "Phí min – max",
     "FEE_CAPPED_MIN": "Phí đã được nâng lên mức tối thiểu.",
     "FEE_CAPPED_MAX": "Phí đã bị giới hạn mức tối đa.",
-    "FEE_DISABLED": "Hiện không thu phí chuyển khoản nội bộ."
+    "FEE_DISABLED": "Hiện không thu phí chuyển khoản nội bộ.",
+    "FIELD_REQUIRED": "Trường này bắt buộc",
+    "AMOUNT_MIN": "Số tiền tối thiểu là 1",
+    "TO_ACCOUNT_PATTERN": "Số tài khoản phải gồm 8–14 chữ số",
+    "FROM_ACCOUNT_EMPTY": "Chưa có tài khoản nguồn ACTIVE",
+    "FROM_ACCOUNT_EMPTY_HINT": "Mở tài khoản PAYMENT trước, rồi quay lại chuyển tiền.",
+    "OPEN_ACCOUNT_CTA": "Mở tài khoản",
+    "NO_TX_HINT": "Các giao dịch hoàn tất sẽ hiển thị tại đây.",
+    "NO_TX_FILTERED": "Không có giao dịch khớp bộ lọc",
+    "NO_TX_FILTERED_HINT": "Thử xóa trạng thái hoặc khoảng ngày.",
+    "START_TRANSFER_CTA": "Chuyển tiền ngay",
+    "BENEFICIARY_NONE_HINT": "Tuỳ chọn — chọn danh bạ đã lưu hoặc nhập số tài khoản.",
+    "RESULT_PENDING_HINT": "Giao dịch đang xử lý. Vui lòng xem lại lịch sử sau giây lát.",
+    "RESULT_FAILED_HINT": "Tiền có thể đã được hoàn. Kiểm tra số dư và lịch sử.",
+    "RESULT_OK_HINT": "Chuyển tiền thành công.",
+    "QUOTE_PLACEHOLDER": "Nhập số tiền để xem phí và hạn mức còn lại trong ngày."
   },
   "ADMIN": {
     "SHELL_TITLE": "Operations Console",
@@ -616,5 +631,14 @@
     "VALIDATION_ERROR": "Yêu cầu chuyển tiền không hợp lệ. Vui lòng kiểm tra form.",
     "INTERNAL_ERROR": "Lỗi hệ thống. Vui lòng thử lại sau.",
     "TRANSFER_FAILED": "Không hoàn tất được giao dịch chuyển tiền."
+  },
+  "TRANSFER_STATUS": {
+    "COMPLETED": "Thành công",
+    "FAILED": "Thất bại",
+    "PENDING": "Đang chờ",
+    "DEBITED": "Đã ghi nợ",
+    "COMPENSATING": "Đang hoàn",
+    "COMPENSATED": "Đã hoàn",
+    "SUCCESS": "Thành công"
   }
 }

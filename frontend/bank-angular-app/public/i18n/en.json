@@ -193,7 +193,7 @@
     "DESCRIPTION": "Description",
     "DEFAULT_DESC": "Transfer",
     "CONFIRM_TRANSFER": "Confirm transfer",
-    "PROCESSING": "Processing...",
+    "PROCESSING": "Processing…",
     "RESULT_TITLE": "Transfer result",
     "RESULT_ID": "ID",
     "RESULT_STATUS": "Status",
@@ -298,7 +298,22 @@
     "FEE_BOUNDS": "Min – max fee",
     "FEE_CAPPED_MIN": "Fee raised to the minimum.",
     "FEE_CAPPED_MAX": "Fee capped at the maximum.",
-    "FEE_DISABLED": "No transfer fee for this product right now."
+    "FEE_DISABLED": "No transfer fee for this product right now.",
+    "FIELD_REQUIRED": "This field is required",
+    "AMOUNT_MIN": "Amount must be at least 1",
+    "TO_ACCOUNT_PATTERN": "Account number must be 8–14 digits",
+    "FROM_ACCOUNT_EMPTY": "No ACTIVE source account available",
+    "FROM_ACCOUNT_EMPTY_HINT": "Open a PAYMENT account first, then come back to transfer.",
+    "OPEN_ACCOUNT_CTA": "Open account",
+    "NO_TX_HINT": "Completed transfers will show up here.",
+    "NO_TX_FILTERED": "No transfers match these filters",
+    "NO_TX_FILTERED_HINT": "Try clearing status or date range.",
+    "START_TRANSFER_CTA": "Make a transfer",
+    "BENEFICIARY_NONE_HINT": "Optional — pick a saved beneficiary or type the account number.",
+    "RESULT_PENDING_HINT": "Transfer is still processing. Refresh history in a moment.",
+    "RESULT_FAILED_HINT": "Money may have been reversed. Check account balance and history.",
+    "RESULT_OK_HINT": "Transfer completed successfully.",
+    "QUOTE_PLACEHOLDER": "Enter an amount to preview fee and remaining daily limit."
   },
   "ADMIN": {
     "SHELL_TITLE": "Operations Console",
@@ -616,5 +631,14 @@
     "VALIDATION_ERROR": "Invalid transfer request. Please check the form.",
     "INTERNAL_ERROR": "Unexpected server error. Please try again later.",
     "TRANSFER_FAILED": "Transfer could not be completed."
+  },
+  "TRANSFER_STATUS": {
+    "COMPLETED": "Completed",
+    "FAILED": "Failed",
+    "PENDING": "Pending",
+    "DEBITED": "Debited",
+    "COMPENSATING": "Reversing",
+    "COMPENSATED": "Reversed",
+    "SUCCESS": "Success"
   }
 }

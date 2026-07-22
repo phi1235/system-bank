@@ -21,6 +21,7 @@ import { LoadingComponent } from '../../../shared/components/loading/loading.com
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { TransferDetailDialogComponent } from '../../../shared/components/transfer-detail-dialog/transfer-detail-dialog.component';
 import { FriendlyTransferErrorPipe } from '../../../shared/pipes/friendly-transfer-error.pipe';
+import { TransferStatusPipe } from '../../../shared/pipes/transfer-status.pipe';
 import { MoneyVndPipe } from '../../../shared/pipes/money-vnd.pipe';
 import { TransfersActions } from '../../../store/transfers/transfers.actions';
 import {
@@ -50,6 +51,7 @@ import {
     LoadingComponent,
     MoneyVndPipe,
     FriendlyTransferErrorPipe,
+    TransferStatusPipe,
     TranslateModule,
   ],
   templateUrl: './history.component.html',
@@ -86,6 +88,11 @@ export class HistoryComponent implements OnInit {
     from: [''],
     to: [''],
   });
+
+  get hasActiveFilters(): boolean {
+    const f = this.filter.getRawValue();
+    return Boolean(f.status || f.from || f.to);
+  }
 
   ngOnInit(): void {
     this.reload();
