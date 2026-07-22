@@ -13,6 +13,8 @@ import { ToastService } from '../../../../core/services/toast.service';
 import { resolveHttpErrorMessage } from '../../../../core/utils/http-error.util';
 import { MoneyVndPipe } from '../../../../shared/pipes/money-vnd.pipe';
 
+import { formatVndAmountWithWords } from '../../../../core/utils/vietnamese-number.util';
+
 export interface AdminTopUpDialogData {
   account: Account;
 }
@@ -48,6 +50,10 @@ export class AdminTopUpDialogComponent {
     amount: [10000000, [Validators.required, Validators.min(0.01), Validators.max(50000000)]],
     description: ['', [Validators.maxLength(200)]],
   });
+
+  get amountFormattedHint(): string {
+    return formatVndAmountWithWords(this.form.controls.amount.value);
+  }
 
   submit(): void {
     if (this.form.invalid) {

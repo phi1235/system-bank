@@ -8,7 +8,7 @@ html {
         primary: mat.$azure-palette,
         tertiary: mat.$cyan-palette,
       ),
-      typography: Roboto,
+      typography: 'Plus Jakarta Sans',
       density: 0,
     )
   );
@@ -16,7 +16,7 @@ html {
 
 /* Design tokens — aligned with ui-mockups */
 :root {
-  --font-sans: 'DM Sans', 'Segoe UI', Roboto, system-ui, sans-serif;
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
   --color-success: #0d9f6e;
   --color-danger: #dc2626;
@@ -406,17 +406,39 @@ html {
   }
 }
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
+html,
+body,
+h1, h2, h3, h4, h5, h6,
+p, span, div, a,
+button, input, select, textarea,
+.mat-mdc-button-base,
+.mat-mdc-card,
+.mat-mdc-form-field,
+.mat-mdc-select,
+.mat-mdc-select-panel,
+.mat-mdc-menu-panel,
+.mat-mdc-dialog-container,
+.mat-mdc-snack-bar-container,
+.mat-mdc-table,
+.mat-mdc-header-cell,
+.mat-mdc-cell,
+.mat-mdc-tab,
+.mat-mdc-tooltip {
+  font-family: var(--font-sans);
+}
+
+/* Material Icons MUST retain Material Icons font family */
+mat-icon,
+.material-icons,
+.material-icons-outlined,
+.mat-icon {
+  font-family: 'Material Icons' !important;
 }
 
 html,
 body {
   height: 100%;
   margin: 0;
-  font-family: var(--font-sans);
   background: #f0f5fa;
   color: #0f172a;
 }
@@ -559,4 +581,90 @@ code {
   width: 100%;
   max-height: min(36rem, 78vh);
 }
+
+/* ==========================================================================
+   Global Angular Material Dropdown, Select Panel & Menu Overlay Styling
+   ========================================================================== */
+.mat-mdc-select {
+  font-weight: 600 !important;
+  font-size: 0.95rem !important;
+
+  .mat-mdc-select-value {
+    color: #0f172a !important;
+  }
+
+  .mat-mdc-select-arrow {
+    color: #10b981 !important;
+  }
+}
+
+.cdk-overlay-container {
+  .mat-mdc-select-panel {
+    background: #ffffff !important;
+    border-radius: 14px !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 12px 32px -4px rgba(15, 23, 42, 0.18), 0 4px 12px rgba(15, 23, 42, 0.08) !important;
+    padding: 6px !important;
+    max-height: 340px !important;
+
+    .mat-mdc-option {
+      border-radius: 8px !important;
+      margin-bottom: 3px !important;
+      font-weight: 500 !important;
+      font-size: 0.9rem !important;
+      color: #0f172a !important;
+      min-height: 44px !important;
+      padding: 0 12px !important;
+      transition: background-color 0.15s ease, color 0.15s ease !important;
+
+      &:hover:not(.mdc-list-item--disabled) {
+        background-color: #ecfdf5 !important;
+        color: #059669 !important;
+      }
+
+      &.mdc-list-item--selected:not(.mdc-list-item--disabled) {
+        background-color: #10b981 !important;
+        color: #ffffff !important;
+        font-weight: 700 !important;
+
+        .mdc-list-item__primary-text {
+          color: #ffffff !important;
+        }
+      }
+
+      &.mdc-list-item--disabled {
+        opacity: 0.45 !important;
+        background-color: #f8fafc !important;
+      }
+    }
+  }
+
+  .mat-mdc-menu-panel {
+    background: #ffffff !important;
+    border-radius: 14px !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 12px 32px -4px rgba(15, 23, 42, 0.18), 0 4px 12px rgba(15, 23, 42, 0.08) !important;
+    padding: 6px !important;
+
+    .mat-mdc-menu-item {
+      border-radius: 8px !important;
+      margin-bottom: 2px !important;
+      font-weight: 600 !important;
+      font-size: 0.9rem !important;
+      color: #0f172a !important;
+      min-height: 42px !important;
+      transition: background-color 0.15s ease, color 0.15s ease !important;
+
+      &:hover:not([disabled]) {
+        background-color: #ecfdf5 !important;
+        color: #059669 !important;
+      }
+
+      mat-icon {
+        color: #10b981 !important;
+      }
+    }
+  }
+}
+
 

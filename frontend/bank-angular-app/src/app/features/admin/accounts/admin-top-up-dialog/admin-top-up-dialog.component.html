@@ -26,6 +26,9 @@
         step="1000000"
       />
       <span matSuffix>VND</span>
+      @if (amountFormattedHint) {
+        <mat-hint style="font-weight: 700; color: #059669;">{{ amountFormattedHint }}</mat-hint>
+      }
       @if (form.controls.amount.touched && form.controls.amount.invalid) {
         <mat-error>
           @if (form.controls.amount.hasError('required')) {
