@@ -15,7 +15,7 @@
     color="primary"
     type="button"
     (click)="exportCsv()"
-    [disabled]="!accountId || exporting || loading"
+    [disabled]="!accountId || exporting || loading || missingAccount"
   >
     <mat-icon>download</mat-icon>
     {{ 'CUSTOMER.STATEMENT_EXPORT_CSV' | translate }}
@@ -23,165 +23,295 @@
   <a mat-button routerLink="/customer/history">{{ 'NAV.HISTORY' | translate }}</a>
 </app-page-header>
 
-@if (account) {
-  <mat-card class="summary-card">
-    <div class="summary-grid">
-      <div>
-        <div class="label">{{ 'CUSTOMER.ACCOUNT_NUMBER' | translate }}</div>
-        <div class="value mono">{{ account.accountNumber }}</div>
-      </div>
-      <div>
-        <div class="label">{{ 'CUSTOMER.BALANCE' | translate }}</div>
-        <div class="value money">{{ account.balance | moneyVnd: account.currency }}</div>
-      </div>
-      <div>
-        <div class="label">{{ 'COMMON.STATUS' | translate }}</div>
-        <div class="value">
-          <span
-            class="chip"
-            [class.ok]="account.status === 'ACTIVE'"
-            [class.bad]="account.status === 'FROZEN'"
-          >
-            {{ account.status | enumLabel:'ACCOUNT_STATUS' }}
-          </span>
+@if (missingAccount) {
+  <mat-card class="empty-card" role="status">
+    <mat-icon>account_balance</mat-icon>
+    <p class="empty-title">{{ 'CUSTOMER.STATEMENT_NO_ACCOUNT_CTA' | translate }}</p>
+    <p class="empty-body">{{ 'CUSTOMER.STATEMENT_NO_ACCOUNT_HINT' | translate }}</p>
+    @if (accounts.length) {
+      <mat-form-field appearance="outline" class="account-pick">
+        <mat-label>{{ 'CUSTOMER.STATEMENT_SWITCH_ACCOUNT' | translate }}</mat-label>
+        <mat-select (selectionChange)="switchAccount($event.value)">
+          @for (a of accounts; track a.id) {
+            <mat-option [value]="a.id">
+              {{ a.accountNumber }} · {{ a.balance | moneyVnd: a.currency }}
+            </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    } @else {
+      <a mat-flat-button color="primary" routerLink="/customer/accounts">
+        {{ 'CUSTOMER.STATEMENT_OPEN_ACCOUNTS' | translate }}
+      </a>
+    }
+  </mat-card>
+} @else {
+  @if (account || accounts.length > 1) {
+    <mat-card class="summary-card">
+      <div class="summary-grid">
+        <div>
+          <div class="label">{{ 'CUSTOMER.STATEMENT_SWITCH_ACCOUNT' | translate }}</div>
+          @if (accounts.length > 1) {
+            <mat-form-field appearance="outline" class="account-select">
+              <mat-select [value]="accountId" (selectionChange)="switchAccount($event.value)">
+                @for (a of accounts; track a.id) {
+                  <mat-option [value]="a.id">
+                    {{ a.accountNumber }}
+                    @if (a.status !== 'ACTIVE') {
+                      · {{ a.status | enumLabel: 'ACCOUNT_STATUS' }}
+                    }
+                  </mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          } @else if (account) {
+            <div class="value mono">{{ account.accountNumber }}</div>
+          }
+        </div>
+        <div>
+          <div class="label">{{ 'CUSTOMER.BALANCE' | translate }}</div>
+          <div class="value money">
+            {{ (account?.balance ?? 0) | moneyVnd: (account?.currency || 'VND') }}
+          </div>
+        </div>
+        <div>
+          <div class="label">{{ 'COMMON.STATUS' | translate }}</div>
+          <div class="value">
+            @if (account) {
+              <span
+                class="chip"
+                [class.ok]="account.status === 'ACTIVE'"
+                [class.bad]="account.status === 'FROZEN'"
+              >
+                {{ account.status | enumLabel: 'ACCOUNT_STATUS' }}
+              </span>
+            } @else {
+              —
+            }
+          </div>
         </div>
       </div>
-    </div>
-  </mat-card>
-}
+    </mat-card>
+  }
 
-<mat-card class="filter-card">
-  <form class="filters" [formGroup]="filter" (ngSubmit)="applyFilters()">
-    <mat-form-field appearance="outline">
-      <mat-label>{{ 'CUSTOMER.STATEMENT_TYPE' | translate }}</mat-label>
-      <mat-select formControlName="entryType">
-        <mat-option value="">{{ 'CUSTOMER.STATEMENT_TYPE_ALL' | translate }}</mat-option>
-        <mat-option value="CREDIT">{{ 'LEDGER_ENTRY.CREDIT' | translate }}</mat-option>
-        <mat-option value="DEBIT">{{ 'LEDGER_ENTRY.DEBIT' | translate }}</mat-option>
-      </mat-select>
-    </mat-form-field>
-    <mat-form-field appearance="outline">
-      <mat-label>{{ 'CUSTOMER.STATEMENT_FROM' | translate }}</mat-label>
-      <input matInput type="date" formControlName="from" />
-    </mat-form-field>
-    <mat-form-field appearance="outline">
-      <mat-label>{{ 'CUSTOMER.STATEMENT_TO' | translate }}</mat-label>
-      <input matInput type="date" formControlName="to" />
-    </mat-form-field>
-    <div class="filter-actions">
-      <button mat-flat-button color="primary" type="submit" [disabled]="loading">
-        <mat-icon>filter_list</mat-icon>
-        {{ 'COMMON.SEARCH' | translate }}
-      </button>
-      <button
-        mat-button
-        type="button"
-        (click)="resetFilters()"
-        [disabled]="loading || !hasActiveFilters"
-      >
-        {{ 'CUSTOMER.STATEMENT_RESET' | translate }}
-      </button>
-    </div>
-  </form>
-  <p class="hint">{{ 'CUSTOMER.STATEMENT_HINT' | translate }}</p>
-</mat-card>
-
-@if (loading && !rows.length) {
-  <app-loading />
-}
-
-<mat-card class="table-card">
-  <div class="table-meta">
-    <span class="meta-label">{{ 'CUSTOMER.STATEMENT_RESULT' | translate }}</span>
-    <span class="meta-count" aria-live="polite">
-      {{ 'CUSTOMER.STATEMENT_COUNT' | translate: { count: totalElements } }}
-    </span>
-  </div>
-
-  @if (rows.length) {
-    <div class="table-wrap">
-      <table mat-table [dataSource]="rows" class="full">
-        <ng-container matColumnDef="createdAt">
-          <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.TIME' | translate }}</th>
-          <td mat-cell *matCellDef="let r" class="time">{{ r.createdAt | date: 'short' }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="entryType">
-          <th mat-header-cell *matHeaderCellDef>{{ 'CUSTOMER.STATEMENT_TYPE' | translate }}</th>
-          <td mat-cell *matCellDef="let r">
-            <span
-              class="chip"
-              [class.ok]="r.entryType === 'CREDIT'"
-              [class.bad]="r.entryType === 'DEBIT'"
+  <div class="statement-layout">
+    <div class="main-col">
+      <mat-card class="filter-card">
+        <form class="filters" [formGroup]="filter" (ngSubmit)="applyFilters()">
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'CUSTOMER.STATEMENT_TYPE' | translate }}</mat-label>
+            <mat-select formControlName="entryType">
+              <mat-option value="">{{ 'CUSTOMER.STATEMENT_TYPE_ALL' | translate }}</mat-option>
+              <mat-option value="CREDIT">{{ 'LEDGER_ENTRY.CREDIT' | translate }}</mat-option>
+              <mat-option value="DEBIT">{{ 'LEDGER_ENTRY.DEBIT' | translate }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'CUSTOMER.STATEMENT_FROM' | translate }}</mat-label>
+            <input matInput type="date" formControlName="from" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'CUSTOMER.STATEMENT_TO' | translate }}</mat-label>
+            <input matInput type="date" formControlName="to" />
+          </mat-form-field>
+          <div class="filter-actions">
+            <button mat-flat-button color="primary" type="submit" [disabled]="loading">
+              <mat-icon>filter_list</mat-icon>
+              {{ 'COMMON.SEARCH' | translate }}
+            </button>
+            <button
+              mat-button
+              type="button"
+              (click)="resetFilters()"
+              [disabled]="loading || !hasActiveFilters"
             >
-              {{ r.entryType | enumLabel:'LEDGER_ENTRY' }}
-            </span>
-          </td>
-        </ng-container>
+              {{ 'CUSTOMER.STATEMENT_RESET' | translate }}
+            </button>
+          </div>
+        </form>
 
-        <ng-container matColumnDef="description">
-          <th mat-header-cell *matHeaderCellDef>{{ 'CUSTOMER.HISTORY_DESC' | translate }}</th>
-          <td mat-cell *matCellDef="let r">
-            <div
-              class="desc"
-              [matTooltip]="r.description || ''"
-              [matTooltipDisabled]="!r.description"
-            >
-              {{ r.description || '—' }}
-            </div>
-          </td>
-        </ng-container>
-
-        <ng-container matColumnDef="amount">
-          <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.AMOUNT' | translate }}</th>
-          <td
-            mat-cell
-            *matCellDef="let r"
-            class="money"
-            [class.credit]="r.entryType === 'CREDIT'"
-            [class.debit]="r.entryType === 'DEBIT'"
+        <div class="quick-ranges" role="group" [attr.aria-label]="'CUSTOMER.STATEMENT_QUICK_RANGE' | translate">
+          <span class="quick-label">{{ 'CUSTOMER.STATEMENT_QUICK_RANGE' | translate }}</span>
+          <button
+            mat-stroked-button
+            type="button"
+            [class.active]="activeQuick === '7d'"
+            (click)="applyQuickRange('7d')"
+            [disabled]="loading"
           >
-            {{ r.signedAmount | moneyVnd: (account?.currency || 'VND') }}
-          </td>
-        </ng-container>
-
-        <ng-container matColumnDef="referenceId">
-          <th mat-header-cell *matHeaderCellDef>{{ 'CUSTOMER.STATEMENT_REF' | translate }}</th>
-          <td mat-cell *matCellDef="let r">
-            <code class="ref">{{ r.referenceId || '—' }}</code>
-          </td>
-        </ng-container>
-
-        <tr mat-header-row *matHeaderRowDef="cols"></tr>
-        <tr mat-row *matRowDef="let row; columns: cols"></tr>
-      </table>
-    </div>
-  } @else if (!loading) {
-    <div class="empty" role="status">
-      <mat-icon>receipt_long</mat-icon>
-      <p class="empty-title">{{ 'CUSTOMER.STATEMENT_EMPTY' | translate }}</p>
-      <p class="empty-body">{{ 'CUSTOMER.STATEMENT_EMPTY_HINT' | translate }}</p>
-      <div class="empty-actions">
-        @if (hasActiveFilters) {
-          <button mat-flat-button color="primary" type="button" (click)="resetFilters()">
-            {{ 'CUSTOMER.STATEMENT_RESET' | translate }}
+            {{ 'CUSTOMER.STATEMENT_RANGE_7D' | translate }}
           </button>
-        }
-        <a mat-stroked-button routerLink="/customer/payments/transfer">
-          <mat-icon>swap_horiz</mat-icon>
-          {{ 'NAV.TRANSFER' | translate }}
-        </a>
-      </div>
-    </div>
-  }
+          <button
+            mat-stroked-button
+            type="button"
+            [class.active]="activeQuick === '30d'"
+            (click)="applyQuickRange('30d')"
+            [disabled]="loading"
+          >
+            {{ 'CUSTOMER.STATEMENT_RANGE_30D' | translate }}
+          </button>
+          <button
+            mat-stroked-button
+            type="button"
+            [class.active]="activeQuick === '90d'"
+            (click)="applyQuickRange('90d')"
+            [disabled]="loading"
+          >
+            {{ 'CUSTOMER.STATEMENT_RANGE_90D' | translate }}
+          </button>
+          <button
+            mat-stroked-button
+            type="button"
+            [class.active]="activeQuick === 'month'"
+            (click)="applyQuickRange('month')"
+            [disabled]="loading"
+          >
+            {{ 'CUSTOMER.STATEMENT_RANGE_THIS_MONTH' | translate }}
+          </button>
+        </div>
 
-  @if (rows.length || totalElements > 0) {
-    <mat-paginator
-      [length]="totalElements"
-      [pageIndex]="pageIndex"
-      [pageSize]="pageSize"
-      [pageSizeOptions]="[10, 20, 50, 100]"
-      (page)="page($event)"
-    />
-  }
-</mat-card>
+        <p class="hint">{{ 'CUSTOMER.STATEMENT_HINT' | translate }}</p>
+      </mat-card>
+
+      @if (loading && !rows.length) {
+        <app-loading />
+      }
+
+      <mat-card class="table-card">
+        <div class="table-meta">
+          <span class="meta-label">{{ 'CUSTOMER.STATEMENT_RESULT' | translate }}</span>
+          <span class="meta-count" aria-live="polite">
+            {{ 'CUSTOMER.STATEMENT_COUNT' | translate: { count: totalElements } }}
+          </span>
+        </div>
+
+        @if (rows.length) {
+          <div class="table-wrap">
+            <table mat-table [dataSource]="rows" class="full">
+              <ng-container matColumnDef="createdAt">
+                <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.TIME' | translate }}</th>
+                <td mat-cell *matCellDef="let r" class="time">{{ r.createdAt | date: 'short' }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="entryType">
+                <th mat-header-cell *matHeaderCellDef>{{ 'CUSTOMER.STATEMENT_TYPE' | translate }}</th>
+                <td mat-cell *matCellDef="let r">
+                  <span
+                    class="chip"
+                    [class.ok]="r.entryType === 'CREDIT'"
+                    [class.bad]="r.entryType === 'DEBIT'"
+                  >
+                    {{ r.entryType | enumLabel: 'LEDGER_ENTRY' }}
+                  </span>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="description">
+                <th mat-header-cell *matHeaderCellDef>{{ 'CUSTOMER.HISTORY_DESC' | translate }}</th>
+                <td mat-cell *matCellDef="let r">
+                  <div
+                    class="desc"
+                    [matTooltip]="r.description || ''"
+                    [matTooltipDisabled]="!r.description"
+                  >
+                    {{ r.description || '—' }}
+                  </div>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="amount">
+                <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.AMOUNT' | translate }}</th>
+                <td
+                  mat-cell
+                  *matCellDef="let r"
+                  class="money"
+                  [class.credit]="r.entryType === 'CREDIT'"
+                  [class.debit]="r.entryType === 'DEBIT'"
+                >
+                  {{ r.signedAmount | moneyVnd: (account?.currency || 'VND') }}
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="referenceId">
+                <th mat-header-cell *matHeaderCellDef>{{ 'CUSTOMER.STATEMENT_REF' | translate }}</th>
+                <td mat-cell *matCellDef="let r">
+                  @if (r.referenceId) {
+                    <div class="ref-cell">
+                      <code class="ref" [matTooltip]="r.referenceId">{{ r.referenceId | slice: 0:8 }}…</code>
+                      <button
+                        mat-icon-button
+                        type="button"
+                        class="copy-btn"
+                        (click)="copyRef(r.referenceId)"
+                        [matTooltip]="'CUSTOMER.STATEMENT_COPY_REF' | translate"
+                        [attr.aria-label]="'CUSTOMER.STATEMENT_COPY_REF' | translate"
+                      >
+                        <mat-icon>content_copy</mat-icon>
+                      </button>
+                    </div>
+                  } @else {
+                    <span class="muted">—</span>
+                  }
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="cols"></tr>
+              <tr mat-row *matRowDef="let row; columns: cols"></tr>
+            </table>
+          </div>
+        } @else if (!loading) {
+          <div class="empty" role="status">
+            <mat-icon>receipt_long</mat-icon>
+            @if (hasActiveFilters) {
+              <p class="empty-title">{{ 'CUSTOMER.STATEMENT_EMPTY_FILTERED' | translate }}</p>
+              <p class="empty-body">{{ 'CUSTOMER.STATEMENT_EMPTY_FILTERED_HINT' | translate }}</p>
+              <div class="empty-actions">
+                <button mat-flat-button color="primary" type="button" (click)="resetFilters()">
+                  {{ 'CUSTOMER.STATEMENT_RESET' | translate }}
+                </button>
+                <a mat-stroked-button routerLink="/customer/history">
+                  {{ 'NAV.HISTORY' | translate }}
+                </a>
+              </div>
+            } @else {
+              <p class="empty-title">{{ 'CUSTOMER.STATEMENT_EMPTY_NONE' | translate }}</p>
+              <p class="empty-body">{{ 'CUSTOMER.STATEMENT_EMPTY_NONE_HINT' | translate }}</p>
+              <div class="empty-actions">
+                <a mat-flat-button color="primary" routerLink="/customer/payments/transfer">
+                  <mat-icon>swap_horiz</mat-icon>
+                  {{ 'NAV.TRANSFER' | translate }}
+                </a>
+                <a mat-stroked-button routerLink="/customer/history">
+                  {{ 'NAV.HISTORY' | translate }}
+                </a>
+              </div>
+            }
+          </div>
+        }
+
+        @if (rows.length || totalElements > 0) {
+          <mat-paginator
+            [length]="totalElements"
+            [pageIndex]="pageIndex"
+            [pageSize]="pageSize"
+            [pageSizeOptions]="[10, 20, 50, 100]"
+            (page)="page($event)"
+          />
+        }
+      </mat-card>
+    </div>
+
+    <mat-card class="side-card">
+      <h3>{{ 'CUSTOMER.STATEMENT_HELP_TITLE' | translate }}</h3>
+      <p>{{ 'CUSTOMER.STATEMENT_HELP_BODY' | translate }}</p>
+      <ul>
+        <li>{{ 'CUSTOMER.STATEMENT_HELP_1' | translate }}</li>
+        <li>{{ 'CUSTOMER.STATEMENT_HELP_2' | translate }}</li>
+        <li>{{ 'CUSTOMER.STATEMENT_HELP_3' | translate }}</li>
+      </ul>
+      <p class="side-link">
+        <a routerLink="/customer/history">{{ 'CUSTOMER.STATEMENT_VS_HISTORY' | translate }}</a>
+      </p>
+    </mat-card>
+  </div>
+}
