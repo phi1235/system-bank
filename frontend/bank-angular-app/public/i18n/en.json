@@ -610,7 +610,7 @@
     "UNFREEZE_FAIL": "Unfreeze failed"
   },
   "ERRORS": {
-    "GENERIC": "System error",
+    "GENERIC": "Something went wrong. Please try again.",
     "WITH_REF": "{{message}} (ref: {{ref}})",
     "BENEFICIARY_EXISTS": "This account is already in your beneficiary list",
     "BENEFICIARY_NOT_FOUND": "Beneficiary not found",
@@ -618,7 +618,16 @@
     "ACCOUNT_FROZEN": "Destination account is not active",
     "ACCOUNT_SERVICE_ERROR": "Account service is temporarily unavailable",
     "INVALID_NICKNAME": "Invalid nickname",
-    "INVALID_ACCOUNT": "Invalid account number"
+    "INVALID_ACCOUNT": "Invalid account number",
+    "SERVER": "System is temporarily unavailable. Please try again later.",
+    "NETWORK": "Cannot connect to the server. Check your network connection.",
+    "BAD_REQUEST": "Invalid request. Please check your input and try again.",
+    "UNAUTHORIZED": "Your session has expired. Please sign in again.",
+    "FORBIDDEN": "You do not have permission for this action.",
+    "NOT_FOUND": "The requested information was not found.",
+    "TIMEOUT": "The request timed out. Please try again.",
+    "CONFLICT": "This action conflicts with the current data. Please refresh and try again.",
+    "TOO_MANY_REQUESTS": "Too many requests. Please wait a moment and try again."
   },
   "TRANSFER_DETAIL": {
     "TITLE": "Transfer detail",

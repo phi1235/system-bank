@@ -7,6 +7,8 @@ import { catchError, exhaustMap, map, tap } from 'rxjs/operators';
 import { AuthApiService } from '../../core/services/auth-api.service';
 import { isStaffUser } from '../../core/services/rbac.util';
 import { ToastService } from '../../core/services/toast.service';
+import { resolveHttpErrorMessage } from '../../core/utils/http-error.util';
+import { HttpErrorResponse } from '@angular/common/http';
 import { TokenService } from '../../core/services/token.service';
 import { AuthActions } from './auth.actions';
 
@@ -53,9 +55,9 @@ export class AuthEffects {
             of(
               AuthActions.loginFailure({
                 error:
-                  err?.error?.error?.message ||
-                  err?.message ||
-                  this.i18n.instant('AUTH.LOGIN_FAILED'),
+                  err instanceof HttpErrorResponse
+                    ? resolveHttpErrorMessage(err, this.i18n)
+                    : this.i18n.instant('AUTH.LOGIN_FAILED'),
               }),
             ),
           ),

@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -9,6 +10,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { resolveHttpErrorMessage } from '../../../core/utils/http-error.util';
 import { AuthApiService } from '../../../core/services/auth-api.service';
 import { LangSwitcherComponent } from '../../../shared/components/lang-switcher/lang-switcher.component';
 
@@ -68,9 +70,9 @@ export class ForgotPasswordComponent {
         error: (err) => {
           this.loading = false;
           this.error =
-            err?.error?.error?.message ||
-            err?.message ||
-            this.i18n.instant('AUTH.FORGOT_FAIL');
+            err instanceof HttpErrorResponse
+              ? resolveHttpErrorMessage(err, this.i18n)
+              : this.i18n.instant('AUTH.FORGOT_FAIL');
         },
       });
   }

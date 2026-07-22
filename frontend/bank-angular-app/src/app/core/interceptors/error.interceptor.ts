@@ -3,6 +3,7 @@ import { inject, Injector } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, throwError } from 'rxjs';
 import { ToastService } from '../services/toast.service';
+import { resolveHttpErrorMessage } from '../utils/http-error.util';
 import { CORRELATION_HEADER } from './correlation.interceptor';
 
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
@@ -22,26 +23,7 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
       const i18n = injector.get(TranslateService);
 
       const body = err.error;
-      let msg = i18n.instant('ERRORS.GENERIC');
-      const code = body?.error?.code as string | undefined;
-      if (code) {
-        const key = `ERRORS.${code}`;
-        const localized = i18n.instant(key);
-        if (localized && localized !== key) {
-          msg = localized;
-        } else if (body?.error?.message) {
-          msg = body.error.message;
-        }
-      } else if (body?.error?.message) {
-        msg = body.error.message;
-        if (body.error.details?.length) {
-          msg += ': ' + body.error.details.join(', ');
-        }
-      } else if (body?.message) {
-        msg = body.message;
-      } else if (err.message) {
-        msg = err.status ? `${err.status}: ${err.statusText || err.message}` : err.message;
-      }
+      let msg = resolveHttpErrorMessage(err, i18n);
 
       const correlationId =
         body?.meta?.correlationId ||

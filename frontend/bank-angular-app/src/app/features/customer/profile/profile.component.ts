@@ -18,6 +18,8 @@ import {
 import { AuthApiService } from '../../../core/services/auth-api.service';
 import { BankApiService } from '../../../core/services/bank-api.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { resolveHttpErrorMessage } from '../../../core/utils/http-error.util';
+import { HttpErrorResponse } from '@angular/common/http';
 import { selectHasPermission, selectUser } from '../../../store/auth/auth.selectors';
 import { AuthActions } from '../../../store/auth/auth.actions';
 import { CustomerProfile } from '../../../core/models/domain.model';
@@ -203,9 +205,9 @@ export class ProfileComponent implements OnInit {
         error: (err) => {
           this.changingPassword = false;
           this.toast.error(
-            err?.error?.error?.message ||
-              err?.message ||
-              this.i18n.instant('CUSTOMER.CHANGE_PWD_FAIL'),
+            err instanceof HttpErrorResponse
+              ? resolveHttpErrorMessage(err, this.i18n)
+              : this.i18n.instant('CUSTOMER.CHANGE_PWD_FAIL'),
           );
         },
       });

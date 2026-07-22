@@ -610,7 +610,7 @@
     "UNFREEZE_FAIL": "Mở đóng băng thất bại"
   },
   "ERRORS": {
-    "GENERIC": "Lỗi hệ thống",
+    "GENERIC": "Đã xảy ra lỗi. Vui lòng thử lại.",
     "WITH_REF": "{{message}} (mã: {{ref}})",
     "BENEFICIARY_EXISTS": "Số tài khoản này đã có trong danh bạ",
     "BENEFICIARY_NOT_FOUND": "Không tìm thấy người thụ hưởng",
@@ -618,7 +618,16 @@
     "ACCOUNT_FROZEN": "Tài khoản đích không ở trạng thái hoạt động",
     "ACCOUNT_SERVICE_ERROR": "Dịch vụ tài khoản tạm thời không khả dụng",
     "INVALID_NICKNAME": "Biệt danh không hợp lệ",
-    "INVALID_ACCOUNT": "Số tài khoản không hợp lệ"
+    "INVALID_ACCOUNT": "Số tài khoản không hợp lệ",
+    "SERVER": "Hệ thống tạm thời gián đoạn. Vui lòng thử lại sau.",
+    "NETWORK": "Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại.",
+    "BAD_REQUEST": "Yêu cầu không hợp lệ. Vui lòng kiểm tra thông tin và thử lại.",
+    "UNAUTHORIZED": "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
+    "FORBIDDEN": "Bạn không có quyền thực hiện thao tác này.",
+    "NOT_FOUND": "Không tìm thấy thông tin yêu cầu.",
+    "TIMEOUT": "Yêu cầu hết thời gian chờ. Vui lòng thử lại.",
+    "CONFLICT": "Thao tác xung đột với dữ liệu hiện tại. Vui lòng tải lại và thử lại.",
+    "TOO_MANY_REQUESTS": "Quá nhiều yêu cầu. Vui lòng chờ một lát rồi thử lại."
   },
   "TRANSFER_DETAIL": {
     "TITLE": "Chi tiết chuyển tiền",

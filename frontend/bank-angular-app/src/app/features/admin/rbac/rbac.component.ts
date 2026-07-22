@@ -20,8 +20,10 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { Store } from '@ngrx/store';
+import { HttpErrorResponse } from '@angular/common/http';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { BankApiService, RbacRole, RbacStaffUser } from '../../../core/services/bank-api.service';
+import { resolveHttpErrorMessage } from '../../../core/utils/http-error.util';
 import {
   RBAC_ACTION_COLUMNS,
   RBAC_SCREENS,
@@ -172,13 +174,19 @@ export class AdminRbacComponent implements OnInit {
     });
   }
 
-  private rbacErrorMessage(err: unknown): string {
-    const e = err as { status?: number; message?: string; error?: { error?: { message?: string; code?: string } } };
-    const apiMsg = e?.error?.error?.message || e?.message;
-    if (e?.status === 403 || apiMsg?.includes('FORBIDDEN') || apiMsg?.includes('Missing permission')) {
+  private rbacErrorMessage(err: unknown, fallbackKey = 'ADMIN.RBAC_LOAD_FAIL'): string {
+    const e = err as HttpErrorResponse;
+    if (
+      e?.status === 403 ||
+      e?.error?.error?.code === 'FORBIDDEN' ||
+      String(e?.error?.error?.message || '').includes('Missing permission')
+    ) {
       return this.i18n.instant('ADMIN.RBAC_NEED_RELOGIN');
     }
-    return apiMsg || this.i18n.instant('ADMIN.RBAC_LOAD_FAIL');
+    if (e instanceof HttpErrorResponse) {
+      return resolveHttpErrorMessage(e, this.i18n);
+    }
+    return this.i18n.instant(fallbackKey);
   }
 
   onPage(e: PageEvent): void {
@@ -250,7 +258,7 @@ export class AdminRbacComponent implements OnInit {
       },
       error: (err) => {
         this.savingUser = false;
-        this.toast.error(err?.message || this.i18n.instant('ADMIN.RBAC_ASSIGN_FAIL'));
+        this.toast.error(this.rbacErrorMessage(err, 'ADMIN.RBAC_ASSIGN_FAIL'));
       },
     });
   }
@@ -379,7 +387,7 @@ export class AdminRbacComponent implements OnInit {
           },
           error: (err) => {
             this.savingRole = false;
-            this.toast.error(err?.message || this.i18n.instant('ADMIN.RBAC_ROLE_CREATE_FAIL'));
+            this.toast.error(this.rbacErrorMessage(err, 'ADMIN.RBAC_ROLE_CREATE_FAIL'));
           },
         });
       return;
@@ -405,13 +413,13 @@ export class AdminRbacComponent implements OnInit {
             },
             error: (err) => {
               this.savingRole = false;
-              this.toast.error(err?.message || this.i18n.instant('ADMIN.RBAC_ROLE_SAVE_FAIL'));
+              this.toast.error(this.rbacErrorMessage(err, 'ADMIN.RBAC_ROLE_SAVE_FAIL'));
             },
           });
         },
         error: (err) => {
           this.savingRole = false;
-          this.toast.error(err?.message || this.i18n.instant('ADMIN.RBAC_ROLE_SAVE_FAIL'));
+          this.toast.error(this.rbacErrorMessage(err, 'ADMIN.RBAC_ROLE_SAVE_FAIL'));
         },
       });
   }

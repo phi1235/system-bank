@@ -12,12 +12,14 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { LoadingComponent } from '../../../shared/components/loading/loading.component';
 import { MoneyVndPipe } from '../../../shared/pipes/money-vnd.pipe';
 import { EnumLabelPipe } from '../../../shared/pipes/enum-label.pipe';
 import { BankApiService } from '../../../core/services/bank-api.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { resolveHttpErrorMessage } from '../../../core/utils/http-error.util';
 import { Account, LedgerEntry } from '../../../core/models/domain.model';
 
 @Component({
@@ -169,7 +171,11 @@ export class StatementComponent implements OnInit {
           this.rows = [];
           this.totalElements = 0;
           this.loading = false;
-          this.toast.error(err?.message || this.i18n.instant('CUSTOMER.STATEMENT_LOAD_FAIL'));
+          this.toast.error(
+            err instanceof HttpErrorResponse
+              ? resolveHttpErrorMessage(err, this.i18n)
+              : this.i18n.instant('CUSTOMER.STATEMENT_LOAD_FAIL'),
+          );
         },
       });
   }

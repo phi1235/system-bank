@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { TranslateService } from '@ngx-translate/core';
 import { of } from 'rxjs';
@@ -9,6 +10,7 @@ import {
   parseTransferError,
   transferErrorI18nKey,
 } from '../../core/utils/transfer-error.util';
+import { resolveHttpErrorMessage } from '../../core/utils/http-error.util';
 import { AccountsActions } from '../accounts/accounts.actions';
 import { TransfersActions } from './transfers.actions';
 
@@ -71,10 +73,14 @@ export class TransfersEffects {
   private friendlyCreateError(err: any): string {
     const apiCode = err?.error?.error?.code as string | undefined;
     const apiMsg = err?.error?.error?.message as string | undefined;
-    return (
-      this.friendlyReason(apiMsg || err?.message, apiCode) ||
-      this.i18n.instant('CUSTOMER.TRANSFER_FAIL')
-    );
+    const mapped = this.friendlyReason(apiMsg, apiCode);
+    if (mapped) {
+      return mapped;
+    }
+    if (err instanceof HttpErrorResponse) {
+      return resolveHttpErrorMessage(err, this.i18n);
+    }
+    return this.i18n.instant('CUSTOMER.TRANSFER_FAIL');
   }
 
   private friendlyReason(
