@@ -3,7 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { TranslateService } from '@ngx-translate/core';
 import { of } from 'rxjs';
-import { catchError, exhaustMap, map } from 'rxjs/operators';
+import { catchError, exhaustMap, map, switchMap } from 'rxjs/operators';
 import { BankApiService } from '../../core/services/bank-api.service';
 import { ToastService } from '../../core/services/toast.service';
 import {
@@ -104,7 +104,8 @@ export class TransfersEffects {
   history$ = createEffect(() =>
     this.actions$.pipe(
       ofType(TransfersActions.loadHistory),
-      exhaustMap(({ page, size, status, from, to }) =>
+      // switchMap: new filter/page cancels in-flight history so UI shows latest params
+      switchMap(({ page, size, status, from, to }) =>
         this.api
           .myTransfers(page ?? 0, size ?? 20, {
             status: status || undefined,
