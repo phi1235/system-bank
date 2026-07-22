@@ -36,4 +36,11 @@
   @if (rows.length === 0) {
     <p class="empty">{{ 'ADMIN.EMPTY_AUDIT' | translate }}</p>
   }
+  <mat-paginator
+    [length]="totalElements"
+    [pageIndex]="pageIndex"
+    [pageSize]="pageSize"
+    [pageSizeOptions]="[10, 20, 50]"
+    (page)="page($event)"
+  />
 </mat-card>

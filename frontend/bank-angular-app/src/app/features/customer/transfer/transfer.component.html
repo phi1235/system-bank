@@ -15,6 +15,7 @@
       }
       <mat-form-field appearance="outline" class="full">
         <mat-label>{{ 'CUSTOMER.FROM_ACCOUNT' | translate }}</mat-label>
+        <mat-icon matPrefix>account_balance_wallet</mat-icon>
         <mat-select formControlName="fromAccountId">
           @for (a of accounts$ | async; track a.id) {
             <mat-option [value]="a.id" [disabled]="a.status !== 'ACTIVE'">
@@ -42,6 +43,7 @@
 
       <mat-form-field appearance="outline" class="full">
         <mat-label>{{ 'CUSTOMER.TRANSFER_PICK_BENEFICIARY' | translate }}</mat-label>
+        <mat-icon matPrefix>contacts</mat-icon>
         <mat-select
           [value]="selectedBeneficiaryId"
           (selectionChange)="onBeneficiaryPicked($event.value)"
@@ -83,6 +85,7 @@
       <div class="row-2">
         <mat-form-field appearance="outline" class="full">
           <mat-label>{{ 'CUSTOMER.AMOUNT_VND' | translate }}</mat-label>
+          <mat-icon matPrefix>payments</mat-icon>
           <input matInput type="number" formControlName="amount" />
           <span matTextSuffix>₫</span>
           @if (form.controls.amount.touched && form.controls.amount.hasError('required')) {
@@ -94,6 +97,7 @@
         </mat-form-field>
         <mat-form-field appearance="outline" class="full">
           <mat-label>{{ 'CUSTOMER.DESCRIPTION' | translate }}</mat-label>
+          <mat-icon matPrefix>edit_note</mat-icon>
           <input matInput formControlName="description" />
         </mat-form-field>
       </div>

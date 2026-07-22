@@ -2,8 +2,9 @@
   [title]="'ADMIN.TX_TITLE' | translate"
   [subtitle]="'ADMIN.TX_SUB' | translate"
 >
-  <mat-form-field appearance="outline" class="filter">
+  <mat-form-field appearance="outline" class="filter" subscriptSizing="dynamic">
     <mat-label>{{ 'COMMON.STATUS' | translate }}</mat-label>
+    <mat-icon matPrefix>filter_list</mat-icon>
     <mat-select [(ngModel)]="status">
       <mat-option value="">{{ 'COMMON.ALL' | translate }}</mat-option>
       <mat-option value="COMPLETED">{{ 'COMPLETED' | transferStatus }}</mat-option>
@@ -11,7 +12,7 @@
       <mat-option value="COMPENSATED">{{ 'COMPENSATED' | transferStatus }}</mat-option>
     </mat-select>
   </mat-form-field>
-  <button mat-flat-button color="primary" type="button" (click)="load()">{{ 'ADMIN.FILTER' | translate }}</button>
+  <button mat-flat-button color="primary" type="button" (click)="applyFilters()">{{ 'ADMIN.FILTER' | translate }}</button>
 </app-page-header>
 
 <mat-card class="table-card">
@@ -72,4 +73,11 @@
   @if (rows.length === 0) {
     <p class="empty">{{ 'ADMIN.EMPTY_TX' | translate }}</p>
   }
+  <mat-paginator
+    [length]="totalElements"
+    [pageIndex]="pageIndex"
+    [pageSize]="pageSize"
+    [pageSizeOptions]="[10, 20, 50]"
+    (page)="page($event)"
+  />
 </mat-card>

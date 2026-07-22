@@ -8,6 +8,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -42,6 +43,7 @@ import { selectHasPermission, selectUser } from '../../../store/auth/auth.select
     MatInputModule,
     MatProgressSpinnerModule,
     MatTableModule,
+    MatPaginatorModule,
     MatTooltipModule,
     PageHeaderComponent,
     TranslateModule,
@@ -64,6 +66,9 @@ export class AdminUsersComponent implements OnInit {
   meUserId: string | null = null;
 
   rows: RbacStaffUser[] = [];
+  pageIndex = 0;
+  pageSize = 20;
+  totalElements = 0;
   q = '';
   cols = ['username', 'email', 'roles', 'status', 'actions'];
   loading = false;
@@ -80,14 +85,22 @@ export class AdminUsersComponent implements OnInit {
     return !!this.meUserId && u.userId === this.meUserId;
   }
 
+  applyFilters(): void {
+    this.pageIndex = 0;
+    this.load();
+  }
+
   load(): void {
     this.loading = true;
-    this.bankApi.rbacUsers(0, 100, this.q || undefined).subscribe({
+    this.bankApi.rbacUsers(this.pageIndex, this.pageSize, this.q || undefined).subscribe({
       next: (p) => {
         this.rows = p.items || [];
+        this.totalElements = p.totalElements ?? this.rows.length;
         this.loading = false;
       },
       error: () => {
+        this.rows = [];
+        this.totalElements = 0;
         this.loading = false;
         this.toast.error(this.i18n.instant('ADMIN.USERS_LOAD_FAIL'));
       },
@@ -208,4 +221,11 @@ export class AdminUsersComponent implements OnInit {
         },
       });
   }
+
+  page(e: PageEvent): void {
+    this.pageIndex = e.pageIndex;
+    this.pageSize = e.pageSize;
+    this.load();
+  }
+
 }

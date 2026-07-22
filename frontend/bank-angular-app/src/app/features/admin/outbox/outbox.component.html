@@ -2,15 +2,16 @@
   [title]="'ADMIN.OUTBOX_TITLE' | translate"
   [subtitle]="'ADMIN.OUTBOX_SUB' | translate"
 >
-  <mat-form-field appearance="outline" class="filter">
+  <mat-form-field appearance="outline" class="filter" subscriptSizing="dynamic">
     <mat-label>{{ 'COMMON.STATUS' | translate }}</mat-label>
+    <mat-icon matPrefix>filter_list</mat-icon>
     <mat-select [(ngModel)]="status">
       <mat-option value="DEAD">{{ 'OUTBOX_STATUS.DEAD' | translate }}</mat-option>
       <mat-option value="PENDING">{{ 'OUTBOX_STATUS.PENDING' | translate }}</mat-option>
       <mat-option value="PUBLISHED">{{ 'OUTBOX_STATUS.PUBLISHED' | translate }}</mat-option>
     </mat-select>
   </mat-form-field>
-  <button mat-flat-button color="primary" type="button" (click)="load()" [disabled]="loading">
+  <button mat-flat-button color="primary" type="button" (click)="applyFilters()" [disabled]="loading">
     <mat-icon>refresh</mat-icon>
     {{ 'ADMIN.FILTER' | translate }}
   </button>
@@ -100,4 +101,12 @@
   @if (!loading && rows.length === 0) {
     <p class="empty">{{ 'ADMIN.OUTBOX_EMPTY' | translate }}</p>
   }
+  <mat-paginator
+    [length]="totalElements"
+    [pageIndex]="pageIndex"
+    [pageSize]="pageSize"
+    [pageSizeOptions]="[10, 20, 50]"
+    (page)="page($event)"
+    [disabled]="loading"
+  />
 </mat-card>

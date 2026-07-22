@@ -6,6 +6,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
@@ -38,6 +39,7 @@ import { filter, switchMap } from 'rxjs';
     MatIconModule,
     MatButtonModule,
     MatTableModule,
+    MatPaginatorModule,
     MatDialogModule,
     PageHeaderComponent,
     MoneyVndPipe,
@@ -59,6 +61,9 @@ export class AdminAccountsComponent implements OnInit {
   selected: Account | null = null;
   loading = false;
   total = 0;
+  pageIndex = 0;
+  pageSize = 20;
+  get totalElements(): number { return this.total; }
   cols = ['accountNumber', 'userId', 'balance', 'status', 'actions'];
   canFreeze$ = this.store.select(selectHasPermission(PERMISSIONS.ACCOUNTS_FREEZE_EXECUTE));
 
@@ -71,10 +76,15 @@ export class AdminAccountsComponent implements OnInit {
     this.load();
   }
 
+  applyFilters(): void {
+    this.pageIndex = 0;
+    this.load();
+  }
+
   load(): void {
     this.loading = true;
     const { q, status } = this.form.getRawValue();
-    this.api.adminListAccounts(0, 50, q.trim() || undefined, status || undefined).subscribe({
+    this.api.adminListAccounts(this.pageIndex, this.pageSize, q.trim() || undefined, status || undefined).subscribe({
       next: (page) => {
         this.rows = page.items || [];
         this.total = page.totalElements ?? this.rows.length;
@@ -91,8 +101,15 @@ export class AdminAccountsComponent implements OnInit {
     });
   }
 
+  page(e: PageEvent): void {
+    this.pageIndex = e.pageIndex;
+    this.pageSize = e.pageSize;
+    this.load();
+  }
+
   clearFilters(): void {
     this.form.reset({ q: '', status: '' });
+    this.pageIndex = 0;
     this.load();
   }
 

@@ -15,17 +15,23 @@
   .filters {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.75rem;
-    align-items: flex-start;
+    gap: 0.75rem 0.85rem;
+    align-items: center;
   }
 
   .grow {
-    flex: 1 1 240px;
+    flex: 1 1 260px;
+    min-width: 200px;
   }
 
   .status-field {
-    width: 160px;
-    flex: 0 0 160px;
+    width: 170px;
+    flex: 0 0 170px;
+  }
+
+  button {
+    height: 44px;
+    align-self: center;
   }
 
   .meta {

@@ -6,6 +6,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -29,6 +30,7 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
     FormsModule,
     MatCardModule,
     MatTableModule,
+    MatPaginatorModule,
     MatButtonModule,
     MatFormFieldModule,
     MatSelectModule,
@@ -49,6 +51,9 @@ export class AdminOutboxComponent implements OnInit {
   private readonly i18n = inject(TranslateService);
 
   rows: OutboxEvent[] = [];
+  pageIndex = 0;
+  pageSize = 20;
+  totalElements = 0;
   counts: OutboxCounts | null = null;
   status = 'DEAD';
   loading = false;
@@ -59,19 +64,26 @@ export class AdminOutboxComponent implements OnInit {
     this.load();
   }
 
+  applyFilters(): void {
+    this.pageIndex = 0;
+    this.load();
+  }
+
   load(): void {
     this.loading = true;
     this.api.adminOutboxCounts().subscribe({
       next: (c) => (this.counts = c),
       error: () => (this.counts = null),
     });
-    this.api.adminOutboxList(0, 50, this.status || undefined).subscribe({
+    this.api.adminOutboxList(this.pageIndex, this.pageSize, this.status || undefined).subscribe({
       next: (p) => {
         this.rows = p.items || [];
+        this.totalElements = p.totalElements ?? this.rows.length;
         this.loading = false;
       },
       error: () => {
         this.rows = [];
+        this.totalElements = 0;
         this.loading = false;
         this.toast.error(this.i18n.instant('ADMIN.OUTBOX_LOAD_FAIL'));
       },
@@ -120,4 +132,11 @@ export class AdminOutboxComponent implements OnInit {
     }
     return id.length > 8 ? id.slice(0, 8) + '…' : id;
   }
+
+  page(e: PageEvent): void {
+    this.pageIndex = e.pageIndex;
+    this.pageSize = e.pageSize;
+    this.load();
+  }
+
 }
