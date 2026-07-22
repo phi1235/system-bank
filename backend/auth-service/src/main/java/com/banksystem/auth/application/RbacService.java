@@ -135,17 +135,50 @@ public class RbacService {
   }
 
   @Transactional(readOnly = true)
-  public PageResponse<StaffUserDto> listUsers(int page, int size, String q) {
+  public PageResponse<StaffUserDto> listUsers(int page, int size, String q, Boolean enabled, String userId) {
     PageRequest pr = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 100));
-    Page<UserEntity> result;
-    if (q != null && !q.isBlank()) {
-      result = userRepository.search(q.trim(), pr);
-    } else {
-      result = userRepository.findAll(pr);
+    String qNorm = q == null ? null : q.trim();
+    boolean hasQ = qNorm != null && !qNorm.isEmpty();
+    boolean hasEnabled = enabled != null;
+    UUID uid = null;
+    boolean hasUserId = false;
+    if (userId != null && !userId.isBlank()) {
+      try {
+        uid = UUID.fromString(userId.trim());
+        hasUserId = true;
+      } catch (IllegalArgumentException ex) {
+        throw new BusinessException(
+            "INVALID_USER_ID", "userId must be a valid UUID", HttpStatus.BAD_REQUEST);
+      }
     }
+    Page<UserEntity> result =
+        userRepository.searchAdmin(
+            hasUserId,
+            hasUserId ? uid : new UUID(0L, 0L),
+            hasEnabled,
+            hasEnabled && enabled,
+            hasQ,
+            hasQ ? qNorm : "",
+            pr);
     List<StaffUserDto> items = result.getContent().stream().map(this::toStaffDto).toList();
-    return new PageResponse<>(items, result.getNumber(), result.getSize(),
-        result.getTotalElements(), result.getTotalPages());
+    return new PageResponse<>(
+        items,
+        result.getNumber(),
+        result.getSize(),
+        result.getTotalElements(),
+        result.getTotalPages());
+  }
+
+  @Transactional(readOnly = true)
+  public StaffUserDto getUser(UUID userId) {
+    UserEntity user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(
+                () ->
+                    new BusinessException(
+                        "USER_NOT_FOUND", "User not found", HttpStatus.NOT_FOUND));
+    return toStaffDto(user);
   }
 
   @Transactional
@@ -297,8 +330,8 @@ public class RbacService {
         u.isEnabled(),
         u.isMustChangePassword(),
         u.getLockedReason(),
-        openTicket
-    );
+        openTicket,
+        u.getCreatedAt());
   }
 
   private RoleDto toRoleDto(RoleEntity r) {

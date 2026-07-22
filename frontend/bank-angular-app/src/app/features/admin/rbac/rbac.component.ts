@@ -158,7 +158,9 @@ export class AdminRbacComponent implements OnInit {
     if (resetPage) this.page = 0;
     this.usersLoading = true;
     this.closeUserDrawer();
-    this.api.rbacUsers(this.page, this.size, this.q?.trim() || undefined).subscribe({
+    this.api
+      .rbacUsers(this.page, this.size, { q: this.q?.trim() || undefined })
+      .subscribe({
       next: (p) => {
         this.users = p.items || [];
         this.total = p.totalElements ?? this.users.length;

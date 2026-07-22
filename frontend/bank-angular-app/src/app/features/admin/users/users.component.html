@@ -1,112 +1,195 @@
 <app-page-header
   [title]="'ADMIN.USERS_TITLE' | translate"
   [subtitle]="'ADMIN.USERS_SUB' | translate"
->
-  <mat-form-field appearance="outline" class="search" subscriptSizing="dynamic">
-    <mat-label>{{ 'COMMON.SEARCH' | translate }}</mat-label>
-    <mat-icon matPrefix>search</mat-icon>
-    <input matInput [(ngModel)]="q" (keyup.enter)="applyFilters()" />
-  </mat-form-field>
-  <button mat-flat-button color="primary" type="button" (click)="applyFilters()">
-    {{ 'COMMON.SEARCH' | translate }}
-  </button>
-</app-page-header>
+/>
 
-<mat-card class="table-card">
-  @if (loading) {
-    <div class="center"><mat-spinner diameter="36"></mat-spinner></div>
-  } @else {
-    <div class="table-wrap">
-      <table mat-table [dataSource]="rows" class="full">
-        <ng-container matColumnDef="username">
-          <th mat-header-cell *matHeaderCellDef>{{ 'AUTH.USERNAME' | translate }}</th>
-          <td mat-cell *matCellDef="let u">
-            <strong>{{ u.username }}</strong>
-            @if (u.openResetTicket) {
-              <span class="ticket-dot" [matTooltip]="'ADMIN.USERS_OPEN_TICKET' | translate">●</span>
-            }
-            @if (u.mustChangePassword) {
-              <span class="flag" [matTooltip]="'ADMIN.USERS_MUST_CHANGE' | translate">MCP</span>
-            }
-          </td>
-        </ng-container>
-        <ng-container matColumnDef="email">
-          <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.EMAIL' | translate }}</th>
-          <td mat-cell *matCellDef="let u">{{ u.email || '—' }}</td>
-        </ng-container>
-        <ng-container matColumnDef="roles">
-          <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.ROLE' | translate }}</th>
-          <td mat-cell *matCellDef="let u">
-            <span class="roles">{{ (u.roles || []).join(', ') || '—' }}</span>
-          </td>
-        </ng-container>
-        <ng-container matColumnDef="status">
-          <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.STATUS' | translate }}</th>
-          <td mat-cell *matCellDef="let u">
-            <span class="chip" [class.ok]="u.enabled" [class.bad]="!u.enabled">
-              {{ u.enabled ? ('ADMIN.USER_ACTIVE' | translate) : ('ADMIN.USER_LOCKED' | translate) }}
-            </span>
-            @if (!u.enabled && u.lockedReason) {
-              <div class="reason" [matTooltip]="u.lockedReason">{{ u.lockedReason }}</div>
-            }
-          </td>
-        </ng-container>
-        <ng-container matColumnDef="actions">
-          <th mat-header-cell *matHeaderCellDef class="col-actions">{{ 'COMMON.ACTIONS' | translate }}</th>
-          <td mat-cell *matCellDef="let u" class="acts">
-            @if (canReset$ | async) {
+<div class="page-stack">
+  <mat-card class="filters-card">
+    <form class="filters" (ngSubmit)="applyFilters()">
+      <mat-form-field appearance="outline" class="grow" subscriptSizing="dynamic">
+        <mat-label>{{ 'COMMON.SEARCH' | translate }}</mat-label>
+        <mat-icon matPrefix>search</mat-icon>
+        <input
+          matInput
+          [(ngModel)]="q"
+          name="q"
+          [placeholder]="'ADMIN.USERS_SEARCH_PH' | translate"
+        />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="status-field" subscriptSizing="dynamic">
+        <mat-label>{{ 'COMMON.STATUS' | translate }}</mat-label>
+        <mat-icon matPrefix>filter_list</mat-icon>
+        <mat-select [(ngModel)]="enabledFilter" name="enabledFilter">
+          <mat-option value="">{{ 'COMMON.ALL' | translate }}</mat-option>
+          <mat-option value="true">{{ 'ADMIN.USER_ACTIVE' | translate }}</mat-option>
+          <mat-option value="false">{{ 'ADMIN.USER_LOCKED' | translate }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="grow" subscriptSizing="dynamic">
+        <mat-label>{{ 'ADMIN.USERS_USER_ID' | translate }}</mat-label>
+        <mat-icon matPrefix>tag</mat-icon>
+        <input
+          matInput
+          [(ngModel)]="userId"
+          name="userId"
+          [placeholder]="'ADMIN.USERS_USER_ID_PH' | translate"
+        />
+      </mat-form-field>
+
+      <button mat-flat-button color="primary" type="submit" [disabled]="loading">
+        {{ 'ADMIN.FILTER' | translate }}
+      </button>
+      <button mat-stroked-button type="button" (click)="clearFilters()" [disabled]="loading">
+        {{ 'ADMIN.CLEAR' | translate }}
+      </button>
+    </form>
+    <p class="hint">{{ 'ADMIN.USERS_FILTER_HINT' | translate }}</p>
+    <p class="meta">{{ 'ADMIN.USERS_TOTAL' | translate: { total: totalElements } }}</p>
+  </mat-card>
+
+  <mat-card class="table-card">
+    @if (loading) {
+      <div class="center"><mat-spinner diameter="36"></mat-spinner></div>
+    } @else if (rows.length) {
+      <div class="table-wrap">
+        <table mat-table [dataSource]="rows" class="full">
+          <ng-container matColumnDef="username">
+            <th mat-header-cell *matHeaderCellDef>{{ 'AUTH.USERNAME' | translate }}</th>
+            <td mat-cell *matCellDef="let u">
+              <strong>{{ u.username }}</strong>
+              @if (u.openResetTicket) {
+                <span class="ticket-dot" [matTooltip]="'ADMIN.USERS_OPEN_TICKET' | translate"
+                  >●</span
+                >
+              }
+              @if (u.mustChangePassword) {
+                <span class="flag" [matTooltip]="'ADMIN.USERS_MUST_CHANGE' | translate">MCP</span>
+              }
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="email">
+            <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.EMAIL' | translate }}</th>
+            <td mat-cell *matCellDef="let u">{{ u.email || '—' }}</td>
+          </ng-container>
+          <ng-container matColumnDef="roles">
+            <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.ROLE' | translate }}</th>
+            <td mat-cell *matCellDef="let u">
+              <span class="roles">{{ (u.roles || []).join(', ') || '—' }}</span>
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.STATUS' | translate }}</th>
+            <td mat-cell *matCellDef="let u">
+              <span class="chip" [class.ok]="u.enabled" [class.bad]="!u.enabled">
+                {{
+                  u.enabled
+                    ? ('ADMIN.USER_ACTIVE' | translate)
+                    : ('ADMIN.USER_LOCKED' | translate)
+                }}
+              </span>
+              @if (!u.enabled && u.lockedReason) {
+                <div class="reason" [matTooltip]="u.lockedReason">{{ u.lockedReason }}</div>
+              }
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef class="col-actions">
+              {{ 'COMMON.ACTIONS' | translate }}
+            </th>
+            <td mat-cell *matCellDef="let u" class="acts">
               <button
                 mat-icon-button
                 type="button"
-                class="btn-reset"
-                [disabled]="busyId === u.userId || isSelf(u)"
-                (click)="resetPassword(u)"
-                [matTooltip]="
-                  isSelf(u)
-                    ? ('ADMIN.CANNOT_ACT_SELF' | translate)
-                    : ('ADMIN.PWD_FULFILL_TIP' | translate)
-                "
-                [attr.aria-label]="'ADMIN.PWD_FULFILL' | translate"
+                color="primary"
+                (click)="openDetail(u, $event)"
+                [disabled]="openingId === u.userId"
+                [matTooltip]="'ADMIN.USERS_OPEN_DETAIL' | translate"
+                [attr.aria-label]="'ADMIN.USERS_OPEN_DETAIL' | translate"
               >
-                <mat-icon>password</mat-icon>
+                <mat-icon>info</mat-icon>
               </button>
-            }
-            @if (canLock$ | async) {
               <button
                 mat-icon-button
                 type="button"
-                [class.btn-lock]="u.enabled"
-                [class.btn-unlock]="!u.enabled"
-                [disabled]="busyId === u.userId || isSelf(u)"
-                (click)="toggleLock(u)"
-                [matTooltip]="
-                  isSelf(u)
-                    ? ('ADMIN.CANNOT_LOCK_SELF' | translate)
-                    : u.enabled
+                (click)="copyUserId(u, $event)"
+                [matTooltip]="'ADMIN.USERS_COPY_ID' | translate"
+                [attr.aria-label]="'ADMIN.USERS_COPY_ID' | translate"
+              >
+                <mat-icon>content_copy</mat-icon>
+              </button>
+              @if (canReset$ | async) {
+                <button
+                  mat-icon-button
+                  type="button"
+                  class="btn-reset"
+                  [disabled]="busyId === u.userId || isSelf(u)"
+                  (click)="resetPassword(u, $event)"
+                  [matTooltip]="
+                    isSelf(u)
+                      ? ('ADMIN.CANNOT_ACT_SELF' | translate)
+                      : ('ADMIN.PWD_FULFILL_TIP' | translate)
+                  "
+                  [attr.aria-label]="'ADMIN.PWD_FULFILL' | translate"
+                >
+                  <mat-icon>password</mat-icon>
+                </button>
+              }
+              @if (canLock$ | async) {
+                <button
+                  mat-icon-button
+                  type="button"
+                  [class.btn-lock]="u.enabled"
+                  [class.btn-unlock]="!u.enabled"
+                  [disabled]="busyId === u.userId || isSelf(u)"
+                  (click)="toggleLock(u, $event)"
+                  [matTooltip]="
+                    isSelf(u)
+                      ? ('ADMIN.CANNOT_LOCK_SELF' | translate)
+                      : u.enabled
+                        ? ('ADMIN.LOCK_USER' | translate)
+                        : ('ADMIN.UNLOCK_USER' | translate)
+                  "
+                  [attr.aria-label]="
+                    u.enabled
                       ? ('ADMIN.LOCK_USER' | translate)
                       : ('ADMIN.UNLOCK_USER' | translate)
-                "
-                [attr.aria-label]="
-                  u.enabled
-                    ? ('ADMIN.LOCK_USER' | translate)
-                    : ('ADMIN.UNLOCK_USER' | translate)
-                "
-              >
-                <mat-icon>{{ u.enabled ? 'lock' : 'lock_open' }}</mat-icon>
-              </button>
-            }
-            @if (!(canReset$ | async) && !(canLock$ | async)) {
-              <span class="no-perm">{{ 'ADMIN.USERS_NO_ACT' | translate }}</span>
-            }
-          </td>
-        </ng-container>
-        <tr mat-header-row *matHeaderRowDef="cols"></tr>
-        <tr mat-row *matRowDef="let row; columns: cols"></tr>
-      </table>
-    </div>
-    @if (rows.length === 0) {
-      <p class="empty">{{ 'ADMIN.USERS_EMPTY' | translate }}</p>
+                  "
+                >
+                  <mat-icon>{{ u.enabled ? 'lock' : 'lock_open' }}</mat-icon>
+                </button>
+              }
+              @if (!(canReset$ | async) && !(canLock$ | async)) {
+                <span class="no-perm">{{ 'ADMIN.USERS_NO_ACT' | translate }}</span>
+              }
+            </td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="cols"></tr>
+          <tr
+            mat-row
+            *matRowDef="let row; columns: cols"
+            class="clickable-row"
+            (click)="openDetail(row)"
+          ></tr>
+        </table>
+      </div>
+    } @else {
+      <div class="empty-state">
+        <mat-icon>group</mat-icon>
+        @if (hasActiveFilters) {
+          <p class="empty-title">{{ 'ADMIN.USERS_EMPTY_FILTERED' | translate }}</p>
+          <p class="empty-hint">{{ 'ADMIN.USERS_EMPTY_FILTERED_HINT' | translate }}</p>
+          <button mat-stroked-button type="button" (click)="clearFilters()">
+            {{ 'ADMIN.CLEAR' | translate }}
+          </button>
+        } @else {
+          <p class="empty-title">{{ 'ADMIN.USERS_EMPTY' | translate }}</p>
+          <p class="empty-hint">{{ 'ADMIN.USERS_EMPTY_HINT' | translate }}</p>
+        }
+      </div>
     }
+
     <mat-paginator
       [length]="totalElements"
       [pageIndex]="pageIndex"
@@ -115,5 +198,5 @@
       (page)="page($event)"
       [disabled]="loading"
     />
-  }
-</mat-card>
+  </mat-card>
+</div>

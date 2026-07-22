@@ -20,7 +20,9 @@
     "PLACEHOLDER_MVP": "Không ảnh hưởng luồng MVP (tài khoản · chuyển tiền · lịch sử).",
     "LANG_VI": "Tiếng Việt",
     "LANG_EN": "English",
-    "REASON": "Lý do"
+    "REASON": "Lý do",
+    "YES": "Có",
+    "NO": "Không"
   },
   "NAV": {
     "HOME": "Tổng quan",
@@ -632,7 +634,7 @@
     "FEAT_PWD_RESET": "Cấp lại mật khẩu (blind)",
     "FEAT_USER_LOCK": "Khóa / mở khóa đăng nhập",
     "USERS_TITLE": "Quản lý người dùng",
-    "USERS_SUB": "Thông tin đăng nhập · khóa · cấp lại mật khẩu (blind)",
+    "USERS_SUB": "Tài khoản đăng nhập · khóa · reset mật khẩu · chi tiết",
     "USERS_LOAD_FAIL": "Không tải danh sách user",
     "USERS_EMPTY": "Không có user.",
     "USERS_OPEN_TICKET": "Có ticket quên mật khẩu đang mở",
@@ -751,7 +753,26 @@
     "OUTBOX_HELP_BODY": "Outbox lưu domain event chờ publish. DEAD = publish thất bại sau các lần retry.",
     "OUTBOX_HELP_1": "Bắt đầu từ DEAD, mở detail để xem payload và last error.",
     "OUTBOX_HELP_2": "Replay chỉ cho DEAD và đưa event về PENDING.",
-    "OUTBOX_HELP_3": "Search khớp event type, aggregate type hoặc last error."
+    "OUTBOX_HELP_3": "Search khớp event type, aggregate type hoặc last error.",
+    "USERS_SEARCH_PH": "Username hoặc email",
+    "USERS_USER_ID": "Mã user",
+    "USERS_USER_ID_PH": "UUID user đầy đủ (tuỳ chọn)",
+    "USERS_FILTER_HINT": "Search khớp username/email. User id phải là UUID đầy đủ. Status lọc ACTIVE vs LOCKED.",
+    "USERS_TOTAL": "{{total}} người dùng",
+    "USERS_OPEN_DETAIL": "Xem chi tiết",
+    "USERS_DETAIL_TITLE": "Chi tiết user",
+    "USERS_CREATED": "Tạo lúc",
+    "USERS_STAFF": "Tài khoản staff",
+    "USERS_PERMISSIONS": "Quyền",
+    "USERS_LOCKED_REASON": "Lý do khóa",
+    "USERS_COPY_ID": "Sao chép user id",
+    "USERS_COPY_ID_OK": "Đã sao chép user id",
+    "USERS_COPY_EMAIL": "Sao chép email",
+    "USERS_COPY_EMAIL_OK": "Đã sao chép email",
+    "USERS_COPY_FAIL": "Không sao chép được vào clipboard",
+    "USERS_EMPTY_FILTERED": "Không có user khớp bộ lọc",
+    "USERS_EMPTY_FILTERED_HINT": "Thử xóa bộ lọc hoặc đổi trạng thái ACTIVE/LOCKED.",
+    "USERS_EMPTY_HINT": "Tài khoản staff/customer xuất hiện khi seed hoặc đăng ký."
   },
   "ERRORS": {
     "GENERIC": "Đã xảy ra lỗi. Vui lòng thử lại.",
@@ -783,7 +804,9 @@
     "OUTBOX_NOT_FOUND": "Không tìm thấy outbox event.",
     "OUTBOX_NOT_DEAD": "Chỉ replay được event DEAD.",
     "INVALID_OUTBOX_ID": "Mã outbox event phải là UUID hợp lệ.",
-    "INVALID_AGGREGATE_ID": "Aggregate id phải là UUID hợp lệ."
+    "INVALID_AGGREGATE_ID": "Aggregate id phải là UUID hợp lệ.",
+    "INVALID_USER_ID": "Mã user phải là UUID hợp lệ.",
+    "USER_NOT_FOUND": "Không tìm thấy user."
   },
   "TRANSFER_DETAIL": {
     "TITLE": "Chi tiết chuyển tiền",

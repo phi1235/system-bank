@@ -20,7 +20,9 @@
     "PLACEHOLDER_MVP": "Does not affect MVP flows (accounts · transfer · history).",
     "LANG_VI": "Tiếng Việt",
     "LANG_EN": "English",
-    "REASON": "Reason"
+    "REASON": "Reason",
+    "YES": "Yes",
+    "NO": "No"
   },
   "NAV": {
     "HOME": "Overview",
@@ -632,7 +634,7 @@
     "FEAT_PWD_RESET": "Blind password reset",
     "FEAT_USER_LOCK": "Lock / unlock login",
     "USERS_TITLE": "User management",
-    "USERS_SUB": "Login accounts · lock · blind password reset",
+    "USERS_SUB": "Login accounts · lock · blind password reset · detail",
     "USERS_LOAD_FAIL": "Failed to load users",
     "USERS_EMPTY": "No users.",
     "USERS_OPEN_TICKET": "Open forgot-password ticket",
@@ -751,7 +753,26 @@
     "OUTBOX_HELP_BODY": "Outbox stores domain events waiting to be published. DEAD means publish failed after retries.",
     "OUTBOX_HELP_1": "Start on DEAD, open detail to inspect payload and last error.",
     "OUTBOX_HELP_2": "Replay only works for DEAD and re-queues the event as PENDING.",
-    "OUTBOX_HELP_3": "Search matches event type, aggregate type, or last error text."
+    "OUTBOX_HELP_3": "Search matches event type, aggregate type, or last error text.",
+    "USERS_SEARCH_PH": "Username or email",
+    "USERS_USER_ID": "User id",
+    "USERS_USER_ID_PH": "Full user UUID (optional)",
+    "USERS_FILTER_HINT": "Search matches username/email. User id must be a full UUID. Status filters ACTIVE vs LOCKED.",
+    "USERS_TOTAL": "{{total}} user(s)",
+    "USERS_OPEN_DETAIL": "View detail",
+    "USERS_DETAIL_TITLE": "User detail",
+    "USERS_CREATED": "Created",
+    "USERS_STAFF": "Staff account",
+    "USERS_PERMISSIONS": "Permissions",
+    "USERS_LOCKED_REASON": "Lock reason",
+    "USERS_COPY_ID": "Copy user id",
+    "USERS_COPY_ID_OK": "User id copied",
+    "USERS_COPY_EMAIL": "Copy email",
+    "USERS_COPY_EMAIL_OK": "Email copied",
+    "USERS_COPY_FAIL": "Could not copy to clipboard",
+    "USERS_EMPTY_FILTERED": "No users match these filters",
+    "USERS_EMPTY_FILTERED_HINT": "Try clearing filters or switch ACTIVE/LOCKED status.",
+    "USERS_EMPTY_HINT": "Staff and customer login accounts appear here when seeded or registered."
   },
   "ERRORS": {
     "GENERIC": "Something went wrong. Please try again.",
@@ -783,7 +804,9 @@
     "OUTBOX_NOT_FOUND": "Outbox event was not found.",
     "OUTBOX_NOT_DEAD": "Only DEAD outbox events can be replayed.",
     "INVALID_OUTBOX_ID": "Outbox event id must be a valid UUID.",
-    "INVALID_AGGREGATE_ID": "Aggregate id must be a valid UUID."
+    "INVALID_AGGREGATE_ID": "Aggregate id must be a valid UUID.",
+    "INVALID_USER_ID": "User id must be a valid UUID.",
+    "USER_NOT_FOUND": "User was not found."
   },
   "TRANSFER_DETAIL": {
     "TITLE": "Transfer detail",
