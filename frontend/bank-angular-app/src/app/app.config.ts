@@ -10,6 +10,8 @@ import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { refreshInterceptor } from './core/interceptors/refresh.interceptor';
 import { errorInterceptor } from './core/interceptors/error.interceptor';
 import { provideAppI18n } from './core/i18n/translate.providers';
+import { NotificationStreamService } from './core/services/notification-stream.service';
+import { OpsNotificationStreamService } from './core/services/ops-notification-stream.service';
 import { authReducer } from './store/auth/auth.reducer';
 import { AuthEffects } from './store/auth/auth.effects';
 import { accountsReducer } from './store/accounts/accounts.reducer';
@@ -24,6 +26,10 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withInterceptors([authInterceptor, refreshInterceptor, errorInterceptor])),
     provideAnimationsAsync(),
     ...provideAppI18n(),
+    // Explicit root providers so admin/customer notification bells always resolve DI
+    // (guards against tree-shaking / HMR edge cases with providedIn: 'root' alone).
+    NotificationStreamService,
+    OpsNotificationStreamService,
     provideStore({
       auth: authReducer,
       accounts: accountsReducer,

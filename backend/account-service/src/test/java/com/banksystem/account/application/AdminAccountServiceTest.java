@@ -30,14 +30,16 @@ import org.springframework.data.domain.Pageable;
 class AdminAccountServiceTest {
 
   private AccountRepository accountRepository;
+  private OpsAlertPublisher opsAlertPublisher;
   private AdminAccountService service;
 
   @BeforeEach
   void setUp() {
     accountRepository = mock(AccountRepository.class);
+    opsAlertPublisher = mock(OpsAlertPublisher.class);
     AccountAccessService access = new AccountAccessService(accountRepository);
     AccountMapper mapper = new AccountMapper();
-    service = new AdminAccountService(accountRepository, access, mapper);
+    service = new AdminAccountService(accountRepository, access, mapper, opsAlertPublisher);
   }
 
   @Test
@@ -104,6 +106,31 @@ class AdminAccountServiceTest {
 
     assertEquals("FROZEN", response.status());
     verify(accountRepository, never()).save(any());
+    verify(opsAlertPublisher, never()).accountFrozen(any());
+  }
+
+  @Test
+  void freeze_publishesOpsAlertWhenStatusChanges() {
+    AccountEntity entity = sampleAccount("ACTIVE");
+    when(accountRepository.findById(entity.getId())).thenReturn(java.util.Optional.of(entity));
+    when(accountRepository.save(any(AccountEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    AccountResponse response = service.freeze(entity.getId());
+
+    assertEquals("FROZEN", response.status());
+    verify(opsAlertPublisher).accountFrozen(any(AccountEntity.class));
+  }
+
+  @Test
+  void unfreeze_publishesOpsAlertWhenStatusChanges() {
+    AccountEntity entity = sampleAccount("FROZEN");
+    when(accountRepository.findById(entity.getId())).thenReturn(java.util.Optional.of(entity));
+    when(accountRepository.save(any(AccountEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    AccountResponse response = service.unfreeze(entity.getId());
+
+    assertEquals("ACTIVE", response.status());
+    verify(opsAlertPublisher).accountUnfrozen(any(AccountEntity.class));
   }
 
   @Test
@@ -114,6 +141,7 @@ class AdminAccountServiceTest {
     BusinessException ex = assertThrows(BusinessException.class, () -> service.freeze(entity.getId()));
     assertEquals("ACCOUNT_CLOSED", ex.getCode());
     verify(accountRepository, never()).save(any());
+    verify(opsAlertPublisher, never()).accountFrozen(any());
   }
 
   private AccountEntity sampleAccount(String status) {

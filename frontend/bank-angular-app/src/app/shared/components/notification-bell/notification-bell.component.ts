@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import {
   Component,
   ElementRef,
+  Injector,
   Input,
   OnDestroy,
   TemplateRef,
@@ -16,7 +17,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { Subscription } from 'rxjs';
+import { Observable, Subscription } from 'rxjs';
 import { NotificationItem } from '../../../core/models/domain.model';
 import { BankApiService } from '../../../core/services/bank-api.service';
 import { NotificationStreamService } from '../../../core/services/notification-stream.service';
@@ -29,6 +30,9 @@ export type NotificationBellMode = 'customer' | 'ops';
  * Header notification bell + wide dropdown.
  * Uses CDK Overlay with global right-edge positioning (not mat-menu),
  * so the panel is free of Material's 280px cap and expands under the top-right header.
+ *
+ * Streams are resolved lazily by mode so admin shell does not hard-depend on
+ * the customer NotificationStreamService at construction time (and vice versa).
  */
 @Component({
   selector: 'app-notification-bell',
@@ -53,8 +57,7 @@ export class NotificationBellComponent implements OnDestroy {
   private readonly api = inject(BankApiService);
   private readonly toast = inject(ToastService);
   private readonly i18n = inject(TranslateService);
-  private readonly customerStream = inject(NotificationStreamService);
-  private readonly opsStream = inject(OpsNotificationStreamService);
+  private readonly injector = inject(Injector);
   private readonly overlay = inject(Overlay);
   private readonly vcr = inject(ViewContainerRef);
   private liveSub?: Subscription;
@@ -70,12 +73,12 @@ export class NotificationBellComponent implements OnDestroy {
   private readonly panelMaxWidth = 720;
   private readonly edgeMargin = 12;
 
-  get unread$() {
-    return this.mode === 'ops' ? this.opsStream.unreadCount$ : this.customerStream.unreadCount$;
+  get unread$(): Observable<number> {
+    return this.stream().unreadCount$;
   }
 
   get unread(): number {
-    return this.mode === 'ops' ? this.opsStream.unreadCount : this.customerStream.unreadCount;
+    return this.stream().unreadCount;
   }
 
   get titleKey(): string {
@@ -229,6 +232,12 @@ export class NotificationBellComponent implements OnDestroy {
     return n.template?.includes('FAILED') === true || n.template?.startsWith('OPS_') === true;
   }
 
+  private stream(): NotificationStreamService | OpsNotificationStreamService {
+    return this.mode === 'ops'
+      ? this.injector.get(OpsNotificationStreamService)
+      : this.injector.get(NotificationStreamService);
+  }
+
   private reload(): void {
     this.loading = true;
     const req =
@@ -255,8 +264,7 @@ export class NotificationBellComponent implements OnDestroy {
     if (this.liveSub) {
       return;
     }
-    const stream = this.mode === 'ops' ? this.opsStream : this.customerStream;
-    this.liveSub = stream.liveEvents$.subscribe((item) => {
+    this.liveSub = this.stream().liveEvents$.subscribe((item) => {
       if (!this.items.some((x) => x.id === item.id)) {
         this.items = [item, ...this.items].slice(0, this.pageSize);
       }
@@ -264,10 +272,6 @@ export class NotificationBellComponent implements OnDestroy {
   }
 
   private setUnread(n: number): void {
-    if (this.mode === 'ops') {
-      this.opsStream.setUnreadCount(n);
-    } else {
-      this.customerStream.setUnreadCount(n);
-    }
+    this.stream().setUnreadCount(n);
   }
 }

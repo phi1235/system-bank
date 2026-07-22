@@ -3,10 +3,13 @@ package com.banksystem.customer.application;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.banksystem.customer.api.dto.CustomerDtos.KycUpdateRequest;
 import com.banksystem.customer.api.dto.CustomerDtos.UpdateProfileRequest;
 import com.banksystem.customer.domain.CustomerEntity;
 import com.banksystem.customer.domain.CustomerRepository;
@@ -23,13 +26,15 @@ class CustomerAppServiceUpdateTest {
       Base64.getEncoder().encodeToString("0123456789abcdef0123456789abcdef".getBytes());
 
   private CustomerRepository repository;
+  private OpsAlertPublisher opsAlertPublisher;
   private CustomerAppService service;
   private final UUID userId = UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
 
   @BeforeEach
   void setUp() {
     repository = mock(CustomerRepository.class);
-    service = new CustomerAppService(repository, AES_KEY);
+    opsAlertPublisher = mock(OpsAlertPublisher.class);
+    service = new CustomerAppService(repository, opsAlertPublisher, AES_KEY);
   }
 
   @Test
@@ -78,6 +83,32 @@ class CustomerAppServiceUpdateTest {
 
     assertEquals("Only Name", res.fullName());
     assertEquals("keep@example.com", res.email());
+  }
+
+  @Test
+  void updateKyc_publishesOpsAlertWhenChanged() {
+    CustomerEntity existing = baseEntity();
+    existing.setKycStatus("PENDING");
+    when(repository.findById(userId)).thenReturn(Optional.of(existing));
+    when(repository.save(any(CustomerEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    var res = service.updateKyc(userId, new KycUpdateRequest("VERIFIED"));
+
+    assertEquals("VERIFIED", res.kycStatus());
+    verify(opsAlertPublisher).kycUpdated(any(CustomerEntity.class), eq("PENDING"));
+  }
+
+  @Test
+  void updateKyc_skipsAlertWhenUnchanged() {
+    CustomerEntity existing = baseEntity();
+    existing.setKycStatus("VERIFIED");
+    when(repository.findById(userId)).thenReturn(Optional.of(existing));
+
+    var res = service.updateKyc(userId, new KycUpdateRequest("VERIFIED"));
+
+    assertEquals("VERIFIED", res.kycStatus());
+    verify(repository, never()).save(any());
+    verify(opsAlertPublisher, never()).kycUpdated(any(), any());
   }
 
   private CustomerEntity baseEntity() {

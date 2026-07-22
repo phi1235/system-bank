@@ -40,6 +40,7 @@ bank:
     max-clock-skew-seconds: ${GATEWAY_MAX_CLOCK_SKEW_SECONDS}
   internal:
     api-key: ${ACCOUNT_INTERNAL_API_KEY}
+    notification-api-key: ${NOTIFICATION_INTERNAL_API_KEY}
 
 management:
   endpoints:

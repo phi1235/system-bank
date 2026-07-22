@@ -64,6 +64,7 @@ bank:
     max-clock-skew-seconds: ${GATEWAY_MAX_CLOCK_SKEW_SECONDS}
   internal:
     account-api-key: ${ACCOUNT_INTERNAL_API_KEY}
+    notification-api-key: ${NOTIFICATION_INTERNAL_API_KEY}
   beneficiary:
     # Redis TTL for GET /transactions/beneficiaries (seconds). Set in infra/.env.
     cache-ttl-seconds: ${BENEFICIARY_CACHE_TTL_SECONDS}
