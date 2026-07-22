@@ -22,16 +22,26 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
       const toast = injector.get(ToastService);
       const i18n = injector.get(TranslateService);
 
-      const body = err.error;
-      let msg = resolveHttpErrorMessage(err, i18n);
+      // User-facing toast: plain language only — no HTTP status, no corr ref, no raw codes.
+      const msg = resolveHttpErrorMessage(err, i18n);
 
+      // Dev/debug: keep correlation id in console (also in BE logs / Network headers).
+      const body = err.error;
       const correlationId =
         body?.meta?.correlationId ||
         err.headers?.get(CORRELATION_HEADER) ||
         req.headers.get(CORRELATION_HEADER) ||
         null;
-      if (correlationId) {
-        msg = i18n.instant('ERRORS.WITH_REF', { message: msg, ref: correlationId });
+      if (correlationId || err.status >= 500) {
+        // eslint-disable-next-line no-console
+        console.warn('[api-error]', {
+          url: req.url,
+          method: req.method,
+          status: err.status,
+          code: body?.error?.code,
+          correlationId,
+          message: body?.error?.message || err.message,
+        });
       }
 
       // don't toast every 401 during redirect

@@ -50,6 +50,15 @@ describe('resolveHttpErrorMessage', () => {
     expect(msg).not.toMatch(/\bOK\b/);
   });
 
+  it('never surfaces bare machine codes as toast text', () => {
+    const err = new HttpErrorResponse({
+      status: 400,
+      statusText: 'OK',
+      error: { error: { code: 'SOME_UNKNOWN', message: 'SOME_UNKNOWN' } },
+    });
+    expect(resolveHttpErrorMessage(err, i18n)).toBe('Invalid request. Please check your input.');
+  });
+
   it('uses SERVER for 5xx even when message is Http failure response', () => {
     const err = new HttpErrorResponse({
       status: 500,
