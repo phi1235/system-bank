@@ -20,6 +20,7 @@ import { ToastService } from '../../../core/services/toast.service';
 import { LoadingComponent } from '../../../shared/components/loading/loading.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { TransferDetailDialogComponent } from '../../../shared/components/transfer-detail-dialog/transfer-detail-dialog.component';
+import { FriendlyTransferErrorPipe } from '../../../shared/pipes/friendly-transfer-error.pipe';
 import { MoneyVndPipe } from '../../../shared/pipes/money-vnd.pipe';
 import { TransfersActions } from '../../../store/transfers/transfers.actions';
 import {
@@ -48,6 +49,7 @@ import {
     PageHeaderComponent,
     LoadingComponent,
     MoneyVndPipe,
+    FriendlyTransferErrorPipe,
     TranslateModule,
   ],
   templateUrl: './history.component.html',

@@ -80,7 +80,11 @@
                 [class.bad]="t.status === 'FAILED'"
               >{{ t.status }}</span>
               @if (t.failureReason) {
-                <span class="fail-reason" [matTooltip]="t.failureReason">{{ t.failureReason }}</span>
+                <span
+                  class="fail-reason"
+                  [matTooltip]="t.failureReason | friendlyTransferError"
+                  >{{ t.failureReason | friendlyTransferError }}</span
+                >
               }
             </div>
           </td>
