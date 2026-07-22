@@ -1,6 +1,5 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
-import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
@@ -14,6 +13,7 @@ import { NotificationStreamService } from '../../core/services/notification-stre
 import { PERMISSIONS } from '../../core/services/rbac.util';
 import { ToastService } from '../../core/services/toast.service';
 import { LangSwitcherComponent } from '../../shared/components/lang-switcher/lang-switcher.component';
+import { NotificationBellComponent } from '../../shared/components/notification-bell/notification-bell.component';
 import { AuthActions } from '../../store/auth/auth.actions';
 import { selectHasPermission, selectUsername } from '../../store/auth/auth.selectors';
 
@@ -29,9 +29,9 @@ import { selectHasPermission, selectUsername } from '../../store/auth/auth.selec
     MatIconModule,
     MatMenuModule,
     MatDividerModule,
-    MatBadgeModule,
     TranslateModule,
     LangSwitcherComponent,
+    NotificationBellComponent,
   ],
   templateUrl: './customer-shell.component.html',
   styleUrl: './customer-shell.component.scss',
@@ -46,7 +46,6 @@ export class CustomerShellComponent implements OnInit, OnDestroy {
   private permSub?: Subscription;
 
   username$ = this.store.select(selectUsername);
-  unread$ = this.stream.unreadCount$;
 
   canHome$ = this.store.select(selectHasPermission(PERMISSIONS.IB_HOME_VIEW));
   canAccounts$ = this.store.select(selectHasPermission(PERMISSIONS.IB_ACCOUNTS_VIEW));

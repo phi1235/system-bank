@@ -30,19 +30,28 @@ spring:
           uri: lb://TRANSACTION-SERVICE
           predicates:
             - Path=/api/v1/transactions/**
+        # SSE first (more specific) so /** does not swallow the stream path.
+        # response-timeout: 0 aborts JSON bodies as empty 200 — use a long positive ms for SSE only.
+        - id: notification-service-stream
+          uri: lb://NOTIFICATION-SERVICE
+          predicates:
+            - Path=/api/v1/notifications/stream
+          metadata:
+            response-timeout: 3600000
+        - id: admin-routes-notifications-stream
+          uri: lb://NOTIFICATION-SERVICE
+          predicates:
+            - Path=/api/v1/admin/notifications/stream
+          metadata:
+            response-timeout: 3600000
         - id: notification-service
           uri: lb://NOTIFICATION-SERVICE
           predicates:
-            - Path=/api/v1/notifications/**
-          # SSE stream stays open; avoid default response timeout cutting the pipe.
-          metadata:
-            response-timeout: 0
+            - Path=/api/v1/notifications,/api/v1/notifications/**
         - id: admin-routes-notifications
           uri: lb://NOTIFICATION-SERVICE
           predicates:
-            - Path=/api/v1/admin/notifications/**
-          metadata:
-            response-timeout: 0
+            - Path=/api/v1/admin/notifications,/api/v1/admin/notifications/**
         - id: admin-routes-rbac
           uri: lb://AUTH-SERVICE
           predicates:

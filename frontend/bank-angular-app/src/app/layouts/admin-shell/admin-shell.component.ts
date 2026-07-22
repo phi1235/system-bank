@@ -1,6 +1,5 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
-import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
@@ -15,6 +14,7 @@ import { OpsNotificationStreamService } from '../../core/services/ops-notificati
 import { PERMISSIONS } from '../../core/services/rbac.util';
 import { ToastService } from '../../core/services/toast.service';
 import { LangSwitcherComponent } from '../../shared/components/lang-switcher/lang-switcher.component';
+import { NotificationBellComponent } from '../../shared/components/notification-bell/notification-bell.component';
 import { AuthActions } from '../../store/auth/auth.actions';
 import {
   selectHasAnyPermission,
@@ -37,9 +37,9 @@ import {
     MatToolbarModule,
     MatButtonModule,
     MatIconModule,
-    MatBadgeModule,
     TranslateModule,
     LangSwitcherComponent,
+    NotificationBellComponent,
   ],
   templateUrl: './admin-shell.component.html',
   styleUrl: './admin-shell.component.scss',
@@ -56,7 +56,6 @@ export class AdminShellComponent implements OnInit, OnDestroy {
   username$ = this.store.select(selectUsername);
   roles$ = this.store.select(selectRoles);
   permissions$ = this.store.select(selectPermissions);
-  unread$ = this.stream.unreadCount$;
 
   canDashboard$ = this.store.select(selectHasPermission(PERMISSIONS.DASHBOARD_VIEW));
   canCustomers$ = this.store.select(selectHasPermission(PERMISSIONS.CUSTOMERS_LIST_VIEW));

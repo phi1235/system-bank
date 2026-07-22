@@ -271,3 +271,14 @@ code {
   color: var(--color-danger);
 }
 
+/* Notification panel overlay (CDK global, right-edge). */
+.cdk-overlay-pane.notif-dropdown-overlay {
+  width: min(720px, calc(100vw - 1.5rem)) !important;
+  max-width: min(720px, calc(100vw - 1.5rem)) !important;
+}
+
+.cdk-overlay-pane.notif-dropdown-overlay .notif-panel {
+  width: 100%;
+  max-height: min(36rem, 78vh);
+}
+

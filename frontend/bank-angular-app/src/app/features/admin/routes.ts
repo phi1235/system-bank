@@ -35,12 +35,6 @@ export const ADMIN_ROUTES: Routes = [
         loadComponent: () => import('./outbox/outbox.component').then((m) => m.AdminOutboxComponent),
       },
       {
-        path: 'notifications',
-        canActivate: [permissionGuard([PERMISSIONS.NOTIFICATIONS_OPS_VIEW])],
-        loadComponent: () =>
-          import('./notifications/notifications.component').then((m) => m.AdminNotificationsComponent),
-      },
-      {
         path: 'audit',
         canActivate: [permissionGuard([PERMISSIONS.AUDIT_LIST_VIEW])],
         loadComponent: () => import('./audit/audit.component').then((m) => m.AdminAuditComponent),

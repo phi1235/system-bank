@@ -10,6 +10,8 @@ export class ToastService {
   success(message: string): void {
     this.snack.open(message, this.i18n.instant('COMMON.OK'), {
       duration: 3500,
+      horizontalPosition: 'end',
+      verticalPosition: 'top',
       panelClass: ['toast-success'],
     });
   }
@@ -17,11 +19,17 @@ export class ToastService {
   error(message: string): void {
     this.snack.open(message, this.i18n.instant('COMMON.CLOSE'), {
       duration: 5000,
+      horizontalPosition: 'end',
+      verticalPosition: 'top',
       panelClass: ['toast-error'],
     });
   }
 
   info(message: string): void {
-    this.snack.open(message, this.i18n.instant('COMMON.OK'), { duration: 3000 });
+    this.snack.open(message, this.i18n.instant('COMMON.OK'), {
+      duration: 3000,
+      horizontalPosition: 'end',
+      verticalPosition: 'top',
+    });
   }
 }
