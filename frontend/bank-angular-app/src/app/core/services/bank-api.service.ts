@@ -151,8 +151,13 @@ export class BankApiService {
     size = 20,
     q?: string,
     status?: string,
+    accountType?: string,
   ): Observable<PageResponse<Account>> {
-    return this.api.get('/admin/accounts', { page, size, q, status });
+    return this.api.get('/admin/accounts', { page, size, q, status, accountType });
+  }
+
+  adminAccountDetail(id: string): Observable<Account> {
+    return this.api.get(`/admin/accounts/${id}`);
   }
 
   // Transfers

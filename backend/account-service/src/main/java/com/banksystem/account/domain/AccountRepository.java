@@ -20,20 +20,32 @@ public interface AccountRepository extends JpaRepository<AccountEntity, UUID> {
 
   boolean existsByAccountNumber(String accountNumber);
 
+  /**
+   * Staff search with boolean flags so Postgres never sees untyped NULL binds
+   * for optional status/type/UUID filters.
+   */
   @Query("""
       SELECT a FROM AccountEntity a
-      WHERE (:status IS NULL OR :status = '' OR a.status = :status)
+      WHERE (:hasStatus = false OR a.status = :status)
+        AND (:hasType = false OR a.accountType = :accountType)
         AND (
-          :q IS NULL OR :q = ''
+          :hasQ = false
           OR LOWER(a.accountNumber) LIKE LOWER(CONCAT('%', :q, '%'))
-          OR (:userId IS NOT NULL AND a.userId = :userId)
-          OR (:accountId IS NOT NULL AND a.id = :accountId)
+          OR (:hasUserId = true AND a.userId = :userId)
+          OR (:hasAccountId = true AND a.id = :accountId)
         )
+      ORDER BY a.updatedAt DESC
       """)
   Page<AccountEntity> adminSearch(
+      @Param("hasQ") boolean hasQ,
       @Param("q") String q,
+      @Param("hasStatus") boolean hasStatus,
       @Param("status") String status,
+      @Param("hasType") boolean hasType,
+      @Param("accountType") String accountType,
+      @Param("hasUserId") boolean hasUserId,
       @Param("userId") UUID userId,
+      @Param("hasAccountId") boolean hasAccountId,
       @Param("accountId") UUID accountId,
       Pageable pageable);
 

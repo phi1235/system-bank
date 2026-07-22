@@ -6,6 +6,8 @@ export interface Account {
   currency: string;
   balance: number;
   status: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface CustomerProfile {
