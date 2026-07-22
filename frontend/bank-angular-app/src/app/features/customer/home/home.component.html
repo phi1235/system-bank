@@ -88,7 +88,7 @@
               <div class="ico-acc"><mat-icon>payments</mat-icon></div>
               <div>
                 <div class="num">{{ a.accountNumber | accountMask }}</div>
-                <div class="row-meta">{{ a.accountType }} · {{ a.status }}</div>
+                <div class="row-meta">{{ a.accountType | enumLabel:'ACCOUNT_TYPE' }} · {{ a.status | enumLabel:'ACCOUNT_STATUS' }}</div>
               </div>
             </div>
             <div class="bal">{{ a.balance | moneyVnd: a.currency }}</div>

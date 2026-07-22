@@ -16,6 +16,7 @@ import { ToastService } from '../../../core/services/toast.service';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { TransferDetailDialogComponent } from '../../../shared/components/transfer-detail-dialog/transfer-detail-dialog.component';
 import { MoneyVndPipe } from '../../../shared/pipes/money-vnd.pipe';
+import { TransferStatusPipe } from '../../../shared/pipes/transfer-status.pipe';
 
 @Component({
   selector: 'app-admin-transfers',
@@ -33,6 +34,7 @@ import { MoneyVndPipe } from '../../../shared/pipes/money-vnd.pipe';
     MatDialogModule,
     PageHeaderComponent,
     MoneyVndPipe,
+    TransferStatusPipe,
     TranslateModule,
   ],
   templateUrl: './transfers.component.html',

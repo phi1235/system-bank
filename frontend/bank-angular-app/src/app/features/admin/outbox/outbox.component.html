@@ -5,9 +5,9 @@
   <mat-form-field appearance="outline" class="filter">
     <mat-label>{{ 'COMMON.STATUS' | translate }}</mat-label>
     <mat-select [(ngModel)]="status">
-      <mat-option value="DEAD">DEAD</mat-option>
-      <mat-option value="PENDING">PENDING</mat-option>
-      <mat-option value="PUBLISHED">PUBLISHED</mat-option>
+      <mat-option value="DEAD">{{ 'OUTBOX_STATUS.DEAD' | translate }}</mat-option>
+      <mat-option value="PENDING">{{ 'OUTBOX_STATUS.PENDING' | translate }}</mat-option>
+      <mat-option value="PUBLISHED">{{ 'OUTBOX_STATUS.PUBLISHED' | translate }}</mat-option>
     </mat-select>
   </mat-form-field>
   <button mat-flat-button color="primary" type="button" (click)="load()" [disabled]="loading">
@@ -48,7 +48,7 @@
             [class.ok]="e.status === 'PUBLISHED'"
             [class.warn]="e.status === 'PENDING'"
             [class.bad]="e.status === 'DEAD'"
-            >{{ e.status }}</span
+            >{{ e.status | enumLabel:'OUTBOX_STATUS' }}</span
           >
         </td>
       </ng-container>

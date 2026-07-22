@@ -46,6 +46,8 @@ Browser (Angular) ──► API Gateway (JWT · CORS · rate limit)
 | Data | PostgreSQL 16, Flyway, Redis 7 |
 | Security | JWT (HS256), BCrypt + pepper-bound password, AES-GCM (PII/MFA) |
 | Frontend | Angular 19, NgRx, Angular Material, ngx-translate (vi/en) |
+> **Note:** rontend/ui-mockups/ is a **static design prototype** (hard-coded sample copy/data for UX review). The production UI is rontend/bank-angular-app/ with API + i18n.
+
 | Ops | Docker Compose, Eureka, Zipkin, Prometheus, Grafana |
 | CI | GitHub Actions (`mvn verify`, Angular build) |
 

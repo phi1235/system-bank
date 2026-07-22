@@ -12,7 +12,7 @@
         <mat-select formControlName="fromAccountId">
           @for (a of accounts$ | async; track a.id) {
             <mat-option [value]="a.id" [disabled]="a.status !== 'ACTIVE'">
-              {{ a.accountNumber }} — {{ a.balance | moneyVnd: a.currency }} ({{ a.status | transferStatus }})
+              {{ a.accountNumber }} — {{ a.balance | moneyVnd: a.currency }} ({{ a.status | enumLabel:'ACCOUNT_STATUS' }})
             </mat-option>
           }
         </mat-select>

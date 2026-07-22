@@ -640,5 +640,23 @@
     "COMPENSATING": "Reversing",
     "COMPENSATED": "Reversed",
     "SUCCESS": "Success"
+  },
+  "ACCOUNT_STATUS": {
+    "ACTIVE": "Active",
+    "FROZEN": "Frozen",
+    "CLOSED": "Closed"
+  },
+  "ACCOUNT_TYPE": {
+    "PAYMENT": "Payment",
+    "SAVINGS": "Savings"
+  },
+  "OUTBOX_STATUS": {
+    "PENDING": "Pending",
+    "PUBLISHED": "Published",
+    "DEAD": "Dead"
+  },
+  "LEDGER_ENTRY": {
+    "CREDIT": "Credit",
+    "DEBIT": "Debit"
   }
 }

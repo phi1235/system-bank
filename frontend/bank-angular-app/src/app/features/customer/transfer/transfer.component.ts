@@ -18,6 +18,7 @@ import {
   ConfirmDialogData,
 } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { FriendlyTransferErrorPipe } from '../../../shared/pipes/friendly-transfer-error.pipe';
+import { EnumLabelPipe } from '../../../shared/pipes/enum-label.pipe';
 import { TransferStatusPipe } from '../../../shared/pipes/transfer-status.pipe';
 import { MoneyVndPipe } from '../../../shared/pipes/money-vnd.pipe';
 import { PERMISSIONS } from '../../../core/services/rbac.util';
@@ -51,6 +52,7 @@ import { selectHasPermission } from '../../../store/auth/auth.selectors';
     MoneyVndPipe,
     FriendlyTransferErrorPipe,
     TransferStatusPipe,
+    EnumLabelPipe,
     TranslateModule,
   ],
   templateUrl: './transfer.component.html',

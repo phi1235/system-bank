@@ -15,6 +15,7 @@ import {
   ConfirmDialogData,
 } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { MoneyVndPipe } from '../../../shared/pipes/money-vnd.pipe';
+import { EnumLabelPipe } from '../../../shared/pipes/enum-label.pipe';
 import { BankApiService } from '../../../core/services/bank-api.service';
 import { PERMISSIONS } from '../../../core/services/rbac.util';
 import { ToastService } from '../../../core/services/toast.service';
@@ -40,6 +41,7 @@ import { filter, switchMap } from 'rxjs';
     MatDialogModule,
     PageHeaderComponent,
     MoneyVndPipe,
+    EnumLabelPipe,
     TranslateModule,
   ],
   templateUrl: './accounts.component.html',
