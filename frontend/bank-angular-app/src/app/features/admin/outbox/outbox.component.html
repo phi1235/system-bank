@@ -2,8 +2,9 @@
   [title]="'ADMIN.OUTBOX_TITLE' | translate"
   [subtitle]="'ADMIN.OUTBOX_SUB' | translate"
 >
-  <mat-form-field appearance="outline" class="filter">
+  <mat-form-field appearance="outline" class="filter" subscriptSizing="dynamic">
     <mat-label>{{ 'COMMON.STATUS' | translate }}</mat-label>
+    <mat-icon matPrefix>filter_list</mat-icon>
     <mat-select [(ngModel)]="status">
       <mat-option value="DEAD">{{ 'OUTBOX_STATUS.DEAD' | translate }}</mat-option>
       <mat-option value="PENDING">{{ 'OUTBOX_STATUS.PENDING' | translate }}</mat-option>

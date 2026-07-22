@@ -2,8 +2,9 @@
   [title]="'ADMIN.CUSTOMERS_TITLE' | translate"
   [subtitle]="'ADMIN.CUSTOMERS_SUB' | translate"
 >
-  <mat-form-field appearance="outline" class="search">
+  <mat-form-field appearance="outline" class="search" subscriptSizing="dynamic">
     <mat-label>{{ 'COMMON.SEARCH' | translate }}</mat-label>
+    <mat-icon matPrefix>search</mat-icon>
     <input matInput [(ngModel)]="q" (keyup.enter)="load()" />
   </mat-form-field>
   <button mat-flat-button color="primary" type="button" (click)="load()">{{ 'COMMON.SEARCH' | translate }}</button>

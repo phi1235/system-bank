@@ -1,5 +1,6 @@
 .search {
-  width: 240px;
+  width: min(280px, 42vw);
+  min-width: 200px;
   margin: 0;
 }
 

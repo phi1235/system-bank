@@ -7,7 +7,7 @@
   <div class="main-col">
     <mat-card class="filters-card">
       <form class="filters" [formGroup]="form" (ngSubmit)="load()">
-        <mat-form-field appearance="outline" class="grow">
+        <mat-form-field appearance="outline" class="grow" subscriptSizing="dynamic">
           <mat-label>{{ 'ADMIN.ACCOUNT_SEARCH' | translate }}</mat-label>
           <input
             matInput
@@ -17,7 +17,7 @@
           <mat-icon matPrefix>search</mat-icon>
         </mat-form-field>
 
-        <mat-form-field appearance="outline" class="status-field">
+        <mat-form-field appearance="outline" class="status-field" subscriptSizing="dynamic">
           <mat-label>{{ 'ADMIN.STATUS' | translate }}</mat-label>
           <mat-select formControlName="status">
             <mat-option value="">{{ 'ADMIN.STATUS_ALL' | translate }}</mat-option>

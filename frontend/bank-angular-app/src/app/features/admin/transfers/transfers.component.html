@@ -2,8 +2,9 @@
   [title]="'ADMIN.TX_TITLE' | translate"
   [subtitle]="'ADMIN.TX_SUB' | translate"
 >
-  <mat-form-field appearance="outline" class="filter">
+  <mat-form-field appearance="outline" class="filter" subscriptSizing="dynamic">
     <mat-label>{{ 'COMMON.STATUS' | translate }}</mat-label>
+    <mat-icon matPrefix>filter_list</mat-icon>
     <mat-select [(ngModel)]="status">
       <mat-option value="">{{ 'COMMON.ALL' | translate }}</mat-option>
       <mat-option value="COMPLETED">{{ 'COMPLETED' | transferStatus }}</mat-option>

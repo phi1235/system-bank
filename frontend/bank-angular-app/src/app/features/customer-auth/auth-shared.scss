@@ -117,14 +117,36 @@ h1 {
 }
 
 .admin-theme {
-  background: linear-gradient(145deg, #111827 0%, #374151 100%);
-  .brand span { color: #f59e0b; }
+  background: linear-gradient(145deg, #0f172a 0%, #1e293b 48%, #334155 100%);
+
+  .brand {
+    color: #0f172a;
+
+    span {
+      color: #d97706;
+    }
+  }
+
   .submit {
     background: #f59e0b !important;
     color: #111827 !important;
+
     &:hover:not(:disabled) {
       background: #d97706 !important;
       box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3) !important;
     }
+  }
+
+  .links a {
+    color: #b45309;
+
+    &:hover {
+      color: #92400e;
+    }
+  }
+
+  /* Ensure prefix icons visible on BO login under portal-admin tokens */
+  .mat-mdc-form-field.mat-focused .mat-mdc-form-field-icon-prefix {
+    color: #d97706;
   }
 }

@@ -150,6 +150,61 @@ html {
   --sidebar-active-text: #fbbf24;
   --link-color: #b45309;
 
+  /* Admin outline fields — denser, amber focus (parity with customer polish) */
+  .mat-mdc-form-field {
+    width: 100%;
+
+    &.mat-form-field-appearance-outline {
+      .mdc-text-field--outlined {
+        --mdc-outlined-text-field-outline-color: var(--color-border);
+        --mdc-outlined-text-field-focus-outline-color: var(--color-accent);
+        --mdc-outlined-text-field-hover-outline-color: var(--color-accent-strong);
+        --mdc-outlined-text-field-label-text-color: var(--color-text-muted);
+        --mdc-outlined-text-field-focus-label-text-color: var(--color-accent-strong);
+
+        border-radius: 10px;
+        background-color: var(--color-surface);
+        transition: box-shadow 0.2s ease, border-color 0.2s ease;
+      }
+
+      .mdc-notched-outline__leading {
+        border-top-left-radius: 10px !important;
+        border-bottom-left-radius: 10px !important;
+      }
+
+      .mdc-notched-outline__trailing {
+        border-top-right-radius: 10px !important;
+        border-bottom-right-radius: 10px !important;
+      }
+
+      &.mat-focused .mdc-text-field--outlined {
+        box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.18);
+      }
+    }
+
+    .mat-mdc-form-field-icon-prefix,
+    .mat-mdc-form-field-icon-suffix {
+      color: var(--color-text-muted);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+
+      mat-icon {
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+      }
+    }
+
+    &.mat-focused .mat-mdc-form-field-icon-prefix {
+      color: var(--color-accent-strong);
+    }
+
+    .mat-mdc-form-field-subscript-wrapper {
+      font-size: 0.78rem;
+    }
+  }
+
   /* Amber primary actions (override Material azure theme) */
   .mat-mdc-unelevated-button.mat-primary,
   .mat-mdc-raised-button.mat-primary,
@@ -161,6 +216,13 @@ html {
     background-color: #f59e0b !important;
     color: #111827 !important;
     font-weight: 700;
+    border-radius: 10px !important;
+    transition: box-shadow 0.2s ease, background-color 0.2s ease !important;
+
+    &:hover:not(:disabled) {
+      background-color: #d97706 !important;
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.28) !important;
+    }
   }
 
   .mat-mdc-outlined-button {
@@ -169,6 +231,7 @@ html {
     border-color: #cbd5e1 !important;
     color: #0f172a !important;
     font-weight: 600;
+    border-radius: 10px !important;
   }
 
   .mat-mdc-outlined-button.mat-warn {
@@ -190,9 +253,54 @@ html {
     }
   }
 
+  /* Filter / search bars in page headers and filter cards */
   .page-header {
-    h1 { color: var(--color-primary-900); }
-    .sub { color: var(--color-text-muted); }
+    h1 {
+      color: var(--color-primary-900);
+    }
+    .sub {
+      color: var(--color-text-muted);
+    }
+
+    .actions {
+      gap: 0.65rem;
+      align-items: center;
+
+      .mat-mdc-form-field {
+        width: auto;
+        min-width: 180px;
+        margin-bottom: 0;
+
+        &.search,
+        &.filter {
+          width: min(280px, 42vw);
+        }
+      }
+
+      .mat-mdc-form-field-subscript-wrapper {
+        display: none;
+      }
+    }
+  }
+
+  .filters-card,
+  .filter-card {
+    .filters,
+    form.filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem 0.85rem;
+      align-items: flex-start;
+    }
+
+    .mat-mdc-form-field {
+      margin-bottom: 0;
+    }
+
+    .mat-mdc-form-field-subscript-wrapper {
+      height: 0;
+      min-height: 0;
+    }
   }
 
   .mat-mdc-header-cell {

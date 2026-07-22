@@ -9,11 +9,13 @@
     <form [formGroup]="form" (ngSubmit)="submit()">
       <mat-form-field appearance="outline" class="full">
         <mat-label>{{ 'AUTH.USERNAME' | translate }}</mat-label>
-        <input matInput formControlName="username" />
+        <mat-icon matPrefix>admin_panel_settings</mat-icon>
+        <input matInput formControlName="username" autocomplete="username" />
       </mat-form-field>
       <mat-form-field appearance="outline" class="full">
         <mat-label>{{ 'AUTH.PASSWORD' | translate }}</mat-label>
-        <input matInput type="password" formControlName="password" />
+        <mat-icon matPrefix>lock_outline</mat-icon>
+        <input matInput type="password" formControlName="password" autocomplete="current-password" />
       </mat-form-field>
       @if (error$ | async; as err) {
         <div class="err">{{ err }}</div>

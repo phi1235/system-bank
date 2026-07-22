@@ -1,7 +1,8 @@
 .full { width: 100%; }
 
 .filter {
-  width: 180px;
+  width: min(220px, 40vw);
+  min-width: 160px;
   margin: 0;
 }
 
