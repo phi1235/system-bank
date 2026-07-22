@@ -12,6 +12,7 @@ import {
   OutboxEvent,
   Transfer,
   TransferDetail,
+  TransferQuote,
   TransferRequest,
 } from '../models/domain.model';
 import { ApiService } from './api.service';
@@ -175,6 +176,13 @@ export class BankApiService {
   /** Transfer order + ordered saga steps (owner or staff). */
   getTransferDetail(id: string): Observable<TransferDetail> {
     return this.api.get(`/transactions/transfers/${id}/detail`);
+  }
+
+  /** Fee + remaining daily limit preview (no order created). */
+  transferQuote(amount?: number): Observable<TransferQuote> {
+    return this.api.get('/transactions/transfers/quote', {
+      amount: amount != null && amount > 0 ? amount : undefined,
+    });
   }
 
   // Beneficiaries (internal transfer address book)

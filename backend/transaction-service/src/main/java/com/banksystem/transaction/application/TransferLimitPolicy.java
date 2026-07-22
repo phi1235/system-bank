@@ -51,12 +51,7 @@ public class TransferLimitPolicy {
           HttpStatus.UNPROCESSABLE_ENTITY);
     }
 
-    Instant dayStart = startOfBusinessDay();
-    BigDecimal spentToday = transferOrderRepository.sumAmountByUserAndStatusSince(
-        userId, TransferStatus.COMPLETED, dayStart);
-    if (spentToday == null) {
-      spentToday = BigDecimal.ZERO;
-    }
+    BigDecimal spentToday = spentToday(userId);
     BigDecimal projected = spentToday.add(amount);
     if (projected.compareTo(dailyLimit) > 0) {
       throw new BusinessException(
@@ -65,6 +60,20 @@ public class TransferLimitPolicy {
               + " (spent today: " + spentToday.toPlainString() + ")",
           HttpStatus.UNPROCESSABLE_ENTITY);
     }
+  }
+
+  /** Sum of COMPLETED principal amounts since start of banking day (never null). */
+  public BigDecimal spentToday(UUID userId) {
+    Instant dayStart = startOfBusinessDay();
+    BigDecimal spent = transferOrderRepository.sumAmountByUserAndStatusSince(
+        userId, TransferStatus.COMPLETED, dayStart);
+    return spent == null ? BigDecimal.ZERO : spent;
+  }
+
+  /** Remaining principal capacity for today: max(0, dailyLimit - spentToday). */
+  public BigDecimal remainingToday(UUID userId) {
+    BigDecimal remaining = dailyLimit.subtract(spentToday(userId));
+    return remaining.compareTo(BigDecimal.ZERO) < 0 ? BigDecimal.ZERO : remaining;
   }
 
   /**

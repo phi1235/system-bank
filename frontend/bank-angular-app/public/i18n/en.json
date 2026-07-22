@@ -198,7 +198,7 @@
     "RESULT_STATUS": "Status",
     "RESULT_AMOUNT": "Amount",
     "RESULT_REASON": "Reason",
-    "CONFIRM_MSG": "Confirm transfer {{amount}} VND\nTo: {{to}}\nNote: {{desc}}",
+    "CONFIRM_MSG": "Confirm transfer {{amount}} VND\nFee: {{fee}} VND\nTotal debit: {{total}} VND\nTo: {{to}}\nNote: {{desc}}",
     "TRANSFER_OK": "Transfer completed",
     "TRANSFER_FAIL": "Transfer failed",
     "TRANSFER_STATUS": "Status: {{status}}",
@@ -280,7 +280,14 @@
     "CARDS_SUB": "Issue · lock · limits",
     "WEALTH_SUB": "Savings · funds",
     "SUPPORT_SUB": "FAQ · ticket · hotline",
-    "NO_PERM_TRANSFER": "You do not have permission to execute transfers (ib:transfer:execute)."
+    "NO_PERM_TRANSFER": "You do not have permission to execute transfers (ib:transfer:execute).",
+    "QUOTE_TITLE": "Transfer summary",
+    "QUOTE_UPDATING": "Updating…",
+    "QUOTE_LOAD_FAIL": "Could not load fee/limit preview. You can still submit.",
+    "QUOTE_TOTAL_DEBIT": "Total debit",
+    "QUOTE_REMAINING_TODAY": "Remaining today",
+    "QUOTE_MAX_TX": "Max per transfer",
+    "QUOTE_NOTE": "Spent today {{spent}} / daily limit {{daily}} ({{zone}})."
   },
   "ADMIN": {
     "SHELL_TITLE": "Operations Console",

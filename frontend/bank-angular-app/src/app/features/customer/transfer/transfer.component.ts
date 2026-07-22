@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -11,11 +11,12 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatDialogModule } from '@angular/material/dialog';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { Store } from '@ngrx/store';
+import { Subscription, debounceTime, distinctUntilChanged } from 'rxjs';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { MoneyVndPipe } from '../../../shared/pipes/money-vnd.pipe';
 import { PERMISSIONS } from '../../../core/services/rbac.util';
 import { BankApiService } from '../../../core/services/bank-api.service';
-import { Beneficiary } from '../../../core/models/domain.model';
+import { Beneficiary, TransferQuote } from '../../../core/models/domain.model';
 import { AccountsActions } from '../../../store/accounts/accounts.actions';
 import { selectAccounts } from '../../../store/accounts/accounts.selectors';
 import { TransfersActions } from '../../../store/transfers/transfers.actions';
@@ -47,12 +48,14 @@ import { selectHasPermission } from '../../../store/auth/auth.selectors';
   templateUrl: './transfer.component.html',
   styleUrl: './transfer.component.scss',
 })
-export class TransferComponent implements OnInit {
+export class TransferComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly store = inject(Store);
   private readonly i18n = inject(TranslateService);
   private readonly api = inject(BankApiService);
   private readonly route = inject(ActivatedRoute);
+  private amountSub?: Subscription;
+  private quoteReq = 0;
 
   accounts$ = this.store.select(selectAccounts);
   creating$ = this.store.select(selectTransferCreating);
@@ -62,6 +65,9 @@ export class TransferComponent implements OnInit {
 
   beneficiaries: Beneficiary[] = [];
   selectedBeneficiaryId = '';
+  quote: TransferQuote | null = null;
+  quoteLoading = false;
+  quoteError: string | null = null;
 
   form = this.fb.nonNullable.group({
     fromAccountId: ['', Validators.required],
@@ -75,11 +81,20 @@ export class TransferComponent implements OnInit {
     this.store.dispatch(AccountsActions.load());
     this.store.dispatch(TransfersActions.clearStatus());
     this.loadBeneficiaries();
+    this.refreshQuote();
 
     const to = this.route.snapshot.queryParamMap.get('to');
     if (to && /^\d{8,14}$/.test(to)) {
       this.form.patchValue({ toAccountNumber: to });
     }
+
+    this.amountSub = this.form.controls.amount.valueChanges
+      .pipe(debounceTime(300), distinctUntilChanged())
+      .subscribe(() => this.refreshQuote());
+  }
+
+  ngOnDestroy(): void {
+    this.amountSub?.unsubscribe();
   }
 
   loadBeneficiaries(): void {
@@ -119,9 +134,14 @@ export class TransferComponent implements OnInit {
       return;
     }
     const v = this.form.getRawValue();
+    const amount = Number(v.amount);
+    const fee = this.quote?.feeAmount ?? 0;
+    const total = this.quote?.totalDebit ?? amount;
     const ok = confirm(
       this.i18n.instant('CUSTOMER.CONFIRM_MSG', {
-        amount: Number(v.amount).toLocaleString('vi-VN'),
+        amount: amount.toLocaleString('vi-VN'),
+        fee: Number(fee).toLocaleString('vi-VN'),
+        total: Number(total).toLocaleString('vi-VN'),
         to: v.toAccountNumber,
         desc: v.description || '',
       }),
@@ -133,12 +153,32 @@ export class TransferComponent implements OnInit {
         request: {
           fromAccountId: v.fromAccountId,
           toAccountNumber: v.toAccountNumber,
-          amount: Number(v.amount),
+          amount,
           description: v.description || undefined,
           currency: 'VND',
         },
         idempotencyKey: key,
       }),
     );
+  }
+
+  private refreshQuote(): void {
+    const amount = Number(this.form.controls.amount.value || 0);
+    const reqId = ++this.quoteReq;
+    this.quoteLoading = true;
+    this.quoteError = null;
+    this.api.transferQuote(amount > 0 ? amount : undefined).subscribe({
+      next: (q) => {
+        if (reqId !== this.quoteReq) return;
+        this.quote = q;
+        this.quoteLoading = false;
+      },
+      error: () => {
+        if (reqId !== this.quoteReq) return;
+        this.quote = null;
+        this.quoteLoading = false;
+        this.quoteError = this.i18n.instant('CUSTOMER.QUOTE_LOAD_FAIL');
+      },
+    });
   }
 }

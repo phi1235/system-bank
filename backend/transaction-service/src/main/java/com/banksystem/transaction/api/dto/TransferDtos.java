@@ -33,6 +33,23 @@ public final class TransferDtos {
       Instant createdAt
   ) {}
 
+  /**
+   * Pre-transfer quote for customer UX: fee preview + remaining daily limit.
+   * Does not create an order; read-only.
+   */
+  public record TransferQuoteResponse(
+      BigDecimal amount,
+      BigDecimal feeAmount,
+      BigDecimal totalDebit,
+      BigDecimal maxPerTransaction,
+      BigDecimal dailyLimit,
+      BigDecimal spentToday,
+      BigDecimal remainingToday,
+      String currency,
+      String dailyLimitZone,
+      boolean feeEnabled
+  ) {}
+
   /** Single saga step log line for transfer lifecycle visibility. */
   public record SagaStepResponse(
       String id,
