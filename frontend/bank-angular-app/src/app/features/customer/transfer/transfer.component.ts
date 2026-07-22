@@ -13,6 +13,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { Store } from '@ngrx/store';
 import { Subscription, debounceTime, distinctUntilChanged } from 'rxjs';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { FriendlyTransferErrorPipe } from '../../../shared/pipes/friendly-transfer-error.pipe';
 import { MoneyVndPipe } from '../../../shared/pipes/money-vnd.pipe';
 import { PERMISSIONS } from '../../../core/services/rbac.util';
 import { BankApiService } from '../../../core/services/bank-api.service';
@@ -43,6 +44,7 @@ import { selectHasPermission } from '../../../store/auth/auth.selectors';
     MatDialogModule,
     PageHeaderComponent,
     MoneyVndPipe,
+    FriendlyTransferErrorPipe,
     TranslateModule,
   ],
   templateUrl: './transfer.component.html',

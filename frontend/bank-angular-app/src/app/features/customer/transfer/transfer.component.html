@@ -140,7 +140,7 @@
           @if (t.failureReason) {
             <div>
               <span class="k">{{ 'CUSTOMER.RESULT_REASON' | translate }}</span>
-              <span class="v">{{ t.failureReason }}</span>
+              <span class="v">{{ t.failureReason | friendlyTransferError }}</span>
             </div>
           }
         </div>

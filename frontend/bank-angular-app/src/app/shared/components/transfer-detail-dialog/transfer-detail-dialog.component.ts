@@ -5,6 +5,7 @@ import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { TranslateModule } from '@ngx-translate/core';
 import { TransferDetail } from '../../../core/models/domain.model';
+import { FriendlyTransferErrorPipe } from '../../pipes/friendly-transfer-error.pipe';
 import { MoneyVndPipe } from '../../pipes/money-vnd.pipe';
 
 export interface TransferDetailDialogData {
@@ -14,7 +15,15 @@ export interface TransferDetailDialogData {
 @Component({
   selector: 'app-transfer-detail-dialog',
   standalone: true,
-  imports: [CommonModule, MatDialogModule, MatButtonModule, MatIconModule, TranslateModule, MoneyVndPipe],
+  imports: [
+    CommonModule,
+    MatDialogModule,
+    MatButtonModule,
+    MatIconModule,
+    TranslateModule,
+    MoneyVndPipe,
+    FriendlyTransferErrorPipe,
+  ],
   templateUrl: './transfer-detail-dialog.component.html',
   styleUrl: './transfer-detail-dialog.component.scss',
 })
