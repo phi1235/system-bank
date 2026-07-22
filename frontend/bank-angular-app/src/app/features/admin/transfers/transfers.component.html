@@ -1,83 +1,177 @@
 <app-page-header
   [title]="'ADMIN.TX_TITLE' | translate"
   [subtitle]="'ADMIN.TX_SUB' | translate"
->
-  <mat-form-field appearance="outline" class="filter" subscriptSizing="dynamic">
-    <mat-label>{{ 'COMMON.STATUS' | translate }}</mat-label>
-    <mat-icon matPrefix>filter_list</mat-icon>
-    <mat-select [(ngModel)]="status">
-      <mat-option value="">{{ 'COMMON.ALL' | translate }}</mat-option>
-      <mat-option value="COMPLETED">{{ 'COMPLETED' | transferStatus }}</mat-option>
-      <mat-option value="FAILED">{{ 'FAILED' | transferStatus }}</mat-option>
-      <mat-option value="COMPENSATED">{{ 'COMPENSATED' | transferStatus }}</mat-option>
-    </mat-select>
-  </mat-form-field>
-  <button mat-flat-button color="primary" type="button" (click)="applyFilters()">{{ 'ADMIN.FILTER' | translate }}</button>
-</app-page-header>
+/>
 
-<mat-card class="table-card">
-  <div class="table-wrap">
-    <table mat-table [dataSource]="rows" class="full">
-      <ng-container matColumnDef="createdAt">
-        <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.TIME' | translate }}</th>
-        <td mat-cell *matCellDef="let t">{{ t.createdAt | date: 'short' }}</td>
-      </ng-container>
-      <ng-container matColumnDef="amount">
-        <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.AMOUNT' | translate }}</th>
-        <td mat-cell *matCellDef="let t" class="money">{{ t.amount | moneyVnd: t.currency }}</td>
-      </ng-container>
-      <ng-container matColumnDef="status">
-        <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.STATUS' | translate }}</th>
-        <td mat-cell *matCellDef="let t">
-          <span
-            class="chip"
-            [class.ok]="t.status === 'COMPLETED'"
-            [class.warn]="t.status === 'COMPENSATED' || t.status === 'PENDING'"
-            [class.bad]="t.status === 'FAILED'"
-          >{{ t.status | transferStatus }}</span>
-        </td>
-      </ng-container>
-      <ng-container matColumnDef="fromAccountId">
-        <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.FROM' | translate }}</th>
-        <td mat-cell *matCellDef="let t"><code>{{ t.fromAccountId | slice: 0:8 }}</code></td>
-      </ng-container>
-      <ng-container matColumnDef="toAccountNumber">
-        <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.TO' | translate }}</th>
-        <td mat-cell *matCellDef="let t">{{ t.toAccountNumber || '—' }}</td>
-      </ng-container>
-      <ng-container matColumnDef="transactionId">
-        <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.TXN' | translate }}</th>
-        <td mat-cell *matCellDef="let t"><code>{{ t.transactionId | slice: 0:8 }}…</code></td>
-      </ng-container>
-      <ng-container matColumnDef="actions">
-        <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.ACTIONS' | translate }}</th>
-        <td mat-cell *matCellDef="let t">
-          <button
-            mat-stroked-button
-            color="primary"
-            type="button"
-            (click)="openDetail(t)"
-            [disabled]="openingId === t.transactionId"
-            [attr.aria-label]="'TRANSFER_DETAIL.OPEN' | translate"
-            [matTooltip]="'TRANSFER_DETAIL.OPEN' | translate"
-          >
-            <mat-icon>timeline</mat-icon>
-            {{ 'TRANSFER_DETAIL.OPEN' | translate }}
-          </button>
-        </td>
-      </ng-container>
-      <tr mat-header-row *matHeaderRowDef="cols"></tr>
-      <tr mat-row *matRowDef="let row; columns: cols"></tr>
-    </table>
+<div class="layout">
+  <div class="main-col">
+    <mat-card class="filters-card">
+      <form class="filters" (ngSubmit)="applyFilters()">
+        <mat-form-field appearance="outline" class="status-field" subscriptSizing="dynamic">
+          <mat-label>{{ 'COMMON.STATUS' | translate }}</mat-label>
+          <mat-icon matPrefix>filter_list</mat-icon>
+          <mat-select [(ngModel)]="status" name="status">
+            <mat-option value="">{{ 'COMMON.ALL' | translate }}</mat-option>
+            @for (s of statusOptions; track s) {
+              @if (s) {
+                <mat-option [value]="s">{{ s | transferStatus }}</mat-option>
+              }
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="grow" subscriptSizing="dynamic">
+          <mat-label>{{ 'ADMIN.TX_ID' | translate }}</mat-label>
+          <mat-icon matPrefix>tag</mat-icon>
+          <input
+            matInput
+            [(ngModel)]="transferId"
+            name="transferId"
+            [placeholder]="'ADMIN.TX_ID_PH' | translate"
+          />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="grow" subscriptSizing="dynamic">
+          <mat-label>{{ 'COMMON.SEARCH' | translate }}</mat-label>
+          <mat-icon matPrefix>search</mat-icon>
+          <input
+            matInput
+            [(ngModel)]="q"
+            name="q"
+            [placeholder]="'ADMIN.TX_SEARCH_PH' | translate"
+          />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="date-field" subscriptSizing="dynamic">
+          <mat-label>{{ 'ADMIN.TX_FROM' | translate }}</mat-label>
+          <input matInput type="date" [(ngModel)]="from" name="from" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="date-field" subscriptSizing="dynamic">
+          <mat-label>{{ 'ADMIN.TX_TO' | translate }}</mat-label>
+          <input matInput type="date" [(ngModel)]="to" name="to" />
+        </mat-form-field>
+
+        <button mat-flat-button color="primary" type="submit" [disabled]="loading">
+          {{ 'ADMIN.FILTER' | translate }}
+        </button>
+        <button mat-stroked-button type="button" (click)="clearFilters()" [disabled]="loading">
+          {{ 'ADMIN.CLEAR' | translate }}
+        </button>
+      </form>
+      <p class="hint">{{ 'ADMIN.TX_FILTER_HINT' | translate }}</p>
+      <p class="meta">{{ 'ADMIN.TX_TOTAL' | translate: { total: totalElements } }}</p>
+    </mat-card>
+
+    <mat-card class="table-card">
+      @if (rows.length) {
+        <div class="table-wrap">
+          <table mat-table [dataSource]="rows" class="full">
+            <ng-container matColumnDef="createdAt">
+              <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.TIME' | translate }}</th>
+              <td mat-cell *matCellDef="let t">{{ t.createdAt | date: 'short' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="amount">
+              <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.AMOUNT' | translate }}</th>
+              <td mat-cell *matCellDef="let t" class="money">
+                {{ t.amount | moneyVnd: t.currency }}
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.STATUS' | translate }}</th>
+              <td mat-cell *matCellDef="let t">
+                <span
+                  class="chip"
+                  [class.ok]="t.status === 'COMPLETED'"
+                  [class.warn]="
+                    t.status === 'COMPENSATED' ||
+                    t.status === 'PENDING' ||
+                    t.status === 'DEBITED' ||
+                    t.status === 'COMPENSATING'
+                  "
+                  [class.bad]="t.status === 'FAILED'"
+                  >{{ t.status | transferStatus }}</span
+                >
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="fromAccountId">
+              <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.FROM' | translate }}</th>
+              <td mat-cell *matCellDef="let t">
+                <code [matTooltip]="t.fromAccountId || ''">{{ shortId(t.fromAccountId) }}</code>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="toAccountNumber">
+              <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.TO' | translate }}</th>
+              <td mat-cell *matCellDef="let t">{{ t.toAccountNumber || '—' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="transactionId">
+              <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.TXN' | translate }}</th>
+              <td mat-cell *matCellDef="let t">
+                <code [matTooltip]="t.transactionId || ''">{{ shortId(t.transactionId) }}</code>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.ACTIONS' | translate }}</th>
+              <td mat-cell *matCellDef="let t">
+                <button
+                  mat-stroked-button
+                  color="primary"
+                  type="button"
+                  (click)="openDetail(t)"
+                  [disabled]="openingId === t.transactionId || loading"
+                  [attr.aria-label]="'TRANSFER_DETAIL.OPEN' | translate"
+                  [matTooltip]="'TRANSFER_DETAIL.OPEN' | translate"
+                >
+                  <mat-icon>timeline</mat-icon>
+                  {{ 'TRANSFER_DETAIL.OPEN' | translate }}
+                </button>
+              </td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="cols"></tr>
+            <tr
+              mat-row
+              *matRowDef="let row; columns: cols"
+              class="clickable-row"
+              (click)="openDetail(row)"
+            ></tr>
+          </table>
+        </div>
+      } @else if (!loading) {
+        <div class="empty-state">
+          <mat-icon>swap_horiz</mat-icon>
+          @if (hasActiveFilters) {
+            <p class="empty-title">{{ 'ADMIN.TX_EMPTY_FILTERED' | translate }}</p>
+            <p class="empty-hint">{{ 'ADMIN.TX_EMPTY_FILTERED_HINT' | translate }}</p>
+            <button mat-stroked-button type="button" (click)="clearFilters()">
+              {{ 'ADMIN.CLEAR' | translate }}
+            </button>
+          } @else {
+            <p class="empty-title">{{ 'ADMIN.EMPTY_TX' | translate }}</p>
+            <p class="empty-hint">{{ 'ADMIN.TX_EMPTY_HINT' | translate }}</p>
+          }
+        </div>
+      }
+
+      <mat-paginator
+        [length]="totalElements"
+        [pageIndex]="pageIndex"
+        [pageSize]="pageSize"
+        [pageSizeOptions]="[10, 20, 50]"
+        (page)="page($event)"
+        [disabled]="loading"
+      />
+    </mat-card>
   </div>
-  @if (rows.length === 0) {
-    <p class="empty">{{ 'ADMIN.EMPTY_TX' | translate }}</p>
-  }
-  <mat-paginator
-    [length]="totalElements"
-    [pageIndex]="pageIndex"
-    [pageSize]="pageSize"
-    [pageSizeOptions]="[10, 20, 50]"
-    (page)="page($event)"
-  />
-</mat-card>
+
+  <div class="side-col">
+    <mat-card class="side-card">
+      <h3>{{ 'ADMIN.TX_HELP_TITLE' | translate }}</h3>
+      <p>{{ 'ADMIN.TX_HELP_BODY' | translate }}</p>
+      <ul>
+        <li>{{ 'ADMIN.TX_HELP_1' | translate }}</li>
+        <li>{{ 'ADMIN.TX_HELP_2' | translate }}</li>
+        <li>{{ 'ADMIN.TX_HELP_3' | translate }}</li>
+      </ul>
+    </mat-card>
+  </div>
+</div>

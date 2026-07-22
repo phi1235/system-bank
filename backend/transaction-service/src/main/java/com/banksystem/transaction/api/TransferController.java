@@ -83,10 +83,19 @@ public class TransferController {
   @GetMapping({"/admin/transfers", "/transactions/admin/transfers"})
   @RequirePermission("transactions:list:view")
   public ApiResponse<PageResponse<TransferResponse>> adminTransfers(
-      @RequestParam(defaultValue = "0") int page,
-      @RequestParam(defaultValue = "20") int size,
-      @RequestParam(required = false) String status) {
-    return ApiResponse.ok(transferService.adminList(status, page, Math.min(size, 100)));
+      @RequestParam(required = false) String status,
+      @RequestParam(required = false) String transferId,
+      @RequestParam(required = false) String q,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+          Instant from,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+          Instant to,
+      @RequestParam(required = false) Integer page,
+      @RequestParam(required = false) Integer size) {
+    return ApiResponse.ok(
+        transferService.adminList(
+            com.banksystem.transaction.application.query.AdminTransferListQuery.of(
+                status, transferId, q, from, to, page, size)));
   }
 
   private String clientIp(HttpServletRequest request) {

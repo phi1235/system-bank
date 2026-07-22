@@ -263,12 +263,20 @@ public class TransferService {
   }
 
   @Transactional(readOnly = true)
-  public PageResponse<TransferResponse> adminList(String status, int page, int size) {
-    TransferStatus st = null;
-    if (status != null && !status.isBlank()) {
-      st = TransferStatus.valueOf(status);
-    }
-    Page<TransferOrderEntity> p = transferOrderRepository.adminSearch(st, PageRequest.of(page, size));
+  public PageResponse<TransferResponse> adminList(
+      com.banksystem.transaction.application.query.AdminTransferListQuery query) {
+    PageRequest pageable = PageRequest.of(query.page(), query.size());
+    Page<TransferOrderEntity> p =
+        transferOrderRepository.adminSearch(
+            query.hasStatus(),
+            query.hasStatus() ? query.status() : TransferStatus.PENDING,
+            query.hasTransferId(),
+            query.hasTransferId() ? query.transferId() : new UUID(0L, 0L),
+            query.hasQ(),
+            query.hasQ() ? query.q() : "",
+            query.from(),
+            query.to(),
+            pageable);
     return mapPage(p);
   }
 

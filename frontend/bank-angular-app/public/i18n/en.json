@@ -448,8 +448,8 @@
     "FROZEN_OK": "Account FROZEN",
     "ACTIVE_OK": "Account ACTIVE",
     "TX_TITLE": "Transactions",
-    "TX_SUB": "System-wide transfer monitor",
-    "EMPTY_TX": "No transfers for the current filter.",
+    "TX_SUB": "Monitor transfers with status, id, account/desc search, and date range",
+    "EMPTY_TX": "No transfers yet",
     "OUTBOX_TITLE": "Outbox",
     "OUTBOX_SUB": "Kafka outbox — inspect DEAD and replay publish",
     "OUTBOX_PENDING": "Pending",
@@ -703,7 +703,22 @@
     "KYC_PENDING_ACTION": "Set pending",
     "KYC_VERIFY_HINT": "Approve this customer KYC",
     "KYC_REJECT_HINT": "Reject this customer KYC",
-    "KYC_PENDING_HINT": "Move back to pending review"
+    "KYC_PENDING_HINT": "Move back to pending review",
+    "TX_FILTER_HINT": "Exact transfer id is UUID-only. Search matches destination account number or description.",
+    "TX_TOTAL": "{{total}} transfer(s)",
+    "TX_ID": "Transfer id",
+    "TX_ID_PH": "Full transfer UUID",
+    "TX_SEARCH_PH": "Account number or description",
+    "TX_FROM": "From",
+    "TX_TO": "To",
+    "TX_EMPTY_FILTERED": "No transfers match these filters",
+    "TX_EMPTY_FILTERED_HINT": "Try clearing filters or widening the date range.",
+    "TX_EMPTY_HINT": "Transfers appear when customers submit money moves.",
+    "TX_HELP_TITLE": "How to use",
+    "TX_HELP_BODY": "Staff can inspect system-wide transfer orders and open saga detail.",
+    "TX_HELP_1": "Filter FAILED / COMPENSATED to review problem flows.",
+    "TX_HELP_2": "Paste a full transfer UUID for an exact lookup.",
+    "TX_HELP_3": "Click a row or Open detail to view saga steps."
   },
   "ERRORS": {
     "GENERIC": "Something went wrong. Please try again.",
@@ -729,7 +744,9 @@
     "INVALID_ACTOR_ID": "Actor must be a valid user id (UUID).",
     "INVALID_KYC_STATUS": "KYC status must be Pending, Verified, or Rejected.",
     "CUSTOMER_NOT_FOUND": "Customer was not found.",
-    "PROFILE_EXISTS": "Customer profile already exists."
+    "PROFILE_EXISTS": "Customer profile already exists.",
+    "INVALID_STATUS": "Transfer status is not valid.",
+    "INVALID_TRANSFER_ID": "Transfer id must be a valid UUID."
   },
   "TRANSFER_DETAIL": {
     "TITLE": "Transfer detail",

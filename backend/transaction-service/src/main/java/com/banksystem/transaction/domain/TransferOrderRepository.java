@@ -36,12 +36,31 @@ public interface TransferOrderRepository extends JpaRepository<TransferOrderEnti
       @Param("toTs") Instant toTs,
       Pageable pageable);
 
+  /**
+   * Admin transfer search. Callers pass concrete from/to bounds and boolean flags so Postgres
+   * never sees untyped NULL enum/UUID binds.
+   */
   @Query("""
       SELECT t FROM TransferOrderEntity t
-      WHERE (:status IS NULL OR t.status = :status)
+      WHERE (:hasStatus = false OR t.status = :status)
+        AND (:hasTransferId = false OR t.id = :transferId)
+        AND (:hasQ = false
+          OR LOWER(t.toAccountNumber) LIKE LOWER(CONCAT('%', :q, '%'))
+          OR LOWER(COALESCE(t.description, '')) LIKE LOWER(CONCAT('%', :q, '%')))
+        AND t.createdAt >= :fromTs
+        AND t.createdAt <= :toTs
       ORDER BY t.createdAt DESC
       """)
-  Page<TransferOrderEntity> adminSearch(@Param("status") TransferStatus status, Pageable pageable);
+  Page<TransferOrderEntity> adminSearch(
+      @Param("hasStatus") boolean hasStatus,
+      @Param("status") TransferStatus status,
+      @Param("hasTransferId") boolean hasTransferId,
+      @Param("transferId") UUID transferId,
+      @Param("hasQ") boolean hasQ,
+      @Param("q") String q,
+      @Param("fromTs") Instant fromTs,
+      @Param("toTs") Instant toTs,
+      Pageable pageable);
 
   @Query("""
       SELECT COALESCE(SUM(t.amount), 0)

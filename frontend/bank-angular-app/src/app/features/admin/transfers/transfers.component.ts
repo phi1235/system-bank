@@ -6,6 +6,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
@@ -14,6 +15,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { Transfer } from '../../../core/models/domain.model';
 import { BankApiService } from '../../../core/services/bank-api.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { resolveHttpErrorMessage } from '../../../core/utils/http-error.util';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { TransferDetailDialogComponent } from '../../../shared/components/transfer-detail-dialog/transfer-detail-dialog.component';
 import { MoneyVndPipe } from '../../../shared/pipes/money-vnd.pipe';
@@ -31,6 +33,7 @@ import { TransferStatusPipe } from '../../../shared/pipes/transfer-status.pipe';
     MatButtonModule,
     MatFormFieldModule,
     MatSelectModule,
+    MatInputModule,
     MatIconModule,
     MatTooltipModule,
     MatDialogModule,
@@ -52,12 +55,45 @@ export class AdminTransfersComponent implements OnInit {
   pageIndex = 0;
   pageSize = 20;
   totalElements = 0;
+  loading = false;
   status = '';
-  cols = ['createdAt', 'amount', 'status', 'fromAccountId', 'toAccountNumber', 'transactionId', 'actions'];
+  transferId = '';
+  q = '';
+  from = '';
+  to = '';
+  cols = [
+    'createdAt',
+    'amount',
+    'status',
+    'fromAccountId',
+    'toAccountNumber',
+    'transactionId',
+    'actions',
+  ];
   openingId: string | null = null;
+
+  readonly statusOptions = [
+    '',
+    'PENDING',
+    'DEBITED',
+    'COMPLETED',
+    'FAILED',
+    'COMPENSATING',
+    'COMPENSATED',
+  ];
 
   ngOnInit(): void {
     this.load();
+  }
+
+  get hasActiveFilters(): boolean {
+    return !!(
+      this.status ||
+      this.transferId.trim() ||
+      this.q.trim() ||
+      this.from ||
+      this.to
+    );
   }
 
   applyFilters(): void {
@@ -65,17 +101,39 @@ export class AdminTransfersComponent implements OnInit {
     this.load();
   }
 
+  clearFilters(): void {
+    this.status = '';
+    this.transferId = '';
+    this.q = '';
+    this.from = '';
+    this.to = '';
+    this.pageIndex = 0;
+    this.load();
+  }
+
   load(): void {
-    this.api.adminTransfers(this.pageIndex, this.pageSize, this.status || undefined).subscribe({
-      next: (p) => {
-        this.rows = p.items || [];
-        this.totalElements = p.totalElements ?? this.rows.length;
-      },
-      error: () => {
-        this.rows = [];
-        this.totalElements = 0;
-      },
-    });
+    this.loading = true;
+    this.api
+      .adminTransfers(this.pageIndex, this.pageSize, {
+        status: this.status || undefined,
+        transferId: this.transferId.trim() || undefined,
+        q: this.q.trim() || undefined,
+        from: this.toIsoStart(this.from),
+        to: this.toIsoEnd(this.to),
+      })
+      .subscribe({
+        next: (p) => {
+          this.rows = p.items || [];
+          this.totalElements = p.totalElements ?? this.rows.length;
+          this.loading = false;
+        },
+        error: (err) => {
+          this.rows = [];
+          this.totalElements = 0;
+          this.loading = false;
+          this.toast.error(resolveHttpErrorMessage(err, this.i18n));
+        },
+      });
   }
 
   openDetail(row: Transfer): void {
@@ -92,9 +150,12 @@ export class AdminTransfersComponent implements OnInit {
           maxWidth: '95vw',
         });
       },
-      error: () => {
+      error: (err) => {
         this.openingId = null;
-        this.toast.error(this.i18n.instant('TRANSFER_DETAIL.LOAD_FAIL'));
+        this.toast.error(
+          resolveHttpErrorMessage(err, this.i18n) ||
+            this.i18n.instant('TRANSFER_DETAIL.LOAD_FAIL'),
+        );
       },
     });
   }
@@ -105,4 +166,26 @@ export class AdminTransfersComponent implements OnInit {
     this.load();
   }
 
+  shortId(id: string | null | undefined): string {
+    if (!id) {
+      return '—';
+    }
+    return id.length > 8 ? `${id.slice(0, 8)}…` : id;
+  }
+
+  private toIsoStart(date: string): string | undefined {
+    const d = (date || '').trim();
+    if (!d) {
+      return undefined;
+    }
+    return `${d}T00:00:00.000Z`;
+  }
+
+  private toIsoEnd(date: string): string | undefined {
+    const d = (date || '').trim();
+    if (!d) {
+      return undefined;
+    }
+    return `${d}T23:59:59.999Z`;
+  }
 }
