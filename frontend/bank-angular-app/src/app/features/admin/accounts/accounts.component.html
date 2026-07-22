@@ -3,132 +3,150 @@
   [subtitle]="'ADMIN.ACCOUNTS_SUB' | translate"
 />
 
-<div class="layout">
-  <div class="main-col">
-    <mat-card class="filters-card">
-      <form class="filters" [formGroup]="form" (ngSubmit)="applyFilters()">
-        <mat-form-field appearance="outline" class="grow" subscriptSizing="dynamic">
-          <mat-label>{{ 'ADMIN.ACCOUNT_SEARCH' | translate }}</mat-label>
-          <input
-            matInput
-            formControlName="q"
-            [placeholder]="'ADMIN.ACCOUNT_SEARCH_PH' | translate"
-          />
-          <mat-icon matPrefix>search</mat-icon>
-        </mat-form-field>
+<div class="accounts-page-container">
+  <!-- SEARCH & FILTER BAR (SINGLE ROW ALIGNED) -->
+  <mat-card class="filters-card">
+    <form class="filters" [formGroup]="form" (ngSubmit)="applyFilters()">
+      <mat-form-field appearance="outline" class="filter-field grow" subscriptSizing="dynamic">
+        <mat-label>Tìm kiếm Số tài khoản / Mã KH</mat-label>
+        <mat-icon matPrefix>search</mat-icon>
+        <input
+          matInput
+          formControlName="q"
+          placeholder="Nhập số tài khoản hoặc mã KH..."
+        />
+      </mat-form-field>
 
-        <mat-form-field appearance="outline" class="status-field" subscriptSizing="dynamic">
-          <mat-label>{{ 'ADMIN.STATUS' | translate }}</mat-label>
-          <mat-select formControlName="status">
-            <mat-option value="">{{ 'ADMIN.STATUS_ALL' | translate }}</mat-option>
-            <mat-option value="ACTIVE">{{ 'ACCOUNT_STATUS.ACTIVE' | translate }}</mat-option>
-            <mat-option value="FROZEN">{{ 'ACCOUNT_STATUS.FROZEN' | translate }}</mat-option>
-            <mat-option value="CLOSED">{{ 'ACCOUNT_STATUS.CLOSED' | translate }}</mat-option>
-          </mat-select>
-        </mat-form-field>
+      <mat-form-field appearance="outline" class="filter-field select-field" subscriptSizing="dynamic">
+        <mat-label>Trạng thái</mat-label>
+        <mat-select formControlName="status">
+          <mat-option value="">Tất cả trạng thái</mat-option>
+          <mat-option value="ACTIVE">Hoạt động (Active)</mat-option>
+          <mat-option value="FROZEN">Đã khóa (Frozen)</mat-option>
+          <mat-option value="CLOSED">Đã đóng (Closed)</mat-option>
+        </mat-select>
+      </mat-form-field>
 
-        <mat-form-field appearance="outline" class="type-field" subscriptSizing="dynamic">
-          <mat-label>{{ 'ADMIN.TYPE' | translate }}</mat-label>
-          <mat-select formControlName="accountType">
-            <mat-option value="">{{ 'ADMIN.TYPE_ALL' | translate }}</mat-option>
-            <mat-option value="PAYMENT">{{ 'ACCOUNT_TYPE.PAYMENT' | translate }}</mat-option>
-            <mat-option value="SAVINGS">{{ 'ACCOUNT_TYPE.SAVINGS' | translate }}</mat-option>
-          </mat-select>
-        </mat-form-field>
+      <mat-form-field appearance="outline" class="filter-field select-field" subscriptSizing="dynamic">
+        <mat-label>Loại tài khoản</mat-label>
+        <mat-select formControlName="accountType">
+          <mat-option value="">Mọi loại tài khoản</mat-option>
+          <mat-option value="PAYMENT">Thanh toán (Payment)</mat-option>
+          <mat-option value="SAVINGS">Tiết kiệm (Savings)</mat-option>
+        </mat-select>
+      </mat-form-field>
 
-        <button mat-flat-button color="primary" type="submit" [disabled]="loading">
-          {{ 'ADMIN.FILTER' | translate }}
-        </button>
-        <button mat-stroked-button type="button" (click)="clearFilters()" [disabled]="loading">
-          {{ 'ADMIN.CLEAR' | translate }}
-        </button>
-      </form>
-      <p class="hint">{{ 'ADMIN.ACCOUNT_SEARCH_HINT' | translate }}</p>
-      <p class="meta">{{ 'ADMIN.ACCOUNT_TOTAL' | translate: { total: total } }}</p>
-    </mat-card>
+      <button mat-flat-button color="primary" type="submit" [disabled]="loading" class="filter-btn">
+        <mat-icon>filter_list</mat-icon>
+        <span>Lọc</span>
+      </button>
 
-    <mat-card class="table-card">
-      @if (rows.length) {
-        <table mat-table [dataSource]="rows" class="accounts-table">
+      <button mat-stroked-button type="button" (click)="clearFilters()" [disabled]="loading" class="clear-btn">
+        Xóa lọc
+      </button>
+    </form>
+
+    <div class="meta-row">
+      <span class="total-count">Tổng số: {{ total }} tài khoản</span>
+    </div>
+  </mat-card>
+
+  <!-- ACCOUNTS FULL WIDTH TABLE -->
+  <mat-card class="table-card">
+    @if (rows.length) {
+      <div class="table-container">
+        <table mat-table [dataSource]="rows" class="full-width-table">
+          <!-- Account Number (STK) -->
           <ng-container matColumnDef="accountNumber">
-            <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.NUMBER' | translate }}</th>
-            <td mat-cell *matCellDef="let row" class="mono strong">
-              <span class="num-cell">
-                {{ row.accountNumber }}
-                <button
-                  mat-icon-button
-                  type="button"
-                  class="icon-mini"
-                  [matTooltip]="'ADMIN.ACCOUNT_COPY_NUMBER' | translate"
-                  (click)="copyTextValue(row.accountNumber, 'ADMIN.ACCOUNT_COPY_OK', 'ADMIN.ACCOUNT_COPY_FAIL'); $event.stopPropagation()"
-                >
-                  <mat-icon>content_copy</mat-icon>
-                </button>
-              </span>
+            <th mat-header-cell *matHeaderCellDef class="text-left">Số tài khoản (STK)</th>
+            <td mat-cell *matCellDef="let row" class="stk-cell">
+              <span class="stk-val">{{ row.accountNumber }}</span>
+              <button
+                mat-icon-button
+                type="button"
+                class="copy-btn"
+                [matTooltip]="'ADMIN.ACCOUNT_COPY_NUMBER' | translate"
+                (click)="copyTextValue(row.accountNumber, 'ADMIN.ACCOUNT_COPY_OK', 'ADMIN.ACCOUNT_COPY_FAIL'); $event.stopPropagation()"
+              >
+                <mat-icon>content_copy</mat-icon>
+              </button>
             </td>
           </ng-container>
 
+          <!-- Account Type -->
           <ng-container matColumnDef="accountType">
-            <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.TYPE' | translate }}</th>
-            <td mat-cell *matCellDef="let row">
-              {{ row.accountType | enumLabel: 'ACCOUNT_TYPE' }}
+            <th mat-header-cell *matHeaderCellDef class="text-center">Loại tài khoản</th>
+            <td mat-cell *matCellDef="let row" class="text-center">
+              <span class="type-pill">{{ row.accountType === 'PAYMENT' ? 'Thanh toán' : 'Tiết kiệm' }}</span>
             </td>
           </ng-container>
 
+          <!-- Owner Customer -->
           <ng-container matColumnDef="userId">
-            <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.USER' | translate }}</th>
-            <td mat-cell *matCellDef="let row" class="mono muted">
-              <span class="num-cell">
-                {{ row.userId }}
+            <th mat-header-cell *matHeaderCellDef class="text-center">Chủ sở hữu (Mã KH)</th>
+            <td mat-cell *matCellDef="let row" class="text-center">
+              <div class="customer-badge" [matTooltip]="'Mã KH: ' + row.userId">
+                <mat-icon>account_circle</mat-icon>
+                <span class="uid-code">KH-{{ row.userId | slice:0:8 }}</span>
                 <button
                   mat-icon-button
                   type="button"
-                  class="icon-mini"
-                  [matTooltip]="'ADMIN.ACCOUNT_COPY_USER' | translate"
-                  (click)="copyTextValue(row.userId, 'ADMIN.ACCOUNT_COPY_OK', 'ADMIN.ACCOUNT_COPY_FAIL'); $event.stopPropagation()"
+                  class="copy-btn"
+                  (click)="copyTextValue(row.userId, 'ADMIN.ACCOUNT_COPY_USER', 'ADMIN.ACCOUNT_COPY_FAIL'); $event.stopPropagation()"
                 >
                   <mat-icon>content_copy</mat-icon>
                 </button>
-              </span>
+              </div>
             </td>
           </ng-container>
 
+          <!-- Balance -->
           <ng-container matColumnDef="balance">
-            <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.BALANCE' | translate }}</th>
-            <td mat-cell *matCellDef="let row" class="bal">
-              {{ row.balance | moneyVnd: row.currency }}
+            <th mat-header-cell *matHeaderCellDef class="text-right">Số dư khả dụng</th>
+            <td mat-cell *matCellDef="let row" class="text-right bal-cell">
+              <span class="balance-amount">{{ row.balance | moneyVnd: row.currency }}</span>
             </td>
           </ng-container>
 
+          <!-- Status -->
           <ng-container matColumnDef="status">
-            <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.STATUS' | translate }}</th>
-            <td mat-cell *matCellDef="let row">
+            <th mat-header-cell *matHeaderCellDef class="text-center">Trạng thái</th>
+            <td mat-cell *matCellDef="let row" class="text-center">
               <span
-                class="chip"
+                class="status-chip"
                 [class.ok]="row.status === 'ACTIVE'"
                 [class.bad]="row.status === 'FROZEN'"
                 [class.warn]="row.status === 'CLOSED'"
               >
-                {{ row.status | enumLabel: 'ACCOUNT_STATUS' }}
+                <mat-icon class="chip-icon">{{ row.status === 'ACTIVE' ? 'check_circle' : (row.status === 'FROZEN' ? 'lock' : 'cancel') }}</mat-icon>
+                {{ row.status === 'ACTIVE' ? 'Hoạt động' : (row.status === 'FROZEN' ? 'Đã khóa' : 'Đã đóng') }}
               </span>
             </td>
           </ng-container>
 
+          <!-- Actions -->
           <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef></th>
-            <td mat-cell *matCellDef="let row">
-              <button mat-button type="button" color="primary" (click)="openDetail(row, $event)">
-                {{ 'ADMIN.VIEW' | translate }}
+            <th mat-header-cell *matHeaderCellDef class="text-center">Thao tác</th>
+            <td mat-cell *matCellDef="let row" class="text-center acts-cell">
+              <button
+                mat-icon-button
+                type="button"
+                class="btn-icon-eye"
+                [matTooltip]="'Xem chi tiết tài khoản'"
+                (click)="openDetail(row, $event)"
+              >
+                <mat-icon>visibility</mat-icon>
               </button>
+
               @if ((canTopUp$ | async) && row.status === 'ACTIVE') {
                 <button
-                  mat-stroked-button
+                  mat-flat-button
                   type="button"
-                  color="accent"
+                  class="btn-topup"
                   (click)="openTopUp(row); $event.stopPropagation()"
                 >
-                  <mat-icon>add_circle_outline</mat-icon>
-                  {{ 'ADMIN.TOPUP_BTN' | translate }}
+                  <mat-icon>add_circle</mat-icon>
+                  <span>Nạp tiền</span>
                 </button>
               }
             </td>
@@ -139,156 +157,31 @@
             mat-row
             *matRowDef="let row; columns: cols"
             class="clickable-row"
-            [class.selected]="selected?.id === row.id"
-            (click)="select(row)"
+            (click)="openDetail(row)"
           ></tr>
         </table>
-      } @else {
-        <div class="empty-inline">
-          <mat-icon>account_balance</mat-icon>
-          @if (loading) {
-            <p>{{ 'ADMIN.LOADING' | translate }}</p>
-          } @else if (hasActiveFilters) {
-            <p>{{ 'ADMIN.ACCOUNT_LIST_FILTERED_EMPTY' | translate }}</p>
-            <button mat-stroked-button type="button" (click)="clearFilters()">
-              {{ 'ADMIN.CLEAR' | translate }}
-            </button>
-          } @else {
-            <p>{{ 'ADMIN.ACCOUNT_LIST_EMPTY' | translate }}</p>
-          }
-        </div>
-      }
-      <mat-paginator
-        [length]="total"
-        [pageIndex]="pageIndex"
-        [pageSize]="pageSize"
-        [pageSizeOptions]="[10, 20, 50]"
-        (page)="page($event)"
-        [disabled]="loading"
-      />
-    </mat-card>
-  </div>
-
-  <div class="side-col">
-    @if (selected) {
-      <mat-card class="result-card" [class.frozen]="selected.status === 'FROZEN'">
-        <div class="result-head">
-          <h3>{{ 'ADMIN.NUMBER' | translate }}</h3>
-          <span
-            class="chip"
-            [class.ok]="selected.status === 'ACTIVE'"
-            [class.bad]="selected.status === 'FROZEN'"
-            [class.warn]="selected.status === 'CLOSED'"
-          >
-            {{ selected.status | enumLabel: 'ACCOUNT_STATUS' }}
-          </span>
-        </div>
-        <div class="acc-num">
-          {{ selected.accountNumber }}
-          <button
-            mat-icon-button
-            type="button"
-            [matTooltip]="'ADMIN.ACCOUNT_COPY_NUMBER' | translate"
-            (click)="copyTextValue(selected.accountNumber, 'ADMIN.ACCOUNT_COPY_OK', 'ADMIN.ACCOUNT_COPY_FAIL')"
-          >
-            <mat-icon>content_copy</mat-icon>
-          </button>
-        </div>
-        <div class="meta-grid">
-          <div>
-            <span class="k">{{ 'ADMIN.ACCOUNT_ID_LABEL' | translate }}</span>
-            <span class="v mono copy-line">
-              {{ selected.id }}
-              <button
-                mat-icon-button
-                type="button"
-                class="icon-mini"
-                [matTooltip]="'ADMIN.ACCOUNT_COPY_ID' | translate"
-                (click)="copyTextValue(selected.id, 'ADMIN.ACCOUNT_COPY_OK', 'ADMIN.ACCOUNT_COPY_FAIL')"
-              >
-                <mat-icon>content_copy</mat-icon>
-              </button>
-            </span>
-          </div>
-          <div>
-            <span class="k">{{ 'ADMIN.USER' | translate }}</span>
-            <span class="v mono copy-line">
-              {{ selected.userId }}
-              <button
-                mat-icon-button
-                type="button"
-                class="icon-mini"
-                [matTooltip]="'ADMIN.ACCOUNT_COPY_USER' | translate"
-                (click)="copyTextValue(selected.userId, 'ADMIN.ACCOUNT_COPY_OK', 'ADMIN.ACCOUNT_COPY_FAIL')"
-              >
-                <mat-icon>content_copy</mat-icon>
-              </button>
-            </span>
-          </div>
-          <div>
-            <span class="k">{{ 'ADMIN.BALANCE' | translate }}</span>
-            <span class="v bal">{{ selected.balance | moneyVnd: selected.currency }}</span>
-          </div>
-          <div>
-            <span class="k">{{ 'ADMIN.TYPE' | translate }}</span>
-            <span class="v">{{ selected.accountType | enumLabel: 'ACCOUNT_TYPE' }}</span>
-          </div>
-          @if (selected.createdAt) {
-            <div>
-              <span class="k">{{ 'ADMIN.ACCOUNT_CREATED' | translate }}</span>
-              <span class="v">{{ selected.createdAt | date: 'medium' }}</span>
-            </div>
-          }
-          @if (selected.updatedAt) {
-            <div>
-              <span class="k">{{ 'ADMIN.ACCOUNT_UPDATED' | translate }}</span>
-              <span class="v">{{ selected.updatedAt | date: 'medium' }}</span>
-            </div>
-          }
-        </div>
-        <div class="acts">
-          @if (canTopUp$ | async) {
-            <button
-              mat-flat-button
-              color="accent"
-              type="button"
-              (click)="openTopUp(selected)"
-              [disabled]="selected.status !== 'ACTIVE' || busyId === selected.id"
-            >
-              <mat-icon>add_circle_outline</mat-icon>
-              {{ 'ADMIN.TOPUP_BTN' | translate }}
-            </button>
-          }
-          @if (canFreeze$ | async) {
-            <button
-              mat-stroked-button
-              color="warn"
-              type="button"
-              (click)="freeze(selected)"
-              [disabled]="selected.status !== 'ACTIVE' || busyId === selected.id"
-            >
-              {{ 'ADMIN.FREEZE' | translate }}
-            </button>
-            <button
-              mat-flat-button
-              color="primary"
-              type="button"
-              (click)="unfreeze(selected)"
-              [disabled]="selected.status !== 'FROZEN' || busyId === selected.id"
-            >
-              {{ 'ADMIN.UNFREEZE' | translate }}
-            </button>
-          } @else {
-            <p class="hint">{{ 'ADMIN.NO_PERM_FREEZE' | translate }}</p>
-          }
-        </div>
-        <p class="hint">{{ 'ADMIN.FREEZE_HINT' | translate }}</p>
-      </mat-card>
+      </div>
     } @else {
-      <mat-card class="empty-card">
-        <mat-icon>manage_search</mat-icon>
-        <p>{{ 'ADMIN.ACCOUNT_DETAIL_EMPTY' | translate }}</p>
-      </mat-card>
+      <div class="empty-state">
+        <mat-icon>account_balance</mat-icon>
+        @if (loading) {
+          <p>Đang tải danh sách tài khoản...</p>
+        } @else if (hasActiveFilters) {
+          <p>Không tìm thấy tài khoản phù hợp với điều kiện tìm kiếm.</p>
+          <button mat-stroked-button type="button" (click)="clearFilters()">Xóa lọc</button>
+        } @else {
+          <p>Chưa có tài khoản nào trong hệ thống.</p>
+        }
+      </div>
     }
-  </div>
+
+    <mat-paginator
+      [length]="total"
+      [pageIndex]="pageIndex"
+      [pageSize]="pageSize"
+      [pageSizeOptions]="[10, 20, 50]"
+      (page)="page($event)"
+      [disabled]="loading"
+    />
+  </mat-card>
 </div>

@@ -41,6 +41,12 @@
 
 .full-table {
   width: 100%;
+
+  .mat-column-username { width: 25%; min-width: 150px; }
+  .mat-column-email { width: 30%; min-width: 200px; }
+  .mat-column-roles { width: 22%; min-width: 150px; }
+  .mat-column-type { width: 11%; min-width: 100px; }
+  .mat-column-actions { width: 12%; min-width: 120px; text-align: right; }
 }
 
 .table-scroll {

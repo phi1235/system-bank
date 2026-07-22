@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,18 +48,21 @@ public class PasswordResetService {
   private final AuthAuditLogRepository auditLogRepository;
   private final BoundPasswordEncoder passwordEncoder;
   private final SessionService sessionService;
+  private final JdbcTemplate jdbcTemplate;
 
   public PasswordResetService(
       UserRepository userRepository,
       PasswordResetTicketRepository ticketRepository,
       AuthAuditLogRepository auditLogRepository,
       BoundPasswordEncoder passwordEncoder,
-      SessionService sessionService) {
+      SessionService sessionService,
+      JdbcTemplate jdbcTemplate) {
     this.userRepository = userRepository;
     this.ticketRepository = ticketRepository;
     this.auditLogRepository = auditLogRepository;
     this.passwordEncoder = passwordEncoder;
     this.sessionService = sessionService;
+    this.jdbcTemplate = jdbcTemplate;
   }
 
   @Transactional
@@ -182,8 +186,31 @@ public class PasswordResetService {
     }
 
     String delivery = "EMAIL".equals(channel) ? user.getEmail() : maskPhonePlaceholder(user.getEmail());
+    if (delivery == null || delivery.isBlank()) {
+      delivery = user.getUsername() + "@bank.local";
+    }
     log.info("MOCK_{} password-reset to={} username={} tempPassword={} (DEV only — not returned to admin UI)",
         channel, delivery, user.getUsername(), tempPassword);
+
+    try {
+      if (jdbcTemplate != null) {
+        jdbcTemplate.update(
+            "INSERT INTO notification_logs (id, event_id, channel, recipient, template, status, body, user_id, audience, created_at) " +
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW()) ON CONFLICT DO NOTHING",
+            UUID.randomUUID(),
+            UUID.randomUUID(),
+            channel,
+            delivery,
+            "PASSWORD_RESET",
+            "SENT",
+            "Mật khẩu tạm thời mới cấp cho tài khoản " + user.getUsername() + " là: " + tempPassword + ". Vui lòng sử dụng mật khẩu này để đăng nhập và đổi mật khẩu mới.",
+            user.getId(),
+            "CUSTOMER"
+        );
+      }
+    } catch (Exception ex) {
+      log.warn("Could not insert notification log for password reset: {}", ex.getMessage());
+    }
 
     audit(adminId, "PWD_RESET_FULFILLED", null,
         "ticketId=" + ticketId + ",targetUser=" + user.getUsername() + ",channel=" + channel);

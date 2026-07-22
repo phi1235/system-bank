@@ -435,6 +435,72 @@ mat-icon,
   font-family: 'Material Icons' !important;
 }
 
+/* Universal Table Styling for clean full-width column distribution */
+table.mat-mdc-table {
+  width: 100% !important;
+  background: #ffffff !important;
+
+  th.mat-mdc-header-cell {
+    background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%) !important;
+    color: #334155 !important;
+    font-weight: 800 !important;
+    font-size: 0.8rem !important;
+    letter-spacing: 0.03em !important;
+    text-transform: uppercase !important;
+    padding: 1rem 1.15rem !important;
+    border-bottom: 1px solid #cbd5e1 !important;
+    white-space: nowrap !important;
+
+    .mat-mdc-header-cell-label {
+      width: 100% !important;
+      display: flex !important;
+      align-items: center !important;
+    }
+
+    &.text-left, &.text-left .mat-mdc-header-cell-label {
+      text-align: left !important;
+      justify-content: flex-start !important;
+    }
+
+    &.text-center, &.text-center .mat-mdc-header-cell-label {
+      text-align: center !important;
+      justify-content: center !important;
+    }
+
+    &.text-right, &.text-right .mat-mdc-header-cell-label {
+      text-align: right !important;
+      justify-content: flex-end !important;
+    }
+  }
+
+  td.mat-mdc-cell.text-left {
+    text-align: left !important;
+  }
+
+  td.mat-mdc-cell.text-right {
+    text-align: right !important;
+  }
+
+  td.mat-mdc-cell.text-center {
+    text-align: center !important;
+  }
+
+  td.mat-mdc-cell {
+    padding: 1rem 1.15rem !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    font-size: 0.88rem !important;
+    color: #0f172a !important;
+    vertical-align: middle !important;
+  }
+
+  tr.mat-mdc-row {
+    transition: background 0.15s ease;
+    &:hover {
+      background: #f8fafc !important;
+    }
+  }
+}
+
 html,
 body {
   height: 100%;
