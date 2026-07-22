@@ -313,7 +313,20 @@
     "RESULT_PENDING_HINT": "Giao dịch đang xử lý. Vui lòng xem lại lịch sử sau giây lát.",
     "RESULT_FAILED_HINT": "Tiền có thể đã được hoàn. Kiểm tra số dư và lịch sử.",
     "RESULT_OK_HINT": "Chuyển tiền thành công.",
-    "QUOTE_PLACEHOLDER": "Nhập số tiền để xem phí và hạn mức còn lại trong ngày."
+    "QUOTE_PLACEHOLDER": "Nhập số tiền để xem phí và hạn mức còn lại trong ngày.",
+    "BENEFICIARY_SEARCH": "Tìm biệt danh hoặc số TK",
+    "BENEFICIARY_SEARCH_PH": "Gõ để lọc…",
+    "BENEFICIARY_FILTERED_EMPTY": "Không có danh bạ khớp bộ lọc",
+    "BENEFICIARY_CLEAR_FILTER": "Xóa tìm kiếm",
+    "BENEFICIARY_RENAME": "Đổi tên",
+    "BENEFICIARY_RENAME_TITLE": "Đổi biệt danh người thụ hưởng",
+    "BENEFICIARY_RENAME_MSG": "Cập nhật tên hiển thị cho tài khoản {{account}}.",
+    "BENEFICIARY_RENAME_OK": "Đã cập nhật biệt danh",
+    "BENEFICIARY_COPY": "Sao chép số tài khoản",
+    "BENEFICIARY_COPIED": "Đã sao chép số tài khoản",
+    "BENEFICIARY_COPY_FAIL": "Không sao chép được số tài khoản",
+    "BENEFICIARY_CREATED_AT": "Đã lưu",
+    "TRANSFER_BENEFICIARY_EMPTY": "Chưa có danh bạ — nhập số TK hoặc quản lý danh sách."
   },
   "ADMIN": {
     "SHELL_TITLE": "Operations Console",
@@ -598,7 +611,14 @@
   },
   "ERRORS": {
     "GENERIC": "Lỗi hệ thống",
-    "WITH_REF": "{{message}} (mã: {{ref}})"
+    "WITH_REF": "{{message}} (mã: {{ref}})",
+    "BENEFICIARY_EXISTS": "Số tài khoản này đã có trong danh bạ",
+    "BENEFICIARY_NOT_FOUND": "Không tìm thấy người thụ hưởng",
+    "ACCOUNT_NOT_FOUND": "Không tìm thấy số tài khoản",
+    "ACCOUNT_FROZEN": "Tài khoản đích không ở trạng thái hoạt động",
+    "ACCOUNT_SERVICE_ERROR": "Dịch vụ tài khoản tạm thời không khả dụng",
+    "INVALID_NICKNAME": "Biệt danh không hợp lệ",
+    "INVALID_ACCOUNT": "Số tài khoản không hợp lệ"
   },
   "TRANSFER_DETAIL": {
     "TITLE": "Chi tiết chuyển tiền",

@@ -313,7 +313,20 @@
     "RESULT_PENDING_HINT": "Transfer is still processing. Refresh history in a moment.",
     "RESULT_FAILED_HINT": "Money may have been reversed. Check account balance and history.",
     "RESULT_OK_HINT": "Transfer completed successfully.",
-    "QUOTE_PLACEHOLDER": "Enter an amount to preview fee and remaining daily limit."
+    "QUOTE_PLACEHOLDER": "Enter an amount to preview fee and remaining daily limit.",
+    "BENEFICIARY_SEARCH": "Search nickname or account",
+    "BENEFICIARY_SEARCH_PH": "Type to filter…",
+    "BENEFICIARY_FILTERED_EMPTY": "No beneficiaries match your search",
+    "BENEFICIARY_CLEAR_FILTER": "Clear search",
+    "BENEFICIARY_RENAME": "Rename",
+    "BENEFICIARY_RENAME_TITLE": "Rename beneficiary",
+    "BENEFICIARY_RENAME_MSG": "Update the display name for {{account}}.",
+    "BENEFICIARY_RENAME_OK": "Nickname updated",
+    "BENEFICIARY_COPY": "Copy account number",
+    "BENEFICIARY_COPIED": "Account number copied",
+    "BENEFICIARY_COPY_FAIL": "Could not copy account number",
+    "BENEFICIARY_CREATED_AT": "Saved",
+    "TRANSFER_BENEFICIARY_EMPTY": "No saved beneficiaries yet — type the account number or manage the list."
   },
   "ADMIN": {
     "SHELL_TITLE": "Operations Console",
@@ -598,7 +611,14 @@
   },
   "ERRORS": {
     "GENERIC": "System error",
-    "WITH_REF": "{{message}} (ref: {{ref}})"
+    "WITH_REF": "{{message}} (ref: {{ref}})",
+    "BENEFICIARY_EXISTS": "This account is already in your beneficiary list",
+    "BENEFICIARY_NOT_FOUND": "Beneficiary not found",
+    "ACCOUNT_NOT_FOUND": "Account number not found",
+    "ACCOUNT_FROZEN": "Destination account is not active",
+    "ACCOUNT_SERVICE_ERROR": "Account service is temporarily unavailable",
+    "INVALID_NICKNAME": "Invalid nickname",
+    "INVALID_ACCOUNT": "Invalid account number"
   },
   "TRANSFER_DETAIL": {
     "TITLE": "Transfer detail",
