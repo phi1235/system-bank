@@ -357,7 +357,20 @@
     "RESULT_RETRY_HINT": "Form đã được điền sẵn — kiểm tra rồi xác nhận để tạo giao dịch mới.",
     "HISTORY_COPY_ID": "Sao chép mã",
     "HISTORY_RETRY": "Thử lại",
-    "TRANSFER_RETRY_BANNER": "Đang thử lại giao dịch trước. Kiểm tra thông tin rồi xác nhận."
+    "TRANSFER_RETRY_BANNER": "Đang thử lại giao dịch trước. Kiểm tra thông tin rồi xác nhận.",
+    "NOTIF_PAGE_SUB": "{{unread}} chưa đọc · cập nhật trạng thái chuyển khoản hiện tại đây",
+    "NOTIF_FILTER_READ": "Trạng thái đọc",
+    "NOTIF_FILTER_ALL": "Tất cả",
+    "NOTIF_EMPTY_HINT": "Thực hiện chuyển khoản để nhận thông báo trạng thái.",
+    "NOTIF_EMPTY_FILTERED": "Không có thông báo khớp bộ lọc",
+    "NOTIF_EMPTY_FILTERED_HINT": "Thử hiển thị tất cả thông báo.",
+    "NOTIF_VIEW_ALL": "Xem tất cả thông báo",
+    "NOTIF_OPEN_HISTORY": "Mở lịch sử chuyển khoản",
+    "NOTIF_HELP_TITLE": "Về thông báo",
+    "NOTIF_HELP_1": "Bạn nhận thông báo khi chuyển khoản thành công hoặc thất bại.",
+    "NOTIF_HELP_2": "Số chưa đọc trên chuông header cập nhật theo thời gian thực.",
+    "NOTIF_HELP_3": "Đánh dấu đã đọc từng cái hoặc tất cả; bộ lọc có phân trang.",
+    "NOTIF_REFRESH": "Làm mới"
   },
   "ADMIN": {
     "SHELL_TITLE": "Operations Console",
@@ -638,7 +651,8 @@
     "FREEZE_FAIL": "Đóng băng thất bại",
     "UNFREEZE_TITLE": "Mở đóng băng tài khoản",
     "UNFREEZE_CONFIRM": "Mở đóng băng {{account}} và trả về trạng thái ACTIVE?",
-    "UNFREEZE_FAIL": "Mở đóng băng thất bại"
+    "UNFREEZE_FAIL": "Mở đóng băng thất bại",
+    "NOTIF_VIEW_ALL": "Xem tất cả cảnh báo"
   },
   "ERRORS": {
     "GENERIC": "Đã xảy ra lỗi. Vui lòng thử lại.",
@@ -737,5 +751,14 @@
   "LEDGER_ENTRY": {
     "CREDIT": "Ghi có",
     "DEBIT": "Ghi nợ"
+  },
+  "NOTIF_TEMPLATE": {
+    "TRANSFER_COMPLETED": "Chuyển khoản thành công",
+    "TRANSFER_FAILED": "Chuyển khoản thất bại",
+    "OPS_TRANSFER_FAILED": "Ops: chuyển khoản thất bại",
+    "OPS_OUTBOX_DEAD": "Ops: outbox DEAD",
+    "OPS_ACCOUNT_FROZEN": "Ops: khóa tài khoản",
+    "OPS_ACCOUNT_UNFROZEN": "Ops: mở khóa tài khoản",
+    "OPS_KYC_UPDATED": "Ops: cập nhật KYC"
   }
 }

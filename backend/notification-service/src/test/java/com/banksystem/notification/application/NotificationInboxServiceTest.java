@@ -50,6 +50,34 @@ class NotificationInboxServiceTest {
   }
 
   @Test
+  void myInbox_unreadFilter_usesUnreadQuery() {
+    NotificationLogEntity unread = row(userId, null, NotificationInboxService.AUDIENCE_CUSTOMER);
+    when(repository.findByUserIdAndReadAtIsNullOrderByCreatedAtDesc(eq(userId), any(Pageable.class)))
+        .thenReturn(new PageImpl<>(List.of(unread)));
+
+    var page = service.myInbox(userId, 0, 20, "UNREAD");
+    assertEquals(1, page.items().size());
+    assertFalse(page.items().get(0).read());
+    verify(repository)
+        .findByUserIdAndReadAtIsNullOrderByCreatedAtDesc(eq(userId), any(Pageable.class));
+  }
+
+  @Test
+  void myInbox_readFilter_usesReadQuery() {
+    NotificationLogEntity read =
+        row(userId, Instant.parse("2026-07-21T10:00:00Z"), NotificationInboxService.AUDIENCE_CUSTOMER);
+    when(repository.findByUserIdAndReadAtIsNotNullOrderByCreatedAtDesc(
+            eq(userId), any(Pageable.class)))
+        .thenReturn(new PageImpl<>(List.of(read)));
+
+    var page = service.myInbox(userId, 0, 20, "read");
+    assertEquals(1, page.items().size());
+    assertTrue(page.items().get(0).read());
+    verify(repository)
+        .findByUserIdAndReadAtIsNotNullOrderByCreatedAtDesc(eq(userId), any(Pageable.class));
+  }
+
+  @Test
   void markRead_setsTimestamp() {
     NotificationLogEntity unread = row(userId, null, NotificationInboxService.AUDIENCE_CUSTOMER);
     when(repository.findByIdAndUserId(unread.getId(), userId)).thenReturn(Optional.of(unread));

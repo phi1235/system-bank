@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,8 +29,27 @@ public class NotificationInboxService {
 
   @Transactional(readOnly = true)
   public PageResponse<NotificationItem> myInbox(UUID userId, int page, int size) {
-    Page<NotificationLogEntity> p =
-        repository.findByUserIdOrderByCreatedAtDesc(userId, PageRequest.of(page, size));
+    return myInbox(userId, page, size, null);
+  }
+
+  /**
+   * Customer inbox with optional read-state filter.
+   *
+   * @param readFilter {@code null}/blank = all, {@code UNREAD}, or {@code READ}
+   */
+  @Transactional(readOnly = true)
+  public PageResponse<NotificationItem> myInbox(
+      UUID userId, int page, int size, String readFilter) {
+    Pageable pageable = PageRequest.of(page, size);
+    String filter = readFilter == null ? "" : readFilter.trim().toUpperCase();
+    Page<NotificationLogEntity> p;
+    if ("UNREAD".equals(filter)) {
+      p = repository.findByUserIdAndReadAtIsNullOrderByCreatedAtDesc(userId, pageable);
+    } else if ("READ".equals(filter)) {
+      p = repository.findByUserIdAndReadAtIsNotNullOrderByCreatedAtDesc(userId, pageable);
+    } else {
+      p = repository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
+    }
     return toPage(p);
   }
 

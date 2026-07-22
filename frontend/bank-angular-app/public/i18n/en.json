@@ -357,7 +357,20 @@
     "RESULT_RETRY_HINT": "Form prefilled — review and confirm to create a new transfer.",
     "HISTORY_COPY_ID": "Copy reference",
     "HISTORY_RETRY": "Try again",
-    "TRANSFER_RETRY_BANNER": "Retrying a previous transfer. Review details, then confirm."
+    "TRANSFER_RETRY_BANNER": "Retrying a previous transfer. Review details, then confirm.",
+    "NOTIF_PAGE_SUB": "{{unread}} unread · transfer status updates appear here",
+    "NOTIF_FILTER_READ": "Read status",
+    "NOTIF_FILTER_ALL": "All",
+    "NOTIF_EMPTY_HINT": "Complete a transfer to receive status notifications.",
+    "NOTIF_EMPTY_FILTERED": "No notifications match this filter",
+    "NOTIF_EMPTY_FILTERED_HINT": "Try showing all notifications.",
+    "NOTIF_VIEW_ALL": "View all notifications",
+    "NOTIF_OPEN_HISTORY": "Open transfer history",
+    "NOTIF_HELP_TITLE": "About notifications",
+    "NOTIF_HELP_1": "You get an inbox item when a transfer completes or fails.",
+    "NOTIF_HELP_2": "Unread count stays in the header bell and updates live.",
+    "NOTIF_HELP_3": "Mark one or all as read; filters work with pagination.",
+    "NOTIF_REFRESH": "Refresh"
   },
   "ADMIN": {
     "SHELL_TITLE": "Operations Console",
@@ -638,7 +651,8 @@
     "FREEZE_FAIL": "Freeze failed",
     "UNFREEZE_TITLE": "Unfreeze account",
     "UNFREEZE_CONFIRM": "Unfreeze account {{account}} and restore ACTIVE status?",
-    "UNFREEZE_FAIL": "Unfreeze failed"
+    "UNFREEZE_FAIL": "Unfreeze failed",
+    "NOTIF_VIEW_ALL": "View all alerts"
   },
   "ERRORS": {
     "GENERIC": "Something went wrong. Please try again.",
@@ -737,5 +751,14 @@
   "LEDGER_ENTRY": {
     "CREDIT": "Credit",
     "DEBIT": "Debit"
+  },
+  "NOTIF_TEMPLATE": {
+    "TRANSFER_COMPLETED": "Transfer completed",
+    "TRANSFER_FAILED": "Transfer failed",
+    "OPS_TRANSFER_FAILED": "Ops: transfer failed",
+    "OPS_OUTBOX_DEAD": "Ops: outbox dead",
+    "OPS_ACCOUNT_FROZEN": "Ops: account frozen",
+    "OPS_ACCOUNT_UNFROZEN": "Ops: account unfrozen",
+    "OPS_KYC_UPDATED": "Ops: KYC updated"
   }
 }

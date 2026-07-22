@@ -16,6 +16,7 @@ import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { Router } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { Observable, Subscription } from 'rxjs';
 import { NotificationItem } from '../../../core/models/domain.model';
@@ -60,6 +61,7 @@ export class NotificationBellComponent implements OnDestroy {
   private readonly injector = inject(Injector);
   private readonly overlay = inject(Overlay);
   private readonly vcr = inject(ViewContainerRef);
+  private readonly router = inject(Router);
   private liveSub?: Subscription;
   private overlayRef?: OverlayRef;
   private backdropSub?: Subscription;
@@ -107,6 +109,15 @@ export class NotificationBellComponent implements OnDestroy {
 
   get markAllOkKey(): string {
     return this.mode === 'ops' ? 'ADMIN.NOTIF_MARK_ALL_OK' : 'CUSTOMER.NOTIF_MARK_ALL_OK';
+  }
+
+  get viewAllKey(): string {
+    return this.mode === 'ops' ? 'ADMIN.NOTIF_VIEW_ALL' : 'CUSTOMER.NOTIF_VIEW_ALL';
+  }
+
+  /** Full inbox page (customer only; ops stays panel-only for now). */
+  get viewAllLink(): string | null {
+    return this.mode === 'customer' ? '/customer/notifications' : null;
   }
 
   ngOnDestroy(): void {
@@ -230,6 +241,22 @@ export class NotificationBellComponent implements OnDestroy {
 
   isBad(n: NotificationItem): boolean {
     return n.template?.includes('FAILED') === true || n.template?.startsWith('OPS_') === true;
+  }
+
+  templateLabel(n: NotificationItem): string {
+    const key = `NOTIF_TEMPLATE.${n.template}`;
+    const loc = this.i18n.instant(key);
+    return loc && loc !== key ? loc : n.template;
+  }
+
+  openViewAll(event?: MouseEvent): void {
+    event?.stopPropagation();
+    const link = this.viewAllLink;
+    if (!link) {
+      return;
+    }
+    this.closePanel();
+    void this.router.navigateByUrl(link);
   }
 
   private stream(): NotificationStreamService | OpsNotificationStreamService {

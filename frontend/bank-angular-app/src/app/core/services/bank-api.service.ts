@@ -22,8 +22,19 @@ export class BankApiService {
   private readonly api = inject(ApiService);
 
   // Notifications (customer inbox)
-  myNotifications(page = 0, size = 20): Observable<PageResponse<NotificationItem>> {
-    return this.api.get('/notifications', { page, size });
+  /**
+   * @param readFilter ALL | UNREAD | READ (default ALL)
+   */
+  myNotifications(
+    page = 0,
+    size = 20,
+    readFilter: 'ALL' | 'UNREAD' | 'READ' = 'ALL',
+  ): Observable<PageResponse<NotificationItem>> {
+    return this.api.get('/notifications', {
+      page,
+      size,
+      ...(readFilter && readFilter !== 'ALL' ? { readFilter } : {}),
+    });
   }
 
   notificationUnreadCount(): Observable<{ unread: number }> {
