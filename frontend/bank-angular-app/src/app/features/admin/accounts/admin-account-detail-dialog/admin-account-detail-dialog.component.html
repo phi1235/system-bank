@@ -1,0 +1,80 @@
+<div class="dialog-header">
+  <div class="title-box">
+    <mat-icon class="icon">account_balance</mat-icon>
+    <div>
+      <h2>Chi tiết tài khoản</h2>
+      <p class="sub">Thông tin quản trị và số dư khả dụng</p>
+    </div>
+  </div>
+  <button mat-icon-button type="button" (click)="close()">
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
+
+<mat-dialog-content class="dialog-body">
+  <div class="account-card">
+    <div class="stk-row">
+      <div>
+        <span class="lbl">Số tài khoản (STK)</span>
+        <div class="stk-val">
+          <span>{{ data.account.accountNumber }}</span>
+          <button mat-icon-button type="button" class="copy-btn" (click)="copy(data.account.accountNumber, 'Số tài khoản')">
+            <mat-icon>content_copy</mat-icon>
+          </button>
+        </div>
+      </div>
+      <span class="status-badge" [class.ok]="data.account.status === 'ACTIVE'" [class.bad]="data.account.status === 'FROZEN'">
+        {{ data.account.status === 'ACTIVE' ? 'Hoạt động' : (data.account.status === 'FROZEN' ? 'Đã khóa' : 'Đã đóng') }}
+      </span>
+    </div>
+
+    <div class="bal-box">
+      <span class="lbl">Số dư hiện tại</span>
+      <span class="bal-val">{{ data.account.balance | moneyVnd: data.account.currency }}</span>
+    </div>
+  </div>
+
+  <div class="detail-rows">
+    <div class="detail-item">
+      <span class="k">Loại tài khoản</span>
+      <span class="v">{{ data.account.accountType === 'PAYMENT' ? 'Tài khoản Thanh toán' : 'Tài khoản Tiết kiệm' }}</span>
+    </div>
+
+    <div class="detail-item">
+      <span class="k">Mã khách hàng sở hữu</span>
+      <div class="v copy-line">
+        <span>{{ data.account.userId }}</span>
+        <button mat-icon-button type="button" class="copy-btn" (click)="copy(data.account.userId, 'Mã khách hàng')">
+          <mat-icon>content_copy</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    <div class="detail-item">
+      <span class="k">Mã ID tài khoản (System UUID)</span>
+      <div class="v copy-line">
+        <span>{{ data.account.id }}</span>
+        <button mat-icon-button type="button" class="copy-btn" (click)="copy(data.account.id, 'Mã ID tài khoản')">
+          <mat-icon>content_copy</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    @if (data.account.createdAt) {
+      <div class="detail-item">
+        <span class="k">Ngày mở tài khoản</span>
+        <span class="v">{{ data.account.createdAt | date: 'dd/MM/yyyy HH:mm:ss' }}</span>
+      </div>
+    }
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions class="dialog-actions">
+  <button mat-stroked-button type="button" (click)="close()">Đóng</button>
+  @if (data.canTopUp && data.account.status === 'ACTIVE') {
+    <button mat-flat-button class="topup-btn" type="button" (click)="openTopUp()">
+      <mat-icon>add_circle</mat-icon>
+      Lập lệnh Nạp tiền
+    </button>
+  }
+</mat-dialog-actions>

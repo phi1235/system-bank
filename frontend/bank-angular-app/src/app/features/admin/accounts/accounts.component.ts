@@ -18,6 +18,7 @@ import {
   ConfirmDialogData,
 } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { AdminTopUpDialogComponent } from './admin-top-up-dialog/admin-top-up-dialog.component';
+import { AdminAccountDetailDialogComponent } from './admin-account-detail-dialog/admin-account-detail-dialog.component';
 import { MoneyVndPipe } from '../../../shared/pipes/money-vnd.pipe';
 import { EnumLabelPipe } from '../../../shared/pipes/enum-label.pipe';
 import { BankApiService } from '../../../core/services/bank-api.service';
@@ -49,7 +50,6 @@ import { filter, switchMap } from 'rxjs';
     MatTooltipModule,
     PageHeaderComponent,
     MoneyVndPipe,
-    EnumLabelPipe,
     TranslateModule,
   ],
   templateUrl: './accounts.component.html',
@@ -164,14 +164,12 @@ export class AdminAccountsComponent implements OnInit {
   openDetail(account: Account, event?: Event): void {
     event?.stopPropagation();
     this.selected = account;
-    this.api.adminAccountDetail(account.id).subscribe({
-      next: (a) => {
-        this.selected = a;
-        this.patchRow(a);
-      },
-      error: (err) => {
-        this.toast.error(resolveHttpErrorMessage(err, this.i18n));
-      },
+    let canTopUp = false;
+    this.canTopUp$.subscribe((val) => (canTopUp = val));
+    this.dialog.open(AdminAccountDetailDialogComponent, {
+      data: { account, canTopUp },
+      width: '500px',
+      maxWidth: '95vw',
     });
   }
 

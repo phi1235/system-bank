@@ -51,13 +51,22 @@
 
 .full {
   width: 100%;
+
+  .mat-column-fullName { width: 22%; min-width: 170px; }
+  .mat-column-email { width: 26%; min-width: 200px; }
+  .mat-column-phone { width: 17%; min-width: 130px; }
+  .mat-column-kycStatus { width: 15%; min-width: 130px; }
+  .mat-column-actions { width: 20%; min-width: 250px; }
 }
 
 .acts {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 0.35rem;
+  align-items: center;
+  justify-content: center;
   white-space: nowrap;
+  width: 100%;
 
   button {
     font-size: 0.78rem;
