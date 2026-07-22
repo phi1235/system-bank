@@ -71,3 +71,7 @@ coverage/
 # Maven wrapper jar (optional binary)
 # =============================================================================
 .mvn/wrapper/maven-wrapper.jar
+
+# Local agent briefs (not product)
+.agy-briefs/
+
