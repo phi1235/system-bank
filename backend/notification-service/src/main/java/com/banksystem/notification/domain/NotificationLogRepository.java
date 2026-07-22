@@ -48,4 +48,16 @@ public interface NotificationLogRepository extends JpaRepository<NotificationLog
       WHERE n.audience = :audience AND n.readAt IS NULL
       """)
   int markAllReadByAudience(@Param("audience") String audience);
+  @Query("""
+      SELECT n FROM NotificationLogEntity n
+      WHERE (:hasQ = false OR LOWER(n.recipient) LIKE LOWER(CONCAT('%', :q, '%')) OR LOWER(n.body) LIKE LOWER(CONCAT('%', :q, '%')) OR LOWER(n.template) LIKE LOWER(CONCAT('%', :q, '%')))
+        AND (:hasChannel = false OR n.channel = :channel)
+      ORDER BY n.createdAt DESC
+      """)
+  Page<NotificationLogEntity> searchSandbox(
+      @Param("hasQ") boolean hasQ,
+      @Param("q") String q,
+      @Param("hasChannel") boolean hasChannel,
+      @Param("channel") String channel,
+      Pageable pageable);
 }

@@ -3,7 +3,10 @@ import { Observable } from 'rxjs';
 import { PageResponse } from '../models/api.model';
 import {
   Account,
+  AccountInquiryRequest,
+  AccountInquiryResponse,
   AuditLog,
+  BankItem,
   Beneficiary,
   CustomerProfile,
   LedgerEntry,
@@ -21,6 +24,20 @@ import { ApiService } from './api.service';
 @Injectable({ providedIn: 'root' })
 export class BankApiService {
   private readonly api = inject(ApiService);
+
+  getNotificationSandbox(params?: {
+    q?: string;
+    channel?: string;
+    page?: number;
+    size?: number;
+  }): Observable<PageResponse<NotificationItem>> {
+    return this.api.get('/admin/notifications/sandbox', {
+      q: params?.q,
+      channel: params?.channel,
+      page: params?.page,
+      size: params?.size,
+    });
+  }
 
   // Notifications (customer inbox)
   /**
@@ -166,6 +183,15 @@ export class BankApiService {
 
   adminAccountDetail(id: string): Observable<Account> {
     return this.api.get(`/admin/accounts/${id}`);
+  }
+
+  // Banks & Account Inquiry
+  listBanks(): Observable<BankItem[]> {
+    return this.api.get('/transactions/banks');
+  }
+
+  accountInquiry(body: AccountInquiryRequest): Observable<AccountInquiryResponse> {
+    return this.api.post('/transactions/account-inquiry', body);
   }
 
   // Transfers
