@@ -285,13 +285,35 @@ export class BankApiService {
   adminOutboxList(
     page = 0,
     size = 20,
-    status?: string,
+    filters?: {
+      status?: string;
+      eventType?: string;
+      eventId?: string;
+      aggregateId?: string;
+      q?: string;
+      from?: string;
+      to?: string;
+    },
   ): Observable<PageResponse<OutboxEvent>> {
-    return this.api.get('/admin/outbox', { page, size, status });
+    return this.api.get('/admin/outbox', {
+      page,
+      size,
+      status: filters?.status,
+      eventType: filters?.eventType,
+      eventId: filters?.eventId,
+      aggregateId: filters?.aggregateId,
+      q: filters?.q,
+      from: filters?.from,
+      to: filters?.to,
+    });
   }
 
   adminOutboxCounts(): Observable<OutboxCounts> {
     return this.api.get('/admin/outbox/counts');
+  }
+
+  adminOutboxDetail(id: string): Observable<OutboxEvent> {
+    return this.api.get(`/admin/outbox/${id}`);
   }
 
   adminOutboxReplay(id: string): Observable<OutboxEvent> {

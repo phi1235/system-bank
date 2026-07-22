@@ -15,7 +15,9 @@ public final class OutboxDtos {
       Instant nextAttemptAt,
       Instant createdAt,
       Instant publishedAt,
-      String lastError
+      String lastError,
+      /** Present on detail; null on list rows to keep pages light. */
+      String payload
   ) {}
 
   public record OutboxCountsResponse(

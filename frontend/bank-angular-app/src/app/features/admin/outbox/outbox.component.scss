@@ -1,14 +1,21 @@
-.filter {
-  width: min(220px, 40vw);
-  min-width: 160px;
-  margin: 0 !important;
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.85fr) minmax(260px, 0.9fr);
+  gap: 1.15rem;
+  align-items: start;
+}
+
+.main-col,
+.side-col {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
 }
 
 .counts {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.75rem;
-  margin-bottom: 1rem;
 }
 
 .count-card {
@@ -29,10 +36,52 @@
   &.dead .value {
     color: #c62828;
   }
+
+  &.active {
+    outline: 2px solid #94a3b8;
+  }
+}
+
+.filters-card {
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 0.85rem;
+    align-items: center;
+  }
+
+  .grow {
+    flex: 1 1 200px;
+    min-width: 170px;
+  }
+
+  .status-field {
+    width: 180px;
+    flex: 0 0 180px;
+  }
+
+  .date-field {
+    width: 160px;
+    flex: 0 0 160px;
+  }
+
+  .hint {
+    margin: 0.45rem 0 0;
+    font-size: 0.85rem;
+    color: var(--color-text-muted, #64748b);
+    line-height: 1.45;
+  }
+
+  .meta {
+    margin: 0.35rem 0 0;
+    font-size: 0.85rem;
+    color: var(--color-text-muted, #64748b);
+    font-weight: 600;
+  }
 }
 
 .table-card {
-  padding: 0;
+  padding-bottom: 0.5rem !important;
   overflow: hidden;
 }
 
@@ -42,6 +91,28 @@
 
 table.full {
   width: 100%;
+}
+
+.clickable-row {
+  cursor: pointer;
+
+  &:hover {
+    background: #f8fafc;
+  }
+}
+
+.acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+  white-space: nowrap;
+
+  button mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
 }
 
 .chip {
@@ -77,14 +148,65 @@ table.full {
   opacity: 0.9;
 }
 
-.muted {
-  opacity: 0.45;
+code {
+  font-size: 0.8rem;
+  color: #334155;
 }
 
-.empty {
-  padding: 1.25rem 1rem;
-  margin: 0;
-  opacity: 0.7;
+.empty-state {
+  display: grid;
+  place-items: center;
+  text-align: center;
+  gap: 0.35rem;
+  padding: 2rem 1rem 1.25rem;
+  color: var(--color-text-muted, #64748b);
+
+  mat-icon {
+    font-size: 2.25rem;
+    width: 2.25rem;
+    height: 2.25rem;
+    opacity: 0.55;
+  }
+
+  .empty-title {
+    margin: 0.35rem 0 0;
+    font-weight: 700;
+    color: var(--color-text, #0f172a);
+  }
+
+  .empty-hint {
+    margin: 0 0 0.65rem;
+    max-width: 42ch;
+    line-height: 1.45;
+  }
+}
+
+.side-card {
+  h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1rem;
+  }
+
+  p {
+    margin: 0 0 0.65rem;
+    color: var(--color-text-secondary, #475569);
+    line-height: 1.5;
+    font-size: 0.92rem;
+  }
+
+  ul {
+    margin: 0;
+    padding-left: 1.15rem;
+    color: var(--color-text-secondary, #475569);
+    font-size: 0.9rem;
+    line-height: 1.55;
+  }
+}
+
+@media (max-width: 960px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 720px) {

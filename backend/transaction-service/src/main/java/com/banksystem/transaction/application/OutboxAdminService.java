@@ -38,8 +38,21 @@ public class OutboxAdminService {
   public PageResponse<OutboxEventResponse> list(OutboxListQuery query) {
     PageRequest pageable = PageRequest.of(query.page(), query.size());
     Page<OutboxEventEntity> page =
-        repository.findByStatusOrderByCreatedAtDesc(query.status().name(), pageable);
-    List<OutboxEventResponse> items = page.getContent().stream().map(this::toResponse).toList();
+        repository.searchAdmin(
+            query.status().name(),
+            query.hasEventType(),
+            query.hasEventType() ? query.eventType() : "",
+            query.hasEventId(),
+            query.hasEventId() ? query.eventId() : new UUID(0L, 0L),
+            query.hasAggregateId(),
+            query.hasAggregateId() ? query.aggregateId() : new UUID(0L, 0L),
+            query.hasQ(),
+            query.hasQ() ? query.q() : "",
+            query.from(),
+            query.to(),
+            pageable);
+    List<OutboxEventResponse> items =
+        page.getContent().stream().map(e -> toResponse(e, false)).toList();
     return new PageResponse<>(
         items,
         page.getNumber(),
@@ -50,7 +63,7 @@ public class OutboxAdminService {
 
   @Transactional(readOnly = true)
   public OutboxEventResponse get(UUID id) {
-    return toResponse(require(id));
+    return toResponse(require(id), true);
   }
 
   @Transactional(readOnly = true)
@@ -77,7 +90,7 @@ public class OutboxAdminService {
     event.markForReplay(clock.instant());
     OutboxEventEntity saved = repository.save(event);
     metrics.incrementReplayed();
-    return toResponse(saved);
+    return toResponse(saved, true);
   }
 
   private OutboxEventEntity require(UUID id) {
@@ -86,7 +99,7 @@ public class OutboxAdminService {
             "OUTBOX_NOT_FOUND", "Outbox event not found", HttpStatus.NOT_FOUND));
   }
 
-  private OutboxEventResponse toResponse(OutboxEventEntity e) {
+  private OutboxEventResponse toResponse(OutboxEventEntity e, boolean includePayload) {
     return new OutboxEventResponse(
         e.getId().toString(),
         e.getAggregateType(),
@@ -97,6 +110,7 @@ public class OutboxAdminService {
         e.getNextAttemptAt(),
         e.getCreatedAt(),
         e.getPublishedAt(),
-        e.getLastError());
+        e.getLastError(),
+        includePayload ? e.getPayload() : null);
   }
 }

@@ -41,23 +41,46 @@ class OutboxAdminServiceTest {
   void setUp() {
     repository = mock(OutboxEventRepository.class);
     metrics = mock(OutboxMetrics.class);
-    service = new OutboxAdminService(
-        repository,
-        metrics,
-        Clock.fixed(NOW, ZoneOffset.UTC));
+    service =
+        new OutboxAdminService(repository, metrics, Clock.fixed(NOW, ZoneOffset.UTC));
   }
 
   @Test
-  void list_defaultsToDeadAndMapsPage() {
+  void list_defaultsToDeadAndOmitsPayload() {
     OutboxEventEntity dead = deadEvent();
-    when(repository.findByStatusOrderByCreatedAtDesc(eq("DEAD"), any(Pageable.class)))
+    when(repository.searchAdmin(
+            eq("DEAD"),
+            eq(false),
+            eq(""),
+            eq(false),
+            any(UUID.class),
+            eq(false),
+            any(UUID.class),
+            eq(false),
+            eq(""),
+            eq(OutboxListQuery.EPOCH),
+            eq(OutboxListQuery.FAR_FUTURE),
+            any(Pageable.class)))
         .thenReturn(new PageImpl<>(List.of(dead), PageRequest.of(0, 20), 1));
 
-    PageResponse<OutboxEventResponse> page = service.list(OutboxListQuery.of(null, 0, 20));
+    PageResponse<OutboxEventResponse> page =
+        service.list(OutboxListQuery.of(null, null, null, null, null, null, null, 0, 20));
 
     assertEquals(1, page.items().size());
     assertEquals(dead.getId().toString(), page.items().get(0).id());
     assertEquals("DEAD", page.items().get(0).status());
+    assertNull(page.items().get(0).payload());
+  }
+
+  @Test
+  void get_includesPayload() {
+    OutboxEventEntity dead = deadEvent();
+    when(repository.findById(dead.getId())).thenReturn(Optional.of(dead));
+
+    OutboxEventResponse res = service.get(dead.getId());
+
+    assertEquals("{\"ok\":true}", res.payload());
+    assertEquals("broker down", res.lastError());
   }
 
   @Test
@@ -73,6 +96,7 @@ class OutboxAdminServiceTest {
     assertEquals(NOW, res.nextAttemptAt());
     assertNull(res.lastError());
     assertNull(res.publishedAt());
+    assertEquals("{\"ok\":true}", res.payload());
     verify(metrics).incrementReplayed();
   }
 
@@ -82,7 +106,8 @@ class OutboxAdminServiceTest {
     pending.setStatus(OutboxStatus.PENDING.name());
     when(repository.findById(pending.getId())).thenReturn(Optional.of(pending));
 
-    BusinessException ex = assertThrows(BusinessException.class, () -> service.replay(pending.getId()));
+    BusinessException ex =
+        assertThrows(BusinessException.class, () -> service.replay(pending.getId()));
     assertEquals("OUTBOX_NOT_DEAD", ex.getCode());
   }
 
@@ -100,7 +125,7 @@ class OutboxAdminServiceTest {
     e.setAggregateType("TRANSFER");
     e.setAggregateId(UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
     e.setEventType("TRANSACTION_COMPLETED");
-    e.setPayload("{}");
+    e.setPayload("{\"ok\":true}");
     e.setCreatedAt(NOW.minusSeconds(60));
     e.setStatus(OutboxStatus.DEAD.name());
     e.setAttemptCount(10);
