@@ -6,6 +6,7 @@ import com.banksystem.common.security.RequirePermission;
 import com.banksystem.common.security.UserContext;
 import com.banksystem.transaction.api.dto.TransferDtos.AuditResponse;
 import com.banksystem.transaction.api.dto.TransferDtos.TransferDetailResponse;
+import com.banksystem.transaction.api.dto.TransferDtos.TransferQuoteResponse;
 import com.banksystem.transaction.api.dto.TransferDtos.TransferRequest;
 import com.banksystem.transaction.api.dto.TransferDtos.TransferResponse;
 import com.banksystem.transaction.application.TransferService;
@@ -13,6 +14,7 @@ import com.banksystem.transaction.domain.AuditLogEntity;
 import com.banksystem.transaction.domain.AuditLogRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.data.domain.PageRequest;
@@ -45,6 +47,16 @@ public class TransferController {
       HttpServletRequest http) {
     return ApiResponse.ok(transferService.transfer(
         UserContext.requireUser(), idempotencyKey, req, clientIp(http)));
+  }
+
+  /**
+   * Fee + daily-limit remaining preview before submit.
+   * amount optional: when omitted/0 only limits are returned (fee=0).
+   */
+  @GetMapping("/transactions/transfers/quote")
+  public ApiResponse<TransferQuoteResponse> quote(
+      @RequestParam(required = false) BigDecimal amount) {
+    return ApiResponse.ok(transferService.quote(UserContext.requireUser().userId(), amount));
   }
 
   @GetMapping("/transactions/transfers")

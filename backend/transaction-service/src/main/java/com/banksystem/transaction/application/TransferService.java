@@ -5,6 +5,7 @@ import com.banksystem.common.api.PageResponse;
 import com.banksystem.common.exception.BusinessException;
 import com.banksystem.transaction.api.dto.TransferDtos.SagaStepResponse;
 import com.banksystem.transaction.api.dto.TransferDtos.TransferDetailResponse;
+import com.banksystem.transaction.api.dto.TransferDtos.TransferQuoteResponse;
 import com.banksystem.transaction.api.dto.TransferDtos.TransferRequest;
 import com.banksystem.transaction.api.dto.TransferDtos.TransferResponse;
 import com.banksystem.common.security.GatewayUser;
@@ -58,6 +59,37 @@ public class TransferService {
     this.transferLimitPolicy = transferLimitPolicy;
     this.transferFeePolicy = transferFeePolicy;
     this.internalApiKey = internalApiKey;
+  }
+
+  /**
+   * Read-only quote: fee for amount (if provided) + daily spent/remaining for the user.
+   * Does not validate account ownership or create an order.
+   */
+  @Transactional(readOnly = true)
+  public TransferQuoteResponse quote(UUID userId, BigDecimal amount) {
+    BigDecimal principal = amount == null ? BigDecimal.ZERO : amount;
+    if (principal.compareTo(BigDecimal.ZERO) < 0) {
+      throw new BusinessException("INVALID_AMOUNT", "Amount must be non-negative", HttpStatus.BAD_REQUEST);
+    }
+    BigDecimal fee = BigDecimal.ZERO.setScale(2);
+    BigDecimal total = principal.setScale(2);
+    if (principal.compareTo(BigDecimal.ZERO) > 0) {
+      fee = transferFeePolicy.calculate(principal);
+      total = transferFeePolicy.totalDebit(principal);
+    }
+    BigDecimal spent = transferLimitPolicy.spentToday(userId);
+    BigDecimal remaining = transferLimitPolicy.remainingToday(userId);
+    return new TransferQuoteResponse(
+        principal,
+        fee,
+        total,
+        transferLimitPolicy.maxPerTransaction(),
+        transferLimitPolicy.dailyLimit(),
+        spent,
+        remaining,
+        "VND",
+        transferLimitPolicy.dailyLimitZone().getId(),
+        transferFeePolicy.enabled());
   }
 
   public TransferResponse transfer(GatewayUser user, String idempotencyKey, TransferRequest req, String ip) {

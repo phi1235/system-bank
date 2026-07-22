@@ -54,6 +54,20 @@ export interface TransferRequest {
   currency?: string;
 }
 
+/** Pre-transfer fee + daily limit remaining preview. */
+export interface TransferQuote {
+  amount: number;
+  feeAmount: number;
+  totalDebit: number;
+  maxPerTransaction: number;
+  dailyLimit: number;
+  spentToday: number;
+  remainingToday: number;
+  currency: string;
+  dailyLimitZone: string;
+  feeEnabled: boolean;
+}
+
 /** Account ledger line (DEBIT/CREDIT), not transfer-order history. */
 export interface LedgerEntry {
   id: string;

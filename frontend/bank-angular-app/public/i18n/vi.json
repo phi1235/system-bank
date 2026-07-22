@@ -198,7 +198,7 @@
     "RESULT_STATUS": "Status",
     "RESULT_AMOUNT": "Amount",
     "RESULT_REASON": "Lý do",
-    "CONFIRM_MSG": "Xác nhận chuyển {{amount}} VND\nĐến TK: {{to}}\nNội dung: {{desc}}",
+    "CONFIRM_MSG": "Xác nhận chuyển {{amount}} VND\nPhí: {{fee}} VND\nTổng trừ: {{total}} VND\nĐến: {{to}}\nNội dung: {{desc}}",
     "TRANSFER_OK": "Chuyển tiền thành công",
     "TRANSFER_FAIL": "Chuyển tiền thất bại",
     "TRANSFER_STATUS": "Giao dịch: {{status}}",
@@ -280,7 +280,14 @@
     "CARDS_SUB": "Phát hành · khóa thẻ · hạn mức",
     "WEALTH_SUB": "Sổ tiết kiệm · quỹ",
     "SUPPORT_SUB": "FAQ · ticket · hotline",
-    "NO_PERM_TRANSFER": "Bạn không có quyền thực hiện chuyển tiền (ib:transfer:execute)."
+    "NO_PERM_TRANSFER": "Bạn không có quyền thực hiện chuyển tiền (ib:transfer:execute).",
+    "QUOTE_TITLE": "Tóm tắt giao dịch",
+    "QUOTE_UPDATING": "Đang cập nhật…",
+    "QUOTE_LOAD_FAIL": "Không tải được phí/hạn mức. Anh vẫn có thể gửi lệnh.",
+    "QUOTE_TOTAL_DEBIT": "Tổng trừ tài khoản",
+    "QUOTE_REMAINING_TODAY": "Còn lại trong ngày",
+    "QUOTE_MAX_TX": "Tối đa / giao dịch",
+    "QUOTE_NOTE": "Đã chi hôm nay {{spent}} / hạn mức ngày {{daily}} ({{zone}})."
   },
   "ADMIN": {
     "SHELL_TITLE": "Operations Console",

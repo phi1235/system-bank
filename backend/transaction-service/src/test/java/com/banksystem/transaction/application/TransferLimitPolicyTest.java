@@ -102,4 +102,23 @@ class TransferLimitPolicyTest {
   void exposesConfiguredZone() {
     assertEquals(ZONE, policy.dailyLimitZone().getId());
   }
+
+  @Test
+  void remainingTodayNeverNegative() {
+    Instant dayStart = Instant.parse("2026-07-20T17:00:00Z");
+    when(repository.sumAmountByUserAndStatusSince(eq(userId), eq(TransferStatus.COMPLETED), eq(dayStart)))
+        .thenReturn(new BigDecimal("250000000"));
+
+    assertEquals(new BigDecimal("250000000"), policy.spentToday(userId));
+    assertEquals(0, policy.remainingToday(userId).compareTo(BigDecimal.ZERO));
+  }
+
+  @Test
+  void remainingTodaySubtractsSpent() {
+    Instant dayStart = Instant.parse("2026-07-20T17:00:00Z");
+    when(repository.sumAmountByUserAndStatusSince(eq(userId), eq(TransferStatus.COMPLETED), eq(dayStart)))
+        .thenReturn(new BigDecimal("30000000"));
+
+    assertEquals(new BigDecimal("170000000"), policy.remainingToday(userId));
+  }
 }

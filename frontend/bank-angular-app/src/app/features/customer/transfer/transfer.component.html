@@ -57,6 +57,50 @@
           <input matInput formControlName="description" />
         </mat-form-field>
       </div>
+
+      <div class="quote-card" [class.loading]="quoteLoading">
+        <div class="quote-head">
+          <mat-icon>receipt_long</mat-icon>
+          <span>{{ 'CUSTOMER.QUOTE_TITLE' | translate }}</span>
+          @if (quoteLoading) {
+            <span class="quote-muted">{{ 'CUSTOMER.QUOTE_UPDATING' | translate }}</span>
+          }
+        </div>
+        @if (quoteError) {
+          <p class="quote-error">{{ quoteError }}</p>
+        } @else if (quote) {
+          <div class="quote-grid">
+            <div>
+              <span class="k">{{ 'CUSTOMER.FEE' | translate }}</span>
+              <span class="v">{{ quote.feeAmount | moneyVnd: quote.currency }}</span>
+            </div>
+            <div>
+              <span class="k">{{ 'CUSTOMER.QUOTE_TOTAL_DEBIT' | translate }}</span>
+              <span class="v strong">{{ quote.totalDebit | moneyVnd: quote.currency }}</span>
+            </div>
+            <div>
+              <span class="k">{{ 'CUSTOMER.QUOTE_REMAINING_TODAY' | translate }}</span>
+              <span class="v">{{ quote.remainingToday | moneyVnd: quote.currency }}</span>
+            </div>
+            <div>
+              <span class="k">{{ 'CUSTOMER.QUOTE_MAX_TX' | translate }}</span>
+              <span class="v">{{ quote.maxPerTransaction | moneyVnd: quote.currency }}</span>
+            </div>
+          </div>
+          <p class="quote-note">
+            {{
+              'CUSTOMER.QUOTE_NOTE'
+                | translate
+                  : {
+                      spent: (quote.spentToday | moneyVnd: quote.currency),
+                      daily: (quote.dailyLimit | moneyVnd: quote.currency),
+                      zone: quote.dailyLimitZone,
+                    }
+            }}
+          </p>
+        }
+      </div>
+
       @if (error$ | async; as err) {
         <div class="err">{{ err }}</div>
       }
