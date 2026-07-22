@@ -460,9 +460,9 @@
     "ACCOUNT_ID_LABEL": "Account ID",
     "ACCOUNT_SEARCH": "Search accounts",
     "ACCOUNT_SEARCH_PH": "Account no. / account UUID / user UUID",
-    "ACCOUNT_SEARCH_HINT": "Filter by ACTIVE / FROZEN / CLOSED. Select a row for detail and freeze actions.",
+    "ACCOUNT_SEARCH_HINT": "Search by account number, account UUID, or owner user UUID. Filter by status and type.",
     "ACCOUNT_TOTAL": "Total: {{total}} accounts",
-    "ACCOUNT_LIST_EMPTY": "No accounts match the current filter.",
+    "ACCOUNT_LIST_EMPTY": "No accounts yet.",
     "ACCOUNT_DETAIL_EMPTY": "Select an account from the list to view details.",
     "STATUS_ALL": "All",
     "CLEAR": "Clear",
@@ -822,14 +822,23 @@
     "QUEUE_OUTBOX": "Outbox dead-letter",
     "QUEUE_OUTBOX_HINT": "Replay DEAD events in Outbox",
     "QUEUE_FROZEN": "Frozen accounts",
-    "QUEUE_FROZEN_HINT": "Review freeze status in Accounts"
+    "QUEUE_FROZEN_HINT": "Review freeze status in Accounts",
+    "TYPE_ALL": "All types",
+    "ACCOUNT_LIST_FILTERED_EMPTY": "No accounts match the current filters.",
+    "ACCOUNT_COPY_NUMBER": "Copy account number",
+    "ACCOUNT_COPY_ID": "Copy account id",
+    "ACCOUNT_COPY_USER": "Copy user id",
+    "ACCOUNT_COPY_OK": "Copied",
+    "ACCOUNT_COPY_FAIL": "Could not copy",
+    "ACCOUNT_CREATED": "Created",
+    "ACCOUNT_UPDATED": "Updated"
   },
   "ERRORS": {
     "GENERIC": "Something went wrong. Please try again.",
     "WITH_REF": "{{message}} (ref: {{ref}})",
     "BENEFICIARY_EXISTS": "This account is already in your beneficiary list",
     "BENEFICIARY_NOT_FOUND": "Beneficiary not found",
-    "ACCOUNT_NOT_FOUND": "Account number not found",
+    "ACCOUNT_NOT_FOUND": "Account not found.",
     "ACCOUNT_FROZEN": "Destination account is not active",
     "ACCOUNT_SERVICE_ERROR": "Account service is temporarily unavailable",
     "INVALID_NICKNAME": "Invalid nickname",
@@ -856,7 +865,9 @@
     "INVALID_OUTBOX_ID": "Outbox event id must be a valid UUID.",
     "INVALID_AGGREGATE_ID": "Aggregate id must be a valid UUID.",
     "INVALID_USER_ID": "User id must be a valid UUID.",
-    "USER_NOT_FOUND": "User was not found."
+    "USER_NOT_FOUND": "User was not found.",
+    "INVALID_ACCOUNT_TYPE": "Invalid account type.",
+    "ACCOUNT_CLOSED": "Closed account cannot be changed."
   },
   "TRANSFER_DETAIL": {
     "TITLE": "Transfer detail",

@@ -35,9 +35,16 @@ public class AdminAccountController {
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "20") int size,
       @RequestParam(required = false) String q,
-      @RequestParam(required = false) String status) {
-    AdminAccountSearchQuery query = AdminAccountSearchQuery.of(q, status, page, size);
+      @RequestParam(required = false) String status,
+      @RequestParam(required = false) String accountType) {
+    AdminAccountSearchQuery query = AdminAccountSearchQuery.of(q, status, accountType, page, size);
     return ApiResponse.ok(service.adminList(query));
+  }
+
+  @GetMapping("/{id}")
+  @RequirePermission("accounts:lookup:view")
+  public ApiResponse<AccountResponse> get(@PathVariable UUID id) {
+    return ApiResponse.ok(service.get(id));
   }
 
   @PostMapping("/{id}/freeze")

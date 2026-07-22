@@ -20,7 +20,9 @@ public class AccountMapper {
         a.getAccountType(),
         a.getCurrency(),
         a.getBalance(),
-        a.getStatus()
+        a.getStatus(),
+        a.getCreatedAt(),
+        a.getUpdatedAt()
     );
   }
 

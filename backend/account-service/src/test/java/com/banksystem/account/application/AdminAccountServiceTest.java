@@ -1,10 +1,11 @@
 package com.banksystem.account.application;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -45,7 +46,18 @@ class AdminAccountServiceTest {
   @Test
   void adminList_mapsPageAndPassesFilters() {
     AccountEntity entity = sampleAccount("ACTIVE");
-    when(accountRepository.adminSearch(eq("1001"), eq("ACTIVE"), isNull(), isNull(), any(Pageable.class)))
+    when(accountRepository.adminSearch(
+            eq(true),
+            eq("1001"),
+            eq(true),
+            eq("ACTIVE"),
+            eq(false),
+            eq(""),
+            eq(false),
+            any(UUID.class),
+            eq(false),
+            any(UUID.class),
+            any(Pageable.class)))
         .thenReturn(new PageImpl<>(List.of(entity), PageRequest.of(0, 20), 1));
 
     PageResponse<AccountResponse> page = service.adminList(
@@ -54,13 +66,69 @@ class AdminAccountServiceTest {
     assertEquals(1, page.items().size());
     assertEquals(entity.getAccountNumber(), page.items().get(0).accountNumber());
     assertEquals(1, page.totalElements());
-    verify(accountRepository).adminSearch(eq("1001"), eq("ACTIVE"), isNull(), isNull(), any(Pageable.class));
+    assertNotNull(page.items().get(0).createdAt());
+    assertNotNull(page.items().get(0).updatedAt());
+    verify(accountRepository).adminSearch(
+        eq(true),
+        eq("1001"),
+        eq(true),
+        eq("ACTIVE"),
+        eq(false),
+        eq(""),
+        eq(false),
+        any(UUID.class),
+        eq(false),
+        any(UUID.class),
+        any(Pageable.class));
+  }
+
+  @Test
+  void adminList_passesAccountTypeFilter() {
+    when(accountRepository.adminSearch(
+            eq(false),
+            eq(""),
+            eq(false),
+            eq(""),
+            eq(true),
+            eq("SAVINGS"),
+            eq(false),
+            any(UUID.class),
+            eq(false),
+            any(UUID.class),
+            any(Pageable.class)))
+        .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 20), 0));
+
+    service.adminList(AdminAccountSearchQuery.of(null, null, "savings", 0, 20));
+
+    verify(accountRepository).adminSearch(
+        eq(false),
+        eq(""),
+        eq(false),
+        eq(""),
+        eq(true),
+        eq("SAVINGS"),
+        eq(false),
+        any(UUID.class),
+        eq(false),
+        any(UUID.class),
+        any(Pageable.class));
   }
 
   @Test
   void adminList_parsesUuidQueryAsUserOrAccountId() {
     UUID id = UUID.fromString("11111111-1111-1111-1111-111111111111");
-    when(accountRepository.adminSearch(eq(id.toString()), isNull(), eq(id), eq(id), any(Pageable.class)))
+    when(accountRepository.adminSearch(
+            eq(true),
+            eq(id.toString()),
+            eq(false),
+            eq(""),
+            eq(false),
+            eq(""),
+            eq(true),
+            eq(id),
+            eq(true),
+            eq(id),
+            any(Pageable.class)))
         .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 10), 0));
 
     service.adminList(AdminAccountSearchQuery.of(id.toString(), null, 0, 10));
@@ -68,9 +136,15 @@ class AdminAccountServiceTest {
     ArgumentCaptor<UUID> userIdCaptor = ArgumentCaptor.forClass(UUID.class);
     ArgumentCaptor<UUID> accountIdCaptor = ArgumentCaptor.forClass(UUID.class);
     verify(accountRepository).adminSearch(
+        eq(true),
         eq(id.toString()),
-        isNull(),
+        eq(false),
+        eq(""),
+        eq(false),
+        eq(""),
+        eq(true),
         userIdCaptor.capture(),
+        eq(true),
         accountIdCaptor.capture(),
         any(Pageable.class));
     assertEquals(id, userIdCaptor.getValue());
@@ -79,13 +153,35 @@ class AdminAccountServiceTest {
 
   @Test
   void adminList_clampsPageSizeInQueryObject() {
-    when(accountRepository.adminSearch(isNull(), isNull(), isNull(), isNull(), any(Pageable.class)))
+    when(accountRepository.adminSearch(
+            anyBoolean(),
+            any(),
+            anyBoolean(),
+            any(),
+            anyBoolean(),
+            any(),
+            anyBoolean(),
+            any(UUID.class),
+            anyBoolean(),
+            any(UUID.class),
+            any(Pageable.class)))
         .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 100), 0));
 
     service.adminList(AdminAccountSearchQuery.of(null, null, -3, 500));
 
     ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-    verify(accountRepository).adminSearch(isNull(), isNull(), isNull(), isNull(), pageableCaptor.capture());
+    verify(accountRepository).adminSearch(
+        anyBoolean(),
+        any(),
+        anyBoolean(),
+        any(),
+        anyBoolean(),
+        any(),
+        anyBoolean(),
+        any(UUID.class),
+        anyBoolean(),
+        any(UUID.class),
+        pageableCaptor.capture());
     assertEquals(0, pageableCaptor.getValue().getPageNumber());
     assertEquals(AdminAccountSearchQuery.MAX_SIZE, pageableCaptor.getValue().getPageSize());
   }
@@ -95,6 +191,34 @@ class AdminAccountServiceTest {
     BusinessException ex = assertThrows(BusinessException.class,
         () -> service.adminList(AdminAccountSearchQuery.of(null, "HOLD", 0, 20)));
     assertEquals("INVALID_STATUS", ex.getCode());
+  }
+
+  @Test
+  void adminList_rejectsInvalidAccountType() {
+    BusinessException ex = assertThrows(BusinessException.class,
+        () -> service.adminList(AdminAccountSearchQuery.of(null, null, "LOAN", 0, 20)));
+    assertEquals("INVALID_ACCOUNT_TYPE", ex.getCode());
+  }
+
+  @Test
+  void get_returnsMappedAccount() {
+    AccountEntity entity = sampleAccount("ACTIVE");
+    when(accountRepository.findById(entity.getId())).thenReturn(java.util.Optional.of(entity));
+
+    AccountResponse response = service.get(entity.getId());
+
+    assertEquals(entity.getAccountNumber(), response.accountNumber());
+    assertEquals("ACTIVE", response.status());
+    assertNotNull(response.createdAt());
+  }
+
+  @Test
+  void get_notFound() {
+    UUID id = UUID.randomUUID();
+    when(accountRepository.findById(id)).thenReturn(java.util.Optional.empty());
+
+    BusinessException ex = assertThrows(BusinessException.class, () -> service.get(id));
+    assertEquals("ACCOUNT_NOT_FOUND", ex.getCode());
   }
 
   @Test

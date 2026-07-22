@@ -18,7 +18,9 @@ public final class AccountDtos {
       String accountType,
       String currency,
       BigDecimal balance,
-      String status
+      String status,
+      Instant createdAt,
+      Instant updatedAt
   ) {}
 
   public record MoneyCommand(

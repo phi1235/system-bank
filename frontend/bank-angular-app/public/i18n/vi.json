@@ -460,9 +460,9 @@
     "ACCOUNT_ID_LABEL": "Account ID",
     "ACCOUNT_SEARCH": "Tìm tài khoản",
     "ACCOUNT_SEARCH_PH": "Số TK / account UUID / user UUID",
-    "ACCOUNT_SEARCH_HINT": "Có thể lọc theo trạng thái ACTIVE / FROZEN / CLOSED. Chọn 1 dòng để xem chi tiết và freeze.",
+    "ACCOUNT_SEARCH_HINT": "Tìm theo số TK, account UUID hoặc user UUID. Lọc theo trạng thái và loại.",
     "ACCOUNT_TOTAL": "Tổng: {{total}} tài khoản",
-    "ACCOUNT_LIST_EMPTY": "Không có tài khoản khớp bộ lọc.",
+    "ACCOUNT_LIST_EMPTY": "Chưa có tài khoản nào.",
     "ACCOUNT_DETAIL_EMPTY": "Chọn một tài khoản trong danh sách để xem chi tiết.",
     "STATUS_ALL": "Tất cả",
     "CLEAR": "Xóa lọc",
@@ -822,14 +822,23 @@
     "QUEUE_OUTBOX": "Outbox dead-letter",
     "QUEUE_OUTBOX_HINT": "Replay event DEAD trong Outbox",
     "QUEUE_FROZEN": "Tài khoản đóng băng",
-    "QUEUE_FROZEN_HINT": "Xem trạng thái freeze trong Accounts"
+    "QUEUE_FROZEN_HINT": "Xem trạng thái freeze trong Accounts",
+    "TYPE_ALL": "Mọi loại",
+    "ACCOUNT_LIST_FILTERED_EMPTY": "Không có tài khoản khớp bộ lọc hiện tại.",
+    "ACCOUNT_COPY_NUMBER": "Sao chép số TK",
+    "ACCOUNT_COPY_ID": "Sao chép account id",
+    "ACCOUNT_COPY_USER": "Sao chép user id",
+    "ACCOUNT_COPY_OK": "Đã sao chép",
+    "ACCOUNT_COPY_FAIL": "Không sao chép được",
+    "ACCOUNT_CREATED": "Tạo lúc",
+    "ACCOUNT_UPDATED": "Cập nhật lúc"
   },
   "ERRORS": {
     "GENERIC": "Đã xảy ra lỗi. Vui lòng thử lại.",
     "WITH_REF": "{{message}} (mã: {{ref}})",
     "BENEFICIARY_EXISTS": "Số tài khoản này đã có trong danh bạ",
     "BENEFICIARY_NOT_FOUND": "Không tìm thấy người thụ hưởng",
-    "ACCOUNT_NOT_FOUND": "Không tìm thấy số tài khoản",
+    "ACCOUNT_NOT_FOUND": "Không tìm thấy tài khoản.",
     "ACCOUNT_FROZEN": "Tài khoản đích không ở trạng thái hoạt động",
     "ACCOUNT_SERVICE_ERROR": "Dịch vụ tài khoản tạm thời không khả dụng",
     "INVALID_NICKNAME": "Biệt danh không hợp lệ",
@@ -856,7 +865,9 @@
     "INVALID_OUTBOX_ID": "Mã outbox event phải là UUID hợp lệ.",
     "INVALID_AGGREGATE_ID": "Aggregate id phải là UUID hợp lệ.",
     "INVALID_USER_ID": "Mã user phải là UUID hợp lệ.",
-    "USER_NOT_FOUND": "Không tìm thấy user."
+    "USER_NOT_FOUND": "Không tìm thấy user.",
+    "INVALID_ACCOUNT_TYPE": "Loại tài khoản không hợp lệ.",
+    "ACCOUNT_CLOSED": "Tài khoản đã đóng, không thể thay đổi."
   },
   "TRANSFER_DETAIL": {
     "TITLE": "Chi tiết chuyển tiền",

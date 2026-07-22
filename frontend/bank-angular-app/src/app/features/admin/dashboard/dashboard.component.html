@@ -206,7 +206,9 @@
               {{ 'ADMIN.QUEUE_COUNT' | translate: { n: display(kpis.accountsFrozen) } }}
             </span>
           </div>
-          <a mat-stroked-button routerLink="/admin/accounts">{{ 'ADMIN.HANDLE' | translate }}</a>
+          <a mat-stroked-button routerLink="/admin/accounts" [queryParams]="{ status: 'FROZEN' }">
+            {{ 'ADMIN.HANDLE' | translate }}
+          </a>
         </div>
       </div>
     </mat-card>

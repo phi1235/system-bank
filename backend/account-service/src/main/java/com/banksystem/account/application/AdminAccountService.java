@@ -5,6 +5,7 @@ import com.banksystem.account.application.query.AdminAccountSearchQuery;
 import com.banksystem.account.domain.AccountEntity;
 import com.banksystem.account.domain.AccountRepository;
 import com.banksystem.account.domain.AccountStatus;
+import com.banksystem.account.domain.AccountType;
 import com.banksystem.common.api.PageResponse;
 import com.banksystem.common.exception.BusinessException;
 import java.time.Instant;
@@ -16,7 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Staff-facing account use-cases (search, freeze, unfreeze). */
+/** Staff-facing account use-cases (search, detail, freeze, unfreeze). */
 @Service
 public class AdminAccountService {
 
@@ -41,11 +42,15 @@ public class AdminAccountService {
     String status = query.status() == null
         ? null
         : AccountStatus.parseRequired(query.status()).name();
+    String accountType = query.accountType() == null
+        ? null
+        : AccountType.parseRequired(query.accountType()).name();
 
-    // Staff may paste account number, account UUID, or owner user UUID in the same `q` box.
+    boolean hasQ = query.q() != null;
+    String q = hasQ ? query.q() : "";
     UUID userId = null;
     UUID accountId = null;
-    if (query.q() != null) {
+    if (hasQ) {
       UUID asUuid = tryParseUuid(query.q());
       if (asUuid != null) {
         userId = asUuid;
@@ -53,11 +58,28 @@ public class AdminAccountService {
       }
     }
 
+    boolean hasStatus = status != null;
+    boolean hasType = accountType != null;
+    boolean hasUserId = userId != null;
+    boolean hasAccountId = accountId != null;
+
+    // Concrete UUID binds when flags are false (Postgres-safe).
+    UUID boundUserId = hasUserId ? userId : new UUID(0L, 0L);
+    UUID boundAccountId = hasAccountId ? accountId : new UUID(0L, 0L);
+    String boundStatus = hasStatus ? status : "";
+    String boundType = hasType ? accountType : "";
+
     Page<AccountEntity> result = accountRepository.adminSearch(
-        query.q(),
-        status,
-        userId,
-        accountId,
+        hasQ,
+        q,
+        hasStatus,
+        boundStatus,
+        hasType,
+        boundType,
+        hasUserId,
+        boundUserId,
+        hasAccountId,
+        boundAccountId,
         PageRequest.of(query.page(), query.size()));
     List<AccountResponse> items = result.getContent().stream().map(mapper::toResponse).toList();
     return new PageResponse<>(
@@ -66,6 +88,11 @@ public class AdminAccountService {
         result.getSize(),
         result.getTotalElements(),
         result.getTotalPages());
+  }
+
+  @Transactional(readOnly = true)
+  public AccountResponse get(UUID id) {
+    return mapper.toResponse(access.require(id));
   }
 
   @Transactional
