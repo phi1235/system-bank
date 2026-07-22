@@ -99,6 +99,7 @@ export class TransferComponent implements OnInit, OnDestroy {
     const to = this.route.snapshot.queryParamMap.get('to');
     if (to && /^\d{8,14}$/.test(to)) {
       this.form.patchValue({ toAccountNumber: to });
+      // selectedBeneficiaryId synced after list loads in loadBeneficiaries()
     }
 
     this.accountsSub = this.accounts$.subscribe((accounts) => {

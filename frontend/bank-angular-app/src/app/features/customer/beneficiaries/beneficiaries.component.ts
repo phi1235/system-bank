@@ -17,6 +17,10 @@ import {
   ConfirmDialogComponent,
   ConfirmDialogData,
 } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
+import {
+  PromptDialogComponent,
+  PromptDialogData,
+} from '../../../shared/components/prompt-dialog/prompt-dialog.component';
 import { BankApiService } from '../../../core/services/bank-api.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { Beneficiary } from '../../../core/models/domain.model';
@@ -53,12 +57,31 @@ export class BeneficiariesComponent implements OnInit {
   loading = false;
   saving = false;
   deletingId: string | null = null;
-  cols = ['nickname', 'accountNumber', 'actions'];
+  renamingId: string | null = null;
+  /** Client-side filter text (nickname / account). */
+  search = '';
+  cols = ['nickname', 'accountNumber', 'createdAt', 'actions'];
 
   form = this.fb.nonNullable.group({
     nickname: ['', [Validators.required, Validators.maxLength(80)]],
     accountNumber: ['', [Validators.required, Validators.pattern(/^\d{8,14}$/)]],
   });
+
+  get filteredRows(): Beneficiary[] {
+    const q = this.search.trim().toLowerCase();
+    if (!q) {
+      return this.rows;
+    }
+    return this.rows.filter(
+      (r) =>
+        r.nickname.toLowerCase().includes(q) ||
+        r.accountNumber.includes(q),
+    );
+  }
+
+  get hasActiveFilter(): boolean {
+    return this.search.trim().length > 0;
+  }
 
   ngOnInit(): void {
     this.load();
@@ -74,9 +97,17 @@ export class BeneficiariesComponent implements OnInit {
       error: () => {
         this.rows = [];
         this.loading = false;
-        this.toast.error(this.i18n.instant('CUSTOMER.BENEFICIARY_LOAD_FAIL'));
+        // errorInterceptor already toasts; keep a specific load hint only if generic
       },
     });
+  }
+
+  clearFilter(): void {
+    this.search = '';
+  }
+
+  onSearchInput(value: string): void {
+    this.search = value ?? '';
   }
 
   create(): void {
@@ -85,19 +116,73 @@ export class BeneficiariesComponent implements OnInit {
       return;
     }
     this.saving = true;
-    const v = this.form.getRawValue();
-    this.api.createBeneficiary(v).subscribe({
+    const raw = this.form.getRawValue();
+    const body = {
+      nickname: raw.nickname.trim(),
+      accountNumber: raw.accountNumber.replace(/\s+/g, ''),
+    };
+    this.api.createBeneficiary(body).subscribe({
       next: () => {
         this.saving = false;
         this.form.reset({ nickname: '', accountNumber: '' });
         this.toast.success(this.i18n.instant('CUSTOMER.BENEFICIARY_CREATE_OK'));
         this.load();
       },
-      error: (err) => {
+      error: () => {
         this.saving = false;
-        this.toast.error(err?.message || this.i18n.instant('CUSTOMER.BENEFICIARY_CREATE_FAIL'));
+        // global errorInterceptor maps ERRORS.* + toast
       },
     });
+  }
+
+  rename(row: Beneficiary): void {
+    const data: PromptDialogData = {
+      title: this.i18n.instant('CUSTOMER.BENEFICIARY_RENAME_TITLE'),
+      message: this.i18n.instant('CUSTOMER.BENEFICIARY_RENAME_MSG', {
+        account: row.accountNumber,
+      }),
+      label: this.i18n.instant('CUSTOMER.BENEFICIARY_NICKNAME'),
+      initialValue: row.nickname,
+      confirmLabel: this.i18n.instant('CUSTOMER.BENEFICIARY_RENAME'),
+      cancelLabel: this.i18n.instant('COMMON.CANCEL'),
+      required: true,
+      maxLength: 80,
+    };
+
+    this.dialog
+      .open(PromptDialogComponent, {
+        width: '420px',
+        data,
+        autoFocus: 'first-tabbable',
+      })
+      .afterClosed()
+      .pipe(filter((v): v is string => typeof v === 'string' && v.trim().length > 0))
+      .subscribe((nickname) => {
+        const next = nickname.trim();
+        if (next === row.nickname) {
+          return;
+        }
+        this.renamingId = row.id;
+        this.api.renameBeneficiary(row.id, next).subscribe({
+          next: () => {
+            this.renamingId = null;
+            this.toast.success(this.i18n.instant('CUSTOMER.BENEFICIARY_RENAME_OK'));
+            this.load();
+          },
+          error: () => {
+            this.renamingId = null;
+          },
+        });
+      });
+  }
+
+  async copyAccount(row: Beneficiary): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(row.accountNumber);
+      this.toast.success(this.i18n.instant('CUSTOMER.BENEFICIARY_COPIED'));
+    } catch {
+      this.toast.error(this.i18n.instant('CUSTOMER.BENEFICIARY_COPY_FAIL'));
+    }
   }
 
   remove(row: Beneficiary): void {
@@ -128,9 +213,8 @@ export class BeneficiariesComponent implements OnInit {
             this.toast.success(this.i18n.instant('CUSTOMER.BENEFICIARY_DELETE_OK'));
             this.load();
           },
-          error: (err) => {
+          error: () => {
             this.deletingId = null;
-            this.toast.error(err?.message || this.i18n.instant('CUSTOMER.BENEFICIARY_DELETE_FAIL'));
           },
         });
       });

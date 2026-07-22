@@ -23,7 +23,16 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
 
       const body = err.error;
       let msg = i18n.instant('ERRORS.GENERIC');
-      if (body?.error?.message) {
+      const code = body?.error?.code as string | undefined;
+      if (code) {
+        const key = `ERRORS.${code}`;
+        const localized = i18n.instant(key);
+        if (localized && localized !== key) {
+          msg = localized;
+        } else if (body?.error?.message) {
+          msg = body.error.message;
+        }
+      } else if (body?.error?.message) {
         msg = body.error.message;
         if (body.error.details?.length) {
           msg += ': ' + body.error.details.join(', ');

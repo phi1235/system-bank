@@ -47,7 +47,11 @@
             </mat-option>
           }
         </mat-select>
-        <mat-hint>{{ 'CUSTOMER.BENEFICIARY_NONE_HINT' | translate }}</mat-hint>
+        @if (beneficiaries.length) {
+          <mat-hint>{{ 'CUSTOMER.BENEFICIARY_NONE_HINT' | translate }}</mat-hint>
+        } @else {
+          <mat-hint>{{ 'CUSTOMER.TRANSFER_BENEFICIARY_EMPTY' | translate }}</mat-hint>
+        }
       </mat-form-field>
       <mat-form-field appearance="outline" class="full">
         <mat-label>{{ 'CUSTOMER.TO_ACCOUNT' | translate }}</mat-label>

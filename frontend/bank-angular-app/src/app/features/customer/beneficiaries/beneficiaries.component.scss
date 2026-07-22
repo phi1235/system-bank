@@ -51,6 +51,30 @@
   font-variant-numeric: tabular-nums;
 }
 
+.search-field {
+  width: 100%;
+  margin-bottom: 0.35rem;
+}
+
+.muted-cell {
+  color: var(--color-text-muted, #64748b);
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.copy-btn {
+  width: 32px;
+  height: 32px;
+  line-height: 32px;
+  vertical-align: middle;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+}
+
 .table-wrap {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
