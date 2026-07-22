@@ -55,6 +55,38 @@
   padding: 1.5rem 1rem;
 }
 
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.35rem;
+  padding: 2rem 1.25rem 1.75rem;
+  color: var(--color-text-secondary);
+
+  mat-icon {
+    font-size: 2.25rem;
+    width: 2.25rem;
+    height: 2.25rem;
+    color: #94a3b8;
+    margin-bottom: 0.35rem;
+  }
+
+  .empty-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-text-primary, #0f172a);
+  }
+
+  .empty-hint {
+    margin: 0 0 0.75rem;
+    font-size: 0.88rem;
+    max-width: 36ch;
+    line-height: 1.45;
+  }
+}
+
 .status-cell {
   display: flex;
   flex-direction: column;

@@ -12,11 +12,28 @@
         <mat-select formControlName="fromAccountId">
           @for (a of accounts$ | async; track a.id) {
             <mat-option [value]="a.id" [disabled]="a.status !== 'ACTIVE'">
-              {{ a.accountNumber }} — {{ a.balance | moneyVnd: a.currency }} ({{ a.status }})
+              {{ a.accountNumber }} — {{ a.balance | moneyVnd: a.currency }} ({{ a.status | transferStatus }})
             </mat-option>
           }
         </mat-select>
+        @if (form.controls.fromAccountId.touched && form.controls.fromAccountId.hasError('required')) {
+          <mat-error>{{ 'CUSTOMER.FIELD_REQUIRED' | translate }}</mat-error>
+        }
       </mat-form-field>
+
+      @if (noActiveSource) {
+        <div class="empty-banner">
+          <mat-icon>account_balance</mat-icon>
+          <div>
+            <strong>{{ 'CUSTOMER.FROM_ACCOUNT_EMPTY' | translate }}</strong>
+            <p>{{ 'CUSTOMER.FROM_ACCOUNT_EMPTY_HINT' | translate }}</p>
+            <a mat-stroked-button routerLink="/customer/accounts">
+              {{ 'CUSTOMER.OPEN_ACCOUNT_CTA' | translate }}
+            </a>
+          </div>
+        </div>
+      }
+
       <mat-form-field appearance="outline" class="full">
         <mat-label>{{ 'CUSTOMER.TRANSFER_PICK_BENEFICIARY' | translate }}</mat-label>
         <mat-select
@@ -30,6 +47,7 @@
             </mat-option>
           }
         </mat-select>
+        <mat-hint>{{ 'CUSTOMER.BENEFICIARY_NONE_HINT' | translate }}</mat-hint>
       </mat-form-field>
       <mat-form-field appearance="outline" class="full">
         <mat-label>{{ 'CUSTOMER.TO_ACCOUNT' | translate }}</mat-label>
@@ -40,6 +58,12 @@
           (input)="onToAccountTyped()"
         />
         <mat-icon matPrefix>person_outline</mat-icon>
+        @if (form.controls.toAccountNumber.touched && form.controls.toAccountNumber.hasError('required')) {
+          <mat-error>{{ 'CUSTOMER.FIELD_REQUIRED' | translate }}</mat-error>
+        }
+        @if (form.controls.toAccountNumber.touched && form.controls.toAccountNumber.hasError('pattern')) {
+          <mat-error>{{ 'CUSTOMER.TO_ACCOUNT_PATTERN' | translate }}</mat-error>
+        }
       </mat-form-field>
       <div class="beneficiary-link">
         <a routerLink="/customer/payments/beneficiaries">
@@ -51,6 +75,12 @@
           <mat-label>{{ 'CUSTOMER.AMOUNT_VND' | translate }}</mat-label>
           <input matInput type="number" formControlName="amount" />
           <span matTextSuffix>₫</span>
+          @if (form.controls.amount.touched && form.controls.amount.hasError('required')) {
+            <mat-error>{{ 'CUSTOMER.FIELD_REQUIRED' | translate }}</mat-error>
+          }
+          @if (form.controls.amount.touched && form.controls.amount.hasError('min')) {
+            <mat-error>{{ 'CUSTOMER.AMOUNT_MIN' | translate }}</mat-error>
+          }
         </mat-form-field>
         <mat-form-field appearance="outline" class="full">
           <mat-label>{{ 'CUSTOMER.DESCRIPTION' | translate }}</mat-label>
@@ -137,6 +167,8 @@
                     }
             }}
           </p>
+        } @else if (!quoteLoading) {
+          <p class="quote-note">{{ 'CUSTOMER.QUOTE_PLACEHOLDER' | translate }}</p>
         }
       </div>
 
@@ -144,7 +176,12 @@
         <div class="err">{{ err }}</div>
       }
       @if (canExecute$ | async) {
-        <button mat-flat-button color="primary" type="submit" [disabled]="creating$ | async">
+        <button
+          mat-flat-button
+          color="primary"
+          type="submit"
+          [disabled]="(creating$ | async) || noActiveSource"
+        >
           {{ (creating$ | async) ? ('CUSTOMER.PROCESSING' | translate) : ('CUSTOMER.CONFIRM_TRANSFER' | translate) }}
         </button>
       } @else {
@@ -165,7 +202,7 @@
           <div>
             <span class="k">{{ 'CUSTOMER.RESULT_STATUS' | translate }}</span>
             <span class="chip" [class.ok]="t.status === 'COMPLETED'" [class.bad]="t.status !== 'COMPLETED'">
-              {{ t.status }}
+              {{ t.status | transferStatus }}
             </span>
           </div>
           <div>
@@ -183,6 +220,13 @@
             </div>
           }
         </div>
+        @if (t.status === 'COMPLETED') {
+          <p class="result-hint ok">{{ 'CUSTOMER.RESULT_OK_HINT' | translate }}</p>
+        } @else if (t.status === 'FAILED' || t.status === 'COMPENSATED') {
+          <p class="result-hint bad">{{ 'CUSTOMER.RESULT_FAILED_HINT' | translate }}</p>
+        } @else {
+          <p class="result-hint">{{ 'CUSTOMER.RESULT_PENDING_HINT' | translate }}</p>
+        }
         <a mat-stroked-button routerLink="/customer/history" class="full-btn">
           {{ 'NAV.HISTORY' | translate }}
         </a>

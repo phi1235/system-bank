@@ -9,6 +9,7 @@ import { Store } from '@ngrx/store';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { LoadingComponent } from '../../../shared/components/loading/loading.component';
 import { MoneyVndPipe } from '../../../shared/pipes/money-vnd.pipe';
+import { TransferStatusPipe } from '../../../shared/pipes/transfer-status.pipe';
 import { AccountMaskPipe } from '../../../shared/pipes/account-mask.pipe';
 import { AccountsActions } from '../../../store/accounts/accounts.actions';
 import { selectAccounts, selectAccountsLoading, selectTotalBalance } from '../../../store/accounts/accounts.selectors';
@@ -28,6 +29,7 @@ import { selectTransferHistory } from '../../../store/transfers/transfers.select
     PageHeaderComponent,
     LoadingComponent,
     MoneyVndPipe,
+    TransferStatusPipe,
     AccountMaskPipe,
     TranslateModule,
   ],

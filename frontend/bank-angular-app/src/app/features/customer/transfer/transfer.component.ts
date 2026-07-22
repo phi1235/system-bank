@@ -18,6 +18,7 @@ import {
   ConfirmDialogData,
 } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { FriendlyTransferErrorPipe } from '../../../shared/pipes/friendly-transfer-error.pipe';
+import { TransferStatusPipe } from '../../../shared/pipes/transfer-status.pipe';
 import { MoneyVndPipe } from '../../../shared/pipes/money-vnd.pipe';
 import { PERMISSIONS } from '../../../core/services/rbac.util';
 import { BankApiService } from '../../../core/services/bank-api.service';
@@ -49,6 +50,7 @@ import { selectHasPermission } from '../../../store/auth/auth.selectors';
     PageHeaderComponent,
     MoneyVndPipe,
     FriendlyTransferErrorPipe,
+    TransferStatusPipe,
     TranslateModule,
   ],
   templateUrl: './transfer.component.html',
@@ -75,6 +77,8 @@ export class TransferComponent implements OnInit, OnDestroy {
   quote: TransferQuote | null = null;
   quoteLoading = false;
   quoteError: string | null = null;
+  noActiveSource = false;
+  private accountsSub?: Subscription;
 
   form = this.fb.nonNullable.group({
     fromAccountId: ['', Validators.required],
@@ -95,6 +99,16 @@ export class TransferComponent implements OnInit, OnDestroy {
       this.form.patchValue({ toAccountNumber: to });
     }
 
+    this.accountsSub = this.accounts$.subscribe((accounts) => {
+      const list = accounts || [];
+      const active = list.filter((a) => a.status === 'ACTIVE');
+      // Show CTA when user has no ACTIVE source (none yet, or all frozen).
+      this.noActiveSource = active.length === 0;
+      if (active.length === 1 && !this.form.controls.fromAccountId.value) {
+        this.form.patchValue({ fromAccountId: active[0].id });
+      }
+    });
+
     this.amountSub = this.form.controls.amount.valueChanges
       .pipe(debounceTime(300), distinctUntilChanged())
       .subscribe(() => this.refreshQuote());
@@ -102,6 +116,7 @@ export class TransferComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.amountSub?.unsubscribe();
+    this.accountsSub?.unsubscribe();
   }
 
   loadBeneficiaries(): void {

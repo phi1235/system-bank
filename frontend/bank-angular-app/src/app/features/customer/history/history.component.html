@@ -16,7 +16,7 @@
         <mat-option value="">{{ 'CUSTOMER.HISTORY_STATUS_ALL' | translate }}</mat-option>
         @for (s of statusOptions; track s) {
           @if (s) {
-            <mat-option [value]="s">{{ s }}</mat-option>
+            <mat-option [value]="s">{{ s | transferStatus }}</mat-option>
           }
         }
       </mat-select>
@@ -78,7 +78,7 @@
                 [class.ok]="t.status === 'COMPLETED'"
                 [class.warn]="t.status === 'PENDING' || t.status === 'COMPENSATED'"
                 [class.bad]="t.status === 'FAILED'"
-              >{{ t.status }}</span>
+              >{{ t.status | transferStatus }}</span>
               @if (t.failureReason) {
                 <span
                   class="fail-reason"
@@ -115,7 +115,22 @@
     </div>
 
     @if (((rows$ | async) || []).length === 0 && !(loading$ | async)) {
-      <p class="empty">{{ 'CUSTOMER.NO_TX' | translate }}</p>
+      <div class="empty-state">
+        <mat-icon>receipt_long</mat-icon>
+        @if (hasActiveFilters) {
+          <p class="empty-title">{{ 'CUSTOMER.NO_TX_FILTERED' | translate }}</p>
+          <p class="empty-hint">{{ 'CUSTOMER.NO_TX_FILTERED_HINT' | translate }}</p>
+          <button mat-stroked-button type="button" (click)="resetFilters()">
+            {{ 'CUSTOMER.HISTORY_RESET' | translate }}
+          </button>
+        } @else {
+          <p class="empty-title">{{ 'CUSTOMER.NO_TX' | translate }}</p>
+          <p class="empty-hint">{{ 'CUSTOMER.NO_TX_HINT' | translate }}</p>
+          <a mat-flat-button color="primary" routerLink="/customer/payments/transfer">
+            {{ 'CUSTOMER.START_TRANSFER_CTA' | translate }}
+          </a>
+        }
+      </div>
     }
 
     <mat-paginator

@@ -9,7 +9,7 @@
           [class.ok]="d.transfer.status === 'COMPLETED'"
           [class.warn]="d.transfer.status === 'PENDING' || d.transfer.status === 'COMPENSATED'"
           [class.bad]="d.transfer.status === 'FAILED'"
-          >{{ d.transfer.status }}</span
+          >{{ d.transfer.status | transferStatus }}</span
         >
       </div>
       <div class="row">
@@ -60,7 +60,7 @@
                 [class.ok]="s.status === 'SUCCESS'"
                 [class.warn]="s.status !== 'SUCCESS' && s.status !== 'FAILED'"
                 [class.bad]="s.status === 'FAILED'"
-                >{{ s.status }}</span
+                >{{ s.status | transferStatus }}</span
               >
             </div>
             <div class="step-meta">{{ s.createdAt | date: 'short' }}</div>

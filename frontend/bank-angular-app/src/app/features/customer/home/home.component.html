@@ -114,7 +114,7 @@
               </div>
               <div>
                 <div class="num">{{ t.description || ('NAV.TRANSFER' | translate) }}</div>
-                <div class="row-meta">{{ t.status }} · {{ t.createdAt | date: 'short' }}</div>
+                <div class="row-meta">{{ t.status | transferStatus }} · {{ t.createdAt | date: 'short' }}</div>
               </div>
             </div>
             <div class="bal">{{ t.amount | moneyVnd: t.currency }}</div>
