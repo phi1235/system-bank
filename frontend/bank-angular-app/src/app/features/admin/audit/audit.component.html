@@ -3,170 +3,156 @@
   [subtitle]="'ADMIN.AUDIT_SUB' | translate"
 />
 
-<div class="layout">
-  <div class="main-col">
-    <mat-card class="filters-card">
-      <form class="filters" [formGroup]="form" (ngSubmit)="applyFilters()">
-        <mat-form-field appearance="outline" class="action-field" subscriptSizing="dynamic">
-          <mat-label>{{ 'ADMIN.ACTION' | translate }}</mat-label>
-          <mat-icon matPrefix>bolt</mat-icon>
-          <mat-select formControlName="action">
-            <mat-option value="">{{ 'COMMON.ALL' | translate }}</mat-option>
-            @for (a of actionOptions; track a) {
-              @if (a) {
-                <mat-option [value]="a">{{ a }}</mat-option>
+<div class="page-stack">
+  <mat-card class="filters-card">
+        <form class="filters" [formGroup]="form" (ngSubmit)="applyFilters()">
+          <mat-form-field appearance="outline" class="action-field" subscriptSizing="dynamic">
+            <mat-label>{{ 'ADMIN.ACTION' | translate }}</mat-label>
+            <mat-icon matPrefix>bolt</mat-icon>
+            <mat-select formControlName="action">
+              <mat-option value="">{{ 'COMMON.ALL' | translate }}</mat-option>
+              @for (a of actionOptions; track a) {
+                @if (a) {
+                  <mat-option [value]="a">{{ a }}</mat-option>
+                }
               }
-            }
-          </mat-select>
-        </mat-form-field>
+            </mat-select>
+          </mat-form-field>
 
-        <mat-form-field appearance="outline" class="type-field" subscriptSizing="dynamic">
-          <mat-label>{{ 'ADMIN.TYPE' | translate }}</mat-label>
-          <mat-icon matPrefix>category</mat-icon>
-          <mat-select formControlName="resourceType">
-            <mat-option value="">{{ 'COMMON.ALL' | translate }}</mat-option>
-            @for (t of resourceTypeOptions; track t) {
-              @if (t) {
-                <mat-option [value]="t">{{ t }}</mat-option>
+          <mat-form-field appearance="outline" class="type-field" subscriptSizing="dynamic">
+            <mat-label>{{ 'ADMIN.TYPE' | translate }}</mat-label>
+            <mat-icon matPrefix>category</mat-icon>
+            <mat-select formControlName="resourceType">
+              <mat-option value="">{{ 'COMMON.ALL' | translate }}</mat-option>
+              @for (t of resourceTypeOptions; track t) {
+                @if (t) {
+                  <mat-option [value]="t">{{ t }}</mat-option>
+                }
               }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="grow" subscriptSizing="dynamic">
+            <mat-label>{{ 'ADMIN.ACTOR' | translate }}</mat-label>
+            <mat-icon matPrefix>person</mat-icon>
+            <input
+              matInput
+              formControlName="actorUserId"
+              [placeholder]="'ADMIN.AUDIT_ACTOR_PH' | translate"
+            />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="grow" subscriptSizing="dynamic">
+            <mat-label>{{ 'ADMIN.RESOURCE' | translate }}</mat-label>
+            <mat-icon matPrefix>link</mat-icon>
+            <input
+              matInput
+              formControlName="resourceId"
+              [placeholder]="'ADMIN.AUDIT_RESOURCE_PH' | translate"
+            />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="date-field" subscriptSizing="dynamic">
+            <mat-label>{{ 'ADMIN.AUDIT_FROM' | translate }}</mat-label>
+            <input matInput type="date" formControlName="from" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="date-field" subscriptSizing="dynamic">
+            <mat-label>{{ 'ADMIN.AUDIT_TO' | translate }}</mat-label>
+            <input matInput type="date" formControlName="to" />
+          </mat-form-field>
+
+          <button mat-flat-button color="primary" type="submit" [disabled]="loading">
+            {{ 'ADMIN.FILTER' | translate }}
+          </button>
+          <button mat-stroked-button type="button" (click)="clearFilters()" [disabled]="loading">
+            {{ 'ADMIN.CLEAR' | translate }}
+          </button>
+        </form>
+        <p class="hint">{{ 'ADMIN.AUDIT_FILTER_HINT' | translate }}</p>
+        <p class="meta">{{ 'ADMIN.AUDIT_TOTAL' | translate: { total: totalElements } }}</p>
+      </mat-card>
+
+      <mat-card class="table-card">
+        @if (rows.length) {
+          <div class="table-wrap">
+            <table mat-table [dataSource]="rows" class="full">
+              <ng-container matColumnDef="createdAt">
+                <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.TIME' | translate }}</th>
+                <td mat-cell *matCellDef="let a">{{ a.createdAt | date: 'short' }}</td>
+              </ng-container>
+              <ng-container matColumnDef="action">
+                <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.ACTION' | translate }}</th>
+                <td mat-cell *matCellDef="let a"><span class="chip info">{{ a.action }}</span></td>
+              </ng-container>
+              <ng-container matColumnDef="actorUserId">
+                <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.ACTOR' | translate }}</th>
+                <td mat-cell *matCellDef="let a">
+                  <code [matTooltip]="a.actorUserId || ''">{{ shortId(a.actorUserId) }}</code>
+                </td>
+              </ng-container>
+              <ng-container matColumnDef="resourceType">
+                <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.TYPE' | translate }}</th>
+                <td mat-cell *matCellDef="let a"><strong>{{ a.resourceType || '—' }}</strong></td>
+              </ng-container>
+              <ng-container matColumnDef="resourceId">
+                <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.RESOURCE' | translate }}</th>
+                <td mat-cell *matCellDef="let a">
+                  <code [matTooltip]="a.resourceId || ''">{{ shortId(a.resourceId) }}</code>
+                </td>
+              </ng-container>
+              <ng-container matColumnDef="ip">
+                <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.IP' | translate }}</th>
+                <td mat-cell *matCellDef="let a">{{ a.ip || '—' }}</td>
+              </ng-container>
+              <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef class="col-actions"></th>
+                <td mat-cell *matCellDef="let a" class="col-actions">
+                  <button
+                    mat-icon-button
+                    type="button"
+                    color="primary"
+                    (click)="openDetail(a); $event.stopPropagation()"
+                    [disabled]="openingId === a.id"
+                    [matTooltip]="'ADMIN.AUDIT_OPEN_DETAIL' | translate"
+                    [attr.aria-label]="'ADMIN.AUDIT_OPEN_DETAIL' | translate"
+                  >
+                    <mat-icon>info</mat-icon>
+                  </button>
+                </td>
+              </ng-container>
+              <tr mat-header-row *matHeaderRowDef="cols"></tr>
+              <tr
+                mat-row
+                *matRowDef="let row; columns: cols"
+                class="clickable-row"
+                (click)="openDetail(row)"
+              ></tr>
+            </table>
+          </div>
+        } @else if (!loading) {
+          <div class="empty-state">
+            <mat-icon>policy</mat-icon>
+            @if (hasActiveFilters) {
+              <p class="empty-title">{{ 'ADMIN.AUDIT_EMPTY_FILTERED' | translate }}</p>
+              <p class="empty-hint">{{ 'ADMIN.AUDIT_EMPTY_FILTERED_HINT' | translate }}</p>
+              <button mat-stroked-button type="button" (click)="clearFilters()">
+                {{ 'ADMIN.CLEAR' | translate }}
+              </button>
+            } @else {
+              <p class="empty-title">{{ 'ADMIN.EMPTY_AUDIT' | translate }}</p>
+              <p class="empty-hint">{{ 'ADMIN.AUDIT_EMPTY_HINT' | translate }}</p>
             }
-          </mat-select>
-        </mat-form-field>
+          </div>
+        }
 
-        <mat-form-field appearance="outline" class="grow" subscriptSizing="dynamic">
-          <mat-label>{{ 'ADMIN.ACTOR' | translate }}</mat-label>
-          <mat-icon matPrefix>person</mat-icon>
-          <input
-            matInput
-            formControlName="actorUserId"
-            [placeholder]="'ADMIN.AUDIT_ACTOR_PH' | translate"
-          />
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="grow" subscriptSizing="dynamic">
-          <mat-label>{{ 'ADMIN.RESOURCE' | translate }}</mat-label>
-          <mat-icon matPrefix>link</mat-icon>
-          <input
-            matInput
-            formControlName="resourceId"
-            [placeholder]="'ADMIN.AUDIT_RESOURCE_PH' | translate"
-          />
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="date-field" subscriptSizing="dynamic">
-          <mat-label>{{ 'ADMIN.AUDIT_FROM' | translate }}</mat-label>
-          <input matInput type="date" formControlName="from" />
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="date-field" subscriptSizing="dynamic">
-          <mat-label>{{ 'ADMIN.AUDIT_TO' | translate }}</mat-label>
-          <input matInput type="date" formControlName="to" />
-        </mat-form-field>
-
-        <button mat-flat-button color="primary" type="submit" [disabled]="loading">
-          {{ 'ADMIN.FILTER' | translate }}
-        </button>
-        <button mat-stroked-button type="button" (click)="clearFilters()" [disabled]="loading">
-          {{ 'ADMIN.CLEAR' | translate }}
-        </button>
-      </form>
-      <p class="hint">{{ 'ADMIN.AUDIT_FILTER_HINT' | translate }}</p>
-      <p class="meta">{{ 'ADMIN.AUDIT_TOTAL' | translate: { total: totalElements } }}</p>
-    </mat-card>
-
-    <mat-card class="table-card">
-      @if (rows.length) {
-        <div class="table-wrap">
-          <table mat-table [dataSource]="rows" class="full">
-            <ng-container matColumnDef="createdAt">
-              <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.TIME' | translate }}</th>
-              <td mat-cell *matCellDef="let a">{{ a.createdAt | date: 'short' }}</td>
-            </ng-container>
-            <ng-container matColumnDef="action">
-              <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.ACTION' | translate }}</th>
-              <td mat-cell *matCellDef="let a"><span class="chip info">{{ a.action }}</span></td>
-            </ng-container>
-            <ng-container matColumnDef="actorUserId">
-              <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.ACTOR' | translate }}</th>
-              <td mat-cell *matCellDef="let a">
-                <code [matTooltip]="a.actorUserId || ''">{{ shortId(a.actorUserId) }}</code>
-              </td>
-            </ng-container>
-            <ng-container matColumnDef="resourceType">
-              <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.TYPE' | translate }}</th>
-              <td mat-cell *matCellDef="let a"><strong>{{ a.resourceType || '—' }}</strong></td>
-            </ng-container>
-            <ng-container matColumnDef="resourceId">
-              <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.RESOURCE' | translate }}</th>
-              <td mat-cell *matCellDef="let a">
-                <code [matTooltip]="a.resourceId || ''">{{ shortId(a.resourceId) }}</code>
-              </td>
-            </ng-container>
-            <ng-container matColumnDef="ip">
-              <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.IP' | translate }}</th>
-              <td mat-cell *matCellDef="let a">{{ a.ip || '—' }}</td>
-            </ng-container>
-            <ng-container matColumnDef="actions">
-              <th mat-header-cell *matHeaderCellDef class="col-actions"></th>
-              <td mat-cell *matCellDef="let a" class="col-actions">
-                <button
-                  mat-icon-button
-                  type="button"
-                  color="primary"
-                  (click)="openDetail(a); $event.stopPropagation()"
-                  [disabled]="openingId === a.id"
-                  [matTooltip]="'ADMIN.AUDIT_OPEN_DETAIL' | translate"
-                  [attr.aria-label]="'ADMIN.AUDIT_OPEN_DETAIL' | translate"
-                >
-                  <mat-icon>info</mat-icon>
-                </button>
-              </td>
-            </ng-container>
-            <tr mat-header-row *matHeaderRowDef="cols"></tr>
-            <tr
-              mat-row
-              *matRowDef="let row; columns: cols"
-              class="clickable-row"
-              (click)="openDetail(row)"
-            ></tr>
-          </table>
-        </div>
-      } @else if (!loading) {
-        <div class="empty-state">
-          <mat-icon>policy</mat-icon>
-          @if (hasActiveFilters) {
-            <p class="empty-title">{{ 'ADMIN.AUDIT_EMPTY_FILTERED' | translate }}</p>
-            <p class="empty-hint">{{ 'ADMIN.AUDIT_EMPTY_FILTERED_HINT' | translate }}</p>
-            <button mat-stroked-button type="button" (click)="clearFilters()">
-              {{ 'ADMIN.CLEAR' | translate }}
-            </button>
-          } @else {
-            <p class="empty-title">{{ 'ADMIN.EMPTY_AUDIT' | translate }}</p>
-            <p class="empty-hint">{{ 'ADMIN.AUDIT_EMPTY_HINT' | translate }}</p>
-          }
-        </div>
-      }
-
-      <mat-paginator
-        [length]="totalElements"
-        [pageIndex]="pageIndex"
-        [pageSize]="pageSize"
-        [pageSizeOptions]="[10, 20, 50]"
-        (page)="page($event)"
-        [disabled]="loading"
-      />
-    </mat-card>
-  </div>
-
-  <div class="side-col">
-    <mat-card class="side-card">
-      <h3>{{ 'ADMIN.AUDIT_HELP_TITLE' | translate }}</h3>
-      <p>{{ 'ADMIN.AUDIT_HELP_BODY' | translate }}</p>
-      <ul>
-        <li>{{ 'ADMIN.AUDIT_HELP_1' | translate }}</li>
-        <li>{{ 'ADMIN.AUDIT_HELP_2' | translate }}</li>
-        <li>{{ 'ADMIN.AUDIT_HELP_3' | translate }}</li>
-      </ul>
-    </mat-card>
-  </div>
+        <mat-paginator
+          [length]="totalElements"
+          [pageIndex]="pageIndex"
+          [pageSize]="pageSize"
+          [pageSizeOptions]="[10, 20, 50]"
+          (page)="page($event)"
+          [disabled]="loading"
+        />
+      </mat-card>
 </div>
