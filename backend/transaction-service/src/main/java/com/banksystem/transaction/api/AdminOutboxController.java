@@ -7,7 +7,9 @@ import com.banksystem.transaction.api.dto.OutboxDtos.OutboxCountsResponse;
 import com.banksystem.transaction.api.dto.OutboxDtos.OutboxEventResponse;
 import com.banksystem.transaction.application.OutboxAdminService;
 import com.banksystem.transaction.application.query.OutboxListQuery;
+import java.time.Instant;
 import java.util.UUID;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -33,9 +35,19 @@ public class AdminOutboxController {
   @GetMapping
   public ApiResponse<PageResponse<OutboxEventResponse>> list(
       @RequestParam(required = false) String status,
+      @RequestParam(required = false) String eventType,
+      @RequestParam(required = false) String eventId,
+      @RequestParam(required = false) String aggregateId,
+      @RequestParam(required = false) String q,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+          Instant from,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+          Instant to,
       @RequestParam(required = false) Integer page,
       @RequestParam(required = false) Integer size) {
-    return ApiResponse.ok(service.list(OutboxListQuery.of(status, page, size)));
+    return ApiResponse.ok(
+        service.list(
+            OutboxListQuery.of(status, eventType, eventId, aggregateId, q, from, to, page, size)));
   }
 
   @GetMapping("/counts")

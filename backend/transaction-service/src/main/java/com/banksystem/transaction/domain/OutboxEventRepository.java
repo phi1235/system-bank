@@ -33,5 +33,37 @@ public interface OutboxEventRepository extends JpaRepository<OutboxEventEntity, 
 
   Page<OutboxEventEntity> findByStatusOrderByCreatedAtDesc(String status, Pageable pageable);
 
+  /**
+   * Admin outbox search. Callers pass concrete from/to bounds and boolean flags so Postgres
+   * never sees untyped NULL UUID binds.
+   */
+  @Query("""
+      SELECT e FROM OutboxEventEntity e
+      WHERE e.status = :status
+        AND (:hasEventType = false OR LOWER(e.eventType) = LOWER(:eventType))
+        AND (:hasEventId = false OR e.id = :eventId)
+        AND (:hasAggregateId = false OR e.aggregateId = :aggregateId)
+        AND (:hasQ = false
+          OR LOWER(e.eventType) LIKE LOWER(CONCAT('%', :q, '%'))
+          OR LOWER(e.aggregateType) LIKE LOWER(CONCAT('%', :q, '%'))
+          OR LOWER(COALESCE(e.lastError, '')) LIKE LOWER(CONCAT('%', :q, '%')))
+        AND e.createdAt >= :fromTs
+        AND e.createdAt <= :toTs
+      ORDER BY e.createdAt DESC
+      """)
+  Page<OutboxEventEntity> searchAdmin(
+      @Param("status") String status,
+      @Param("hasEventType") boolean hasEventType,
+      @Param("eventType") String eventType,
+      @Param("hasEventId") boolean hasEventId,
+      @Param("eventId") UUID eventId,
+      @Param("hasAggregateId") boolean hasAggregateId,
+      @Param("aggregateId") UUID aggregateId,
+      @Param("hasQ") boolean hasQ,
+      @Param("q") String q,
+      @Param("fromTs") Instant fromTs,
+      @Param("toTs") Instant toTs,
+      Pageable pageable);
+
   long countByStatus(String status);
 }

@@ -6,21 +6,24 @@ import { MatCardModule } from '@angular/material/card';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { EnumLabelPipe } from '../../../shared/pipes/enum-label.pipe';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { filter, switchMap } from 'rxjs';
 import { OutboxCounts, OutboxEvent } from '../../../core/models/domain.model';
 import { BankApiService } from '../../../core/services/bank-api.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { resolveHttpErrorMessage } from '../../../core/utils/http-error.util';
 import {
   ConfirmDialogComponent,
   ConfirmDialogData,
 } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { OutboxDetailDialogComponent } from '../../../shared/components/outbox-detail-dialog/outbox-detail-dialog.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { EnumLabelPipe } from '../../../shared/pipes/enum-label.pipe';
 
 @Component({
   selector: 'app-admin-outbox',
@@ -34,6 +37,7 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
     MatButtonModule,
     MatFormFieldModule,
     MatSelectModule,
+    MatInputModule,
     MatIconModule,
     MatTooltipModule,
     MatDialogModule,
@@ -56,15 +60,56 @@ export class AdminOutboxComponent implements OnInit {
   totalElements = 0;
   counts: OutboxCounts | null = null;
   status = 'DEAD';
+  eventType = '';
+  eventId = '';
+  aggregateId = '';
+  q = '';
+  from = '';
+  to = '';
   loading = false;
   replayingId: string | null = null;
-  cols = ['createdAt', 'status', 'eventType', 'aggregateId', 'attemptCount', 'lastError', 'actions'];
+  openingId: string | null = null;
+  cols = [
+    'createdAt',
+    'status',
+    'eventType',
+    'aggregateId',
+    'attemptCount',
+    'lastError',
+    'actions',
+  ];
+
+  readonly statusOptions = ['DEAD', 'PENDING', 'PUBLISHED'];
 
   ngOnInit(): void {
     this.load();
   }
 
+  get hasActiveFilters(): boolean {
+    return !!(
+      this.eventType.trim() ||
+      this.eventId.trim() ||
+      this.aggregateId.trim() ||
+      this.q.trim() ||
+      this.from ||
+      this.to ||
+      (this.status && this.status !== 'DEAD')
+    );
+  }
+
   applyFilters(): void {
+    this.pageIndex = 0;
+    this.load();
+  }
+
+  clearFilters(): void {
+    this.status = 'DEAD';
+    this.eventType = '';
+    this.eventId = '';
+    this.aggregateId = '';
+    this.q = '';
+    this.from = '';
+    this.to = '';
     this.pageIndex = 0;
     this.load();
   }
@@ -75,22 +120,59 @@ export class AdminOutboxComponent implements OnInit {
       next: (c) => (this.counts = c),
       error: () => (this.counts = null),
     });
-    this.api.adminOutboxList(this.pageIndex, this.pageSize, this.status || undefined).subscribe({
-      next: (p) => {
-        this.rows = p.items || [];
-        this.totalElements = p.totalElements ?? this.rows.length;
-        this.loading = false;
+    this.api
+      .adminOutboxList(this.pageIndex, this.pageSize, {
+        status: this.status || undefined,
+        eventType: this.eventType.trim() || undefined,
+        eventId: this.eventId.trim() || undefined,
+        aggregateId: this.aggregateId.trim() || undefined,
+        q: this.q.trim() || undefined,
+        from: this.toIsoStart(this.from),
+        to: this.toIsoEnd(this.to),
+      })
+      .subscribe({
+        next: (p) => {
+          this.rows = p.items || [];
+          this.totalElements = p.totalElements ?? this.rows.length;
+          this.loading = false;
+        },
+        error: (err) => {
+          this.rows = [];
+          this.totalElements = 0;
+          this.loading = false;
+          this.toast.error(resolveHttpErrorMessage(err, this.i18n));
+        },
+      });
+  }
+
+  openDetail(row: OutboxEvent): void {
+    if (!row?.id || this.openingId) {
+      return;
+    }
+    this.openingId = row.id;
+    this.api.adminOutboxDetail(row.id).subscribe({
+      next: (event) => {
+        this.openingId = null;
+        this.dialog.open(OutboxDetailDialogComponent, {
+          data: { event },
+          width: '640px',
+          maxWidth: '95vw',
+        });
       },
       error: () => {
-        this.rows = [];
-        this.totalElements = 0;
-        this.loading = false;
-        this.toast.error(this.i18n.instant('ADMIN.OUTBOX_LOAD_FAIL'));
+        this.openingId = null;
+        // Interceptor toasts; fall back to list row without payload.
+        this.dialog.open(OutboxDetailDialogComponent, {
+          data: { event: row },
+          width: '640px',
+          maxWidth: '95vw',
+        });
       },
     });
   }
 
-  replay(row: OutboxEvent): void {
+  replay(row: OutboxEvent, event?: Event): void {
+    event?.stopPropagation();
     if (row.status !== 'DEAD' || this.replayingId) {
       return;
     }
@@ -119,9 +201,12 @@ export class AdminOutboxComponent implements OnInit {
           this.toast.success(this.i18n.instant('ADMIN.OUTBOX_REPLAY_OK'));
           this.load();
         },
-        error: () => {
+        error: (err) => {
           this.replayingId = null;
-          this.toast.error(this.i18n.instant('ADMIN.OUTBOX_REPLAY_FAIL'));
+          this.toast.error(
+            resolveHttpErrorMessage(err, this.i18n) ||
+              this.i18n.instant('ADMIN.OUTBOX_REPLAY_FAIL'),
+          );
         },
       });
   }
@@ -139,4 +224,19 @@ export class AdminOutboxComponent implements OnInit {
     this.load();
   }
 
+  private toIsoStart(date: string): string | undefined {
+    const d = (date || '').trim();
+    if (!d) {
+      return undefined;
+    }
+    return `${d}T00:00:00.000Z`;
+  }
+
+  private toIsoEnd(date: string): string | undefined {
+    const d = (date || '').trim();
+    if (!d) {
+      return undefined;
+    }
+    return `${d}T23:59:59.999Z`;
+  }
 }

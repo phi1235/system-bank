@@ -125,6 +125,8 @@ export interface OutboxEvent {
   createdAt: string;
   publishedAt: string | null;
   lastError: string | null;
+  /** Present on detail/replay responses; usually null on list rows. */
+  payload?: string | null;
 }
 
 export interface OutboxCounts {

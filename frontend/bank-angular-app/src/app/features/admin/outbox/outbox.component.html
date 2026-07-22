@@ -1,112 +1,219 @@
 <app-page-header
   [title]="'ADMIN.OUTBOX_TITLE' | translate"
   [subtitle]="'ADMIN.OUTBOX_SUB' | translate"
->
-  <mat-form-field appearance="outline" class="filter" subscriptSizing="dynamic">
-    <mat-label>{{ 'COMMON.STATUS' | translate }}</mat-label>
-    <mat-icon matPrefix>filter_list</mat-icon>
-    <mat-select [(ngModel)]="status">
-      <mat-option value="DEAD">{{ 'OUTBOX_STATUS.DEAD' | translate }}</mat-option>
-      <mat-option value="PENDING">{{ 'OUTBOX_STATUS.PENDING' | translate }}</mat-option>
-      <mat-option value="PUBLISHED">{{ 'OUTBOX_STATUS.PUBLISHED' | translate }}</mat-option>
-    </mat-select>
-  </mat-form-field>
-  <button mat-flat-button color="primary" type="button" (click)="applyFilters()" [disabled]="loading">
-    <mat-icon>refresh</mat-icon>
-    {{ 'ADMIN.FILTER' | translate }}
-  </button>
-</app-page-header>
+/>
 
-@if (counts) {
-  <div class="counts" aria-live="polite">
-    <mat-card class="count-card">
-      <div class="label">{{ 'ADMIN.OUTBOX_PENDING' | translate }}</div>
-      <div class="value">{{ counts.pending }}</div>
-    </mat-card>
-    <mat-card class="count-card">
-      <div class="label">{{ 'ADMIN.OUTBOX_PUBLISHED' | translate }}</div>
-      <div class="value">{{ counts.published }}</div>
-    </mat-card>
-    <mat-card class="count-card dead">
-      <div class="label">{{ 'ADMIN.OUTBOX_DEAD' | translate }}</div>
-      <div class="value">{{ counts.dead }}</div>
-    </mat-card>
-  </div>
-}
+<div class="layout">
+  <div class="main-col">
+    @if (counts) {
+      <div class="counts" aria-live="polite">
+        <mat-card class="count-card" [class.active]="status === 'PENDING'">
+          <div class="label">{{ 'ADMIN.OUTBOX_PENDING' | translate }}</div>
+          <div class="value">{{ counts.pending }}</div>
+        </mat-card>
+        <mat-card class="count-card" [class.active]="status === 'PUBLISHED'">
+          <div class="label">{{ 'ADMIN.OUTBOX_PUBLISHED' | translate }}</div>
+          <div class="value">{{ counts.published }}</div>
+        </mat-card>
+        <mat-card class="count-card dead" [class.active]="status === 'DEAD'">
+          <div class="label">{{ 'ADMIN.OUTBOX_DEAD' | translate }}</div>
+          <div class="value">{{ counts.dead }}</div>
+        </mat-card>
+      </div>
+    }
 
-<mat-card class="table-card">
-  <div class="table-wrap">
-    <table mat-table [dataSource]="rows" class="full">
-      <ng-container matColumnDef="createdAt">
-        <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.TIME' | translate }}</th>
-        <td mat-cell *matCellDef="let e">{{ e.createdAt | date: 'short' }}</td>
-      </ng-container>
-      <ng-container matColumnDef="status">
-        <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.STATUS' | translate }}</th>
-        <td mat-cell *matCellDef="let e">
-          <span
-            class="chip"
-            [class.ok]="e.status === 'PUBLISHED'"
-            [class.warn]="e.status === 'PENDING'"
-            [class.bad]="e.status === 'DEAD'"
-            >{{ e.status | enumLabel:'OUTBOX_STATUS' }}</span
-          >
-        </td>
-      </ng-container>
-      <ng-container matColumnDef="eventType">
-        <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.OUTBOX_EVENT' | translate }}</th>
-        <td mat-cell *matCellDef="let e">{{ e.eventType }}</td>
-      </ng-container>
-      <ng-container matColumnDef="aggregateId">
-        <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.OUTBOX_AGG' | translate }}</th>
-        <td mat-cell *matCellDef="let e">
-          <code [matTooltip]="e.aggregateId">{{ shortId(e.aggregateId) }}</code>
-        </td>
-      </ng-container>
-      <ng-container matColumnDef="attemptCount">
-        <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.OUTBOX_ATTEMPTS' | translate }}</th>
-        <td mat-cell *matCellDef="let e">{{ e.attemptCount }}</td>
-      </ng-container>
-      <ng-container matColumnDef="lastError">
-        <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.OUTBOX_ERROR' | translate }}</th>
-        <td mat-cell *matCellDef="let e" class="err">
-          <span [matTooltip]="e.lastError || ''">{{ e.lastError || '—' }}</span>
-        </td>
-      </ng-container>
-      <ng-container matColumnDef="actions">
-        <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.ACTIONS' | translate }}</th>
-        <td mat-cell *matCellDef="let e">
-          @if (e.status === 'DEAD') {
-            <button
-              mat-stroked-button
-              color="primary"
-              type="button"
-              (click)="replay(e)"
-              [disabled]="replayingId === e.id"
-              [attr.aria-label]="'ADMIN.OUTBOX_REPLAY' | translate"
-              [matTooltip]="'ADMIN.OUTBOX_REPLAY' | translate"
-            >
-              <mat-icon>replay</mat-icon>
-              {{ 'ADMIN.OUTBOX_REPLAY' | translate }}
+    <mat-card class="filters-card">
+      <form class="filters" (ngSubmit)="applyFilters()">
+        <mat-form-field appearance="outline" class="status-field" subscriptSizing="dynamic">
+          <mat-label>{{ 'COMMON.STATUS' | translate }}</mat-label>
+          <mat-icon matPrefix>filter_list</mat-icon>
+          <mat-select [(ngModel)]="status" name="status">
+            @for (s of statusOptions; track s) {
+              <mat-option [value]="s">{{ s | enumLabel: 'OUTBOX_STATUS' }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="grow" subscriptSizing="dynamic">
+          <mat-label>{{ 'ADMIN.OUTBOX_EVENT' | translate }}</mat-label>
+          <mat-icon matPrefix>bolt</mat-icon>
+          <input
+            matInput
+            [(ngModel)]="eventType"
+            name="eventType"
+            [placeholder]="'ADMIN.OUTBOX_EVENT_PH' | translate"
+          />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="grow" subscriptSizing="dynamic">
+          <mat-label>{{ 'ADMIN.OUTBOX_EVENT_ID' | translate }}</mat-label>
+          <mat-icon matPrefix>tag</mat-icon>
+          <input
+            matInput
+            [(ngModel)]="eventId"
+            name="eventId"
+            [placeholder]="'ADMIN.OUTBOX_EVENT_ID_PH' | translate"
+          />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="grow" subscriptSizing="dynamic">
+          <mat-label>{{ 'ADMIN.OUTBOX_AGG' | translate }}</mat-label>
+          <mat-icon matPrefix>link</mat-icon>
+          <input
+            matInput
+            [(ngModel)]="aggregateId"
+            name="aggregateId"
+            [placeholder]="'ADMIN.OUTBOX_AGG_PH' | translate"
+          />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="grow" subscriptSizing="dynamic">
+          <mat-label>{{ 'COMMON.SEARCH' | translate }}</mat-label>
+          <mat-icon matPrefix>search</mat-icon>
+          <input
+            matInput
+            [(ngModel)]="q"
+            name="q"
+            [placeholder]="'ADMIN.OUTBOX_SEARCH_PH' | translate"
+          />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="date-field" subscriptSizing="dynamic">
+          <mat-label>{{ 'ADMIN.OUTBOX_FROM' | translate }}</mat-label>
+          <input matInput type="date" [(ngModel)]="from" name="from" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="date-field" subscriptSizing="dynamic">
+          <mat-label>{{ 'ADMIN.OUTBOX_TO' | translate }}</mat-label>
+          <input matInput type="date" [(ngModel)]="to" name="to" />
+        </mat-form-field>
+
+        <button mat-flat-button color="primary" type="submit" [disabled]="loading">
+          {{ 'ADMIN.FILTER' | translate }}
+        </button>
+        <button mat-stroked-button type="button" (click)="clearFilters()" [disabled]="loading">
+          {{ 'ADMIN.CLEAR' | translate }}
+        </button>
+      </form>
+      <p class="hint">{{ 'ADMIN.OUTBOX_FILTER_HINT' | translate }}</p>
+      <p class="meta">{{ 'ADMIN.OUTBOX_TOTAL' | translate: { total: totalElements } }}</p>
+    </mat-card>
+
+    <mat-card class="table-card">
+      @if (rows.length) {
+        <div class="table-wrap">
+          <table mat-table [dataSource]="rows" class="full">
+            <ng-container matColumnDef="createdAt">
+              <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.TIME' | translate }}</th>
+              <td mat-cell *matCellDef="let e">{{ e.createdAt | date: 'short' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.STATUS' | translate }}</th>
+              <td mat-cell *matCellDef="let e">
+                <span
+                  class="chip"
+                  [class.ok]="e.status === 'PUBLISHED'"
+                  [class.warn]="e.status === 'PENDING'"
+                  [class.bad]="e.status === 'DEAD'"
+                  >{{ e.status | enumLabel: 'OUTBOX_STATUS' }}</span
+                >
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="eventType">
+              <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.OUTBOX_EVENT' | translate }}</th>
+              <td mat-cell *matCellDef="let e">{{ e.eventType }}</td>
+            </ng-container>
+            <ng-container matColumnDef="aggregateId">
+              <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.OUTBOX_AGG' | translate }}</th>
+              <td mat-cell *matCellDef="let e">
+                <code [matTooltip]="e.aggregateId">{{ shortId(e.aggregateId) }}</code>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="attemptCount">
+              <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.OUTBOX_ATTEMPTS' | translate }}</th>
+              <td mat-cell *matCellDef="let e">{{ e.attemptCount }}</td>
+            </ng-container>
+            <ng-container matColumnDef="lastError">
+              <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.OUTBOX_ERROR' | translate }}</th>
+              <td mat-cell *matCellDef="let e" class="err">
+                <span [matTooltip]="e.lastError || ''">{{ e.lastError || '—' }}</span>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.ACTIONS' | translate }}</th>
+              <td mat-cell *matCellDef="let e" class="acts">
+                <button
+                  mat-icon-button
+                  type="button"
+                  color="primary"
+                  (click)="openDetail(e); $event.stopPropagation()"
+                  [disabled]="openingId === e.id"
+                  [matTooltip]="'ADMIN.OUTBOX_OPEN_DETAIL' | translate"
+                  [attr.aria-label]="'ADMIN.OUTBOX_OPEN_DETAIL' | translate"
+                >
+                  <mat-icon>info</mat-icon>
+                </button>
+                @if (e.status === 'DEAD') {
+                  <button
+                    mat-stroked-button
+                    color="primary"
+                    type="button"
+                    (click)="replay(e, $event)"
+                    [disabled]="replayingId === e.id || loading"
+                    [attr.aria-label]="'ADMIN.OUTBOX_REPLAY' | translate"
+                    [matTooltip]="'ADMIN.OUTBOX_REPLAY' | translate"
+                  >
+                    <mat-icon>replay</mat-icon>
+                    {{ 'ADMIN.OUTBOX_REPLAY' | translate }}
+                  </button>
+                }
+              </td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="cols"></tr>
+            <tr
+              mat-row
+              *matRowDef="let row; columns: cols"
+              class="clickable-row"
+              (click)="openDetail(row)"
+            ></tr>
+          </table>
+        </div>
+      } @else if (!loading) {
+        <div class="empty-state">
+          <mat-icon>outbox</mat-icon>
+          @if (hasActiveFilters) {
+            <p class="empty-title">{{ 'ADMIN.OUTBOX_EMPTY_FILTERED' | translate }}</p>
+            <p class="empty-hint">{{ 'ADMIN.OUTBOX_EMPTY_FILTERED_HINT' | translate }}</p>
+            <button mat-stroked-button type="button" (click)="clearFilters()">
+              {{ 'ADMIN.CLEAR' | translate }}
             </button>
           } @else {
-            <span class="muted">—</span>
+            <p class="empty-title">{{ 'ADMIN.OUTBOX_EMPTY' | translate }}</p>
+            <p class="empty-hint">{{ 'ADMIN.OUTBOX_EMPTY_HINT' | translate }}</p>
           }
-        </td>
-      </ng-container>
-      <tr mat-header-row *matHeaderRowDef="cols"></tr>
-      <tr mat-row *matRowDef="let row; columns: cols"></tr>
-    </table>
+        </div>
+      }
+
+      <mat-paginator
+        [length]="totalElements"
+        [pageIndex]="pageIndex"
+        [pageSize]="pageSize"
+        [pageSizeOptions]="[10, 20, 50]"
+        (page)="page($event)"
+        [disabled]="loading"
+      />
+    </mat-card>
   </div>
-  @if (!loading && rows.length === 0) {
-    <p class="empty">{{ 'ADMIN.OUTBOX_EMPTY' | translate }}</p>
-  }
-  <mat-paginator
-    [length]="totalElements"
-    [pageIndex]="pageIndex"
-    [pageSize]="pageSize"
-    [pageSizeOptions]="[10, 20, 50]"
-    (page)="page($event)"
-    [disabled]="loading"
-  />
-</mat-card>
+
+  <div class="side-col">
+    <mat-card class="side-card">
+      <h3>{{ 'ADMIN.OUTBOX_HELP_TITLE' | translate }}</h3>
+      <p>{{ 'ADMIN.OUTBOX_HELP_BODY' | translate }}</p>
+      <ul>
+        <li>{{ 'ADMIN.OUTBOX_HELP_1' | translate }}</li>
+        <li>{{ 'ADMIN.OUTBOX_HELP_2' | translate }}</li>
+        <li>{{ 'ADMIN.OUTBOX_HELP_3' | translate }}</li>
+      </ul>
+    </mat-card>
+  </div>
+</div>
