@@ -19,7 +19,8 @@
     "PLACEHOLDER_HINT": "Tính năng đang trong roadmap — route giữ chỗ theo IA product-grade.",
     "PLACEHOLDER_MVP": "Không ảnh hưởng luồng MVP (tài khoản · chuyển tiền · lịch sử).",
     "LANG_VI": "Tiếng Việt",
-    "LANG_EN": "English"
+    "LANG_EN": "English",
+    "REASON": "Lý do"
   },
   "NAV": {
     "HOME": "Tổng quan",
@@ -288,6 +289,7 @@
     "QUOTE_REMAINING_TODAY": "Còn lại trong ngày",
     "QUOTE_MAX_TX": "Tối đa / giao dịch",
     "QUOTE_NOTE": "Đã chi hôm nay {{spent}} / hạn mức ngày {{daily}} ({{zone}}).",
+    "CONFIRM_TITLE": "Xác nhận chuyển tiền",
     "TRANSFER_STATUS_REASON": "Chuyển tiền {{status}}: {{reason}}"
   },
   "ADMIN": {
@@ -558,7 +560,18 @@
     "USERS_NO_ACT": "Không có quyền thao tác",
     "SCR_USERS": "BO · Quản lý người dùng",
     "CANNOT_LOCK_SELF": "Không thể khóa tài khoản của chính mình",
-    "CANNOT_ACT_SELF": "Không thể cấp lại mật khẩu / thao tác trên tài khoản của chính mình"
+    "CANNOT_ACT_SELF": "Không thể cấp lại mật khẩu / thao tác trên tài khoản của chính mình",
+    "PWD_FULFILL_TITLE": "Cấp mật khẩu tạm",
+    "LOCK_TITLE": "Khóa đăng nhập · {{user}}",
+    "UNLOCK_TITLE": "Mở khóa đăng nhập · {{user}}",
+    "LOCK_REASON_PLACEHOLDER": "Ghi chú (tuỳ chọn) cho audit",
+    "LOCK_REASON_DEFAULT": "Khóa bởi admin",
+    "FREEZE_TITLE": "Đóng băng tài khoản",
+    "FREEZE_CONFIRM": "Đóng băng tài khoản {{account}}? Customer sẽ không chuyển được từ TK này.",
+    "FREEZE_FAIL": "Đóng băng thất bại",
+    "UNFREEZE_TITLE": "Mở đóng băng tài khoản",
+    "UNFREEZE_CONFIRM": "Mở đóng băng {{account}} và trả về trạng thái ACTIVE?",
+    "UNFREEZE_FAIL": "Mở đóng băng thất bại"
   },
   "ERRORS": {
     "GENERIC": "Lỗi hệ thống"

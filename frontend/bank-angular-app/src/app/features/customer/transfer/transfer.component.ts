@@ -8,11 +8,15 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { MatDialogModule } from '@angular/material/dialog';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { Store } from '@ngrx/store';
-import { Subscription, debounceTime, distinctUntilChanged } from 'rxjs';
+import { Subscription, debounceTime, distinctUntilChanged, filter } from 'rxjs';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import {
+  ConfirmDialogComponent,
+  ConfirmDialogData,
+} from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { FriendlyTransferErrorPipe } from '../../../shared/pipes/friendly-transfer-error.pipe';
 import { MoneyVndPipe } from '../../../shared/pipes/money-vnd.pipe';
 import { PERMISSIONS } from '../../../core/services/rbac.util';
@@ -56,6 +60,7 @@ export class TransferComponent implements OnInit, OnDestroy {
   private readonly i18n = inject(TranslateService);
   private readonly api = inject(BankApiService);
   private readonly route = inject(ActivatedRoute);
+  private readonly dialog = inject(MatDialog);
   private amountSub?: Subscription;
   private quoteReq = 0;
 
@@ -139,29 +144,37 @@ export class TransferComponent implements OnInit, OnDestroy {
     const amount = Number(v.amount);
     const fee = this.quote?.feeAmount ?? 0;
     const total = this.quote?.totalDebit ?? amount;
-    const ok = confirm(
-      this.i18n.instant('CUSTOMER.CONFIRM_MSG', {
+    const data: ConfirmDialogData = {
+      title: this.i18n.instant('CUSTOMER.CONFIRM_TITLE'),
+      message: this.i18n.instant('CUSTOMER.CONFIRM_MSG', {
         amount: amount.toLocaleString('vi-VN'),
         fee: Number(fee).toLocaleString('vi-VN'),
         total: Number(total).toLocaleString('vi-VN'),
         to: v.toAccountNumber,
         desc: v.description || '',
       }),
-    );
-    if (!ok) return;
-    const key = crypto.randomUUID();
-    this.store.dispatch(
-      TransfersActions.create({
-        request: {
-          fromAccountId: v.fromAccountId,
-          toAccountNumber: v.toAccountNumber,
-          amount,
-          description: v.description || undefined,
-          currency: 'VND',
-        },
-        idempotencyKey: key,
-      }),
-    );
+      confirmLabel: this.i18n.instant('CUSTOMER.CONFIRM_TRANSFER'),
+      destructive: false,
+    };
+    this.dialog
+      .open(ConfirmDialogComponent, { data, width: '440px' })
+      .afterClosed()
+      .pipe(filter(Boolean))
+      .subscribe(() => {
+        const key = crypto.randomUUID();
+        this.store.dispatch(
+          TransfersActions.create({
+            request: {
+              fromAccountId: v.fromAccountId,
+              toAccountNumber: v.toAccountNumber,
+              amount,
+              description: v.description || undefined,
+              currency: 'VND',
+            },
+            idempotencyKey: key,
+          }),
+        );
+      });
   }
 
   private refreshQuote(): void {

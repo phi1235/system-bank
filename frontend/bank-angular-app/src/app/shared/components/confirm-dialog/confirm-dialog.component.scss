@@ -1,6 +1,7 @@
 .msg {
   margin: 0;
   line-height: 1.5;
-  max-width: 42ch;
+  max-width: 48ch;
   text-wrap: pretty;
+  white-space: pre-line;
 }
