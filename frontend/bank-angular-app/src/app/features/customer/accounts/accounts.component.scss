@@ -9,20 +9,20 @@
   background: linear-gradient(160deg, #0a1628 0%, #143a5c 100%) !important;
   color: #fff !important;
   border: none !important;
-  min-height: 200px;
+  min-height: 220px;
   display: flex;
   flex-direction: column;
 
   &.frozen {
     background: linear-gradient(160deg, #374151 0%, #4b5563 100%) !important;
-    opacity: 0.92;
+    opacity: 0.95;
   }
 
   .acc-top {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
   }
 
   .type-badge {
@@ -39,8 +39,43 @@
   .chip {
     background: rgba(255, 255, 255, 0.12);
     color: #fff;
-    &.ok { background: rgba(13, 159, 110, 0.35); color: #a7f3d0; }
-    &.bad { background: rgba(220, 38, 38, 0.3); color: #fecaca; }
+
+    &.ok {
+      background: rgba(13, 159, 110, 0.35);
+      color: #a7f3d0;
+    }
+
+    &.bad {
+      background: rgba(220, 38, 38, 0.3);
+      color: #fecaca;
+    }
+  }
+
+  .freeze-banner {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0 0 0.85rem;
+    padding: 0.45rem 0.6rem;
+    border-radius: 8px;
+    background: rgba(254, 226, 226, 0.16);
+    color: #fecaca;
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1.35;
+
+    mat-icon {
+      font-size: 1rem;
+      width: 1rem;
+      height: 1rem;
+    }
+  }
+
+  .acc-num-row {
+    display: flex;
+    align-items: center;
+    gap: 0.15rem;
+    margin-bottom: 1rem;
   }
 
   .acc-num {
@@ -48,7 +83,10 @@
     font-size: 1.05rem;
     font-weight: 600;
     letter-spacing: 0.04em;
-    margin-bottom: 1.25rem;
+  }
+
+  .copy-btn {
+    color: rgba(255, 255, 255, 0.85) !important;
   }
 
   .acc-label {
@@ -68,11 +106,18 @@
 
   .acc-actions {
     display: flex;
+    flex-wrap: wrap;
     gap: 0.5rem;
     margin-top: auto;
-    a {
+
+    a,
+    button {
       color: #fff !important;
       border-color: rgba(255, 255, 255, 0.35) !important;
+    }
+
+    button[disabled] {
+      opacity: 0.45;
     }
   }
 }
@@ -89,7 +134,9 @@
   margin: 0 -0.25rem;
 }
 
-.full { width: 100%; }
+.full {
+  width: 100%;
+}
 
 .mono {
   font-family: var(--font-mono);
@@ -102,10 +149,74 @@
   font-variant-numeric: tabular-nums;
 }
 
-.empty {
-  padding: 1.25rem 0 0.25rem;
-  color: var(--color-text-secondary);
+.num-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.1rem;
+}
+
+.acts {
+  display: flex;
+  align-items: center;
+  gap: 0.1rem;
+  white-space: nowrap;
+}
+
+.col-actions {
+  width: 8.5rem;
+  text-align: right;
+}
+
+.frozen-hint {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  max-width: 18ch;
+}
+
+.empty-card {
+  margin-top: 0.25rem;
+}
+
+.empty-state {
+  display: grid;
+  place-items: center;
   text-align: center;
+  gap: 0.35rem;
+  padding: 2.25rem 1rem 1.75rem;
+  color: var(--color-text-secondary, #64748b);
+
+  mat-icon {
+    font-size: 2.5rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    opacity: 0.55;
+  }
+
+  .empty-title {
+    margin: 0.4rem 0 0;
+    font-weight: 700;
+    color: var(--color-text, #0f172a);
+  }
+
+  .empty-hint {
+    margin: 0;
+    max-width: 48ch;
+    line-height: 1.45;
+
+    &.muted {
+      opacity: 0.85;
+      font-size: 0.9rem;
+    }
+  }
+
+  .empty-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    justify-content: center;
+    margin-top: 0.75rem;
+  }
 }
 
 .chip {
@@ -114,14 +225,26 @@
   padding: 0.15rem 0.5rem;
   border-radius: 999px;
   background: #e5e7eb;
-  &.ok { background: #e6f7f0; color: #0d9f6e; }
-  &.bad { background: #fee2e2; color: #dc2626; }
+
+  &.ok {
+    background: #e6f7f0;
+    color: #0d9f6e;
+  }
+
+  &.bad {
+    background: #fee2e2;
+    color: #dc2626;
+  }
 }
 
 @media (max-width: 1000px) {
-  .cards { grid-template-columns: 1fr 1fr; }
+  .cards {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 @media (max-width: 640px) {
-  .cards { grid-template-columns: 1fr; }
+  .cards {
+    grid-template-columns: 1fr;
+  }
 }

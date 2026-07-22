@@ -2,9 +2,10 @@ import { Injectable, inject } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { TranslateService } from '@ngx-translate/core';
 import { of } from 'rxjs';
-import { catchError, exhaustMap, map } from 'rxjs/operators';
+import { catchError, exhaustMap, map, tap } from 'rxjs/operators';
 import { BankApiService } from '../../core/services/bank-api.service';
 import { ToastService } from '../../core/services/toast.service';
+import { resolveHttpErrorMessage } from '../../core/utils/http-error.util';
 import { AccountsActions } from './accounts.actions';
 
 @Injectable()
@@ -20,16 +21,28 @@ export class AccountsEffects {
       exhaustMap(() =>
         this.api.listAccounts().pipe(
           map((accounts) => AccountsActions.loadSuccess({ accounts })),
-          catchError((err) =>
-            of(
-              AccountsActions.loadFailure({
-                error: err?.error?.error?.message || this.i18n.instant('CUSTOMER.LOAD_ACCOUNTS_FAIL'),
-              }),
-            ),
-          ),
+          catchError((err) => {
+            const message =
+              resolveHttpErrorMessage(err, this.i18n) ||
+              this.i18n.instant('CUSTOMER.LOAD_ACCOUNTS_FAIL');
+            return of(AccountsActions.loadFailure({ error: message }));
+          }),
         ),
       ),
     ),
+  );
+
+  loadFailureToast$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(AccountsActions.loadFailure),
+        tap(({ error }) => {
+          if (error) {
+            this.toast.error(error);
+          }
+        }),
+      ),
+    { dispatch: false },
   );
 
   open$ = createEffect(() =>
@@ -41,15 +54,27 @@ export class AccountsEffects {
             this.toast.success(this.i18n.instant('CUSTOMER.OPEN_OK'));
             return AccountsActions.openSuccess({ account });
           }),
-          catchError((err) =>
-            of(
-              AccountsActions.openFailure({
-                error: err?.error?.error?.message || this.i18n.instant('CUSTOMER.OPEN_FAIL'),
-              }),
-            ),
-          ),
+          catchError((err) => {
+            const message =
+              resolveHttpErrorMessage(err, this.i18n) ||
+              this.i18n.instant('CUSTOMER.OPEN_FAIL');
+            return of(AccountsActions.openFailure({ error: message }));
+          }),
         ),
       ),
     ),
+  );
+
+  openFailureToast$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(AccountsActions.openFailure),
+        tap(({ error }) => {
+          if (error) {
+            this.toast.error(error);
+          }
+        }),
+      ),
+    { dispatch: false },
   );
 }
