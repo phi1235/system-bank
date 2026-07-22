@@ -211,8 +211,14 @@ public class TransferService {
     if (status != null && !status.isBlank() && st == null) {
       return new PageResponse<>(List.of(), page, size, 0, 0);
     }
+    // Postgres cannot infer types for NULL Instant/enum binds in "(:p IS NULL OR ...)".
+    // Always pass concrete bounds + a boolean status flag; dummy enum when not filtering.
+    Instant fromTs = from != null ? from : Instant.EPOCH;
+    Instant toTs = to != null ? to : Instant.parse("9999-12-31T23:59:59.999999999Z");
+    boolean hasStatus = st != null;
+    TransferStatus statusParam = hasStatus ? st : TransferStatus.PENDING;
     Page<TransferOrderEntity> p = transferOrderRepository.searchMine(
-        userId, st, from, to, PageRequest.of(page, size));
+        userId, hasStatus, statusParam, fromTs, toTs, PageRequest.of(page, size));
     return mapPage(p);
   }
 

@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -8,6 +9,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { resolveHttpErrorMessage } from '../../../core/utils/http-error.util';
 import { Store } from '@ngrx/store';
 import { AuthApiService } from '../../../core/services/auth-api.service';
 import { isStaffUser } from '../../../core/services/rbac.util';
@@ -92,9 +94,9 @@ export class ChangePasswordComponent {
         error: (err) => {
           this.loading = false;
           this.error =
-            err?.error?.error?.message ||
-            err?.message ||
-            this.i18n.instant('AUTH.PWD_CHANGE_FAIL');
+            err instanceof HttpErrorResponse
+              ? resolveHttpErrorMessage(err, this.i18n)
+              : this.i18n.instant('AUTH.PWD_CHANGE_FAIL');
         },
       });
   }

@@ -50,6 +50,7 @@ class TransferServiceHistoryTest {
     TransferOrderEntity row = order(TransferStatus.COMPLETED);
     when(transferOrderRepository.searchMine(
             eq(userId),
+            eq(true),
             eq(TransferStatus.COMPLETED),
             any(Instant.class),
             any(Instant.class),
@@ -84,7 +85,12 @@ class TransferServiceHistoryTest {
   @Test
   void myHistory_blankStatusDelegatesWithNullStatus() {
     when(transferOrderRepository.searchMine(
-            eq(userId), isNull(), isNull(), isNull(), any(Pageable.class)))
+            eq(userId),
+            eq(false),
+            eq(TransferStatus.PENDING),
+            any(Instant.class),
+            any(Instant.class),
+            any(Pageable.class)))
         .thenReturn(new PageImpl<>(List.of(order(TransferStatus.FAILED))));
 
     var page = service.myHistory(userId, 0, 10, "  ", null, null);
