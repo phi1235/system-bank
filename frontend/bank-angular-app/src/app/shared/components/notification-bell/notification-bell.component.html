@@ -65,7 +65,7 @@
             </div>
             <div class="body">
               <div class="row">
-                <span class="template">{{ n.template }}</span>
+                <span class="template">{{ templateLabel(n) }}</span>
                 <time>{{ n.createdAt | date: 'medium' }}</time>
               </div>
               <p class="text">{{ n.body }}</p>
@@ -76,6 +76,15 @@
           </li>
         }
       </ul>
+    }
+
+    @if (viewAllLink) {
+      <footer class="panel-foot">
+        <button mat-button type="button" color="primary" class="view-all" (click)="openViewAll($event)">
+          {{ viewAllKey | translate }}
+          <mat-icon>arrow_forward</mat-icon>
+        </button>
+      </footer>
     }
   </div>
 </ng-template>

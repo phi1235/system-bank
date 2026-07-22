@@ -17,6 +17,12 @@ public interface NotificationLogRepository extends JpaRepository<NotificationLog
 
   Page<NotificationLogEntity> findByUserIdOrderByCreatedAtDesc(UUID userId, Pageable pageable);
 
+  Page<NotificationLogEntity> findByUserIdAndReadAtIsNullOrderByCreatedAtDesc(
+      UUID userId, Pageable pageable);
+
+  Page<NotificationLogEntity> findByUserIdAndReadAtIsNotNullOrderByCreatedAtDesc(
+      UUID userId, Pageable pageable);
+
   Optional<NotificationLogEntity> findByIdAndUserId(UUID id, UUID userId);
 
   long countByUserIdAndReadAtIsNull(UUID userId);

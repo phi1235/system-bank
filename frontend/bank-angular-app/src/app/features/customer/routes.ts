@@ -41,6 +41,14 @@ export const CUSTOMER_ROUTES: Routes = [
         loadComponent: () => import('./history/history.component').then((m) => m.HistoryComponent),
       },
       {
+        path: 'notifications',
+        canActivate: [permissionGuard([PERMISSIONS.IB_NOTIFICATIONS_VIEW])],
+        loadComponent: () =>
+          import('./notifications/notifications.component').then(
+            (m) => m.CustomerNotificationsComponent,
+          ),
+      },
+      {
         path: 'profile',
         canActivate: [permissionGuard([PERMISSIONS.IB_PROFILE_VIEW])],
         loadComponent: () => import('./profile/profile.component').then((m) => m.ProfileComponent),

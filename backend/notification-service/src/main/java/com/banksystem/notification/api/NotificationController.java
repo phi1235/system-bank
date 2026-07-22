@@ -33,12 +33,23 @@ public class NotificationController {
     this.realtimeHub = realtimeHub;
   }
 
+  /**
+   * Customer inbox. {@code readFilter}: ALL (default) | UNREAD | READ.
+   * {@code unreadOnly=true} is accepted for older clients and maps to UNREAD.
+   */
   @GetMapping
   public ApiResponse<PageResponse<NotificationItem>> myInbox(
       @RequestParam(defaultValue = "0") int page,
-      @RequestParam(defaultValue = "20") int size) {
+      @RequestParam(defaultValue = "20") int size,
+      @RequestParam(required = false) String readFilter,
+      @RequestParam(defaultValue = "false") boolean unreadOnly) {
     UUID userId = UserContext.requireUser().userId();
-    return ApiResponse.ok(inboxService.myInbox(userId, page, Math.min(size, 100)));
+    String filter = readFilter;
+    if ((filter == null || filter.isBlank()) && unreadOnly) {
+      filter = "UNREAD";
+    }
+    return ApiResponse.ok(
+        inboxService.myInbox(userId, page, Math.min(size, 100), filter));
   }
 
   @GetMapping("/unread-count")
