@@ -1,7 +1,11 @@
 // system-bank — Jenkins declarative pipeline (Method B hybrid)
 // GHA: light PR gate (lint / secrets / quick compile)
-// Jenkins: heavy verify + optional Docker package
-// Deploy: PHASE 2 only (skipped unless DEPLOY_ENABLED=true AND branch allow-list)
+// Jenkins: heavy verify + optional Docker package — ON DEMAND per chosen branch
+//
+// Intended job type: "Pipeline" (NOT Multibranch)
+// - Parameter BRANCH_NAME: branch/tag/commit to build (you type it)
+// - No auto-scan of every feature branch
+// Deploy: PHASE 2 only (blocked until configured)
 
 pipeline {
   agent any
@@ -15,6 +19,11 @@ pipeline {
   }
 
   parameters {
+    string(
+      name: 'BRANCH_NAME',
+      defaultValue: 'main',
+      description: 'Git branch / tag / commit to build (only this ref runs — not all branches)'
+    )
     booleanParam(
       name: 'RUN_PACKAGE',
       defaultValue: false,
@@ -31,20 +40,46 @@ pipeline {
     JAVA_TOOL_OPTIONS = '-Dfile.encoding=UTF-8'
     MAVEN_OPTS = '-Xmx2g'
     NODE_VERSION = '20'
-    // Phase 2 hooks (unused until enabled)
     REGISTRY = "${env.DOCKER_REGISTRY ?: 'ghcr.io'}"
     IMAGE_NAMESPACE = "${env.IMAGE_NAMESPACE ?: 'system-bank'}"
+    // Jenkins credential ID for private GitHub clone (Manage Jenkins → Credentials).
+    // Override on the job: prepare an env var GIT_CREDENTIALS_ID, or rename credential to github-pat.
+    GIT_CREDENTIALS_ID = "${env.GIT_CREDENTIALS_ID ?: 'github-pat'}"
   }
 
   stages {
     stage('Checkout') {
       steps {
-        checkout scm
         script {
+          def ref = params.BRANCH_NAME?.trim()
+          if (!ref) {
+            error('BRANCH_NAME is required. Enter the branch you want to build (e.g. main, feature/xxx).')
+          }
+          echo "On-demand build for ref: ${ref}"
+
+          // Explicit checkout so one Pipeline job can target any branch without Multibranch
+          checkout([
+            $class: 'GitSCM',
+            branches: [[name: "*/${ref}"]],
+            doGenerateSubmoduleConfigurations: false,
+            extensions: [
+              [$class: 'CloneOption', shallow: true, depth: 1, noTags: false, honorRefspec: true],
+              [$class: 'CleanBeforeCheckout']
+            ],
+            userRemoteConfigs: [[
+              url: 'https://github.com/phi1235/system-bank.git',
+              credentialsId: env.GIT_CREDENTIALS_ID,
+              refspec: "+refs/heads/*:refs/remotes/origin/* +refs/tags/*:refs/tags/*"
+            ]]
+          ])
+
           env.GIT_SHA = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
-          echo "Building ${env.BRANCH_NAME ?: env.GIT_BRANCH} @ ${env.GIT_SHA}"
+          env.RESOLVED_BRANCH = sh(
+            returnStdout: true,
+            script: "git rev-parse --abbrev-ref HEAD 2>/dev/null || echo '${ref}'"
+          ).trim()
+          echo "Checked out ${ref} @ ${env.GIT_SHA} (HEAD=${env.RESOLVED_BRANCH})"
         }
-        // Keep a marker so docker agents with reuseNode still see workspace
         sh 'ls -la && test -f Jenkinsfile && test -d backend && test -d frontend'
       }
     }
@@ -99,13 +134,7 @@ pipeline {
 
     stage('Package images') {
       when {
-        anyOf {
-          expression { return params.RUN_PACKAGE == true }
-          allOf {
-            branch 'main'
-            expression { return env.PACKAGE_ON_MAIN == 'true' }
-          }
-        }
+        expression { return params.RUN_PACKAGE == true }
       }
       steps {
         script {
@@ -133,17 +162,11 @@ pipeline {
 
     stage('Deploy (phase 2)') {
       when {
-        allOf {
-          expression { return params.DEPLOY_ENABLED == true }
-          anyOf {
-            branch 'main'
-            buildingTag()
-          }
-        }
+        expression { return params.DEPLOY_ENABLED == true }
       }
       steps {
         echo 'PHASE 2 placeholder: push images + SSH/compose deploy not enabled yet.'
-        echo 'Wire credentials (registry, deploy-ssh) then replace this stage.'
+        echo "Would deploy ref=${params.BRANCH_NAME} sha=${env.GIT_SHA}"
         error('Deploy stage is intentionally blocked until phase 2 is configured.')
       }
     }
@@ -154,10 +177,10 @@ pipeline {
       cleanWs(deleteDirs: true, notFailBuild: true)
     }
     success {
-      echo "SUCCESS — ${env.JOB_NAME} #${env.BUILD_NUMBER}"
+      echo "SUCCESS — ref=${params.BRANCH_NAME} sha=${env.GIT_SHA} #${env.BUILD_NUMBER}"
     }
     failure {
-      echo "FAILED — ${env.JOB_NAME} #${env.BUILD_NUMBER}"
+      echo "FAILED — ref=${params.BRANCH_NAME} #${env.BUILD_NUMBER}"
     }
   }
 }
