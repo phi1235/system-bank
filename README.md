@@ -49,7 +49,7 @@ Browser (Angular) ──► API Gateway (JWT · CORS · rate limit)
 > **Note:** rontend/ui-mockups/ is a **static design prototype** (hard-coded sample copy/data for UX review). The production UI is rontend/bank-angular-app/ with API + i18n.
 
 | Ops | Docker Compose, Eureka, Zipkin, Prometheus, Grafana |
-| CI | GitHub Actions (`mvn verify`, Angular build) |
+| CI | Hybrid: GitHub Actions light gate + Jenkins local Docker (heavy verify/package); deploy phase 2 |
 
 ---
 
@@ -316,11 +316,14 @@ system-bank/
 ├── infra/
 │   ├── docker-compose.yml
 │   ├── .env.example
+│   ├── jenkins/            # local Jenkins LTS (compose + plugins + JCasC)
 │   ├── postgres/
 │   ├── prometheus/
 │   ├── grafana/
 │   └── scripts/init-databases.sh
-└── .github/workflows/ci.yml
+├── Jenkinsfile             # heavy CI (verify / optional package; deploy phase 2)
+├── docs/ci-cd-jenkins.md
+└── .github/workflows/ci.yml  # light PR gate
 ```
 
 ---

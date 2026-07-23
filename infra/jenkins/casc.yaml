@@ -1,0 +1,33 @@
+# Jenkins Configuration as Code (optional bootstrap).
+# Mounted read-only; apply via "Configuration as Code" plugin after first admin setup,
+# or set CASC_JENKINS_CONFIG=/var/jenkins_home/casc.yaml once wizard is done.
+#
+# This file intentionally avoids secrets. Create credentials in UI:
+#   - github-pat (Username with password / Secret text) for private clone if needed
+#   - docker-registry (Username with password) for phase 2 push
+#   - deploy-ssh (SSH Username with private key) for phase 2 deploy
+
+jenkins:
+  systemMessage: |
+    system-bank Jenkins (local Docker) — Method B hybrid:
+    GitHub Actions = light PR gate; Jenkins = heavy build/test/package.
+    Deploy is PHASE 2 (disabled).
+  numExecutors: 2
+  mode: NORMAL
+  scmCheckoutRetryCount: 2
+  securityRealm:
+    local:
+      allowsSignup: false
+  authorizationStrategy:
+    loggedInUsersCanDoAnything:
+      allowAnonymousRead: false
+
+unclassified:
+  location:
+    url: http://localhost:18080/
+    adminAddress: jenkins@localhost
+  timestamper:
+    allPipelines: true
+
+# Multibranch / Pipeline jobs are created in UI or via Job DSL later.
+# Recommended first job: Pipeline from SCM → this repo → Jenkinsfile (root).

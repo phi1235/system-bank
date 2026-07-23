@@ -1,0 +1,41 @@
+# Jenkins LTS — local Docker on developer machine (Method B hybrid CI)
+# Usage (from repo root):
+#   docker compose -f infra/jenkins/docker-compose.yml up -d --build
+# UI: http://localhost:18080
+# First boot: admin password → docs/ci-cd-jenkins.md
+
+name: system-bank-jenkins
+
+services:
+  jenkins:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: system-bank-jenkins:local
+    container_name: system-bank-jenkins
+    user: root
+    ports:
+      - "18080:8080"
+      - "50000:50000"
+    environment:
+      JAVA_OPTS: >-
+        -Djenkins.install.runSetupWizard=true
+        -Dhudson.model.DirectoryBrowserSupport.CSP=
+      # Enable after first admin wizard if you want JCasC:
+      # CASC_JENKINS_CONFIG: /casc/casc.yaml
+      TZ: Asia/Bangkok
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - ./casc.yaml:/casc/casc.yaml:ro
+      # Host Docker engine for package stage + docker {} agents
+      - //var/run/docker.sock:/var/run/docker.sock
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/login >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 120s
+    restart: unless-stopped
+
+volumes:
+  jenkins_home:

@@ -1,4 +1,7 @@
-name: CI
+# Light PR/push gate (Method B hybrid).
+# Heavy verify + image package run on self-hosted Jenkins (see Jenkinsfile, docs/ci-cd-jenkins.md).
+
+name: CI (light)
 
 on:
   push:
@@ -7,12 +10,26 @@ on:
     branches: [main, develop, master]
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-light-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  backend:
-    name: Backend (Maven verify)
+  secrets-check:
+    name: No committed secrets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fail if real .env committed
+        run: |
+          if git ls-files | grep -E '(^|/)\.env$|infra/\.env$'; then
+            echo "Committed .env files are not allowed"
+            git ls-files | grep -E '(^|/)\.env$|infra/\.env$'
+            exit 1
+          fi
+          echo "OK: no .env in git index"
+
+  backend-compile:
+    name: Backend (Maven compile, skipTests)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -27,11 +44,11 @@ jobs:
           java-version: "21"
           cache: maven
 
-      - name: Maven verify
-        run: mvn -B -q verify
+      - name: Maven compile
+        run: mvn -B -q -DskipTests compile
 
-  frontend:
-    name: Frontend (Angular build)
+  frontend-lint:
+    name: Frontend (lint)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -51,20 +68,3 @@ jobs:
 
       - name: Typecheck / lint gate
         run: npm run lint
-
-      - name: Production build
-        run: npm run build
-
-  secrets-check:
-    name: No committed secrets
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Fail if real .env committed
-        run: |
-          if git ls-files | grep -E '(^|/)\.env$|infra/\.env$'; then
-            echo "Committed .env files are not allowed"
-            git ls-files | grep -E '(^|/)\.env$|infra/\.env$'
-            exit 1
-          fi
-          echo "OK: no .env in git index"
