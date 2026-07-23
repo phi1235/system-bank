@@ -44,6 +44,10 @@ export class LoginComponent {
     password: ['', Validators.required],
   });
 
+  fillDemo(username = 'alice', password = 'password123'): void {
+    this.form.patchValue({ username, password });
+  }
+
   submit(): void {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.store.dispatch(AuthActions.login({ request: this.form.getRawValue(), admin: false }));

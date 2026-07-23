@@ -4,6 +4,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve --port 4200 --host 0.0.0.0",
+    "sandbox": "node scripts/serve-sandbox.js",
     "build": "ng build",
     "lint": "tsc -p tsconfig.app.json --noEmit",
     "watch": "ng build --watch --configuration development",

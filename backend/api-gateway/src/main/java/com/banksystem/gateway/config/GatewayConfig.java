@@ -13,7 +13,7 @@ public class GatewayConfig {
 
   @Bean
   public CorsWebFilter corsWebFilter(
-      @Value("${bank.cors.allowed-origins:http://localhost:4200,http://localhost:5173}") String origins) {
+      @Value("${bank.cors.allowed-origins:http://localhost:4200,http://localhost:5173,http://localhost:4201,http://127.0.0.1:4201}") String origins) {
     CorsConfiguration config = new CorsConfiguration();
     config.setAllowCredentials(true);
     config.setAllowedOrigins(List.of(origins.split(",")));

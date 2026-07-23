@@ -8,13 +8,13 @@
   <mat-card class="filters-card">
     <form class="filters" (ngSubmit)="applyFilters()">
       <mat-form-field appearance="outline" class="grow" subscriptSizing="dynamic">
-        <mat-label>Tìm kiếm Tên đăng nhập / Email / SĐT</mat-label>
+        <mat-label>{{ 'ADMIN.USERS_SEARCH_LABEL' | translate }}</mat-label>
         <mat-icon matPrefix>search</mat-icon>
         <input
           matInput
           [(ngModel)]="q"
           name="q"
-          placeholder="Nhập tên đăng nhập hoặc email..."
+          [placeholder]="'ADMIN.USERS_SEARCH_PH' | translate"
         />
       </mat-form-field>
 
@@ -23,8 +23,8 @@
         <mat-icon matPrefix>filter_list</mat-icon>
         <mat-select [(ngModel)]="enabledFilter" name="enabledFilter">
           <mat-option value="">{{ 'COMMON.ALL' | translate }}</mat-option>
-          <mat-option value="true">Hoạt động (Active)</mat-option>
-          <mat-option value="false">Đã khóa (Locked)</mat-option>
+          <mat-option value="true">{{ 'ADMIN.STATUS_ACTIVE_OPT' | translate }}</mat-option>
+          <mat-option value="false">{{ 'ADMIN.STATUS_LOCKED_OPT' | translate }}</mat-option>
         </mat-select>
       </mat-form-field>
 
@@ -50,7 +50,7 @@
         <table mat-table [dataSource]="rows" class="users-table">
           <!-- Username Column -->
           <ng-container matColumnDef="username">
-            <th mat-header-cell *matHeaderCellDef class="text-left">Tên đăng nhập / User</th>
+            <th mat-header-cell *matHeaderCellDef class="text-left">{{ 'ADMIN.COL_USERNAME' | translate }}</th>
             <td mat-cell *matCellDef="let u" class="text-left">
               <div class="user-name-cell">
                 <mat-icon class="user-avatar-icon">account_circle</mat-icon>
@@ -67,13 +67,13 @@
 
           <!-- Email Column -->
           <ng-container matColumnDef="email">
-            <th mat-header-cell *matHeaderCellDef class="text-left">Email liên hệ</th>
+            <th mat-header-cell *matHeaderCellDef class="text-left">{{ 'ADMIN.COL_EMAIL' | translate }}</th>
             <td mat-cell *matCellDef="let u" class="text-left email-cell">{{ u.email || '—' }}</td>
           </ng-container>
 
           <!-- Roles Column -->
           <ng-container matColumnDef="roles">
-            <th mat-header-cell *matHeaderCellDef class="text-center">Vai trò (Roles)</th>
+            <th mat-header-cell *matHeaderCellDef class="text-center">{{ 'ADMIN.COL_ROLES' | translate }}</th>
             <td mat-cell *matCellDef="let u" class="text-center">
               <div class="role-chips">
                 @for (r of u.roles; track r) {
@@ -92,18 +92,18 @@
 
           <!-- Status Column -->
           <ng-container matColumnDef="status">
-            <th mat-header-cell *matHeaderCellDef class="text-center">Trạng thái</th>
+            <th mat-header-cell *matHeaderCellDef class="text-center">{{ 'COMMON.STATUS' | translate }}</th>
             <td mat-cell *matCellDef="let u" class="text-center">
               <span class="status-chip" [class.ok]="u.enabled" [class.bad]="!u.enabled">
                 <mat-icon class="dot-icon">{{ u.enabled ? 'check_circle' : 'lock' }}</mat-icon>
-                {{ u.enabled ? 'Hoạt động' : 'Tài khoản bị khóa' }}
+                {{ u.enabled ? ('ADMIN.USER_ACTIVE_STATUS' | translate) : ('ADMIN.USER_LOCKED_STATUS' | translate) }}
               </span>
             </td>
           </ng-container>
 
           <!-- Actions Column -->
           <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef class="text-center">Thao tác</th>
+            <th mat-header-cell *matHeaderCellDef class="text-center">{{ 'COMMON.ACTIONS' | translate }}</th>
             <td mat-cell *matCellDef="let u" class="text-center acts">
               <button
                 mat-icon-button
@@ -132,7 +132,7 @@
                   class="btn-reset"
                   [disabled]="busyId === u.userId || isSelf(u)"
                   (click)="resetPassword(u, $event)"
-                  [matTooltip]="isSelf(u) ? ('ADMIN.CANNOT_ACT_SELF' | translate) : 'Cấp lại mật khẩu'"
+                  [matTooltip]="isSelf(u) ? ('ADMIN.CANNOT_ACT_SELF' | translate) : ('ADMIN.RESET_PWD' | translate)"
                 >
                   <mat-icon>password</mat-icon>
                 </button>
@@ -146,7 +146,7 @@
                   [class.btn-unlock]="!u.enabled"
                   [disabled]="busyId === u.userId || isSelf(u)"
                   (click)="toggleLock(u, $event)"
-                  [matTooltip]="isSelf(u) ? ('ADMIN.CANNOT_LOCK_SELF' | translate) : (u.enabled ? 'Khóa tài khoản' : 'Mở khóa')"
+                  [matTooltip]="isSelf(u) ? ('ADMIN.CANNOT_LOCK_SELF' | translate) : (u.enabled ? ('ADMIN.LOCK_USER' | translate) : ('ADMIN.UNLOCK_USER' | translate))"
                 >
                   <mat-icon>{{ u.enabled ? 'lock' : 'lock_open' }}</mat-icon>
                 </button>
@@ -166,8 +166,8 @@
     } @else {
       <div class="empty-state">
         <mat-icon>group</mat-icon>
-        <p class="empty-title">Không tìm thấy người dùng phù hợp</p>
-        <button mat-stroked-button type="button" (click)="clearFilters()">Xóa bộ lọc</button>
+        <p class="empty-title">{{ 'ADMIN.USERS_EMPTY_FILTERED' | translate }}</p>
+        <button mat-stroked-button type="button" (click)="clearFilters()">{{ 'ADMIN.CLEAR' | translate }}</button>
       </div>
     }
 

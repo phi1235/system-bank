@@ -1,0 +1,306 @@
+/* ─────────────────────────────────────────────
+   Dev Sandbox — Standalone Shell
+   Accessible at /dev/sandbox without login
+   ───────────────────────────────────────────── */
+
+:host {
+  display: block;
+  min-height: 100vh;
+  background: #0f172a;
+  color: #f1f5f9;
+  font-family: 'Inter', sans-serif;
+}
+
+.dev-sandbox-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ── Header ── */
+.dev-header {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  border-bottom: 1px solid #1e3a5f;
+  padding: 0.75rem 1.5rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+}
+
+.dev-header-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dev-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.logo-icon {
+  font-size: 2rem;
+  width: 2rem;
+  height: 2rem;
+  color: #38bdf8;
+}
+
+.logo-title {
+  display: block;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #e2e8f0;
+  letter-spacing: -0.02em;
+}
+
+.logo-env {
+  display: block;
+  font-size: 0.68rem;
+  color: #f59e0b;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.refresh-btn {
+  color: #94a3b8 !important;
+  border-color: #334155 !important;
+  &:hover {
+    color: #38bdf8 !important;
+    border-color: #38bdf8 !important;
+    background: rgba(56,189,248,0.06) !important;
+  }
+}
+
+/* ── Body ── */
+.dev-body {
+  flex: 1;
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+/* ── Page Title ── */
+.page-title-row {
+  margin-bottom: 1.5rem;
+}
+
+.page-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #f1f5f9;
+  margin: 0 0 0.4rem;
+}
+
+.title-icon {
+  font-size: 1.8rem;
+  width: 1.8rem;
+  height: 1.8rem;
+  color: #38bdf8;
+}
+
+.page-subtitle {
+  font-size: 0.9rem;
+  color: #94a3b8;
+  line-height: 1.6;
+  margin: 0;
+
+  strong {
+    color: #f59e0b;
+  }
+}
+
+/* ── Card ── */
+.sandbox-card {
+  background: #1e293b !important;
+  border: 1px solid #1e3a5f !important;
+  border-radius: 12px !important;
+  padding: 1.25rem !important;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.3) !important;
+}
+
+/* ── Filters ── */
+.filters {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+
+  .search-field { flex: 1; }
+  .channel-field { width: 220px; }
+
+  ::ng-deep {
+    .mat-mdc-form-field-flex { background: #0f172a !important; }
+    .mdc-text-field--outlined .mdc-notched-outline__leading,
+    .mdc-text-field--outlined .mdc-notched-outline__notch,
+    .mdc-text-field--outlined .mdc-notched-outline__trailing {
+      border-color: #334155 !important;
+    }
+    .mat-mdc-input-element, .mdc-list-item__primary-text { color: #e2e8f0 !important; }
+    .mat-mdc-floating-label { color: #64748b !important; }
+    .mat-icon[matPrefix] { color: #64748b !important; }
+  }
+}
+
+/* ── Table ── */
+.full-table {
+  width: 100%;
+  background: transparent !important;
+
+  ::ng-deep {
+    .mat-mdc-header-row { background: #0f172a !important; }
+    .mat-mdc-row {
+      background: transparent !important;
+      border-bottom: 1px solid #1e3a5f !important;
+      &:hover { background: rgba(56,189,248,0.04) !important; }
+    }
+    .mat-mdc-header-cell {
+      color: #64748b !important;
+      font-weight: 700 !important;
+      font-size: 0.78rem !important;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .mat-mdc-cell { color: #cbd5e1 !important; }
+  }
+}
+
+/* ── Channel chips ── */
+.channel-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: #1e3a5f;
+  color: #94a3b8;
+
+  mat-icon { font-size: 1rem; width: 1rem; height: 1rem; }
+
+  &.email { background: #0c4a6e; color: #38bdf8; }
+  &.sms   { background: #451a03; color: #fbbf24; }
+  &.otp   { background: #064e3b; color: #34d399; }
+  &.ops   { background: #3b0764; color: #c084fc; }
+}
+
+/* ── Template code ── */
+.template-code {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.8rem;
+  background: #0f172a;
+  color: #38bdf8;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  border: 1px solid #1e3a5f;
+}
+
+/* ── Body box ── */
+.body-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  max-width: 480px;
+}
+
+.body-text {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  line-height: 1.5;
+}
+
+.otp-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: #064e3b;
+  color: #34d399;
+  border: 1px solid #065f46;
+  padding: 0.2rem 0.55rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  width: fit-content;
+
+  mat-icon { font-size: 1rem; width: 1rem; height: 1rem; }
+  strong { font-size: 1.05rem; letter-spacing: 0.1em; }
+}
+
+/* ── Copy button ── */
+.copy-btn {
+  font-size: 0.82rem !important;
+  color: #64748b !important;
+  border-color: #334155 !important;
+  &:hover {
+    color: #38bdf8 !important;
+    border-color: #38bdf8 !important;
+  }
+}
+
+/* ── Loading ── */
+.loading-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 2.5rem 1rem;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.spin-icon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Empty state ── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 1rem;
+  color: #334155;
+
+  mat-icon {
+    font-size: 3.5rem;
+    width: 3.5rem;
+    height: 3.5rem;
+    margin-bottom: 0.75rem;
+    color: #1e3a5f;
+  }
+
+  p {
+    font-size: 1rem;
+    color: #475569;
+    margin: 0 0 0.35rem;
+    font-weight: 600;
+  }
+
+  span {
+    font-size: 0.85rem;
+    color: #334155;
+    text-align: center;
+  }
+}
+
+/* ── Footer ── */
+.dev-footer {
+  background: #0a1628;
+  border-top: 1px solid #1e3a5f;
+  text-align: center;
+  padding: 0.75rem;
+  font-size: 0.8rem;
+  color: #475569;
+}

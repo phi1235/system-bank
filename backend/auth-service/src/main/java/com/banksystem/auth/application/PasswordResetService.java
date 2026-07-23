@@ -22,10 +22,10 @@ import java.util.Locale;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,21 +48,24 @@ public class PasswordResetService {
   private final AuthAuditLogRepository auditLogRepository;
   private final BoundPasswordEncoder passwordEncoder;
   private final SessionService sessionService;
-  private final JdbcTemplate jdbcTemplate;
+
+  @Value("${bank.notification.internal-url:http://bank-notification:8085}")
+  private String notificationServiceUrl;
+
+  @Value("${bank.notification.internal-api-key:}")
+  private String notificationApiKey;
 
   public PasswordResetService(
       UserRepository userRepository,
       PasswordResetTicketRepository ticketRepository,
       AuthAuditLogRepository auditLogRepository,
       BoundPasswordEncoder passwordEncoder,
-      SessionService sessionService,
-      JdbcTemplate jdbcTemplate) {
+      SessionService sessionService) {
     this.userRepository = userRepository;
     this.ticketRepository = ticketRepository;
     this.auditLogRepository = auditLogRepository;
     this.passwordEncoder = passwordEncoder;
     this.sessionService = sessionService;
-    this.jdbcTemplate = jdbcTemplate;
   }
 
   @Transactional
@@ -191,26 +194,8 @@ public class PasswordResetService {
     }
     log.info("MOCK_{} password-reset to={} username={} tempPassword={} (DEV only — not returned to admin UI)",
         channel, delivery, user.getUsername(), tempPassword);
-
-    try {
-      if (jdbcTemplate != null) {
-        jdbcTemplate.update(
-            "INSERT INTO notification_logs (id, event_id, channel, recipient, template, status, body, user_id, audience, created_at) " +
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW()) ON CONFLICT DO NOTHING",
-            UUID.randomUUID(),
-            UUID.randomUUID(),
-            channel,
-            delivery,
-            "PASSWORD_RESET",
-            "SENT",
-            "Mật khẩu tạm thời mới cấp cho tài khoản " + user.getUsername() + " là: " + tempPassword + ". Vui lòng sử dụng mật khẩu này để đăng nhập và đổi mật khẩu mới.",
-            user.getId(),
-            "CUSTOMER"
-        );
-      }
-    } catch (Exception ex) {
-      log.warn("Could not insert notification log for password reset: {}", ex.getMessage());
-    }
+    
+    postNotificationAsync(channel, delivery, tempPassword, user);
 
     audit(adminId, "PWD_RESET_FULFILLED", null,
         "ticketId=" + ticketId + ",targetUser=" + user.getUsername() + ",channel=" + channel);
@@ -350,5 +335,49 @@ public class PasswordResetService {
 
   private void audit(UUID userId, String action, String ip, String detail) {
     auditLogRepository.save(AuthAuditLogEntity.of(userId, action, ip, detail));
+  }
+
+  private void postNotificationAsync(String channel, String delivery, String tempPassword, UserEntity user) {
+    String bodyMsg = "Mật khẩu tạm thời mới cấp cho tài khoản " + user.getUsername()
+        + " là: " + tempPassword + ". Vui lòng sử dụng mật khẩu này để đăng nhập.";
+    String json = String.format(
+        "{\"channel\":\"%s\",\"recipient\":\"%s\",\"template\":\"PASSWORD_RESET\",\"status\":\"SENT\",\"body\":\"%s\",\"userId\":\"%s\",\"audience\":\"CUSTOMER\"}",
+        channel, delivery, bodyMsg.replace("\"", "\\\""), user.getId());
+    String apiKeyValue = (notificationApiKey != null && !notificationApiKey.isBlank())
+        ? notificationApiKey : "56ae26d48fde6e69d3a6a09d2483bb4f9a93bcd0d9e15fbdb121be9630c05723";
+    String baseUrl = (notificationServiceUrl != null && !notificationServiceUrl.isBlank())
+        ? notificationServiceUrl : "http://bank-notification:8085";
+
+    Thread t = new Thread(() -> {
+      String[] targets = {
+          baseUrl + "/internal/notifications",
+          "http://bank-notification:8085/internal/notifications",
+          "http://notification-service:8085/internal/notifications"
+      };
+      for (String url : targets) {
+        try {
+          java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
+          java.net.http.HttpRequest req = java.net.http.HttpRequest.newBuilder()
+              .uri(java.net.URI.create(url))
+              .header("Content-Type", "application/json")
+              .header("X-Internal-Api-Key", apiKeyValue)
+              .POST(java.net.http.HttpRequest.BodyPublishers.ofString(json))
+              .timeout(java.time.Duration.ofSeconds(5))
+              .build();
+          java.net.http.HttpResponse<String> resp = client.send(req, java.net.http.HttpResponse.BodyHandlers.ofString());
+          if (resp.statusCode() == 200) {
+            log.info("Password reset notification log posted to {}", url);
+            break;
+          } else {
+            log.warn("Posting notification to {} returned status {} body {}", url, resp.statusCode(), resp.body());
+          }
+        } catch (Exception ex) {
+          log.warn("Failed posting notification log to {}: {}", url, ex.getMessage());
+        }
+      }
+    });
+    t.setDaemon(true);
+    t.setName("pwd-reset-notify");
+    t.start();
   }
 }

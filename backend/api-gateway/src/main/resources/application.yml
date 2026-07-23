@@ -52,6 +52,10 @@ spring:
           uri: lb://NOTIFICATION-SERVICE
           predicates:
             - Path=/api/v1/admin/notifications,/api/v1/admin/notifications/**
+        - id: dev-sandbox-notifications
+          uri: lb://NOTIFICATION-SERVICE
+          predicates:
+            - Path=/api/v1/dev/notifications/sandbox
         - id: admin-routes-rbac
           uri: lb://AUTH-SERVICE
           predicates:
