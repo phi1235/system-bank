@@ -58,51 +58,72 @@ UI: **Manage Jenkins → Plugins**, or copy `plugins.txt` into a custom image la
 
 Restart Jenkins after plugin install.
 
-## Create the pipeline job
+## Create the pipeline job (recommended: on-demand branch)
 
-### Option A — Pipeline from SCM (simplest)
+**Do NOT use Multibranch** if you want to type a branch and build only that ref.
+Multibranch with “Discover branches: All branches” will create a job per branch and often builds many at once (heavy on RAM).
 
-1. **New Item** → Pipeline → name `system-bank`
-2. Pipeline → Definition: **Pipeline script from SCM**
-3. SCM: **Git**
+### Recommended — single Pipeline + `BRANCH_NAME` parameter
+
+1. If you already created Multibranch `bank-system`: **Disable** or **Delete** it (or turn off scan triggers) so it stops auto-building.
+2. **New Item** → **Pipeline** → name e.g. `system-bank-build`
+3. Pipeline → Definition: **Pipeline script from SCM**
+   - SCM: **Git**
    - URL: `https://github.com/phi1235/system-bank.git`
-   - Credentials: none if public; else `github-pat`
-   - Branch: `*/main` or `*/feature/jenkins-local-ci` while testing
-4. Script path: `Jenkinsfile`
-5. Save → **Build Now**
+   - Credentials: `github-pat` (Username + PAT)
+   - Branch Specifier: `*/main` **or** `*/feature/jenkins-local-ci`  
+     (this branch only needs to contain the *Jenkinsfile script*; the pipeline then checks out **`params.BRANCH_NAME`** for the actual build)
+   - Script path: `Jenkinsfile`
+4. Save
+5. **Build with Parameters**:
+   - `BRANCH_NAME` = nhánh anh muốn (vd `main`, `feature/transfer-fee-gl`)
+   - `RUN_PACKAGE` = false (phase 1)
+   - `DEPLOY_ENABLED` = false
+6. Build — **only that branch** runs (one Maven verify + one FE build, not N branches × services)
 
-### Option B — Multibranch (recommended after first green build)
+Credential ID in `Jenkinsfile` checkout is `github-pat`. Create Jenkins credential with **exactly that ID** (or change the ID in Jenkinsfile to match yours).
+
+### Optional — Multibranch (only if you really want auto per-branch)
 
 1. **New Item** → Multibranch Pipeline
-2. Branch source: GitHub (or Git)
-3. Discover branches / PRs
-4. Build configuration: by `Jenkinsfile`
+2. Branch source: Git / GitHub + credentials
+3. **Behaviours** — do **not** leave “All branches” without a filter:
+   - Add **Filter by name (with regular expression)**: e.g. `main` only, or `main|develop`
+   - Or add **Build strategies** → suppress automatic SCM triggering (scan without build)
+4. Limit executors (Manage Jenkins → Nodes → Built-in → # of executors = **1**) so even Multibranch cannot run two heavy builds in parallel
 
 ### GitHub webhook (optional on local machine)
 
-Local Jenkins is not reachable from GitHub cloud without a tunnel (ngrok/cloudflared). For local-only:
+Local Jenkins is not reachable from GitHub cloud without a tunnel (ngrok/cloudflared). For on-demand local builds:
 
-- Trigger **Build Now** manually, or  
-- Use **GitHub → ngrok → Jenkins** when you want push-to-build
+- Use **Build with Parameters** only (recommended for your machine)
 
-Phase 2 on a VPS: add webhook  
-`http://<jenkins-host>:8080/github-webhook/` with secret.
+Phase 2 on a VPS: add webhook if you want push-to-build for a *filtered* set of branches.
 
 ## Pipeline stages (phase 1)
 
-1. **Checkout**  
+1. **Checkout** — clone **only** `params.BRANCH_NAME` (not every branch)  
 2. **Secrets check** — fail if `.env` / `infra/.env` is tracked  
 3. **Backend verify** — `maven:3.9.9-eclipse-temurin-21` → `mvn -B -q verify` in `backend/`  
 4. **Frontend lint & build** — `node:20-bookworm` → `npm ci` + `lint` + `build`  
-5. **Package images** — only if param `RUN_PACKAGE=true` (or env `PACKAGE_ON_MAIN=true` on `main`)  
+5. **Package images** — only if param `RUN_PACKAGE=true`  
 6. **Deploy** — **blocked** unless phase 2 is configured; param `DEPLOY_ENABLED` still errors on purpose  
 
 ### Parameters
 
 | Param | Default | Meaning |
 |-------|---------|---------|
+| `BRANCH_NAME` | `main` | **Nhánh anh nhập** — chỉ build ref này |
 | `RUN_PACKAGE` | `false` | Build service images locally (no push) |
 | `DEPLOY_ENABLED` | `false` | Phase 2 only |
+
+Also set job/env `GIT_CREDENTIALS_ID` if your credential ID is not `github-pat`.
+
+### Why not Multibranch for local Docker?
+
+- Multibranch + “All branches” → scan tạo job + build **nhiều nhánh song song**.
+- Mỗi build = full `mvn verify` + Angular (nặng). N nhánh ≈ N× tải máy.
+- On-demand Pipeline: **1 executor, 1 branch/lần**, anh chọn khi bấm Build.
 
 ## GitHub Actions (light gate)
 
