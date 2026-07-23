@@ -51,6 +51,46 @@ public class InternalNotificationController {
     return ApiResponse.ok(rows.stream().map(this::map).toList());
   }
 
+  public record CreateNotificationLogRequest(
+      String channel,
+      String recipient,
+      String template,
+      String status,
+      String body,
+      UUID userId,
+      String audience
+  ) {}
+
+  /** Create arbitrary notification log (password reset, OTP, custom alert). */
+  @PostMapping
+  public ApiResponse<NotificationItem> createNotificationLog(
+      @RequestBody CreateNotificationLogRequest req,
+      @RequestHeader(value = SecurityHeaders.INTERNAL_API_KEY, required = false) String key) {
+    requireKey(key);
+    NotificationLogEntity e = new NotificationLogEntity();
+    e.setId(UUID.randomUUID());
+    e.setEventId(UUID.randomUUID());
+    e.setChannel(req.channel() == null || req.channel().isBlank() ? "EMAIL" : req.channel());
+    e.setRecipient(req.recipient());
+    e.setTemplate(req.template() == null || req.template().isBlank() ? "PASSWORD_RESET" : req.template());
+    e.setStatus(req.status() == null || req.status().isBlank() ? "SENT" : req.status());
+    e.setBody(req.body() == null ? "" : req.body());
+    e.setUserId(req.userId());
+    e.setAudience(req.audience() == null || req.audience().isBlank() ? "CUSTOMER" : req.audience());
+    e.setCreatedAt(java.time.Instant.now());
+    repository.save(e);
+    return ApiResponse.ok(new NotificationItem(
+        e.getId().toString(),
+        e.getChannel(),
+        e.getTemplate(),
+        e.getStatus(),
+        e.getBody(),
+        false,
+        null,
+        e.getCreatedAt()
+    ));
+  }
+
   /** Staff OPS alert from other services (outbox DEAD, freeze, KYC, ...). */
   @PostMapping("/ops-alerts")
   public ApiResponse<NotificationItem> createOpsAlert(

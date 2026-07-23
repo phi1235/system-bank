@@ -34,7 +34,7 @@ public class NotificationSandboxController {
     this.repository = repository;
   }
 
-  @GetMapping({"/admin/notifications/sandbox", "/notifications/sandbox"})
+  @GetMapping({"/admin/notifications/sandbox", "/notifications/sandbox", "/dev/notifications/sandbox"})
   public ApiResponse<PageResponse<NotificationSandboxItem>> getSandboxLogs(
       @RequestParam(required = false) String q,
       @RequestParam(required = false) String channel,

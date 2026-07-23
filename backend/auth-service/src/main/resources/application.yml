@@ -54,6 +54,9 @@ bank:
     username: ${ADMIN_USERNAME}
     password: ${ADMIN_PASSWORD}
     email: ${ADMIN_EMAIL}
+  notification:
+    internal-url: ${NOTIFICATION_INTERNAL_URL:http://bank-notification:8085}
+    internal-api-key: ${NOTIFICATION_INTERNAL_API_KEY:}
 
 management:
   endpoints:

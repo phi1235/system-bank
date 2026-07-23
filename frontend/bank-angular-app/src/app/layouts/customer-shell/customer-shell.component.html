@@ -66,6 +66,10 @@
         @if (canNotifications$ | async) {
           <a mat-menu-item routerLink="/customer/notifications">{{ 'NAV.NOTIFICATIONS' | translate }}</a>
         }
+        <a mat-menu-item href="http://localhost:4201" target="_blank">
+          <mat-icon>terminal</mat-icon>
+          Dev Sandbox (Port 4201)
+        </a>
         <button mat-menu-item type="button" (click)="logout()">{{ 'COMMON.LOGOUT' | translate }}</button>
       </mat-menu>
     </div>

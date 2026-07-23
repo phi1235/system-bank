@@ -8,46 +8,46 @@
   <mat-card class="filters-card">
     <form class="filters" [formGroup]="form" (ngSubmit)="applyFilters()">
       <mat-form-field appearance="outline" class="filter-field grow" subscriptSizing="dynamic">
-        <mat-label>Tìm kiếm Số tài khoản / Mã KH</mat-label>
+        <mat-label>{{ 'ADMIN.ACCOUNT_SEARCH' | translate }}</mat-label>
         <mat-icon matPrefix>search</mat-icon>
         <input
           matInput
           formControlName="q"
-          placeholder="Nhập số tài khoản hoặc mã KH..."
+          [placeholder]="'ADMIN.ACCOUNT_SEARCH_PH' | translate"
         />
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="filter-field select-field" subscriptSizing="dynamic">
-        <mat-label>Trạng thái</mat-label>
+        <mat-label>{{ 'ADMIN.STATUS' | translate }}</mat-label>
         <mat-select formControlName="status">
-          <mat-option value="">Tất cả trạng thái</mat-option>
-          <mat-option value="ACTIVE">Hoạt động (Active)</mat-option>
-          <mat-option value="FROZEN">Đã khóa (Frozen)</mat-option>
-          <mat-option value="CLOSED">Đã đóng (Closed)</mat-option>
+          <mat-option value="">{{ 'ADMIN.ALL_STATUSES' | translate }}</mat-option>
+          <mat-option value="ACTIVE">{{ 'ADMIN.STATUS_ACTIVE' | translate }}</mat-option>
+          <mat-option value="FROZEN">{{ 'ADMIN.STATUS_FROZEN' | translate }}</mat-option>
+          <mat-option value="CLOSED">{{ 'ADMIN.STATUS_CLOSED' | translate }}</mat-option>
         </mat-select>
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="filter-field select-field" subscriptSizing="dynamic">
-        <mat-label>Loại tài khoản</mat-label>
+        <mat-label>{{ 'ADMIN.ACCOUNT_TYPE_LABEL' | translate }}</mat-label>
         <mat-select formControlName="accountType">
-          <mat-option value="">Mọi loại tài khoản</mat-option>
-          <mat-option value="PAYMENT">Thanh toán (Payment)</mat-option>
-          <mat-option value="SAVINGS">Tiết kiệm (Savings)</mat-option>
+          <mat-option value="">{{ 'ADMIN.ALL_TYPES' | translate }}</mat-option>
+          <mat-option value="PAYMENT">{{ 'ADMIN.TYPE_PAYMENT' | translate }}</mat-option>
+          <mat-option value="SAVINGS">{{ 'ADMIN.TYPE_SAVINGS' | translate }}</mat-option>
         </mat-select>
       </mat-form-field>
 
       <button mat-flat-button color="primary" type="submit" [disabled]="loading" class="filter-btn">
         <mat-icon>filter_list</mat-icon>
-        <span>Lọc</span>
+        <span>{{ 'ADMIN.FILTER' | translate }}</span>
       </button>
 
       <button mat-stroked-button type="button" (click)="clearFilters()" [disabled]="loading" class="clear-btn">
-        Xóa lọc
+        {{ 'ADMIN.CLEAR' | translate }}
       </button>
     </form>
 
     <div class="meta-row">
-      <span class="total-count">Tổng số: {{ total }} tài khoản</span>
+      <span class="total-count">{{ 'ADMIN.ACCOUNT_TOTAL' | translate: { total: total } }}</span>
     </div>
   </mat-card>
 
@@ -58,7 +58,7 @@
         <table mat-table [dataSource]="rows" class="full-width-table">
           <!-- Account Number (STK) -->
           <ng-container matColumnDef="accountNumber">
-            <th mat-header-cell *matHeaderCellDef class="text-left">Số tài khoản (STK)</th>
+            <th mat-header-cell *matHeaderCellDef class="text-left">{{ 'ADMIN.STK_COL' | translate }}</th>
             <td mat-cell *matCellDef="let row" class="stk-cell">
               <span class="stk-val">{{ row.accountNumber }}</span>
               <button
@@ -75,17 +75,17 @@
 
           <!-- Account Type -->
           <ng-container matColumnDef="accountType">
-            <th mat-header-cell *matHeaderCellDef class="text-center">Loại tài khoản</th>
+            <th mat-header-cell *matHeaderCellDef class="text-center">{{ 'ADMIN.TYPE_COL' | translate }}</th>
             <td mat-cell *matCellDef="let row" class="text-center">
-              <span class="type-pill">{{ row.accountType === 'PAYMENT' ? 'Thanh toán' : 'Tiết kiệm' }}</span>
+              <span class="type-pill">{{ row.accountType === 'PAYMENT' ? ('ADMIN.TYPE_PAYMENT' | translate) : ('ADMIN.TYPE_SAVINGS' | translate) }}</span>
             </td>
           </ng-container>
 
           <!-- Owner Customer -->
           <ng-container matColumnDef="userId">
-            <th mat-header-cell *matHeaderCellDef class="text-center">Chủ sở hữu (Mã KH)</th>
+            <th mat-header-cell *matHeaderCellDef class="text-center">{{ 'ADMIN.OWNER_COL' | translate }}</th>
             <td mat-cell *matCellDef="let row" class="text-center">
-              <div class="customer-badge" [matTooltip]="'Mã KH: ' + row.userId">
+              <div class="customer-badge" [matTooltip]="'ADMIN.CUSTOMER_ID_LABEL' | translate: { id: row.userId }">
                 <mat-icon>account_circle</mat-icon>
                 <span class="uid-code">KH-{{ row.userId | slice:0:8 }}</span>
                 <button
@@ -102,7 +102,7 @@
 
           <!-- Balance -->
           <ng-container matColumnDef="balance">
-            <th mat-header-cell *matHeaderCellDef class="text-right">Số dư khả dụng</th>
+            <th mat-header-cell *matHeaderCellDef class="text-right">{{ 'ADMIN.BALANCE_COL' | translate }}</th>
             <td mat-cell *matCellDef="let row" class="text-right bal-cell">
               <span class="balance-amount">{{ row.balance | moneyVnd: row.currency }}</span>
             </td>
@@ -110,7 +110,7 @@
 
           <!-- Status -->
           <ng-container matColumnDef="status">
-            <th mat-header-cell *matHeaderCellDef class="text-center">Trạng thái</th>
+            <th mat-header-cell *matHeaderCellDef class="text-center">{{ 'COMMON.STATUS' | translate }}</th>
             <td mat-cell *matCellDef="let row" class="text-center">
               <span
                 class="status-chip"
@@ -119,20 +119,20 @@
                 [class.warn]="row.status === 'CLOSED'"
               >
                 <mat-icon class="chip-icon">{{ row.status === 'ACTIVE' ? 'check_circle' : (row.status === 'FROZEN' ? 'lock' : 'cancel') }}</mat-icon>
-                {{ row.status === 'ACTIVE' ? 'Hoạt động' : (row.status === 'FROZEN' ? 'Đã khóa' : 'Đã đóng') }}
+                {{ row.status === 'ACTIVE' ? ('ADMIN.STATUS_ACTIVE' | translate) : (row.status === 'FROZEN' ? ('ADMIN.STATUS_FROZEN' | translate) : ('ADMIN.STATUS_CLOSED' | translate)) }}
               </span>
             </td>
           </ng-container>
 
           <!-- Actions -->
           <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef class="text-center">Thao tác</th>
+            <th mat-header-cell *matHeaderCellDef class="text-center">{{ 'COMMON.ACTIONS' | translate }}</th>
             <td mat-cell *matCellDef="let row" class="text-center acts-cell">
               <button
                 mat-icon-button
                 type="button"
                 class="btn-icon-eye"
-                [matTooltip]="'Xem chi tiết tài khoản'"
+                [matTooltip]="'ADMIN.VIEW_DETAIL_TIP' | translate"
                 (click)="openDetail(row, $event)"
               >
                 <mat-icon>visibility</mat-icon>
@@ -146,7 +146,7 @@
                   (click)="openTopUp(row); $event.stopPropagation()"
                 >
                   <mat-icon>add_circle</mat-icon>
-                  <span>Nạp tiền</span>
+                  <span>{{ 'ADMIN.TOPUP_BTN' | translate }}</span>
                 </button>
               }
             </td>
@@ -165,12 +165,12 @@
       <div class="empty-state">
         <mat-icon>account_balance</mat-icon>
         @if (loading) {
-          <p>Đang tải danh sách tài khoản...</p>
+          <p>{{ 'ADMIN.LOADING_ACCOUNTS' | translate }}</p>
         } @else if (hasActiveFilters) {
-          <p>Không tìm thấy tài khoản phù hợp với điều kiện tìm kiếm.</p>
-          <button mat-stroked-button type="button" (click)="clearFilters()">Xóa lọc</button>
+          <p>{{ 'ADMIN.ACCOUNT_LIST_FILTERED_EMPTY' | translate }}</p>
+          <button mat-stroked-button type="button" (click)="clearFilters()">{{ 'ADMIN.CLEAR' | translate }}</button>
         } @else {
-          <p>Chưa có tài khoản nào trong hệ thống.</p>
+          <p>{{ 'ADMIN.ACCOUNT_LIST_EMPTY' | translate }}</p>
         }
       </div>
     }

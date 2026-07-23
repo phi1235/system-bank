@@ -1,0 +1,158 @@
+<div class="dev-sandbox-shell">
+
+  <!-- ───── Header Bar ───── -->
+  <header class="dev-header">
+    <div class="dev-header-inner">
+      <div class="dev-logo">
+        <mat-icon class="logo-icon">terminal</mat-icon>
+        <div>
+          <span class="logo-title">{{ 'DEV_SANDBOX.TITLE_SHORT' | translate }}</span>
+          <span class="logo-env">{{ 'DEV_SANDBOX.ENV_LABEL' | translate }}</span>
+        </div>
+      </div>
+
+      <div class="dev-actions">
+        <button mat-stroked-button (click)="refresh()" class="refresh-btn">
+          <mat-icon>refresh</mat-icon>
+          {{ 'DEV_SANDBOX.REFRESH' | translate }}
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ───── Page Body ───── -->
+  <main class="dev-body">
+
+    <div class="page-title-row">
+      <div>
+        <h1 class="page-title">
+          <mat-icon class="title-icon">mark_email_unread</mat-icon>
+          {{ 'DEV_SANDBOX.TITLE' | translate }}
+        </h1>
+        <p class="page-subtitle">
+          {{ 'DEV_SANDBOX.SUBTITLE' | translate }}<br>
+          <strong>{{ 'DEV_SANDBOX.ENV_WARNING' | translate }}</strong>
+        </p>
+      </div>
+    </div>
+
+    <!-- ───── Filters ───── -->
+    <mat-card class="sandbox-card" [formGroup]="filterForm">
+      <div class="filters">
+        <mat-form-field appearance="outline" class="search-field">
+          <mat-label>{{ 'DEV_SANDBOX.SEARCH_PH' | translate }}</mat-label>
+          <mat-icon matPrefix>search</mat-icon>
+          <input matInput formControlName="q" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="channel-field">
+          <mat-label>{{ 'DEV_SANDBOX.CHANNEL_LABEL' | translate }}</mat-label>
+          <mat-icon matPrefix>tune</mat-icon>
+          <mat-select formControlName="channel">
+            <mat-option value="ALL">{{ 'SANDBOX.CHANNEL_ALL' | translate }}</mat-option>
+            <mat-option value="EMAIL">{{ 'SANDBOX.CHANNEL_EMAIL' | translate }}</mat-option>
+            <mat-option value="SMS">{{ 'SANDBOX.CHANNEL_SMS' | translate }}</mat-option>
+            <mat-option value="OTP">{{ 'SANDBOX.CHANNEL_OTP' | translate }}</mat-option>
+            <mat-option value="OPS">{{ 'DEV_SANDBOX.CHANNEL_OPS' | translate }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <!-- ───── Table ───── -->
+      <table mat-table [dataSource]="items" class="full-table">
+
+        <ng-container matColumnDef="channel">
+          <th mat-header-cell *matHeaderCellDef>{{ 'DEV_SANDBOX.COL_CHANNEL' | translate }}</th>
+          <td mat-cell *matCellDef="let item">
+            <span class="channel-chip"
+              [class.email]="item.channel === 'EMAIL'"
+              [class.sms]="item.channel === 'SMS'"
+              [class.otp]="item.channel === 'OTP'"
+              [class.ops]="item.channel === 'OPS'">
+              <mat-icon>{{ item.channel === 'EMAIL' ? 'email' : item.channel === 'SMS' ? 'sms' : item.channel === 'OPS' ? 'warning' : 'lock_clock' }}</mat-icon>
+              {{ item.channel }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="recipient">
+          <th mat-header-cell *matHeaderCellDef>{{ 'SANDBOX.RECIPIENT' | translate }}</th>
+          <td mat-cell *matCellDef="let item">
+            <strong>{{ item.recipient }}</strong>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="template">
+          <th mat-header-cell *matHeaderCellDef>{{ 'SANDBOX.TEMPLATE' | translate }}</th>
+          <td mat-cell *matCellDef="let item">
+            <span class="template-code">{{ item.template }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="body">
+          <th mat-header-cell *matHeaderCellDef>{{ 'SANDBOX.BODY' | translate }}</th>
+          <td mat-cell *matCellDef="let item">
+            <div class="body-box">
+              @if (extractOtp(item.body); as otp) {
+                <span class="otp-badge">
+                  <mat-icon>key</mat-icon>
+                  OTP: <strong>{{ otp }}</strong>
+                </span>
+              }
+              <span class="body-text">{{ item.body }}</span>
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="createdAt">
+          <th mat-header-cell *matHeaderCellDef>{{ 'SANDBOX.TIME' | translate }}</th>
+          <td mat-cell *matCellDef="let item">
+            {{ item.createdAt | date: 'dd/MM/yyyy HH:mm:ss' }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef class="text-center">{{ 'COMMON.ACTIONS' | translate }}</th>
+          <td mat-cell *matCellDef="let item" class="text-center">
+            <button mat-stroked-button type="button" (click)="copyBody(item)" class="copy-btn">
+              <mat-icon>content_copy</mat-icon>
+              {{ extractOtp(item.body) ? ('SANDBOX.COPY_OTP' | translate) : ('COMMON.COPY' | translate) }}
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+
+      @if (loading) {
+        <div class="loading-row">
+          <mat-icon class="spin-icon">sync</mat-icon>
+          {{ 'COMMON.LOADING' | translate }}
+        </div>
+      }
+
+      @if (!items.length && !loading) {
+        <div class="empty-state">
+          <mat-icon>mark_email_unread</mat-icon>
+          <p>{{ 'DEV_SANDBOX.EMPTY_TITLE' | translate }}</p>
+          <span>{{ 'DEV_SANDBOX.EMPTY_HINT' | translate }}</span>
+        </div>
+      }
+
+      <mat-paginator
+        [length]="totalElements"
+        [pageSize]="pageSize"
+        [pageIndex]="pageIndex"
+        [pageSizeOptions]="[10, 20, 50]"
+        (page)="onPageChange($event)"
+      />
+    </mat-card>
+
+  </main>
+
+  <!-- ───── Footer ───── -->
+  <footer class="dev-footer">
+    {{ 'DEV_SANDBOX.FOOTER' | translate }}
+  </footer>
+</div>

@@ -12,7 +12,7 @@
     </mat-form-field>
 
     <mat-form-field appearance="outline" class="channel-field">
-      <mat-label>Kênh thông báo</mat-label>
+      <mat-label>{{ 'DEV_SANDBOX.CHANNEL_LABEL' | translate }}</mat-label>
       <mat-icon matPrefix>tune</mat-icon>
       <mat-select formControlName="channel">
         <mat-option value="ALL">{{ 'SANDBOX.CHANNEL_ALL' | translate }}</mat-option>
@@ -25,7 +25,7 @@
 
   <table mat-table [dataSource]="items" class="full-table">
     <ng-container matColumnDef="channel">
-      <th mat-header-cell *matHeaderCellDef>Kênh</th>
+      <th mat-header-cell *matHeaderCellDef>{{ 'DEV_SANDBOX.COL_CHANNEL' | translate }}</th>
       <td mat-cell *matCellDef="let item">
         <span class="channel-chip" [class.email]="item.channel === 'EMAIL'" [class.sms]="item.channel === 'SMS'">
           <mat-icon>{{ item.channel === 'EMAIL' ? 'email' : (item.channel === 'SMS' ? 'sms' : 'lock_clock') }}</mat-icon>
@@ -68,11 +68,11 @@
     </ng-container>
 
     <ng-container matColumnDef="actions">
-      <th mat-header-cell *matHeaderCellDef>Thao tác</th>
-      <td mat-cell *matCellDef="let item">
+      <th mat-header-cell *matHeaderCellDef class="text-center">{{ 'COMMON.ACTIONS' | translate }}</th>
+      <td mat-cell *matCellDef="let item" class="text-center">
         <button mat-stroked-button type="button" (click)="copyBody(item)">
           <mat-icon>content_copy</mat-icon>
-          {{ extractOtp(item.body) ? ('SANDBOX.COPY_OTP' | translate) : 'Copy' }}
+          {{ extractOtp(item.body) ? ('SANDBOX.COPY_OTP' | translate) : ('COMMON.COPY' | translate) }}
         </button>
       </td>
     </ng-container>
@@ -84,7 +84,7 @@
   @if (!items.length && !loading) {
     <div class="empty-state">
       <mat-icon>mark_email_unread</mat-icon>
-      <p>Chưa có nhật ký Email / SMS / OTP nào được ghi nhận.</p>
+      <p>{{ 'DEV_SANDBOX.EMPTY_TITLE' | translate }}</p>
     </div>
   }
 
