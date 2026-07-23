@@ -67,20 +67,19 @@ Multibranch with “Discover branches: All branches” will create a job per bra
 
 1. If you already created Multibranch `bank-system`: **Disable** or **Delete** it (or turn off scan triggers) so it stops auto-building.
 2. **New Item** → **Pipeline** → name e.g. `system-bank-build`
-3. Tick **This project is parameterized** is not needed if using Jenkinsfile params — first run may need “Build with Parameters” after loading Jenkinsfile.
-4. Pipeline → Definition: **Pipeline script from SCM**
+3. Pipeline → Definition: **Pipeline script from SCM**
    - SCM: **Git**
    - URL: `https://github.com/phi1235/system-bank.git`
    - Credentials: `github-pat` (Username + PAT)
    - Branch Specifier: `*/main` **or** `*/feature/jenkins-local-ci`  
      (this branch only needs to contain the *Jenkinsfile script*; the pipeline then checks out **`params.BRANCH_NAME`** for the actual build)
    - Script path: `Jenkinsfile`
-5. Save
-6. **Build with Parameters**:
+4. Save
+5. **Build with Parameters**:
    - `BRANCH_NAME` = nhánh anh muốn (vd `main`, `feature/transfer-fee-gl`)
    - `RUN_PACKAGE` = false (phase 1)
    - `DEPLOY_ENABLED` = false
-7. Build — **only that branch** runs (one Maven verify + one FE build, not N branches × services)
+6. Build — **only that branch** runs (one Maven verify + one FE build, not N branches × services)
 
 Credential ID in `Jenkinsfile` checkout is `github-pat`. Create Jenkins credential with **exactly that ID** (or change the ID in Jenkinsfile to match yours).
 
