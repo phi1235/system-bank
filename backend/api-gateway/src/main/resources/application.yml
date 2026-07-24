@@ -68,6 +68,10 @@ spring:
           uri: lb://CUSTOMER-SERVICE
           predicates:
             - Path=/api/v1/admin/customers/**
+        - id: admin-routes-support-tickets
+          uri: lb://CUSTOMER-SERVICE
+          predicates:
+            - Path=/api/v1/admin/support-tickets,/api/v1/admin/support-tickets/**
         - id: admin-routes-accounts
           uri: lb://ACCOUNT-SERVICE
           predicates:

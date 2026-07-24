@@ -29,6 +29,9 @@ export const PERMISSIONS = {
   USERS_PASSWORD_RESET: 'users:password:reset',
   USERS_LOCK_EXECUTE: 'users:lock:execute',
   NOTIFICATIONS_OPS_VIEW: 'notifications:ops:view',
+  SUPPORT_TICKETS_LIST: 'support:tickets:list',
+  SUPPORT_TICKETS_CLAIM: 'support:tickets:claim',
+  SUPPORT_TICKETS_DECIDE: 'support:tickets:decide',
   // Internet Banking (customer)
   IB_HOME_VIEW: 'ib:home:view',
   IB_ACCOUNTS_VIEW: 'ib:accounts:view',
@@ -43,6 +46,7 @@ export const PERMISSIONS = {
   IB_CARDS_VIEW: 'ib:cards:view',
   IB_WEALTH_VIEW: 'ib:wealth:view',
   IB_SUPPORT_VIEW: 'ib:support:view',
+  IB_SUPPORT_CREATE: 'ib:support:create',
   // legacy aliases
   DASHBOARD_READ: 'dashboard:view',
   CUSTOMERS_READ: 'customers:list:view',

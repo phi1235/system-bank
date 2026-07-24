@@ -22,16 +22,16 @@ public class NotificationHandler {
 
   private final ProcessedEventRepository processedEventRepository;
   private final NotificationLogRepository notificationLogRepository;
-  private final MockEmailSender emailSender;
-  private final MockSmsSender smsSender;
+  private final EmailSender emailSender;
+  private final SmsSender smsSender;
   private final ObjectMapper objectMapper;
   private final NotificationRealtimeHub realtimeHub;
 
   public NotificationHandler(
       ProcessedEventRepository processedEventRepository,
       NotificationLogRepository notificationLogRepository,
-      MockEmailSender emailSender,
-      MockSmsSender smsSender,
+      EmailSender emailSender,
+      SmsSender smsSender,
       ObjectMapper objectMapper,
       NotificationRealtimeHub realtimeHub) {
     this.processedEventRepository = processedEventRepository;

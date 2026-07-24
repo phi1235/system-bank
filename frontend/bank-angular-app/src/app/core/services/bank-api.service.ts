@@ -13,6 +13,7 @@ import {
   NotificationItem,
   OutboxCounts,
   OutboxEvent,
+  SupportTicket,
   TopUpResponse,
   Transfer,
   TransferDetail,
@@ -250,6 +251,57 @@ export class BankApiService {
 
   deleteBeneficiary(id: string): Observable<void> {
     return this.api.delete(`/transactions/beneficiaries/${id}`);
+  }
+
+  // Support tickets (customer)
+  createSupportTicket(body: {
+    category: string;
+    subject: string;
+    body: string;
+    priority?: string;
+  }): Observable<SupportTicket> {
+    return this.api.post('/customers/me/support-tickets', body);
+  }
+
+  mySupportTickets(page = 0, size = 20): Observable<PageResponse<SupportTicket>> {
+    return this.api.get('/customers/me/support-tickets', { page, size });
+  }
+
+  mySupportTicket(id: string): Observable<SupportTicket> {
+    return this.api.get(`/customers/me/support-tickets/${encodeURIComponent(id)}`);
+  }
+
+  // Support tickets (admin)
+  adminSupportTickets(
+    page = 0,
+    size = 20,
+    filters?: { status?: string; category?: string; q?: string },
+  ): Observable<PageResponse<SupportTicket>> {
+    return this.api.get('/admin/support-tickets', {
+      page,
+      size,
+      status: filters?.status,
+      category: filters?.category,
+      q: filters?.q,
+    });
+  }
+
+  adminSupportTicket(id: string): Observable<SupportTicket> {
+    return this.api.get(`/admin/support-tickets/${encodeURIComponent(id)}`);
+  }
+
+  claimSupportTicket(id: string): Observable<SupportTicket> {
+    return this.api.post(`/admin/support-tickets/${encodeURIComponent(id)}/claim`, {});
+  }
+
+  resolveSupportTicket(id: string, resolutionNote?: string): Observable<SupportTicket> {
+    return this.api.post(`/admin/support-tickets/${encodeURIComponent(id)}/resolve`, {
+      resolutionNote: resolutionNote || undefined,
+    });
+  }
+
+  rejectSupportTicket(id: string, reason: string): Observable<SupportTicket> {
+    return this.api.post(`/admin/support-tickets/${encodeURIComponent(id)}/reject`, { reason });
   }
 
   // Admin

@@ -20,6 +20,12 @@ export const ADMIN_ROUTES: Routes = [
         loadComponent: () => import('./customers/customers.component').then((m) => m.AdminCustomersComponent),
       },
       {
+        path: 'support-tickets',
+        canActivate: [permissionGuard([PERMISSIONS.SUPPORT_TICKETS_LIST])],
+        loadComponent: () =>
+          import('./support-tickets/support-tickets.component').then((m) => m.AdminSupportTicketsComponent),
+      },
+      {
         path: 'accounts',
         canActivate: [permissionGuard([PERMISSIONS.ACCOUNTS_LOOKUP_VIEW])],
         loadComponent: () => import('./accounts/accounts.component').then((m) => m.AdminAccountsComponent),

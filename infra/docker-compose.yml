@@ -160,6 +160,7 @@ services:
       JWT_REFRESH_TTL: ${JWT_REFRESH_TTL}
       JWT_MFA_TTL: ${JWT_MFA_TTL}
       LOGIN_MAX_FAILURES: ${LOGIN_MAX_FAILURES}
+      LOGIN_LOCK_MINUTES: ${LOGIN_LOCK_MINUTES}
       NOTIFICATION_INTERNAL_API_KEY: ${NOTIFICATION_INTERNAL_API_KEY:?NOTIFICATION_INTERNAL_API_KEY must be set in infra/.env}
       NOTIFICATION_SERVICE_URL: http://notification-service:8085
       ZIPKIN_ENDPOINT: ${ZIPKIN_ENDPOINT}
@@ -295,6 +296,10 @@ services:
       # Must match account-service seed (FEE_INCOME_ACCOUNT_NUMBER). Values only from infra/.env.
       TRANSFER_FEE_INCOME_ACCOUNT: ${TRANSFER_FEE_INCOME_ACCOUNT:?TRANSFER_FEE_INCOME_ACCOUNT must be set in infra/.env}
       FEE_INCOME_ACCOUNT_NUMBER: ${FEE_INCOME_ACCOUNT_NUMBER:?FEE_INCOME_ACCOUNT_NUMBER must be set in infra/.env}
+      # NAPAS: mock by default; set NAPAS_PROVIDER=http + NAPAS_BASE_URL for real/sandbox switch
+      NAPAS_PROVIDER: ${NAPAS_PROVIDER:-mock}
+      NAPAS_BASE_URL: ${NAPAS_BASE_URL:-}
+      NAPAS_API_KEY: ${NAPAS_API_KEY:-}
       REDIS_HOST: ${REDIS_HOST}
       REDIS_PORT: ${REDIS_CONTAINER_PORT}
       BENEFICIARY_CACHE_TTL_SECONDS: ${BENEFICIARY_CACHE_TTL_SECONDS:?BENEFICIARY_CACHE_TTL_SECONDS must be set in infra/.env}
@@ -344,6 +349,22 @@ services:
       NOTIFICATION_INTERNAL_API_KEY: ${NOTIFICATION_INTERNAL_API_KEY:?NOTIFICATION_INTERNAL_API_KEY must be set in infra/.env}
       GATEWAY_SIGNING_SECRET: ${GATEWAY_SIGNING_SECRET:?GATEWAY_SIGNING_SECRET must be set in infra/.env}
       ZIPKIN_ENDPOINT: ${ZIPKIN_ENDPOINT}
+      # Email: mock by default; set EMAIL_PROVIDER=smtp + SMTP_* in infra/.env for real mail
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-mock}
+      EMAIL_FROM: ${EMAIL_FROM:-}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_AUTH: ${SMTP_AUTH:-true}
+      SMTP_STARTTLS: ${SMTP_STARTTLS:-true}
+      # Disable SMTP probe when using mock/no credentials (Spring Boot MailHealthIndicator)
+      MANAGEMENT_HEALTH_MAIL_ENABLED: ${MAIL_HEALTH_ENABLED:-false}
+      # SMS: mock by default; set SMS_PROVIDER=http + SMS_BASE_URL for real gateway
+      SMS_PROVIDER: ${SMS_PROVIDER:-mock}
+      SMS_BASE_URL: ${SMS_BASE_URL:-}
+      SMS_API_KEY: ${SMS_API_KEY:-}
+      SMS_FROM: ${SMS_FROM:-}
     depends_on:
       postgres:
         condition: service_healthy

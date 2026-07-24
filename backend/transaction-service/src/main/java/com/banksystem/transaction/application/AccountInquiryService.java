@@ -5,8 +5,8 @@ import com.banksystem.transaction.domain.ExternalBankAccountEntity;
 import com.banksystem.transaction.domain.ExternalBankAccountRepository;
 import com.banksystem.transaction.infrastructure.feign.AccountClient;
 import com.banksystem.transaction.infrastructure.feign.AccountClientDtos.AccountView;
-import com.banksystem.transaction.infrastructure.napas.MockNapasSwitchService;
-import com.banksystem.transaction.infrastructure.napas.MockNapasSwitchService.NapasInquiryResponse;
+import com.banksystem.transaction.infrastructure.napas.NapasSwitchClient;
+import com.banksystem.transaction.infrastructure.napas.NapasSwitchClient.NapasInquiryResponse;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -31,13 +31,13 @@ public class AccountInquiryService {
 
   private final AccountClient accountClient;
   private final ExternalBankAccountRepository externalAccountRepository;
-  private final MockNapasSwitchService napasService;
+  private final NapasSwitchClient napasService;
   private final String internalApiKey;
 
   public AccountInquiryService(
       AccountClient accountClient,
       ExternalBankAccountRepository externalAccountRepository,
-      MockNapasSwitchService napasService,
+      NapasSwitchClient napasService,
       @Value("${bank.internal.account-api-key}") String internalApiKey) {
     this.accountClient = accountClient;
     this.externalAccountRepository = externalAccountRepository;
