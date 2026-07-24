@@ -5,6 +5,7 @@ import com.banksystem.common.api.PageResponse;
 import com.banksystem.common.security.RequirePermission;
 import com.banksystem.common.security.UserContext;
 import com.banksystem.customer.api.dto.SupportTicketDtos.CreateSupportTicketRequest;
+import com.banksystem.customer.api.dto.SupportTicketDtos.PostMessageRequest;
 import com.banksystem.customer.api.dto.SupportTicketDtos.SupportTicketResponse;
 import com.banksystem.customer.application.SupportTicketService;
 import jakarta.validation.Valid;
@@ -50,5 +51,13 @@ public class SupportTicketController {
   @RequirePermission("ib:support:view")
   public ApiResponse<SupportTicketResponse> getMine(@PathVariable UUID id) {
     return ApiResponse.ok(service.getMine(UserContext.requireUser().userId(), id));
+  }
+
+  /** Customer reply / extra context on open ticket (WAITING_CUSTOMER → reopens for staff). */
+  @PostMapping("/customers/me/support-tickets/{id}/messages")
+  @RequirePermission("ib:support:view")
+  public ApiResponse<SupportTicketResponse> postMessage(
+      @PathVariable UUID id, @Valid @RequestBody PostMessageRequest req) {
+    return ApiResponse.ok(service.customerReply(id, UserContext.requireUser().userId(), req));
   }
 }

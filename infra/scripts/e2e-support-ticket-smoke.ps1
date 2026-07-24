@@ -152,7 +152,66 @@ $resolved2 = Unwrap (Invoke-Json -Method POST `
 if ($resolved2.status -ne 'RESOLVED') { throw "Expected RESOLVED after claim+resolve, got $($resolved2.status)" }
 Write-Host "  claim+same-staff-resolve OK ticketId=$ticketId2"
 
+# Phase 0/1: request-info -> customer reply -> resolve; customer inbox notification
+$subject3 = "e2e-wait-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
+Write-Host "Request-info + customer reply path ($subject3) ..."
+$created3 = Unwrap (Invoke-Json -Method POST `
+    -Url "$Gateway/api/v1/customers/me/support-tickets" `
+    -Headers (AuthHeaders $customerToken) `
+    -Body @{
+      category = 'KYC'
+      subject  = $subject3
+      body     = 'E2E need more documents path.'
+      priority = 'NORMAL'
+    })
+$ticketId3 = $created3.id
+$waiting = Unwrap (Invoke-Json -Method POST `
+    -Url "$Gateway/api/v1/admin/support-tickets/$ticketId3/request-info" `
+    -Headers (AuthHeaders $staffToken) `
+    -Body @{ message = 'Vui long gui CCCD mat truoc.' })
+if ($waiting.status -ne 'WAITING_CUSTOMER') { throw "Expected WAITING_CUSTOMER, got $($waiting.status)" }
+if (-not $waiting.messages -or $waiting.messages.Count -lt 2) {
+  throw "Expected seed + staff request-info messages, got count=$($waiting.messages.Count)"
+}
+
+Write-Host "Customer inbox should include SUPPORT_TICKET_NEED_INFO ..."
+$inbox = Unwrap (Invoke-Json -Method GET `
+    -Url "$Gateway/api/v1/notifications?page=0&size=20" `
+    -Headers (AuthHeaders $customerToken))
+$items = if ($inbox.items) { $inbox.items } elseif ($inbox.content) { $inbox.content } else { @() }
+$needInfo = $items | Where-Object { $_.template -eq 'SUPPORT_TICKET_NEED_INFO' -and ($_.body -like "*$ticketId3*") }
+if (-not $needInfo) {
+  Write-Host "  WARN: NEED_INFO notification not found yet (best-effort notify); continuing"
+} else {
+  Write-Host "  OK customer NEED_INFO notification present"
+}
+
+$replied = Unwrap (Invoke-Json -Method POST `
+    -Url "$Gateway/api/v1/customers/me/support-tickets/$ticketId3/messages" `
+    -Headers (AuthHeaders $customerToken) `
+    -Body @{ body = 'Da gui CCCD trong email.' })
+if ($replied.status -ne 'IN_PROGRESS') { throw "Expected IN_PROGRESS after customer reply, got $($replied.status)" }
+
+$resolved3 = Unwrap (Invoke-Json -Method POST `
+    -Url "$Gateway/api/v1/admin/support-tickets/$ticketId3/resolve" `
+    -Headers (AuthHeaders $staffToken) `
+    -Body @{ resolutionNote = 'Da xac minh KYC' })
+if ($resolved3.status -ne 'RESOLVED') { throw "Expected RESOLVED, got $($resolved3.status)" }
+
+$inbox2 = Unwrap (Invoke-Json -Method GET `
+    -Url "$Gateway/api/v1/notifications?page=0&size=20" `
+    -Headers (AuthHeaders $customerToken))
+$items2 = if ($inbox2.items) { $inbox2.items } elseif ($inbox2.content) { $inbox2.content } else { @() }
+$resolvedNotif = $items2 | Where-Object { $_.template -eq 'SUPPORT_TICKET_RESOLVED' -and ($_.body -like "*$ticketId3*") }
+if (-not $resolvedNotif) {
+  Write-Host "  WARN: RESOLVED notification not found yet (best-effort notify)"
+} else {
+  Write-Host "  OK customer RESOLVED notification present"
+}
+Write-Host "  request-info + reply + resolve OK ticketId=$ticketId3"
+
 Write-Host ''
-Write-Host 'PASS e2e support ticket smoke (direct decide + optional claim)'
+Write-Host 'PASS e2e support ticket smoke (direct decide + claim + request-info thread + notify)'
 Write-Host "  ticketId=$ticketId subject=$subject"
 Write-Host "  ticketId2=$ticketId2 subject=$subject2"
+Write-Host "  ticketId3=$ticketId3 subject=$subject3"

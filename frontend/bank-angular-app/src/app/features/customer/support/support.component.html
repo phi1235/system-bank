@@ -158,6 +158,46 @@
             <dd>{{ selected.createdAt | date: 'medium' }}</dd>
           </div>
         </dl>
+
+        <div class="thread">
+          <h4>{{ 'CUSTOMER.SUPPORT_THREAD' | translate }}</h4>
+          @if (!selected.messages?.length) {
+            <p class="empty small">{{ 'CUSTOMER.SUPPORT_THREAD_EMPTY' | translate }}</p>
+          } @else {
+            <ul class="messages">
+              @for (m of selected.messages; track m.id) {
+                <li [class.staff]="m.authorRole === 'STAFF'" [class.customer]="m.authorRole === 'CUSTOMER'">
+                  <div class="meta">
+                    <span class="role">{{ m.authorRole }}</span>
+                    <span class="time">{{ m.createdAt | date: 'short' }}</span>
+                  </div>
+                  <div class="body pre">{{ m.body }}</div>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+
+        @if (canReply(selected)) {
+          <div class="reply">
+            @if ((selected.status || '').toUpperCase() === 'WAITING_CUSTOMER') {
+              <p class="hint warn">{{ 'CUSTOMER.SUPPORT_WAITING_HINT' | translate }}</p>
+            }
+            <mat-form-field appearance="outline" class="full">
+              <mat-label>{{ 'CUSTOMER.SUPPORT_REPLY' | translate }}</mat-label>
+              <textarea matInput rows="3" [(ngModel)]="replyBody" name="replyBody" maxlength="4000"></textarea>
+            </mat-form-field>
+            <button
+              mat-flat-button
+              color="primary"
+              type="button"
+              (click)="sendReply()"
+              [disabled]="replying"
+            >
+              {{ 'CUSTOMER.SUPPORT_SEND_REPLY' | translate }}
+            </button>
+          </div>
+        }
       }
     </mat-card>
   </div>

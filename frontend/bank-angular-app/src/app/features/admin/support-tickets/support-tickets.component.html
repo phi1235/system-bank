@@ -143,10 +143,61 @@
           }
         </dl>
 
+        <div class="thread">
+          <h4>{{ 'ADMIN.SUPPORT_THREAD' | translate }}</h4>
+          @if (!selected.messages?.length) {
+            <p class="empty small">{{ 'ADMIN.SUPPORT_THREAD_EMPTY' | translate }}</p>
+          } @else {
+            <ul class="messages">
+              @for (m of selected.messages; track m.id) {
+                <li [class.staff]="m.authorRole === 'STAFF'" [class.customer]="m.authorRole === 'CUSTOMER'">
+                  <div class="meta">
+                    <span class="role">{{ m.authorRole }}</span>
+                    <span class="time">{{ m.createdAt | date: 'short' }}</span>
+                  </div>
+                  <div class="body pre">{{ m.body }}</div>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+
         @if (isOpen(selected)) {
           <div class="decide">
             @if ((canDecide$ | async) && canShowDecide(selected)) {
               <p class="hint">{{ 'ADMIN.SUPPORT_DECIDE_HINT' | translate }}</p>
+
+              <mat-form-field appearance="outline" class="full">
+                <mat-label>{{ 'ADMIN.SUPPORT_STAFF_MESSAGE' | translate }}</mat-label>
+                <textarea matInput rows="2" [(ngModel)]="staffMessage" name="staffMessage"></textarea>
+              </mat-form-field>
+              <div class="acts">
+                <button
+                  mat-stroked-button
+                  type="button"
+                  (click)="sendStaffMessage(selected)"
+                  [disabled]="busyId === selected.id"
+                >
+                  {{ 'ADMIN.SUPPORT_SEND_MESSAGE' | translate }}
+                </button>
+              </div>
+
+              <mat-form-field appearance="outline" class="full">
+                <mat-label>{{ 'ADMIN.SUPPORT_REQUEST_INFO' | translate }}</mat-label>
+                <textarea matInput rows="2" [(ngModel)]="requestInfoMessage" name="requestInfoMessage"></textarea>
+              </mat-form-field>
+              <div class="acts">
+                <button
+                  mat-stroked-button
+                  color="accent"
+                  type="button"
+                  (click)="requestInfo(selected)"
+                  [disabled]="busyId === selected.id"
+                >
+                  {{ 'ADMIN.SUPPORT_REQUEST_INFO_BTN' | translate }}
+                </button>
+              </div>
+
               <mat-form-field appearance="outline" class="full">
                 <mat-label>{{ 'ADMIN.SUPPORT_RESOLUTION' | translate }}</mat-label>
                 <textarea matInput rows="3" [(ngModel)]="resolutionNote" name="resolutionNote"></textarea>

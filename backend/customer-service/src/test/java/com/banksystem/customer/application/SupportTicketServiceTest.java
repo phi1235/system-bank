@@ -4,17 +4,23 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.banksystem.common.exception.BusinessException;
 import com.banksystem.customer.api.dto.SupportTicketDtos.CreateSupportTicketRequest;
+import com.banksystem.customer.api.dto.SupportTicketDtos.PostMessageRequest;
 import com.banksystem.customer.api.dto.SupportTicketDtos.RejectTicketRequest;
+import com.banksystem.customer.api.dto.SupportTicketDtos.RequestInfoRequest;
 import com.banksystem.customer.api.dto.SupportTicketDtos.ResolveTicketRequest;
 import com.banksystem.customer.domain.CustomerEntity;
 import com.banksystem.customer.domain.CustomerRepository;
 import com.banksystem.customer.domain.SupportTicketEntity;
+import com.banksystem.customer.domain.SupportTicketMessageEntity;
+import com.banksystem.customer.domain.SupportTicketMessageRepository;
 import com.banksystem.customer.domain.SupportTicketRepository;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,8 +30,10 @@ import org.mockito.ArgumentCaptor;
 class SupportTicketServiceTest {
 
   private SupportTicketRepository ticketRepository;
+  private SupportTicketMessageRepository messageRepository;
   private CustomerRepository customerRepository;
   private OpsAlertPublisher opsAlertPublisher;
+  private CustomerNotifyPublisher customerNotifyPublisher;
   private SupportTicketService service;
   private final UUID userId = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
   private final UUID staffId = UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
@@ -34,9 +42,20 @@ class SupportTicketServiceTest {
   @BeforeEach
   void setUp() {
     ticketRepository = mock(SupportTicketRepository.class);
+    messageRepository = mock(SupportTicketMessageRepository.class);
     customerRepository = mock(CustomerRepository.class);
     opsAlertPublisher = mock(OpsAlertPublisher.class);
-    service = new SupportTicketService(ticketRepository, customerRepository, opsAlertPublisher);
+    customerNotifyPublisher = mock(CustomerNotifyPublisher.class);
+    service =
+        new SupportTicketService(
+            ticketRepository,
+            messageRepository,
+            customerRepository,
+            opsAlertPublisher,
+            customerNotifyPublisher);
+    when(messageRepository.save(any(SupportTicketMessageEntity.class)))
+        .thenAnswer(inv -> inv.getArgument(0));
+    when(messageRepository.findByTicketIdOrderByCreatedAtAsc(any())).thenReturn(List.of());
   }
 
   @Test
@@ -47,12 +66,13 @@ class SupportTicketServiceTest {
     when(customerRepository.findById(userId)).thenReturn(Optional.of(c));
     when(ticketRepository.countByUserIdAndStatus(userId, "OPEN")).thenReturn(0L);
     when(ticketRepository.countByUserIdAndStatus(userId, "IN_PROGRESS")).thenReturn(0L);
+    when(ticketRepository.countByUserIdAndStatus(userId, "WAITING_CUSTOMER")).thenReturn(0L);
     when(ticketRepository.save(any(SupportTicketEntity.class))).thenAnswer(inv -> inv.getArgument(0));
 
     var res =
         service.create(
             userId,
-            new CreateSupportTicketRequest("TRANSFER", "Sai phí", "Mình bị trừ phí lạ", "HIGH"));
+            new CreateSupportTicketRequest("TRANSFER", "Sai phi", "Minh bi tru phi la", "HIGH"));
 
     assertEquals("OPEN", res.status());
     assertEquals("TRANSFER", res.category());
@@ -61,12 +81,14 @@ class SupportTicketServiceTest {
     ArgumentCaptor<SupportTicketEntity> cap = ArgumentCaptor.forClass(SupportTicketEntity.class);
     verify(ticketRepository).save(cap.capture());
     verify(opsAlertPublisher).supportTicketOpened(cap.getValue());
+    verify(messageRepository).save(any(SupportTicketMessageEntity.class));
   }
 
   @Test
   void create_rejectsInvalidCategory() {
     when(ticketRepository.countByUserIdAndStatus(userId, "OPEN")).thenReturn(0L);
     when(ticketRepository.countByUserIdAndStatus(userId, "IN_PROGRESS")).thenReturn(0L);
+    when(ticketRepository.countByUserIdAndStatus(userId, "WAITING_CUSTOMER")).thenReturn(0L);
     assertThrows(
         BusinessException.class,
         () ->
@@ -95,17 +117,18 @@ class SupportTicketServiceTest {
   }
 
   @Test
-  void resolve_directlyFromOpen_assignsHandler() {
+  void resolve_directlyFromOpen_assignsHandler_andNotifiesCustomer() {
     SupportTicketEntity t = openTicket();
     when(ticketRepository.findById(t.getId())).thenReturn(Optional.of(t));
     when(ticketRepository.save(any(SupportTicketEntity.class))).thenAnswer(inv -> inv.getArgument(0));
 
-    var res = service.resolve(t.getId(), staffId, new ResolveTicketRequest("Đã hoàn phí"));
+    var res = service.resolve(t.getId(), staffId, new ResolveTicketRequest("Da hoan phi"));
     assertEquals("RESOLVED", res.status());
-    assertEquals("Đã hoàn phí", res.resolutionNote());
+    assertEquals("Da hoan phi", res.resolutionNote());
     assertEquals(staffId.toString(), res.resolvedBy());
     assertEquals(staffId.toString(), res.assignedTo());
     verify(opsAlertPublisher).supportTicketResolved(any(SupportTicketEntity.class));
+    verify(customerNotifyPublisher).supportTicketResolved(any(SupportTicketEntity.class));
   }
 
   @Test
@@ -129,7 +152,6 @@ class SupportTicketServiceTest {
     var res = service.resolve(t.getId(), otherStaffId, new ResolveTicketRequest("handoff ok"));
     assertEquals("RESOLVED", res.status());
     assertEquals(otherStaffId.toString(), res.resolvedBy());
-    // original assignee kept if already set
     assertEquals(staffId.toString(), res.assignedTo());
   }
 
@@ -145,16 +167,17 @@ class SupportTicketServiceTest {
   }
 
   @Test
-  void reject_fromOpen_requiresReason() {
+  void reject_fromOpen_requiresReason_andNotifiesCustomer() {
     SupportTicketEntity t = openTicket();
     when(ticketRepository.findById(t.getId())).thenReturn(Optional.of(t));
     when(ticketRepository.save(any(SupportTicketEntity.class))).thenAnswer(inv -> inv.getArgument(0));
 
-    var res = service.reject(t.getId(), staffId, new RejectTicketRequest("Thiếu chứng từ"));
+    var res = service.reject(t.getId(), staffId, new RejectTicketRequest("Thieu chung tu"));
     assertEquals("REJECTED", res.status());
-    assertEquals("Thiếu chứng từ", res.rejectReason());
+    assertEquals("Thieu chung tu", res.rejectReason());
     assertEquals(staffId.toString(), res.assignedTo());
     verify(opsAlertPublisher).supportTicketRejected(any(SupportTicketEntity.class));
+    verify(customerNotifyPublisher).supportTicketRejected(any(SupportTicketEntity.class));
   }
 
   @Test
@@ -167,6 +190,59 @@ class SupportTicketServiceTest {
             BusinessException.class,
             () -> service.resolve(t.getId(), staffId, new ResolveTicketRequest("late")));
     assertEquals("TICKET_NOT_OPEN", ex.getCode());
+  }
+
+  @Test
+  void requestInfo_setsWaitingCustomer_andNotifies() {
+    SupportTicketEntity t = openTicket();
+    when(ticketRepository.findById(t.getId())).thenReturn(Optional.of(t));
+    when(ticketRepository.save(any(SupportTicketEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    var res =
+        service.requestInfo(t.getId(), staffId, new RequestInfoRequest("Vui long gui CCCD"));
+    assertEquals("WAITING_CUSTOMER", res.status());
+    assertEquals(staffId.toString(), res.assignedTo());
+    verify(messageRepository).save(any(SupportTicketMessageEntity.class));
+    verify(customerNotifyPublisher).supportTicketNeedInfo(any(SupportTicketEntity.class), any());
+  }
+
+  @Test
+  void customerReply_fromWaiting_reopensInProgress() {
+    SupportTicketEntity t = openTicket();
+    t.setStatus("WAITING_CUSTOMER");
+    t.setAssignedTo(staffId);
+    when(ticketRepository.findByIdAndUserId(t.getId(), userId)).thenReturn(Optional.of(t));
+    when(ticketRepository.save(any(SupportTicketEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    var res = service.customerReply(t.getId(), userId, new PostMessageRequest("Day la CCCD"));
+    assertEquals("IN_PROGRESS", res.status());
+    verify(messageRepository).save(any(SupportTicketMessageEntity.class));
+  }
+
+  @Test
+  void customerReply_closedTicketConflicts() {
+    SupportTicketEntity t = openTicket();
+    t.setStatus("RESOLVED");
+    when(ticketRepository.findByIdAndUserId(t.getId(), userId)).thenReturn(Optional.of(t));
+    BusinessException ex =
+        assertThrows(
+            BusinessException.class,
+            () -> service.customerReply(t.getId(), userId, new PostMessageRequest("late")));
+    assertEquals("TICKET_CLOSED", ex.getCode());
+    verify(messageRepository, never()).save(any());
+  }
+
+  @Test
+  void resolve_fromWaitingCustomer_ok() {
+    SupportTicketEntity t = openTicket();
+    t.setStatus("WAITING_CUSTOMER");
+    t.setAssignedTo(staffId);
+    when(ticketRepository.findById(t.getId())).thenReturn(Optional.of(t));
+    when(ticketRepository.save(any(SupportTicketEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    var res = service.resolve(t.getId(), staffId, new ResolveTicketRequest("ok without reply"));
+    assertEquals("RESOLVED", res.status());
+    verify(customerNotifyPublisher).supportTicketResolved(any(SupportTicketEntity.class));
   }
 
   private SupportTicketEntity openTicket() {
