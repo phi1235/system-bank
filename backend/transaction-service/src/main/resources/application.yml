@@ -80,6 +80,11 @@ bank:
     max-attempts: ${OUTBOX_MAX_ATTEMPTS:10}
     base-delay-ms: ${OUTBOX_BASE_DELAY_MS:1000}
     max-delay-ms: ${OUTBOX_MAX_DELAY_MS:300000}
+  # mock (default) | http — real switch URL/key only via env
+  napas:
+    provider: ${NAPAS_PROVIDER:mock}
+    base-url: ${NAPAS_BASE_URL:}
+    api-key: ${NAPAS_API_KEY:}
   transfer:
     # Internal transfer limits (VND). Override via env when needed.
     max-per-transaction: ${TRANSFER_MAX_PER_TX:50000000}

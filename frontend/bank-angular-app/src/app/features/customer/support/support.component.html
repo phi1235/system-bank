@@ -1,0 +1,164 @@
+<app-page-header
+  [title]="'NAV.SUPPORT' | translate"
+  [subtitle]="'CUSTOMER.SUPPORT_PAGE_SUB' | translate"
+/>
+
+<div class="page-stack">
+  @if (canCreate$ | async) {
+    <mat-card class="form-card">
+      <h3>{{ 'CUSTOMER.SUPPORT_CREATE_TITLE' | translate }}</h3>
+      <p class="hint">{{ 'CUSTOMER.SUPPORT_CREATE_HINT' | translate }}</p>
+      <form class="form" (ngSubmit)="submit()">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'CUSTOMER.SUPPORT_CATEGORY' | translate }}</mat-label>
+          <mat-select [(ngModel)]="form.category" name="category" required>
+            @for (c of categories; track c) {
+              <mat-option [value]="c">{{ ('CUSTOMER.SUPPORT_CAT_' + c) | translate }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'CUSTOMER.SUPPORT_PRIORITY' | translate }}</mat-label>
+          <mat-select [(ngModel)]="form.priority" name="priority">
+            @for (p of priorities; track p) {
+              <mat-option [value]="p">{{ ('CUSTOMER.SUPPORT_PRI_' + p) | translate }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>{{ 'CUSTOMER.SUPPORT_SUBJECT' | translate }}</mat-label>
+          <input matInput [(ngModel)]="form.subject" name="subject" maxlength="200" required />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>{{ 'CUSTOMER.SUPPORT_BODY' | translate }}</mat-label>
+          <textarea
+            matInput
+            rows="4"
+            [(ngModel)]="form.body"
+            name="body"
+            maxlength="4000"
+            required
+          ></textarea>
+        </mat-form-field>
+
+        <div class="actions">
+          <button mat-flat-button color="primary" type="submit" [disabled]="submitting">
+            <mat-icon>send</mat-icon>
+            {{ 'CUSTOMER.SUPPORT_SUBMIT' | translate }}
+          </button>
+        </div>
+      </form>
+    </mat-card>
+  }
+
+  <div class="split">
+    <mat-card class="table-card">
+      <div class="card-head">
+        <h3>{{ 'CUSTOMER.SUPPORT_MY_TICKETS' | translate }}</h3>
+        <button mat-stroked-button type="button" (click)="load()" [disabled]="loading">
+          <mat-icon>refresh</mat-icon>
+          {{ 'CUSTOMER.NOTIF_REFRESH' | translate }}
+        </button>
+      </div>
+
+      @if (loading && rows.length === 0) {
+        <app-loading />
+      } @else if (!loading && rows.length === 0) {
+        <p class="empty">{{ 'CUSTOMER.SUPPORT_EMPTY' | translate }}</p>
+      } @else {
+        <div class="table-wrap">
+          <table mat-table [dataSource]="rows" class="full">
+            <ng-container matColumnDef="createdAt">
+              <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.TIME' | translate }}</th>
+              <td mat-cell *matCellDef="let t">{{ t.createdAt | date: 'short' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="category">
+              <th mat-header-cell *matHeaderCellDef>{{ 'CUSTOMER.SUPPORT_CATEGORY' | translate }}</th>
+              <td mat-cell *matCellDef="let t">{{ ('CUSTOMER.SUPPORT_CAT_' + t.category) | translate }}</td>
+            </ng-container>
+            <ng-container matColumnDef="subject">
+              <th mat-header-cell *matHeaderCellDef>{{ 'CUSTOMER.SUPPORT_SUBJECT' | translate }}</th>
+              <td mat-cell *matCellDef="let t"><strong>{{ t.subject }}</strong></td>
+            </ng-container>
+            <ng-container matColumnDef="priority">
+              <th mat-header-cell *matHeaderCellDef>{{ 'CUSTOMER.SUPPORT_PRIORITY' | translate }}</th>
+              <td mat-cell *matCellDef="let t">{{ ('CUSTOMER.SUPPORT_PRI_' + t.priority) | translate }}</td>
+            </ng-container>
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.STATUS' | translate }}</th>
+              <td mat-cell *matCellDef="let t">
+                <span class="chip" [ngClass]="statusClass(t.status)">{{ t.status }}</span>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.ACTIONS' | translate }}</th>
+              <td mat-cell *matCellDef="let t">
+                <button mat-button type="button" (click)="openDetail(t)">
+                  {{ 'CUSTOMER.SUPPORT_VIEW' | translate }}
+                </button>
+              </td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="cols"></tr>
+            <tr mat-row *matRowDef="let row; columns: cols"></tr>
+          </table>
+        </div>
+        <mat-paginator
+          [length]="totalElements"
+          [pageIndex]="pageIndex"
+          [pageSize]="pageSize"
+          [pageSizeOptions]="[5, 10, 20]"
+          (page)="onPage($event)"
+        />
+      }
+    </mat-card>
+
+    <mat-card class="detail-card">
+      <h3>{{ 'CUSTOMER.SUPPORT_DETAIL' | translate }}</h3>
+      @if (!selected) {
+        <p class="empty">{{ 'CUSTOMER.SUPPORT_DETAIL_EMPTY' | translate }}</p>
+      } @else {
+        <dl class="detail">
+          <div>
+            <dt>{{ 'COMMON.STATUS' | translate }}</dt>
+            <dd><span class="chip" [ngClass]="statusClass(selected.status)">{{ selected.status }}</span></dd>
+          </div>
+          <div>
+            <dt>{{ 'CUSTOMER.SUPPORT_CATEGORY' | translate }}</dt>
+            <dd>{{ ('CUSTOMER.SUPPORT_CAT_' + selected.category) | translate }}</dd>
+          </div>
+          <div>
+            <dt>{{ 'CUSTOMER.SUPPORT_PRIORITY' | translate }}</dt>
+            <dd>{{ ('CUSTOMER.SUPPORT_PRI_' + selected.priority) | translate }}</dd>
+          </div>
+          <div>
+            <dt>{{ 'CUSTOMER.SUPPORT_SUBJECT' | translate }}</dt>
+            <dd>{{ selected.subject }}</dd>
+          </div>
+          <div class="block">
+            <dt>{{ 'CUSTOMER.SUPPORT_BODY' | translate }}</dt>
+            <dd class="pre">{{ selected.body }}</dd>
+          </div>
+          @if (selected.resolutionNote) {
+            <div class="block">
+              <dt>{{ 'CUSTOMER.SUPPORT_RESOLUTION' | translate }}</dt>
+              <dd class="pre">{{ selected.resolutionNote }}</dd>
+            </div>
+          }
+          @if (selected.rejectReason) {
+            <div class="block">
+              <dt>{{ 'CUSTOMER.SUPPORT_REJECT_REASON' | translate }}</dt>
+              <dd class="pre">{{ selected.rejectReason }}</dd>
+            </div>
+          }
+          <div>
+            <dt>{{ 'COMMON.TIME' | translate }}</dt>
+            <dd>{{ selected.createdAt | date: 'medium' }}</dd>
+          </div>
+        </dl>
+      }
+    </mat-card>
+  </div>
+</div>

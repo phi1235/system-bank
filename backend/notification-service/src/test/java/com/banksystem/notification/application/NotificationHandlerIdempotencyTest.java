@@ -25,8 +25,8 @@ class NotificationHandlerIdempotencyTest {
     NotificationHandler handler = new NotificationHandler(
         processed,
         logs,
-        mock(MockEmailSender.class),
-        mock(MockSmsSender.class),
+        mock(EmailSender.class),
+        mock(SmsSender.class),
         new ObjectMapper(),
         mock(NotificationRealtimeHub.class));
 

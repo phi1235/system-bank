@@ -24,6 +24,17 @@ spring:
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       enable-auto-commit: ${KAFKA_ENABLE_AUTO_COMMIT}
+  mail:
+    host: ${SMTP_HOST:}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USERNAME:}
+    password: ${SMTP_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${SMTP_AUTH:true}
+          starttls:
+            enable: ${SMTP_STARTTLS:true}
 
 eureka:
   client:
@@ -41,6 +52,16 @@ bank:
     topic-failed: ${KAFKA_TOPIC_FAILED}
   internal:
     api-key: ${NOTIFICATION_INTERNAL_API_KEY}
+  # mock (default) | smtp — real credentials only via env / infra/.env
+  email:
+    provider: ${EMAIL_PROVIDER:mock}
+    from: ${EMAIL_FROM:}
+  # mock (default) | http — real SMS gateway URL/key only via env
+  sms:
+    provider: ${SMS_PROVIDER:mock}
+    base-url: ${SMS_BASE_URL:}
+    api-key: ${SMS_API_KEY:}
+    from: ${SMS_FROM:}
 
 management:
   endpoints:
@@ -50,6 +71,10 @@ management:
   endpoint:
     health:
       show-details: never
+  health:
+    # Avoid probing SMTP when EMAIL_PROVIDER=mock / SMTP credentials unset.
+    mail:
+      enabled: ${MAIL_HEALTH_ENABLED:false}
 
   metrics:
     tags:

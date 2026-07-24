@@ -1,0 +1,195 @@
+<app-page-header
+  [title]="'ADMIN.SUPPORT_TITLE' | translate"
+  [subtitle]="'ADMIN.SUPPORT_SUB' | translate"
+/>
+
+<div class="page-stack">
+  <mat-card class="filters-card">
+    <form class="filters" (ngSubmit)="applyFilters()">
+      <mat-form-field appearance="outline" class="grow" subscriptSizing="dynamic">
+        <mat-label>{{ 'COMMON.SEARCH' | translate }}</mat-label>
+        <mat-icon matPrefix>search</mat-icon>
+        <input matInput [(ngModel)]="q" name="q" [placeholder]="'ADMIN.SUPPORT_SEARCH_PH' | translate" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="status-field" subscriptSizing="dynamic">
+        <mat-label>{{ 'COMMON.STATUS' | translate }}</mat-label>
+        <mat-select [(ngModel)]="status" name="status">
+          @for (s of statuses; track s) {
+            <mat-option [value]="s">
+              {{ s ? s : ('COMMON.ALL' | translate) }}
+            </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="cat-field" subscriptSizing="dynamic">
+        <mat-label>{{ 'ADMIN.SUPPORT_CATEGORY' | translate }}</mat-label>
+        <mat-select [(ngModel)]="category" name="category">
+          @for (c of categories; track c) {
+            <mat-option [value]="c">
+              {{ c ? (('CUSTOMER.SUPPORT_CAT_' + c) | translate) : ('COMMON.ALL' | translate) }}
+            </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <button mat-flat-button color="primary" type="submit" [disabled]="loading">
+        {{ 'ADMIN.FILTER' | translate }}
+      </button>
+      <button mat-stroked-button type="button" (click)="clearFilters()" [disabled]="loading">
+        {{ 'ADMIN.CLEAR' | translate }}
+      </button>
+    </form>
+    <p class="meta">{{ 'ADMIN.SUPPORT_TOTAL' | translate: { total: totalElements } }}</p>
+  </mat-card>
+
+  <div class="split">
+    <mat-card class="table-card">
+      @if (rows.length) {
+        <div class="table-wrap">
+          <table mat-table [dataSource]="rows" class="full">
+            <ng-container matColumnDef="createdAt">
+              <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.TIME' | translate }}</th>
+              <td mat-cell *matCellDef="let t">{{ t.createdAt | date: 'short' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="subject">
+              <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.SUPPORT_SUBJECT' | translate }}</th>
+              <td mat-cell *matCellDef="let t"><strong>{{ t.subject }}</strong></td>
+            </ng-container>
+            <ng-container matColumnDef="category">
+              <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.SUPPORT_CATEGORY' | translate }}</th>
+              <td mat-cell *matCellDef="let t">{{ ('CUSTOMER.SUPPORT_CAT_' + t.category) | translate }}</td>
+            </ng-container>
+            <ng-container matColumnDef="priority">
+              <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.SUPPORT_PRIORITY' | translate }}</th>
+              <td mat-cell *matCellDef="let t">{{ t.priority }}</td>
+            </ng-container>
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.STATUS' | translate }}</th>
+              <td mat-cell *matCellDef="let t">
+                <span class="chip" [ngClass]="statusClass(t.status)">{{ t.status }}</span>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="requesterEmail">
+              <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.EMAIL' | translate }}</th>
+              <td mat-cell *matCellDef="let t">{{ t.requesterEmail || '—' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.ACTIONS' | translate }}</th>
+              <td mat-cell *matCellDef="let t" class="acts">
+                <button mat-button type="button" (click)="openDetail(t)">
+                  {{ 'ADMIN.VIEW' | translate }}
+                </button>
+              </td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="cols"></tr>
+            <tr mat-row *matRowDef="let row; columns: cols"></tr>
+          </table>
+        </div>
+        <mat-paginator
+          [length]="totalElements"
+          [pageIndex]="pageIndex"
+          [pageSize]="pageSize"
+          [pageSizeOptions]="[10, 20, 50]"
+          (page)="onPage($event)"
+        />
+      } @else {
+        <p class="empty">{{ loading ? ('ADMIN.LOADING' | translate) : ('ADMIN.SUPPORT_EMPTY' | translate) }}</p>
+      }
+    </mat-card>
+
+    <mat-card class="detail-card">
+      <h3>{{ 'ADMIN.SUPPORT_DETAIL' | translate }}</h3>
+      @if (!selected) {
+        <p class="empty">{{ 'ADMIN.SUPPORT_DETAIL_EMPTY' | translate }}</p>
+      } @else {
+        <dl class="detail">
+          <div>
+            <dt>{{ 'COMMON.STATUS' | translate }}</dt>
+            <dd><span class="chip" [ngClass]="statusClass(selected.status)">{{ selected.status }}</span></dd>
+          </div>
+          <div>
+            <dt>ID</dt>
+            <dd class="mono">{{ selected.id }}</dd>
+          </div>
+          <div>
+            <dt>{{ 'ADMIN.USER' | translate }}</dt>
+            <dd class="mono">{{ selected.userId }}</dd>
+          </div>
+          <div>
+            <dt>{{ 'ADMIN.EMAIL' | translate }}</dt>
+            <dd>{{ selected.requesterEmail || '—' }}</dd>
+          </div>
+          <div>
+            <dt>{{ 'ADMIN.SUPPORT_SUBJECT' | translate }}</dt>
+            <dd>{{ selected.subject }}</dd>
+          </div>
+          <div class="block">
+            <dt>{{ 'ADMIN.SUPPORT_BODY' | translate }}</dt>
+            <dd class="pre">{{ selected.body }}</dd>
+          </div>
+          @if (selected.resolutionNote) {
+            <div class="block">
+              <dt>{{ 'ADMIN.SUPPORT_RESOLUTION' | translate }}</dt>
+              <dd class="pre">{{ selected.resolutionNote }}</dd>
+            </div>
+          }
+          @if (selected.rejectReason) {
+            <div class="block">
+              <dt>{{ 'ADMIN.SUPPORT_REJECT_REASON' | translate }}</dt>
+              <dd class="pre">{{ selected.rejectReason }}</dd>
+            </div>
+          }
+        </dl>
+
+        @if (isOpen(selected)) {
+          <div class="decide">
+            @if ((canDecide$ | async) && canShowDecide(selected)) {
+              <p class="hint">{{ 'ADMIN.SUPPORT_DECIDE_HINT' | translate }}</p>
+              <mat-form-field appearance="outline" class="full">
+                <mat-label>{{ 'ADMIN.SUPPORT_RESOLUTION' | translate }}</mat-label>
+                <textarea matInput rows="3" [(ngModel)]="resolutionNote" name="resolutionNote"></textarea>
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="full">
+                <mat-label>{{ 'ADMIN.SUPPORT_REJECT_REASON' | translate }}</mat-label>
+                <textarea matInput rows="2" [(ngModel)]="rejectReason" name="rejectReason"></textarea>
+              </mat-form-field>
+              <div class="acts">
+                @if ((canClaim$ | async) && canShowClaim(selected)) {
+                  <button
+                    mat-stroked-button
+                    type="button"
+                    (click)="claim(selected)"
+                    [disabled]="busyId === selected.id"
+                    [matTooltip]="'ADMIN.SUPPORT_CLAIM_TIP' | translate"
+                  >
+                    {{ 'ADMIN.SUPPORT_CLAIM' | translate }}
+                  </button>
+                }
+                <button
+                  mat-flat-button
+                  color="primary"
+                  type="button"
+                  (click)="resolve(selected)"
+                  [disabled]="busyId === selected.id"
+                >
+                  {{ 'ADMIN.SUPPORT_RESOLVE' | translate }}
+                </button>
+                <button
+                  mat-stroked-button
+                  color="warn"
+                  type="button"
+                  (click)="reject(selected)"
+                  [disabled]="busyId === selected.id"
+                >
+                  {{ 'ADMIN.REJECT' | translate }}
+                </button>
+              </div>
+            }
+          </div>
+        }
+      }
+    </mat-card>
+  </div>
+</div>

@@ -35,8 +35,8 @@ class NotificationHandlerUserIdTest {
     handler = new NotificationHandler(
         processedEventRepository,
         notificationLogRepository,
-        mock(MockEmailSender.class),
-        mock(MockSmsSender.class),
+        mock(EmailSender.class),
+        mock(SmsSender.class),
         new ObjectMapper(),
         realtimeHub);
   }

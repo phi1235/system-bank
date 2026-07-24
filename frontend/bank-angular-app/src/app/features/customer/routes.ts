@@ -68,8 +68,7 @@ export const CUSTOMER_ROUTES: Routes = [
       {
         path: 'support',
         canActivate: [permissionGuard([PERMISSIONS.IB_SUPPORT_VIEW])],
-        loadComponent: () => import('./placeholder/placeholder.component').then((m) => m.PlaceholderComponent),
-        data: { titleKey: 'NAV.SUPPORT', subtitleKey: 'CUSTOMER.SUPPORT_SUB' },
+        loadComponent: () => import('./support/support.component').then((m) => m.CustomerSupportComponent),
       },
     ],
   },

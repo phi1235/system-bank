@@ -184,3 +184,24 @@ export interface NotificationItem {
   readAt: string | null;
   createdAt: string;
 }
+
+/** Customer support ticket (create + staff approve/resolve). */
+export interface SupportTicket {
+  id: string;
+  userId: string;
+  category: string;
+  subject: string;
+  body: string;
+  priority: string;
+  status: string;
+  requesterEmail: string | null;
+  resolutionNote: string | null;
+  rejectReason: string | null;
+  assignedTo: string | null;
+  createdAt: string;
+  updatedAt: string;
+  resolvedAt: string | null;
+  resolvedBy: string | null;
+  rejectedAt: string | null;
+  rejectedBy: string | null;
+}
