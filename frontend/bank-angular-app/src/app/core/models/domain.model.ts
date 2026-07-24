@@ -186,6 +186,15 @@ export interface NotificationItem {
 }
 
 /** Customer support ticket (create + staff approve/resolve). */
+export interface SupportTicketMessage {
+  id: string;
+  ticketId: string;
+  authorUserId: string;
+  authorRole: string;
+  body: string;
+  createdAt: string;
+}
+
 export interface SupportTicket {
   id: string;
   userId: string;
@@ -204,4 +213,5 @@ export interface SupportTicket {
   resolvedBy: string | null;
   rejectedAt: string | null;
   rejectedBy: string | null;
+  messages?: SupportTicketMessage[] | null;
 }

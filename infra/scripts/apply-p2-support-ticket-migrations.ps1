@@ -29,10 +29,11 @@ $authDb = Get-DotEnvValue $EnvFile 'AUTH_DB_NAME'
 if (-not $authDb) { $authDb = 'bank_auth' }
 
 $customerSql = Join-Path $RepoRoot 'backend\customer-service\src\main\resources\db\migration\V2__support_tickets.sql'
+$customerSqlV3 = Join-Path $RepoRoot 'backend\customer-service\src\main\resources\db\migration\V3__support_ticket_messages.sql'
 $authSqlV9 = Join-Path $RepoRoot 'backend\auth-service\src\main\resources\db\migration\V9__support_ticket_permissions.sql'
 $authSqlV10 = Join-Path $RepoRoot 'backend\auth-service\src\main\resources\db\migration\V10__support_ticket_maker_checker.sql'
 $authSqlV11 = Join-Path $RepoRoot 'backend\auth-service\src\main\resources\db\migration\V11__ib_support_create_permission.sql'
-foreach ($f in @($customerSql, $authSqlV9, $authSqlV10, $authSqlV11)) {
+foreach ($f in @($customerSql, $customerSqlV3, $authSqlV9, $authSqlV10, $authSqlV11)) {
   if (-not (Test-Path $f)) { throw "Missing migration file: $f" }
 }
 
@@ -118,6 +119,10 @@ Invoke-SqlFile $customerDb $customerSql 'V2 support_tickets'
 # Checksums from Flyway validate log (CRC32 of migration content).
 Ensure-FlywayHistory $customerDb '2' 'support tickets' 'V2__support_tickets.sql' 2009433375
 
+Invoke-SqlFile $customerDb $customerSqlV3 'V3 support ticket messages'
+# Flyway CRC32 from customer-service boot validation log.
+Ensure-FlywayHistory $customerDb '3' 'support ticket messages' 'V3__support_ticket_messages.sql' 1776600042
+
 Invoke-SqlFile $authDb $authSqlV9 'V9 support ticket permissions'
 Ensure-FlywayHistory $authDb '9' 'support ticket permissions' 'V9__support_ticket_permissions.sql' -502167712
 
@@ -129,5 +134,5 @@ Ensure-FlywayHistory $authDb '11' 'ib support create permission' 'V11__ib_suppor
 
 Write-Host ''
 Write-Host 'Done. Verify:'
-Write-Host "  support_tickets table in $customerDb"
+Write-Host "  support_tickets + support_ticket_messages tables in $customerDb"
 Write-Host "  permissions support:tickets:list|claim|decide + ib:support:view|create in $authDb"

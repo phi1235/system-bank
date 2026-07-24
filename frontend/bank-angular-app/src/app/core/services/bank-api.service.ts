@@ -304,6 +304,22 @@ export class BankApiService {
     return this.api.post(`/admin/support-tickets/${encodeURIComponent(id)}/reject`, { reason });
   }
 
+  requestSupportTicketInfo(id: string, message: string): Observable<SupportTicket> {
+    return this.api.post(`/admin/support-tickets/${encodeURIComponent(id)}/request-info`, {
+      message,
+    });
+  }
+
+  postAdminSupportTicketMessage(id: string, body: string): Observable<SupportTicket> {
+    return this.api.post(`/admin/support-tickets/${encodeURIComponent(id)}/messages`, { body });
+  }
+
+  postMySupportTicketMessage(id: string, body: string): Observable<SupportTicket> {
+    return this.api.post(`/customers/me/support-tickets/${encodeURIComponent(id)}/messages`, {
+      body,
+    });
+  }
+
   // Admin
   listCustomers(
     page = 0,

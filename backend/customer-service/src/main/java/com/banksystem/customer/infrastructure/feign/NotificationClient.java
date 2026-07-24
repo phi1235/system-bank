@@ -1,6 +1,7 @@
 package com.banksystem.customer.infrastructure.feign;
 
 import com.banksystem.common.api.ApiResponse;
+import com.banksystem.customer.infrastructure.feign.NotificationClientDtos.CreateNotificationLogRequest;
 import com.banksystem.customer.infrastructure.feign.NotificationClientDtos.CreateOpsAlertRequest;
 import com.banksystem.customer.infrastructure.feign.NotificationClientDtos.NotificationItem;
 import org.springframework.cloud.openfeign.FeignClient;
@@ -14,5 +15,10 @@ public interface NotificationClient {
   @PostMapping("/internal/notifications/ops-alerts")
   ApiResponse<NotificationItem> createOpsAlert(
       @RequestBody CreateOpsAlertRequest request,
+      @RequestHeader("X-Internal-Api-Key") String apiKey);
+
+  @PostMapping("/internal/notifications")
+  ApiResponse<NotificationItem> createNotificationLog(
+      @RequestBody CreateNotificationLogRequest request,
       @RequestHeader("X-Internal-Api-Key") String apiKey);
 }

@@ -3,6 +3,7 @@ package com.banksystem.customer.api.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import java.time.Instant;
+import java.util.List;
 
 public final class SupportTicketDtos {
   private SupportTicketDtos() {}
@@ -17,6 +18,21 @@ public final class SupportTicketDtos {
   public record ResolveTicketRequest(@Size(max = 2000) String resolutionNote) {}
 
   public record RejectTicketRequest(@NotBlank @Size(max = 2000) String reason) {}
+
+  /** Staff asks customer for more info → WAITING_CUSTOMER + message. */
+  public record RequestInfoRequest(@NotBlank @Size(max = 4000) String message) {}
+
+  /** Customer or staff posts a message on the ticket thread. */
+  public record PostMessageRequest(@NotBlank @Size(max = 4000) String body) {}
+
+  public record SupportTicketMessageResponse(
+      String id,
+      String ticketId,
+      String authorUserId,
+      String authorRole,
+      String body,
+      Instant createdAt
+  ) {}
 
   public record SupportTicketResponse(
       String id,
@@ -35,6 +51,7 @@ public final class SupportTicketDtos {
       Instant resolvedAt,
       String resolvedBy,
       Instant rejectedAt,
-      String rejectedBy
+      String rejectedBy,
+      List<SupportTicketMessageResponse> messages
   ) {}
 }

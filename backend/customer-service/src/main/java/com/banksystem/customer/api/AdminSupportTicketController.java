@@ -4,7 +4,9 @@ import com.banksystem.common.api.ApiResponse;
 import com.banksystem.common.api.PageResponse;
 import com.banksystem.common.security.RequirePermission;
 import com.banksystem.common.security.UserContext;
+import com.banksystem.customer.api.dto.SupportTicketDtos.PostMessageRequest;
 import com.banksystem.customer.api.dto.SupportTicketDtos.RejectTicketRequest;
+import com.banksystem.customer.api.dto.SupportTicketDtos.RequestInfoRequest;
 import com.banksystem.customer.api.dto.SupportTicketDtos.ResolveTicketRequest;
 import com.banksystem.customer.api.dto.SupportTicketDtos.SupportTicketResponse;
 import com.banksystem.customer.application.SupportTicketService;
@@ -64,5 +66,21 @@ public class AdminSupportTicketController {
   public ApiResponse<SupportTicketResponse> reject(
       @PathVariable UUID id, @Valid @RequestBody RejectTicketRequest req) {
     return ApiResponse.ok(service.reject(id, UserContext.requireUser().userId(), req));
+  }
+
+  /** Staff requests more info → WAITING_CUSTOMER + thread message + customer notify. */
+  @PostMapping("/{id}/request-info")
+  @RequirePermission("support:tickets:decide")
+  public ApiResponse<SupportTicketResponse> requestInfo(
+      @PathVariable UUID id, @Valid @RequestBody RequestInfoRequest req) {
+    return ApiResponse.ok(service.requestInfo(id, UserContext.requireUser().userId(), req));
+  }
+
+  /** Staff posts a message on open ticket without closing. */
+  @PostMapping("/{id}/messages")
+  @RequirePermission("support:tickets:decide")
+  public ApiResponse<SupportTicketResponse> postMessage(
+      @PathVariable UUID id, @Valid @RequestBody PostMessageRequest req) {
+    return ApiResponse.ok(service.staffMessage(id, UserContext.requireUser().userId(), req));
   }
 }

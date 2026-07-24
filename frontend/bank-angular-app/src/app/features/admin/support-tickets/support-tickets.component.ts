@@ -56,7 +56,7 @@ export class AdminSupportTicketsComponent implements OnInit {
   private readonly dialog = inject(MatDialog);
 
   readonly categories = ['', 'GENERAL', 'ACCOUNT', 'TRANSFER', 'CARD', 'KYC', 'SECURITY', 'OTHER'];
-  readonly statuses = ['', 'OPEN', 'IN_PROGRESS', 'RESOLVED', 'REJECTED'];
+  readonly statuses = ['', 'OPEN', 'IN_PROGRESS', 'WAITING_CUSTOMER', 'RESOLVED', 'REJECTED'];
   readonly cols = ['createdAt', 'subject', 'category', 'priority', 'status', 'requesterEmail', 'actions'];
 
   rows: SupportTicket[] = [];
@@ -71,6 +71,8 @@ export class AdminSupportTicketsComponent implements OnInit {
   category = '';
   resolutionNote = '';
   rejectReason = '';
+  requestInfoMessage = '';
+  staffMessage = '';
 
   canClaim$ = this.store.select(selectHasPermission(PERMISSIONS.SUPPORT_TICKETS_CLAIM));
   canDecide$ = this.store.select(selectHasPermission(PERMISSIONS.SUPPORT_TICKETS_DECIDE));
@@ -88,12 +90,12 @@ export class AdminSupportTicketsComponent implements OnInit {
     return !!t && (t.status || '').toUpperCase() === 'OPEN';
   }
 
-  /** Staff with decide may resolve/reject OPEN or IN_PROGRESS (same person OK). */
+  /** Staff with decide may resolve/reject OPEN / IN_PROGRESS / WAITING_CUSTOMER. */
   canShowDecide(t: SupportTicket | null): boolean {
     if (!t || !this.currentUserId) return false;
     if (t.userId === this.currentUserId) return false;
     const s = (t.status || '').toUpperCase();
-    return s === 'OPEN' || s === 'IN_PROGRESS';
+    return s === 'OPEN' || s === 'IN_PROGRESS' || s === 'WAITING_CUSTOMER';
   }
 
   get hasActiveFilters(): boolean {
@@ -150,6 +152,8 @@ export class AdminSupportTicketsComponent implements OnInit {
     this.selected = row;
     this.resolutionNote = row.resolutionNote || '';
     this.rejectReason = '';
+    this.requestInfoMessage = '';
+    this.staffMessage = '';
     this.api.adminSupportTicket(row.id).subscribe({
       next: (t) => {
         this.selected = t;
@@ -161,7 +165,7 @@ export class AdminSupportTicketsComponent implements OnInit {
 
   isOpen(t: SupportTicket | null): boolean {
     const s = (t?.status || '').toUpperCase();
-    return s === 'OPEN' || s === 'IN_PROGRESS';
+    return s === 'OPEN' || s === 'IN_PROGRESS' || s === 'WAITING_CUSTOMER';
   }
 
   claim(t: SupportTicket): void {
@@ -247,12 +251,58 @@ export class AdminSupportTicketsComponent implements OnInit {
       });
   }
 
+  requestInfo(t: SupportTicket): void {
+    const message = this.requestInfoMessage.trim();
+    if (!message) {
+      this.toast.error(this.i18n.instant('ADMIN.SUPPORT_REQUEST_INFO_REQUIRED'));
+      return;
+    }
+    this.busyId = t.id;
+    this.api.requestSupportTicketInfo(t.id, message).subscribe({
+      next: (updated) => {
+        this.busyId = null;
+        this.toast.success(this.i18n.instant('ADMIN.SUPPORT_REQUEST_INFO_OK'));
+        this.selected = updated;
+        this.requestInfoMessage = '';
+        this.load();
+      },
+      error: (err) => {
+        this.busyId = null;
+        this.toast.error(resolveHttpErrorMessage(err, this.i18n));
+      },
+    });
+  }
+
+  sendStaffMessage(t: SupportTicket): void {
+    const body = this.staffMessage.trim();
+    if (!body) {
+      this.toast.error(this.i18n.instant('ADMIN.SUPPORT_MESSAGE_REQUIRED'));
+      return;
+    }
+    this.busyId = t.id;
+    this.api.postAdminSupportTicketMessage(t.id, body).subscribe({
+      next: (updated) => {
+        this.busyId = null;
+        this.toast.success(this.i18n.instant('ADMIN.SUPPORT_MESSAGE_OK'));
+        this.selected = updated;
+        this.staffMessage = '';
+        this.load();
+      },
+      error: (err) => {
+        this.busyId = null;
+        this.toast.error(resolveHttpErrorMessage(err, this.i18n));
+      },
+    });
+  }
+
   statusClass(status: string): string {
     switch ((status || '').toUpperCase()) {
       case 'OPEN':
         return 'warn';
       case 'IN_PROGRESS':
         return 'info';
+      case 'WAITING_CUSTOMER':
+        return 'wait';
       case 'RESOLVED':
         return 'ok';
       case 'REJECTED':

@@ -55,17 +55,17 @@ export class CustomerSupportComponent implements OnInit {
   /** Create form only when admin granted ib:support:create (separate from view). */
   readonly canCreate$ = this.store
     .select(selectPermissions)
-    .pipe(
-      map((perms) => hasPermission(perms, PERMISSIONS.IB_SUPPORT_CREATE)),
-    );
+    .pipe(map((perms) => hasPermission(perms, PERMISSIONS.IB_SUPPORT_CREATE)));
 
   rows: SupportTicket[] = [];
   selected: SupportTicket | null = null;
   loading = false;
   submitting = false;
+  replying = false;
   pageIndex = 0;
   pageSize = 10;
   totalElements = 0;
+  replyBody = '';
 
   form = {
     category: 'GENERAL',
@@ -76,6 +76,12 @@ export class CustomerSupportComponent implements OnInit {
 
   ngOnInit(): void {
     this.load();
+  }
+
+  canReply(t: SupportTicket | null): boolean {
+    if (!t) return false;
+    const s = (t.status || '').toUpperCase();
+    return s === 'OPEN' || s === 'IN_PROGRESS' || s === 'WAITING_CUSTOMER';
   }
 
   load(): void {
@@ -109,6 +115,7 @@ export class CustomerSupportComponent implements OnInit {
 
   openDetail(row: SupportTicket): void {
     this.selected = row;
+    this.replyBody = '';
     this.api.mySupportTicket(row.id).subscribe({
       next: (t) => (this.selected = t),
       error: (err) => this.toast.error(resolveHttpErrorMessage(err, this.i18n)),
@@ -122,7 +129,6 @@ export class CustomerSupportComponent implements OnInit {
       this.toast.error(this.i18n.instant('CUSTOMER.SUPPORT_REQUIRED'));
       return;
     }
-    // Defense in depth: UI gated by canCreate$; API still enforces ib:support:create
     this.submitting = true;
     this.api
       .createSupportTicket({
@@ -147,12 +153,37 @@ export class CustomerSupportComponent implements OnInit {
       });
   }
 
+  sendReply(): void {
+    if (!this.selected) return;
+    const body = this.replyBody.trim();
+    if (!body) {
+      this.toast.error(this.i18n.instant('CUSTOMER.SUPPORT_REPLY_REQUIRED'));
+      return;
+    }
+    this.replying = true;
+    this.api.postMySupportTicketMessage(this.selected.id, body).subscribe({
+      next: (t) => {
+        this.replying = false;
+        this.replyBody = '';
+        this.selected = t;
+        this.toast.success(this.i18n.instant('CUSTOMER.SUPPORT_REPLY_OK'));
+        this.load();
+      },
+      error: (err) => {
+        this.replying = false;
+        this.toast.error(resolveHttpErrorMessage(err, this.i18n));
+      },
+    });
+  }
+
   statusClass(status: string): string {
     switch ((status || '').toUpperCase()) {
       case 'OPEN':
         return 'warn';
       case 'IN_PROGRESS':
         return 'info';
+      case 'WAITING_CUSTOMER':
+        return 'wait';
       case 'RESOLVED':
         return 'ok';
       case 'REJECTED':

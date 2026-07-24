@@ -6,6 +6,8 @@ import com.banksystem.common.security.SecretVerifier;
 import com.banksystem.common.security.SecurityHeaders;
 import com.banksystem.notification.api.dto.NotificationDtos.NotificationItem;
 import com.banksystem.notification.api.dto.OpsAlertDtos.CreateOpsAlertRequest;
+import com.banksystem.notification.application.NotificationInboxService;
+import com.banksystem.notification.application.NotificationRealtimeHub;
 import com.banksystem.notification.application.OpsAlertService;
 import com.banksystem.notification.domain.NotificationLogEntity;
 import com.banksystem.notification.domain.NotificationLogRepository;
@@ -29,14 +31,17 @@ public class InternalNotificationController {
 
   private final NotificationLogRepository repository;
   private final OpsAlertService opsAlertService;
+  private final NotificationRealtimeHub realtimeHub;
   private final String apiKey;
 
   public InternalNotificationController(
       NotificationLogRepository repository,
       OpsAlertService opsAlertService,
+      NotificationRealtimeHub realtimeHub,
       @Value("${bank.internal.api-key}") String apiKey) {
     this.repository = repository;
     this.opsAlertService = opsAlertService;
+    this.realtimeHub = realtimeHub;
     this.apiKey = apiKey;
   }
 
@@ -76,19 +81,30 @@ public class InternalNotificationController {
     e.setStatus(req.status() == null || req.status().isBlank() ? "SENT" : req.status());
     e.setBody(req.body() == null ? "" : req.body());
     e.setUserId(req.userId());
-    e.setAudience(req.audience() == null || req.audience().isBlank() ? "CUSTOMER" : req.audience());
+    String audience =
+        req.audience() == null || req.audience().isBlank()
+            ? NotificationInboxService.AUDIENCE_CUSTOMER
+            : req.audience().trim().toUpperCase();
+    e.setAudience(audience);
     e.setCreatedAt(java.time.Instant.now());
     repository.save(e);
-    return ApiResponse.ok(new NotificationItem(
-        e.getId().toString(),
-        e.getChannel(),
-        e.getTemplate(),
-        e.getStatus(),
-        e.getBody(),
-        false,
-        null,
-        e.getCreatedAt()
-    ));
+    NotificationItem item =
+        new NotificationItem(
+            e.getId().toString(),
+            e.getChannel(),
+            e.getTemplate(),
+            e.getStatus(),
+            e.getBody(),
+            false,
+            null,
+            e.getCreatedAt());
+    // Fan-out to customer SSE when user-scoped CUSTOMER inbox entry.
+    if (e.getUserId() != null && NotificationInboxService.AUDIENCE_CUSTOMER.equals(audience)) {
+      realtimeHub.publish(e.getUserId(), item);
+    } else if (NotificationInboxService.AUDIENCE_OPS.equals(audience)) {
+      realtimeHub.publishOps(item);
+    }
+    return ApiResponse.ok(item);
   }
 
   /** Staff OPS alert from other services (outbox DEAD, freeze, KYC, ...). */

@@ -3,12 +3,17 @@ package com.banksystem.customer.application;
 import com.banksystem.common.api.PageResponse;
 import com.banksystem.common.exception.BusinessException;
 import com.banksystem.customer.api.dto.SupportTicketDtos.CreateSupportTicketRequest;
+import com.banksystem.customer.api.dto.SupportTicketDtos.PostMessageRequest;
 import com.banksystem.customer.api.dto.SupportTicketDtos.RejectTicketRequest;
+import com.banksystem.customer.api.dto.SupportTicketDtos.RequestInfoRequest;
 import com.banksystem.customer.api.dto.SupportTicketDtos.ResolveTicketRequest;
+import com.banksystem.customer.api.dto.SupportTicketDtos.SupportTicketMessageResponse;
 import com.banksystem.customer.api.dto.SupportTicketDtos.SupportTicketResponse;
 import com.banksystem.customer.domain.CustomerEntity;
 import com.banksystem.customer.domain.CustomerRepository;
 import com.banksystem.customer.domain.SupportTicketEntity;
+import com.banksystem.customer.domain.SupportTicketMessageEntity;
+import com.banksystem.customer.domain.SupportTicketMessageRepository;
 import com.banksystem.customer.domain.SupportTicketRepository;
 import java.time.Instant;
 import java.util.List;
@@ -27,20 +32,30 @@ public class SupportTicketService {
   private static final Set<String> CATEGORIES =
       Set.of("GENERAL", "ACCOUNT", "TRANSFER", "CARD", "KYC", "SECURITY", "OTHER");
   private static final Set<String> PRIORITIES = Set.of("LOW", "NORMAL", "HIGH");
-  private static final Set<String> OPEN_STATUSES = Set.of("OPEN", "IN_PROGRESS");
+  /** Count toward customer open-ticket limit. */
+  private static final Set<String> OPEN_COUNT_STATUSES =
+      Set.of("OPEN", "IN_PROGRESS", "WAITING_CUSTOMER");
   private static final int MAX_OPEN_PER_USER = 10;
+  private static final String ROLE_CUSTOMER = "CUSTOMER";
+  private static final String ROLE_STAFF = "STAFF";
 
   private final SupportTicketRepository ticketRepository;
+  private final SupportTicketMessageRepository messageRepository;
   private final CustomerRepository customerRepository;
   private final OpsAlertPublisher opsAlertPublisher;
+  private final CustomerNotifyPublisher customerNotifyPublisher;
 
   public SupportTicketService(
       SupportTicketRepository ticketRepository,
+      SupportTicketMessageRepository messageRepository,
       CustomerRepository customerRepository,
-      OpsAlertPublisher opsAlertPublisher) {
+      OpsAlertPublisher opsAlertPublisher,
+      CustomerNotifyPublisher customerNotifyPublisher) {
     this.ticketRepository = ticketRepository;
+    this.messageRepository = messageRepository;
     this.customerRepository = customerRepository;
     this.opsAlertPublisher = opsAlertPublisher;
+    this.customerNotifyPublisher = customerNotifyPublisher;
   }
 
   @Transactional
@@ -53,8 +68,10 @@ public class SupportTicketService {
       throw new BusinessException("INVALID_REQUEST", "Subject and body are required", HttpStatus.BAD_REQUEST);
     }
 
-    long openCount = ticketRepository.countByUserIdAndStatus(userId, "OPEN")
-        + ticketRepository.countByUserIdAndStatus(userId, "IN_PROGRESS");
+    long openCount = 0;
+    for (String st : OPEN_COUNT_STATUSES) {
+      openCount += ticketRepository.countByUserIdAndStatus(userId, st);
+    }
     if (openCount >= MAX_OPEN_PER_USER) {
       throw new BusinessException(
           "TICKET_LIMIT",
@@ -75,15 +92,17 @@ public class SupportTicketService {
     t.setCreatedAt(now);
     t.setUpdatedAt(now);
     SupportTicketEntity saved = ticketRepository.save(t);
+    // Seed thread with original customer body as first message for continuity.
+    appendMessage(saved.getId(), userId, ROLE_CUSTOMER, body);
     opsAlertPublisher.supportTicketOpened(saved);
-    return toResponse(saved);
+    return toResponse(saved, true);
   }
 
   @Transactional(readOnly = true)
   public PageResponse<SupportTicketResponse> listMine(UUID userId, int page, int size) {
     PageRequest pr = PageRequest.of(Math.max(page, 0), clampSize(size));
     Page<SupportTicketEntity> p = ticketRepository.findByUserIdOrderByCreatedAtDesc(userId, pr);
-    return toPage(p);
+    return toPage(p, false);
   }
 
   @Transactional(readOnly = true)
@@ -91,7 +110,7 @@ public class SupportTicketService {
     SupportTicketEntity t = ticketRepository
         .findByIdAndUserId(ticketId, userId)
         .orElseThrow(() -> new BusinessException("TICKET_NOT_FOUND", "Ticket not found", HttpStatus.NOT_FOUND));
-    return toResponse(t);
+    return toResponse(t, true);
   }
 
   @Transactional(readOnly = true)
@@ -108,12 +127,12 @@ public class SupportTicketService {
     String query = blankToNull(q);
     PageRequest pr = PageRequest.of(Math.max(page, 0), clampSize(size));
     Page<SupportTicketEntity> p = ticketRepository.search(st, cat, query, pr);
-    return toPage(p);
+    return toPage(p, false);
   }
 
   @Transactional(readOnly = true)
   public SupportTicketResponse adminGet(UUID ticketId) {
-    return toResponse(require(ticketId));
+    return toResponse(require(ticketId), true);
   }
 
   /**
@@ -138,12 +157,12 @@ public class SupportTicketService {
     t.setStatus("IN_PROGRESS");
     t.setAssignedTo(staffId);
     t.setUpdatedAt(Instant.now());
-    return toResponse(ticketRepository.save(t));
+    return toResponse(ticketRepository.save(t), true);
   }
 
   /**
-   * Staff resolve: OPEN or IN_PROGRESS. Handler may be the same person who claimed (if any).
-   * Auto-assigns handler when not yet assigned.
+   * Staff resolve: OPEN, IN_PROGRESS, or WAITING_CUSTOMER.
+   * Auto-assigns handler when not yet assigned. Notifies customer (in-app).
    */
   @Transactional
   public SupportTicketResponse resolve(UUID ticketId, UUID staffId, ResolveTicketRequest req) {
@@ -161,7 +180,8 @@ public class SupportTicketService {
     t.setUpdatedAt(now);
     SupportTicketEntity saved = ticketRepository.save(t);
     opsAlertPublisher.supportTicketResolved(saved);
-    return toResponse(saved);
+    customerNotifyPublisher.supportTicketResolved(saved);
+    return toResponse(saved, true);
   }
 
   /** Staff reject: same open-state rules as resolve. */
@@ -184,7 +204,100 @@ public class SupportTicketService {
     t.setUpdatedAt(now);
     SupportTicketEntity saved = ticketRepository.save(t);
     opsAlertPublisher.supportTicketRejected(saved);
-    return toResponse(saved);
+    customerNotifyPublisher.supportTicketRejected(saved);
+    return toResponse(saved, true);
+  }
+
+  /**
+   * Staff requests more info from customer: OPEN/IN_PROGRESS/WAITING_CUSTOMER → WAITING_CUSTOMER.
+   * Appends staff message and notifies customer.
+   */
+  @Transactional
+  public SupportTicketResponse requestInfo(UUID ticketId, UUID staffId, RequestInfoRequest req) {
+    SupportTicketEntity t = require(ticketId);
+    requireStaffOnOpenTicket(t, staffId);
+    String message = req.message() == null ? "" : req.message().trim();
+    if (message.isBlank()) {
+      throw new BusinessException("INVALID_REQUEST", "Message is required", HttpStatus.BAD_REQUEST);
+    }
+    Instant now = Instant.now();
+    if (t.getAssignedTo() == null) {
+      t.setAssignedTo(staffId);
+    }
+    t.setStatus("WAITING_CUSTOMER");
+    t.setUpdatedAt(now);
+    SupportTicketEntity saved = ticketRepository.save(t);
+    appendMessage(saved.getId(), staffId, ROLE_STAFF, message);
+    customerNotifyPublisher.supportTicketNeedInfo(saved, message);
+    return toResponse(saved, true);
+  }
+
+  /**
+   * Customer reply while WAITING_CUSTOMER → IN_PROGRESS (or OPEN if never assigned).
+   * Also allows customer message on OPEN/IN_PROGRESS (extra context).
+   */
+  @Transactional
+  public SupportTicketResponse customerReply(UUID ticketId, UUID userId, PostMessageRequest req) {
+    SupportTicketEntity t =
+        ticketRepository
+            .findByIdAndUserId(ticketId, userId)
+            .orElseThrow(
+                () -> new BusinessException("TICKET_NOT_FOUND", "Ticket not found", HttpStatus.NOT_FOUND));
+    String status = t.getStatus();
+    if ("RESOLVED".equals(status) || "REJECTED".equals(status)) {
+      throw new BusinessException(
+          "TICKET_CLOSED", "Cannot message a closed ticket", HttpStatus.CONFLICT);
+    }
+    String body = req.body() == null ? "" : req.body().trim();
+    if (body.isBlank()) {
+      throw new BusinessException("INVALID_REQUEST", "Message body is required", HttpStatus.BAD_REQUEST);
+    }
+    appendMessage(t.getId(), userId, ROLE_CUSTOMER, body);
+    Instant now = Instant.now();
+    if ("WAITING_CUSTOMER".equals(status)) {
+      t.setStatus(t.getAssignedTo() == null ? "OPEN" : "IN_PROGRESS");
+    }
+    t.setUpdatedAt(now);
+    SupportTicketEntity saved = ticketRepository.save(t);
+    return toResponse(saved, true);
+  }
+
+  /**
+   * Staff posts a message without changing status (except OPEN stays OPEN unless already claimed).
+   * Notifies customer for staff replies on open tickets.
+   */
+  @Transactional
+  public SupportTicketResponse staffMessage(UUID ticketId, UUID staffId, PostMessageRequest req) {
+    SupportTicketEntity t = require(ticketId);
+    requireStaffOnOpenTicket(t, staffId);
+    String body = req.body() == null ? "" : req.body().trim();
+    if (body.isBlank()) {
+      throw new BusinessException("INVALID_REQUEST", "Message body is required", HttpStatus.BAD_REQUEST);
+    }
+    if (t.getAssignedTo() == null) {
+      t.setAssignedTo(staffId);
+    }
+    // Keep WAITING_CUSTOMER if already waiting; otherwise ensure IN_PROGRESS when messaging.
+    if ("OPEN".equals(t.getStatus())) {
+      t.setStatus("IN_PROGRESS");
+    }
+    t.setUpdatedAt(Instant.now());
+    SupportTicketEntity saved = ticketRepository.save(t);
+    appendMessage(saved.getId(), staffId, ROLE_STAFF, body);
+    customerNotifyPublisher.supportTicketStaffReply(saved, body);
+    return toResponse(saved, true);
+  }
+
+  private SupportTicketMessageEntity appendMessage(
+      UUID ticketId, UUID authorUserId, String authorRole, String body) {
+    SupportTicketMessageEntity m = new SupportTicketMessageEntity();
+    m.setId(UUID.randomUUID());
+    m.setTicketId(ticketId);
+    m.setAuthorUserId(authorUserId);
+    m.setAuthorRole(authorRole);
+    m.setBody(body);
+    m.setCreatedAt(Instant.now());
+    return messageRepository.save(m);
   }
 
   private SupportTicketEntity require(UUID id) {
@@ -193,19 +306,35 @@ public class SupportTicketService {
         .orElseThrow(() -> new BusinessException("TICKET_NOT_FOUND", "Ticket not found", HttpStatus.NOT_FOUND));
   }
 
-  /** Allow decide on OPEN or IN_PROGRESS; block closed tickets and self-service by requester. */
+  /** Allow decide on OPEN / IN_PROGRESS / WAITING_CUSTOMER; block closed + self-service. */
   private static void requireReadyForDecision(SupportTicketEntity t, UUID staffId) {
     String status = t.getStatus();
-    if (!"OPEN".equals(status) && !"IN_PROGRESS".equals(status)) {
+    if (!"OPEN".equals(status)
+        && !"IN_PROGRESS".equals(status)
+        && !"WAITING_CUSTOMER".equals(status)) {
       throw new BusinessException(
           "TICKET_NOT_OPEN",
-          "Only OPEN or IN_PROGRESS tickets can be resolved/rejected",
+          "Only OPEN, IN_PROGRESS or WAITING_CUSTOMER tickets can be resolved/rejected",
           HttpStatus.CONFLICT);
     }
     if (staffId.equals(t.getUserId())) {
       throw new BusinessException(
           "SELF_SERVICE_FORBIDDEN",
           "Requester cannot decide own ticket",
+          HttpStatus.FORBIDDEN);
+    }
+  }
+
+  private static void requireStaffOnOpenTicket(SupportTicketEntity t, UUID staffId) {
+    String status = t.getStatus();
+    if ("RESOLVED".equals(status) || "REJECTED".equals(status)) {
+      throw new BusinessException(
+          "TICKET_CLOSED", "Ticket is closed", HttpStatus.CONFLICT);
+    }
+    if (staffId.equals(t.getUserId())) {
+      throw new BusinessException(
+          "SELF_SERVICE_FORBIDDEN",
+          "Requester cannot handle own ticket",
           HttpStatus.FORBIDDEN);
     }
   }
@@ -255,12 +384,19 @@ public class SupportTicketService {
     return v.trim();
   }
 
-  private static PageResponse<SupportTicketResponse> toPage(Page<SupportTicketEntity> p) {
-    List<SupportTicketResponse> items = p.getContent().stream().map(SupportTicketService::toResponse).toList();
+  private PageResponse<SupportTicketResponse> toPage(Page<SupportTicketEntity> p, boolean withMessages) {
+    List<SupportTicketResponse> items =
+        p.getContent().stream().map(t -> toResponse(t, withMessages)).toList();
     return new PageResponse<>(items, p.getNumber(), p.getSize(), p.getTotalElements(), p.getTotalPages());
   }
 
-  private static SupportTicketResponse toResponse(SupportTicketEntity t) {
+  private SupportTicketResponse toResponse(SupportTicketEntity t, boolean withMessages) {
+    List<SupportTicketMessageResponse> messages =
+        withMessages
+            ? messageRepository.findByTicketIdOrderByCreatedAtAsc(t.getId()).stream()
+                .map(SupportTicketService::toMessageResponse)
+                .toList()
+            : List.of();
     return new SupportTicketResponse(
         t.getId().toString(),
         t.getUserId().toString(),
@@ -278,6 +414,17 @@ public class SupportTicketService {
         t.getResolvedAt(),
         t.getResolvedBy() == null ? null : t.getResolvedBy().toString(),
         t.getRejectedAt(),
-        t.getRejectedBy() == null ? null : t.getRejectedBy().toString());
+        t.getRejectedBy() == null ? null : t.getRejectedBy().toString(),
+        messages);
+  }
+
+  private static SupportTicketMessageResponse toMessageResponse(SupportTicketMessageEntity m) {
+    return new SupportTicketMessageResponse(
+        m.getId().toString(),
+        m.getTicketId().toString(),
+        m.getAuthorUserId().toString(),
+        m.getAuthorRole(),
+        m.getBody(),
+        m.getCreatedAt());
   }
 }
