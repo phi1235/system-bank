@@ -55,13 +55,13 @@ public class AdminAccountController {
   @PostMapping("/{id}/freeze")
   @RequirePermission("accounts:freeze:execute")
   public ApiResponse<AccountResponse> freeze(@PathVariable UUID id) {
-    return ApiResponse.ok(service.freeze(id));
+    return ApiResponse.ok(service.freeze(id, UserContext.requireUser()));
   }
 
   @PostMapping("/{id}/unfreeze")
   @RequirePermission("accounts:freeze:execute")
   public ApiResponse<AccountResponse> unfreeze(@PathVariable UUID id) {
-    return ApiResponse.ok(service.unfreeze(id));
+    return ApiResponse.ok(service.unfreeze(id, UserContext.requireUser()));
   }
 
   @PostMapping("/{id}/top-up")

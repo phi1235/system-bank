@@ -56,9 +56,34 @@ export class AdminAuditComponent implements OnInit {
   openingId: string | null = null;
   cols = ['createdAt', 'action', 'actorUserId', 'resourceType', 'resourceId', 'ip', 'actions'];
 
-  /** Known actions in this service (extensible free-text still allowed via Other path). */
-  readonly actionOptions = ['', 'TRANSFER_CREATE'];
-  readonly resourceTypeOptions = ['', 'TRANSFER'];
+  readonly actionOptions = [
+    '',
+    'TRANSFER_CREATE',
+    'ACCOUNT_FREEZE',
+    'ACCOUNT_UNFREEZE',
+    'ACCOUNT_TOPUP',
+    'USER_ROLE_ASSIGN',
+    'RBAC_ROLE_CREATE',
+    'RBAC_ROLE_UPDATE',
+    'RBAC_PERMISSION_UPDATE',
+    'USER_LOCK',
+    'USER_UNLOCK',
+    'USER_PASSWORD_RESET',
+    'OUTBOX_REPLAY',
+    'LOGIN',
+    'LOGOUT',
+    'REGISTER'
+  ];
+  readonly resourceTypeOptions = [
+    '',
+    'TRANSFER',
+    'ACCOUNT',
+    'USER',
+    'ROLE',
+    'PERMISSION',
+    'OUTBOX_EVENT',
+    'SESSION'
+  ];
 
   form = this.fb.nonNullable.group({
     action: [''],

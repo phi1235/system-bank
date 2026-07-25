@@ -33,6 +33,8 @@ public class AdminAccountService {
   private final AccountMapper mapper;
   private final OpsAlertPublisher opsAlertPublisher;
   private final AccountMoneyService moneyService;
+  private final com.banksystem.account.infrastructure.feign.AuditClient auditClient;
+  private final String internalApiKey;
   private final BigDecimal maxTopUpAmount;
 
   public AdminAccountService(
@@ -41,12 +43,26 @@ public class AdminAccountService {
       AccountMapper mapper,
       OpsAlertPublisher opsAlertPublisher,
       AccountMoneyService moneyService,
+      BigDecimal maxTopUpAmount) {
+    this(accountRepository, access, mapper, opsAlertPublisher, moneyService, null, "", maxTopUpAmount);
+  }
+
+  public AdminAccountService(
+      AccountRepository accountRepository,
+      AccountAccessService access,
+      AccountMapper mapper,
+      OpsAlertPublisher opsAlertPublisher,
+      AccountMoneyService moneyService,
+      com.banksystem.account.infrastructure.feign.AuditClient auditClient,
+      @Value("${bank.internal.api-key}") String internalApiKey,
       @Value("${bank.account.topup.max-amount:50000000}") BigDecimal maxTopUpAmount) {
     this.accountRepository = accountRepository;
     this.access = access;
     this.mapper = mapper;
     this.opsAlertPublisher = opsAlertPublisher;
     this.moneyService = moneyService;
+    this.auditClient = auditClient;
+    this.internalApiKey = internalApiKey;
     this.maxTopUpAmount = maxTopUpAmount;
   }
 
@@ -110,6 +126,11 @@ public class AdminAccountService {
 
   @Transactional
   public AccountResponse freeze(UUID id) {
+    return freeze(id, null);
+  }
+
+  @Transactional
+  public AccountResponse freeze(UUID id, GatewayUser actor) {
     AccountEntity a = access.require(id);
     AccountStatus current = access.currentStatus(a);
     if (current.isClosed()) {
@@ -123,11 +144,18 @@ public class AdminAccountService {
     a.setUpdatedAt(Instant.now());
     AccountEntity saved = accountRepository.save(a);
     opsAlertPublisher.accountFrozen(saved);
+    UUID actorId = actor != null ? actor.userId() : null;
+    recordAuditLog(actorId, "ACCOUNT_FREEZE", "ACCOUNT", saved.getId().toString(), "status=FROZEN");
     return mapper.toResponse(saved);
   }
 
   @Transactional
   public AccountResponse unfreeze(UUID id) {
+    return unfreeze(id, null);
+  }
+
+  @Transactional
+  public AccountResponse unfreeze(UUID id, GatewayUser actor) {
     AccountEntity a = access.require(id);
     AccountStatus current = access.currentStatus(a);
     if (current.isClosed()) {
@@ -141,6 +169,8 @@ public class AdminAccountService {
     a.setUpdatedAt(Instant.now());
     AccountEntity saved = accountRepository.save(a);
     opsAlertPublisher.accountUnfrozen(saved);
+    UUID actorId = actor != null ? actor.userId() : null;
+    recordAuditLog(actorId, "ACCOUNT_UNFREEZE", "ACCOUNT", saved.getId().toString(), "status=ACTIVE");
     return mapper.toResponse(saved);
   }
 
@@ -164,6 +194,9 @@ public class AdminAccountService {
     MoneyCommand cmd = new MoneyCommand(req.amount(), referenceId, description, null);
     MoneyResult result = moneyService.credit(id, cmd);
 
+    UUID actorId = actor != null ? actor.userId() : null;
+    recordAuditLog(actorId, "ACCOUNT_TOPUP", "ACCOUNT", account.getId().toString(), "amount=" + req.amount() + ",ref=" + referenceId);
+
     return new TopUpResponse(
         account.getId().toString(),
         account.getAccountNumber(),
@@ -172,6 +205,22 @@ public class AdminAccountService {
         req.amount(),
         result.balanceAfter(),
         "ADMIN");
+  }
+
+  private void recordAuditLog(UUID actorId, String action, String resourceType, String resourceId, String metadata) {
+    if (auditClient == null) {
+      return;
+    }
+    java.util.concurrent.CompletableFuture.runAsync(() -> {
+      try {
+        auditClient.createAuditLog(
+            new com.banksystem.account.infrastructure.feign.AuditClient.CreateAuditLogRequest(
+                actorId, action, resourceType, resourceId, "127.0.0.1", metadata),
+            internalApiKey);
+      } catch (Exception ex) {
+        // Non-blocking best-effort audit logging
+      }
+    });
   }
 
   private UUID tryParseUuid(String raw) {
