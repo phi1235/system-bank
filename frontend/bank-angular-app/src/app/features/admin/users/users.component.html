@@ -125,18 +125,30 @@
                 <mat-icon>content_copy</mat-icon>
               </button>
 
-              @if (canReset$ | async) {
-                <button
-                  mat-icon-button
-                  type="button"
-                  class="btn-reset"
-                  [disabled]="busyId === u.userId || isSelf(u)"
-                  (click)="resetPassword(u, $event)"
-                  [matTooltip]="isSelf(u) ? ('ADMIN.CANNOT_ACT_SELF' | translate) : ('ADMIN.RESET_PWD' | translate)"
-                >
-                  <mat-icon>password</mat-icon>
-                </button>
-              }
+              @if (canAssignRoles$ | async) {
+                              <button
+                                mat-icon-button
+                                type="button"
+                                color="primary"
+                                (click)="assignRoles(u, $event)"
+                                [matTooltip]="'ADMIN.RBAC_ASSIGN' | translate"
+                              >
+                                <mat-icon>badge</mat-icon>
+                              </button>
+                            }
+
+                            @if (canReset$ | async) {
+                              <button
+                                mat-icon-button
+                                type="button"
+                                class="btn-reset"
+                                [disabled]="busyId === u.userId || isSelf(u)"
+                                (click)="resetPassword(u, $event)"
+                                [matTooltip]="isSelf(u) ? ('ADMIN.CANNOT_ACT_SELF' | translate) : ('ADMIN.RESET_PWD' | translate)"
+                              >
+                                <mat-icon>password</mat-icon>
+                              </button>
+                            }
 
               @if (canLock$ | async) {
                 <button
