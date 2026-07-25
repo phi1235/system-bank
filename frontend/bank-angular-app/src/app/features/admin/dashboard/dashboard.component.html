@@ -5,29 +5,21 @@
   <div class="dash-actions">
     @if (lastUpdated) {
       <span class="updated" [matTooltip]="'ADMIN.DASH_UPDATED_HINT' | translate">
-        {{ 'ADMIN.DASH_UPDATED' | translate }}: {{ lastUpdated | date: 'short' }}
+        <mat-icon>schedule</mat-icon> {{ 'ADMIN.DASH_UPDATED' | translate }}: {{ lastUpdated | date: 'mediumTime' }}
       </span>
     }
     <button
-      mat-stroked-button
+      mat-flat-button
       type="button"
-      color="primary"
+      class="btn-refresh"
       (click)="refresh()"
       [disabled]="loading"
     >
-      <mat-icon>refresh</mat-icon>
+      <mat-icon [class.spinning]="loading">refresh</mat-icon>
       {{ 'ADMIN.DASH_REFRESH' | translate }}
     </button>
   </div>
 </app-page-header>
-
-<div class="banner">
-  <mat-icon>admin_panel_settings</mat-icon>
-  <div>
-    <strong>{{ 'ADMIN.DASH_BANNER_TITLE' | translate }}</strong>
-    <p>{{ 'ADMIN.DASH_BANNER_BODY' | translate }}</p>
-  </div>
-</div>
 
 @if (partialError && hasAnyLiveKpi) {
   <div class="partial-warn" role="status">
@@ -38,253 +30,357 @@
 
 @if (loading && !hasAnyLiveKpi) {
   <div class="loading-block" role="status">
-    <mat-spinner diameter="40" />
-    <span>{{ 'ADMIN.LOADING' | translate }}</span>
+    <mat-spinner diameter="46" />
+    <span>{{ 'ADMIN.DASH_SYNCING' | translate }}</span>
   </div>
 } @else {
-  <div class="kpis" [class.is-loading]="loading">
-    <mat-card class="kpi customers">
-      <div class="kpi-top">
-        <div class="ico"><mat-icon>people</mat-icon></div>
-        <span class="k">{{ 'ADMIN.KPI_CUSTOMERS' | translate }}</span>
+  <!-- Stat KPI Cards Grid -->
+  <div class="kpi-grid" [class.is-loading]="loading">
+    
+    <!-- Customers KPI Card -->
+    <mat-card class="stat-card customers-card">
+      <div class="card-bg-glow"></div>
+      <div class="card-header">
+        <div class="icon-avatar customers-avatar">
+          <mat-icon>people</mat-icon>
+        </div>
+        <span class="card-title">{{ 'ADMIN.KPI_CUSTOMERS' | translate }}</span>
+        <span class="status-tag warn">{{ 'ADMIN.KPI_KYC_WARN' | translate: { n: display(kpis.kycPending) } }}</span>
       </div>
-      <div class="v">{{ display(kpis.customers) }}</div>
-      <div class="meta">
-        <span class="meta-item warn">
-          {{ 'ADMIN.KPI_KYC_PENDING' | translate }}:
-          <strong>{{ display(kpis.kycPending) }}</strong>
+      <div class="card-value">{{ display(kpis.customers) }}</div>
+      <div class="card-progress">
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill customers-fill" style="width: 85%"></div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="footer-meta">
+          {{ 'ADMIN.KPI_KYC_PENDING' | translate }}: <strong class="highlight-warn">{{ display(kpis.kycPending) }}</strong>
         </span>
+        <a class="action-link" routerLink="/admin/customers">{{ 'ADMIN.OPEN_MODULE_ARROW' | translate }}</a>
       </div>
-      <a class="module-link" routerLink="/admin/customers">{{ 'ADMIN.OPEN_MODULE' | translate }}</a>
     </mat-card>
 
-    <mat-card class="kpi accounts">
-      <div class="kpi-top">
-        <div class="ico"><mat-icon>account_balance</mat-icon></div>
-        <span class="k">{{ 'ADMIN.KPI_ACCOUNTS' | translate }}</span>
+    <!-- Accounts KPI Card -->
+    <mat-card class="stat-card accounts-card">
+      <div class="card-bg-glow"></div>
+      <div class="card-header">
+        <div class="icon-avatar accounts-avatar">
+          <mat-icon>account_balance</mat-icon>
+        </div>
+        <span class="card-title">{{ 'ADMIN.KPI_ACCOUNTS' | translate }}</span>
+        <span class="status-tag danger">{{ 'ADMIN.KPI_FROZEN_TAG' | translate: { n: display(kpis.accountsFrozen) } }}</span>
       </div>
-      <div class="v">{{ display(kpis.accounts) }}</div>
-      <div class="meta">
-        <span class="meta-item bad">
-          {{ 'ADMIN.KPI_FROZEN' | translate }}:
-          <strong>{{ display(kpis.accountsFrozen) }}</strong>
+      <div class="card-value">{{ display(kpis.accounts) }}</div>
+      <div class="card-progress">
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill accounts-fill" style="width: 92%"></div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="footer-meta">
+          {{ 'ADMIN.KPI_FROZEN' | translate }}: <strong class="highlight-danger">{{ display(kpis.accountsFrozen) }}</strong>
         </span>
+        <a class="action-link" routerLink="/admin/accounts">{{ 'ADMIN.OPEN_MODULE_ARROW' | translate }}</a>
       </div>
-      <a class="module-link" routerLink="/admin/accounts">{{ 'ADMIN.OPEN_MODULE' | translate }}</a>
     </mat-card>
 
-    <mat-card class="kpi transfers">
-      <div class="kpi-top">
-        <div class="ico"><mat-icon>swap_horiz</mat-icon></div>
-        <span class="k">{{ 'ADMIN.KPI_TRANSFERS' | translate }}</span>
+    <!-- Transfers KPI Card -->
+    <mat-card class="stat-card transfers-card">
+      <div class="card-bg-glow"></div>
+      <div class="card-header">
+        <div class="icon-avatar transfers-avatar">
+          <mat-icon>swap_horiz</mat-icon>
+        </div>
+        <span class="card-title">{{ 'ADMIN.KPI_TRANSFERS' | translate }}</span>
+        <span class="status-tag success">{{ 'ADMIN.KPI_ACTIVE_TAG' | translate }}</span>
       </div>
-      <div class="v">{{ display(kpis.transfers) }}</div>
-      <div class="meta">
-        <span class="meta-item bad">
-          {{ 'ADMIN.KPI_TX_REVIEW' | translate }}:
-          <strong>{{ display(failedReviewTotal) }}</strong>
+      <div class="card-value">{{ display(kpis.transfers) }}</div>
+      <div class="card-progress">
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill transfers-fill" style="width: 100%"></div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="footer-meta">
+          {{ 'ADMIN.KPI_TX_REVIEW' | translate }}: <strong class="highlight-danger">{{ display(failedReviewTotal) }}</strong>
         </span>
+        <a class="action-link" routerLink="/admin/transactions">{{ 'ADMIN.MONITOR_ARROW' | translate }}</a>
       </div>
-      <a class="module-link" routerLink="/admin/transactions">{{ 'ADMIN.MONITOR' | translate }}</a>
     </mat-card>
 
-    <mat-card class="kpi outbox">
-      <div class="kpi-top">
-        <div class="ico"><mat-icon>outbox</mat-icon></div>
-        <span class="k">{{ 'ADMIN.KPI_OUTBOX' | translate }}</span>
-      </div>
-      <div class="v">{{ display(kpis.outboxDead) }}</div>
-      <div class="meta">
-        <span class="meta-item">
-          {{ 'ADMIN.OUTBOX_PENDING' | translate }}:
-          <strong>{{ display(kpis.outboxPending) }}</strong>
-        </span>
-        <span class="meta-item">
-          {{ 'ADMIN.OUTBOX_PUBLISHED' | translate }}:
-          <strong>{{ display(kpis.outboxPublished) }}</strong>
+    <!-- Outbox Dead Letter KPI Card -->
+    <mat-card class="stat-card outbox-card">
+      <div class="card-bg-glow"></div>
+      <div class="card-header">
+        <div class="icon-avatar outbox-avatar">
+          <mat-icon>outbox</mat-icon>
+        </div>
+        <span class="card-title">{{ 'ADMIN.KPI_OUTBOX' | translate }}</span>
+        <span class="status-tag" [class.success]="(kpis.outboxDead ?? 0) === 0" [class.danger]="(kpis.outboxDead ?? 0) > 0">
+          {{ ((kpis.outboxDead ?? 0) === 0 ? 'ADMIN.KPI_HEALTHY_TAG' : 'ADMIN.KPI_ACTION_REQ') | translate }}
         </span>
       </div>
-      <a class="module-link" routerLink="/admin/outbox">{{ 'ADMIN.OPEN_MODULE' | translate }}</a>
-    </mat-card>
-
-    <mat-card class="kpi users">
-      <div class="kpi-top">
-        <div class="ico"><mat-icon>manage_accounts</mat-icon></div>
-        <span class="k">{{ 'ADMIN.KPI_USERS' | translate }}</span>
+      <div class="card-value">{{ display(kpis.outboxDead) }}</div>
+      <div class="card-progress">
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill outbox-fill" [style.width.%]="(kpis.outboxDead ?? 0) > 0 ? 100 : 10"></div>
+        </div>
       </div>
-      <div class="v">{{ display(kpis.users) }}</div>
-      <div class="meta">
-        <span class="meta-item bad">
-          {{ 'ADMIN.KPI_USERS_LOCKED' | translate }}:
-          <strong>{{ display(kpis.usersLocked) }}</strong>
+      <div class="card-footer">
+        <span class="footer-meta">
+          {{ 'ADMIN.OUTBOX_PENDING' | translate }}: <strong>{{ display(kpis.outboxPending) }}</strong> · {{ 'ADMIN.OUTBOX_PUBLISHED' | translate }}: <strong>{{ display(kpis.outboxPublished) }}</strong>
         </span>
+        <a class="action-link" routerLink="/admin/outbox">{{ 'ADMIN.HANDLE_OUTBOX_ARROW' | translate }}</a>
       </div>
-      <a class="module-link" routerLink="/admin/users">{{ 'ADMIN.OPEN_MODULE' | translate }}</a>
     </mat-card>
 
-    <mat-card class="kpi audits">
-      <div class="kpi-top">
-        <div class="ico"><mat-icon>history</mat-icon></div>
-        <span class="k">{{ 'ADMIN.KPI_AUDIT' | translate }}</span>
+    <!-- System Users KPI Card -->
+    <mat-card class="stat-card users-card">
+      <div class="card-bg-glow"></div>
+      <div class="card-header">
+        <div class="icon-avatar users-avatar">
+          <mat-icon>manage_accounts</mat-icon>
+        </div>
+        <span class="card-title">{{ 'ADMIN.KPI_USERS' | translate }}</span>
+        <span class="status-tag muted">{{ 'ADMIN.KPI_LOCKED_TAG' | translate: { n: display(kpis.usersLocked) } }}</span>
       </div>
-      <div class="v">{{ display(kpis.audits) }}</div>
-      <a class="module-link" routerLink="/admin/audit">{{ 'ADMIN.VIEW_LOG' | translate }}</a>
+      <div class="card-value">{{ display(kpis.users) }}</div>
+      <div class="card-progress">
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill users-fill" style="width: 80%"></div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="footer-meta">
+          {{ 'ADMIN.KPI_USERS_LOCKED' | translate }}: <strong class="highlight-danger">{{ display(kpis.usersLocked) }}</strong>
+        </span>
+        <a class="action-link" routerLink="/admin/users">{{ 'ADMIN.MANAGE_USERS_ARROW' | translate }}</a>
+      </div>
     </mat-card>
 
-    <mat-card class="kpi cta">
-      <div class="kpi-top">
-        <div class="ico"><mat-icon>bolt</mat-icon></div>
-        <span class="k">{{ 'ADMIN.QUICK' | translate }}</span>
+    <!-- Realtime Audit Events KPI Card -->
+    <mat-card class="stat-card audit-card">
+      <div class="card-bg-glow"></div>
+      <div class="card-header">
+        <div class="icon-avatar audit-avatar">
+          <mat-icon>history</mat-icon>
+        </div>
+        <span class="card-title">{{ 'ADMIN.KPI_AUDIT' | translate }}</span>
+        <span class="status-tag info">{{ 'ADMIN.KPI_REALTIME_TAG' | translate }}</span>
       </div>
-      <div class="cta-actions">
-        <a mat-flat-button color="primary" routerLink="/admin/accounts">
-          {{ 'ADMIN.FREEZE_LINK' | translate }}
+      <div class="card-value">{{ display(kpis.audits) }}</div>
+      <div class="card-progress">
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill audit-fill" style="width: 100%"></div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="footer-meta">{{ 'ADMIN.AUDIT_LOG_DESC' | translate }}</span>
+        <a class="action-link" routerLink="/admin/audit">{{ 'ADMIN.VIEW_LOG_ARROW' | translate }}</a>
+      </div>
+    </mat-card>
+
+    <!-- Quick Operations CTA Panel -->
+    <mat-card class="stat-card cta-card">
+      <div class="card-header">
+        <div class="icon-avatar cta-avatar">
+          <mat-icon>bolt</mat-icon>
+        </div>
+        <span class="card-title">{{ 'ADMIN.QUICK_TITLE' | translate }}</span>
+      </div>
+      <div class="quick-cta-grid">
+        <a mat-flat-button class="cta-btn freeze-cta" routerLink="/admin/accounts">
+          <mat-icon>ac_unit</mat-icon> {{ 'ADMIN.FREEZE_LINK' | translate }}
         </a>
-        <a mat-stroked-button routerLink="/admin/customers">
-          {{ 'ADMIN.DASH_QUICK_KYC' | translate }}
+        <a mat-stroked-button class="cta-btn kyc-cta" routerLink="/admin/customers">
+          <mat-icon>how_to_reg</mat-icon> {{ 'ADMIN.DASH_QUICK_KYC' | translate }}
+          @if ((kpis.kycPending ?? 0) > 0) {
+            <span class="cta-badge">{{ kpis.kycPending }}</span>
+          }
         </a>
-        <a mat-stroked-button routerLink="/admin/outbox">
-          {{ 'ADMIN.DASH_QUICK_OUTBOX' | translate }}
+        <a mat-stroked-button class="cta-btn outbox-cta" routerLink="/admin/outbox">
+          <mat-icon>sync_problem</mat-icon> {{ 'ADMIN.DASH_QUICK_OUTBOX' | translate }}
         </a>
         @if (canRbac$ | async) {
-          <a mat-stroked-button routerLink="/admin/rbac">{{ 'ADMIN.RBAC_LINK' | translate }}</a>
+          <a mat-stroked-button class="cta-btn rbac-cta" routerLink="/admin/rbac">
+            <mat-icon>admin_panel_settings</mat-icon> {{ 'ADMIN.RBAC_LINK' | translate }}
+          </a>
         }
       </div>
     </mat-card>
+
   </div>
 
-  <div class="panels">
-    <mat-card class="panel">
-      <h3>{{ 'ADMIN.QUEUE_TITLE' | translate }}</h3>
-      <div class="queue">
-        <div class="q-item" [class.hot]="(kpis.kycPending ?? 0) > 0">
-          <span class="chip warn">KYC</span>
-          <div class="q-body">
-            <strong>{{ 'ADMIN.QUEUE_KYC' | translate }}</strong>
-            <span>{{ 'ADMIN.QUEUE_KYC_HINT' | translate }}</span>
-            <span class="count">
-              {{ 'ADMIN.QUEUE_COUNT' | translate: { n: display(kpis.kycPending) } }}
-            </span>
+  <!-- Operational Panels Grid -->
+  <div class="command-panels-grid">
+    
+    <!-- Operational Queue Column -->
+    <mat-card class="ops-panel queue-panel">
+      <div class="panel-header">
+        <div class="title-wrap">
+          <mat-icon class="panel-icon warn-ico">pending_actions</mat-icon>
+          <div>
+            <h3>{{ 'ADMIN.QUEUE_SECTION_TITLE' | translate }}</h3>
+            <span class="panel-sub">{{ 'ADMIN.QUEUE_SECTION_SUB' | translate }}</span>
           </div>
-          <a mat-stroked-button routerLink="/admin/customers" [queryParams]="{ kycStatus: 'PENDING' }">
-            {{ 'ADMIN.HANDLE' | translate }}
+        </div>
+      </div>
+
+      <div class="queue-list">
+        <!-- KYC Queue Item -->
+        <div class="queue-card" [class.urgent]="(kpis.kycPending ?? 0) > 0">
+          <div class="queue-left">
+            <span class="queue-type-badge kyc-badge">KYC</span>
+          </div>
+          <div class="queue-content">
+            <div class="queue-title-row">
+              <strong>{{ 'ADMIN.QUEUE_KYC_TITLE' | translate }}</strong>
+              <span class="queue-count-tag warn">{{ 'ADMIN.ITEMS_COUNT' | translate: { n: display(kpis.kycPending) } }}</span>
+            </div>
+            <p>{{ 'ADMIN.QUEUE_KYC_SUB' | translate }}</p>
+          </div>
+          <a mat-flat-button color="primary" class="queue-action-btn" routerLink="/admin/customers" [queryParams]="{ kycStatus: 'PENDING' }">
+            {{ 'ADMIN.HANDLE_NOW' | translate }}
           </a>
         </div>
 
-        <div class="q-item" [class.hot]="(kpis.outboxDead ?? 0) > 0">
-          <span class="chip bad">DEAD</span>
-          <div class="q-body">
-            <strong>{{ 'ADMIN.QUEUE_OUTBOX' | translate }}</strong>
-            <span>{{ 'ADMIN.QUEUE_OUTBOX_HINT' | translate }}</span>
-            <span class="count">
-              {{ 'ADMIN.QUEUE_COUNT' | translate: { n: display(kpis.outboxDead) } }}
-            </span>
+        <!-- Outbox DEAD Queue Item -->
+        <div class="queue-card" [class.urgent]="(kpis.outboxDead ?? 0) > 0">
+          <div class="queue-left">
+            <span class="queue-type-badge dead-badge">DEAD</span>
           </div>
-          <a mat-stroked-button routerLink="/admin/outbox">{{ 'ADMIN.HANDLE' | translate }}</a>
-        </div>
-
-        <div class="q-item" [class.hot]="(failedReviewTotal ?? 0) > 0">
-          <span class="chip info">TX</span>
-          <div class="q-body">
-            <strong>{{ 'ADMIN.QUEUE_TX' | translate }}</strong>
-            <span>{{ 'ADMIN.QUEUE_TX_HINT' | translate }}</span>
-            <span class="count">
-              {{ 'ADMIN.QUEUE_COUNT' | translate: { n: display(failedReviewTotal) } }}
-            </span>
+          <div class="queue-content">
+            <div class="queue-title-row">
+              <strong>{{ 'ADMIN.QUEUE_OUTBOX_TITLE' | translate }}</strong>
+              <span class="queue-count-tag danger">{{ 'ADMIN.EVENTS_COUNT' | translate: { n: display(kpis.outboxDead) } }}</span>
+            </div>
+            <p>{{ 'ADMIN.QUEUE_OUTBOX_SUB' | translate }}</p>
           </div>
-          <a mat-stroked-button routerLink="/admin/transactions" [queryParams]="{ status: 'FAILED' }">
-            {{ 'ADMIN.HANDLE' | translate }}
+          <a mat-flat-button color="warn" class="queue-action-btn" routerLink="/admin/outbox">
+            {{ 'ADMIN.REPLAY_NOW' | translate }}
           </a>
         </div>
 
-        <div class="q-item" [class.hot]="(kpis.accountsFrozen ?? 0) > 0">
-          <span class="chip muted">ACC</span>
-          <div class="q-body">
-            <strong>{{ 'ADMIN.QUEUE_FROZEN' | translate }}</strong>
-            <span>{{ 'ADMIN.QUEUE_FROZEN_HINT' | translate }}</span>
-            <span class="count">
-              {{ 'ADMIN.QUEUE_COUNT' | translate: { n: display(kpis.accountsFrozen) } }}
-            </span>
+        <!-- Failed Transfer Queue Item -->
+        <div class="queue-card" [class.urgent]="(failedReviewTotal ?? 0) > 0">
+          <div class="queue-left">
+            <span class="queue-type-badge tx-badge">TX</span>
           </div>
-          <a mat-stroked-button routerLink="/admin/accounts" [queryParams]="{ status: 'FROZEN' }">
-            {{ 'ADMIN.HANDLE' | translate }}
+          <div class="queue-content">
+            <div class="queue-title-row">
+              <strong>{{ 'ADMIN.QUEUE_TX_TITLE' | translate }}</strong>
+              <span class="queue-count-tag info">{{ 'ADMIN.TX_COUNT' | translate: { n: display(failedReviewTotal) } }}</span>
+            </div>
+            <p>{{ 'ADMIN.QUEUE_TX_SUB' | translate }}</p>
+          </div>
+          <a mat-stroked-button class="queue-action-btn" routerLink="/admin/transactions" [queryParams]="{ status: 'FAILED' }">
+            {{ 'ADMIN.LOOKUP_NOW' | translate }}
+          </a>
+        </div>
+
+        <!-- Frozen Account Queue Item -->
+        <div class="queue-card" [class.urgent]="(kpis.accountsFrozen ?? 0) > 0">
+          <div class="queue-left">
+            <span class="queue-type-badge acc-badge">FROZEN</span>
+          </div>
+          <div class="queue-content">
+            <div class="queue-title-row">
+              <strong>{{ 'ADMIN.QUEUE_FROZEN_TITLE' | translate }}</strong>
+              <span class="queue-count-tag muted">{{ 'ADMIN.ACC_COUNT' | translate: { n: display(kpis.accountsFrozen) } }}</span>
+            </div>
+            <p>{{ 'ADMIN.QUEUE_FROZEN_SUB' | translate }}</p>
+          </div>
+          <a mat-stroked-button class="queue-action-btn" routerLink="/admin/accounts" [queryParams]="{ status: 'FROZEN' }">
+            {{ 'ADMIN.UNLOCK_NOW' | translate }}
           </a>
         </div>
       </div>
     </mat-card>
 
-    <mat-card class="panel">
-      <h3>{{ 'ADMIN.MODULES_TITLE' | translate }}</h3>
-      <div class="modules">
+    <!-- Modules Navigation Column -->
+    <mat-card class="ops-panel modules-panel">
+      <div class="panel-header">
+        <div class="title-wrap">
+          <mat-icon class="panel-icon info-ico">apps</mat-icon>
+          <div>
+            <h3>{{ 'ADMIN.MODULES_SECTION_TITLE' | translate }}</h3>
+            <span class="panel-sub">{{ 'ADMIN.MODULES_SECTION_SUB' | translate }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modules-grid">
         @if (canCustomers$ | async) {
-          <a class="mod" routerLink="/admin/customers">
-            <mat-icon>people</mat-icon>
-            <div>
+          <a class="module-card" routerLink="/admin/customers">
+            <div class="mod-icon blue-mod"><mat-icon>people</mat-icon></div>
+            <div class="mod-info">
               <strong>{{ 'NAV.ADMIN_CUSTOMERS' | translate }}</strong>
               <span>{{ 'ADMIN.CUSTOMERS_SUB' | translate }}</span>
             </div>
+            <mat-icon class="arrow-icon">chevron_right</mat-icon>
           </a>
         }
         @if (canAccounts$ | async) {
-          <a class="mod" routerLink="/admin/accounts">
-            <mat-icon>account_balance</mat-icon>
-            <div>
+          <a class="module-card" routerLink="/admin/accounts">
+            <div class="mod-icon cyan-mod"><mat-icon>account_balance</mat-icon></div>
+            <div class="mod-info">
               <strong>{{ 'NAV.ADMIN_ACCOUNTS' | translate }}</strong>
               <span>{{ 'ADMIN.ACCOUNTS_SUB' | translate }}</span>
             </div>
+            <mat-icon class="arrow-icon">chevron_right</mat-icon>
           </a>
         }
         @if (canTx$ | async) {
-          <a class="mod" routerLink="/admin/transactions">
-            <mat-icon>swap_horiz</mat-icon>
-            <div>
+          <a class="module-card" routerLink="/admin/transactions">
+            <div class="mod-icon green-mod"><mat-icon>swap_horiz</mat-icon></div>
+            <div class="mod-info">
               <strong>{{ 'NAV.ADMIN_TX' | translate }}</strong>
               <span>{{ 'ADMIN.TX_SUB' | translate }}</span>
             </div>
+            <mat-icon class="arrow-icon">chevron_right</mat-icon>
           </a>
-          <a class="mod" routerLink="/admin/outbox">
-            <mat-icon>outbox</mat-icon>
-            <div>
+          <a class="module-card" routerLink="/admin/outbox">
+            <div class="mod-icon red-mod"><mat-icon>outbox</mat-icon></div>
+            <div class="mod-info">
               <strong>{{ 'NAV.ADMIN_OUTBOX' | translate }}</strong>
               <span>{{ 'ADMIN.OUTBOX_SUB' | translate }}</span>
             </div>
+            <mat-icon class="arrow-icon">chevron_right</mat-icon>
           </a>
         }
         @if (canUsers$ | async) {
-          <a class="mod" routerLink="/admin/users">
-            <mat-icon>manage_accounts</mat-icon>
-            <div>
+          <a class="module-card" routerLink="/admin/users">
+            <div class="mod-icon amber-mod"><mat-icon>manage_accounts</mat-icon></div>
+            <div class="mod-info">
               <strong>{{ 'NAV.ADMIN_USERS' | translate }}</strong>
               <span>{{ 'ADMIN.USERS_SUB' | translate }}</span>
             </div>
+            <mat-icon class="arrow-icon">chevron_right</mat-icon>
           </a>
         }
         @if (canAudit$ | async) {
-          <a class="mod" routerLink="/admin/audit">
-            <mat-icon>history</mat-icon>
-            <div>
+          <a class="module-card" routerLink="/admin/audit">
+            <div class="mod-icon purple-mod"><mat-icon>history</mat-icon></div>
+            <div class="mod-info">
               <strong>{{ 'NAV.ADMIN_AUDIT' | translate }}</strong>
               <span>{{ 'ADMIN.AUDIT_SUB' | translate }}</span>
             </div>
+            <mat-icon class="arrow-icon">chevron_right</mat-icon>
           </a>
         }
         @if (canRbac$ | async) {
-          <a class="mod" routerLink="/admin/rbac">
-            <mat-icon>admin_panel_settings</mat-icon>
-            <div>
+          <a class="module-card" routerLink="/admin/rbac">
+            <div class="mod-icon dark-mod"><mat-icon>admin_panel_settings</mat-icon></div>
+            <div class="mod-info">
               <strong>{{ 'NAV.ADMIN_RBAC' | translate }}</strong>
               <span>{{ 'ADMIN.RBAC_SUB' | translate }}</span>
             </div>
+            <mat-icon class="arrow-icon">chevron_right</mat-icon>
           </a>
         }
-        <a class="mod muted" routerLink="/admin/risk">
-          <mat-icon>shield</mat-icon>
-          <div>
-            <strong>{{ 'NAV.ADMIN_RISK' | translate }}</strong>
-            <span>{{ 'COMMON.COMING_SOON' | translate }}</span>
-          </div>
-        </a>
       </div>
     </mat-card>
+
   </div>
 }
