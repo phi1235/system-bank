@@ -43,6 +43,16 @@ public class AdminAccountService {
       AccountMapper mapper,
       OpsAlertPublisher opsAlertPublisher,
       AccountMoneyService moneyService,
+      BigDecimal maxTopUpAmount) {
+    this(accountRepository, access, mapper, opsAlertPublisher, moneyService, null, "", maxTopUpAmount);
+  }
+
+  public AdminAccountService(
+      AccountRepository accountRepository,
+      AccountAccessService access,
+      AccountMapper mapper,
+      OpsAlertPublisher opsAlertPublisher,
+      AccountMoneyService moneyService,
       com.banksystem.account.infrastructure.feign.AuditClient auditClient,
       @Value("${bank.internal.api-key}") String internalApiKey,
       @Value("${bank.account.topup.max-amount:50000000}") BigDecimal maxTopUpAmount) {
@@ -198,6 +208,9 @@ public class AdminAccountService {
   }
 
   private void recordAuditLog(UUID actorId, String action, String resourceType, String resourceId, String metadata) {
+    if (auditClient == null) {
+      return;
+    }
     java.util.concurrent.CompletableFuture.runAsync(() -> {
       try {
         auditClient.createAuditLog(
