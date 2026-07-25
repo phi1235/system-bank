@@ -5,28 +5,22 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxChange, MatCheckboxModule } from '@angular/material/checkbox';
 import { MatChipsModule } from '@angular/material/chips';
-import { MatDividerModule } from '@angular/material/divider';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { MatListModule } from '@angular/material/list';
-import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTableModule } from '@angular/material/table';
-import { MatTabsModule } from '@angular/material/tabs';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { Store } from '@ngrx/store';
 import { HttpErrorResponse } from '@angular/common/http';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
-import { BankApiService, RbacRole, RbacStaffUser } from '../../../core/services/bank-api.service';
+import { BankApiService, RbacRole } from '../../../core/services/bank-api.service';
 import { resolveHttpErrorMessage } from '../../../core/utils/http-error.util';
 import {
   RBAC_ACTION_COLUMNS,
-  RBAC_SCREENS,
   RbacActionKey,
   RbacFeatureDef,
   RbacScreenDef,
@@ -37,6 +31,10 @@ import { selectPermissions, selectRoles } from '../../../store/auth/auth.selecto
 import { ToastService } from '../../../core/services/toast.service';
 import { combineLatest, map } from 'rxjs';
 
+/**
+ * Admin RBAC = role permission configuration only.
+ * Assigning roles to users lives on /admin/users (not duplicated here).
+ */
 @Component({
   selector: 'app-admin-rbac',
   standalone: true,
@@ -47,18 +45,13 @@ import { combineLatest, map } from 'rxjs';
     MatCardModule,
     MatCheckboxModule,
     MatChipsModule,
-    MatDividerModule,
     MatExpansionModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
-    MatListModule,
-    MatPaginatorModule,
     MatProgressSpinnerModule,
-    MatSidenavModule,
     MatSlideToggleModule,
     MatTableModule,
-    MatTabsModule,
     MatTooltipModule,
     PageHeaderComponent,
     TranslateModule,
@@ -72,37 +65,16 @@ export class AdminRbacComponent implements OnInit {
   private readonly i18n = inject(TranslateService);
   private readonly store = inject(Store);
 
-  readonly screens = RBAC_SCREENS;
   readonly ibScreens = screensByPortal('ib');
   readonly boScreens = screensByPortal('bo');
   readonly actionCols = RBAC_ACTION_COLUMNS;
-  readonly featureTableCols = ['feature', ...RBAC_ACTION_COLUMNS.map((c) => c.key), 'hint'];
-
-  tabIndex = 0;
-
-  canAssignUsers$ = combineLatest([
-    this.store.select(selectPermissions),
-    this.store.select(selectRoles),
-  ]).pipe(map(([p, r]) => hasAnyPermission(p, [PERMISSIONS.RBAC_USERS_ASSIGN], r)));
 
   canManageRoles$ = combineLatest([
     this.store.select(selectPermissions),
     this.store.select(selectRoles),
   ]).pipe(map(([p, r]) => hasAnyPermission(p, [PERMISSIONS.RBAC_ROLES_MANAGE], r)));
 
-  // Users
-  userCols = ['username', 'email', 'roles', 'type', 'actions'];
-  users: RbacStaffUser[] = [];
-  q = '';
-  page = 0;
-  size = 10;
-  total = 0;
-  usersLoading = false;
-  selectedUser: RbacStaffUser | null = null;
-  draftUserRoles: string[] = [];
-  savingUser = false;
-
-  // Roles
+  roleCols = ['name', 'code', 'type', 'perms', 'actions'];
   roles: RbacRole[] = [];
   rolesLoading = false;
   roleFilter = '';
@@ -117,11 +89,13 @@ export class AdminRbacComponent implements OnInit {
   newName = '';
   newDesc = '';
   newStaff = true;
-  expandedScreen: string | null = 'customers';
+  expandedScreen: string | null = null;
+  /** Collapse portals to save space: open only the relevant one by default. */
+  openPortalIb = false;
+  openPortalBo = true;
 
   ngOnInit(): void {
     this.loadRoles();
-    this.searchUsers();
   }
 
   get filteredRoles(): RbacRole[] {
@@ -153,29 +127,6 @@ export class AdminRbacComponent implements OnInit {
     });
   }
 
-  // ── Users ──
-  searchUsers(resetPage = true): void {
-    if (resetPage) this.page = 0;
-    this.usersLoading = true;
-    this.closeUserDrawer();
-    this.api
-      .rbacUsers(this.page, this.size, { q: this.q?.trim() || undefined })
-      .subscribe({
-      next: (p) => {
-        this.users = p.items || [];
-        this.total = p.totalElements ?? this.users.length;
-        this.page = p.page ?? this.page;
-        this.usersLoading = false;
-      },
-      error: (err) => {
-        this.usersLoading = false;
-        this.users = [];
-        this.total = 0;
-        this.toast.error(this.rbacErrorMessage(err));
-      },
-    });
-  }
-
   private rbacErrorMessage(err: unknown, fallbackKey = 'ADMIN.RBAC_LOAD_FAIL'): string {
     const e = err as HttpErrorResponse;
     if (
@@ -191,100 +142,60 @@ export class AdminRbacComponent implements OnInit {
     return this.i18n.instant(fallbackKey);
   }
 
-  onPage(e: PageEvent): void {
-    this.page = e.pageIndex;
-    this.size = e.pageSize;
-    this.searchUsers(false);
-  }
-
-  openUserAssign(user: RbacStaffUser): void {
-    this.selectedUser = user;
-    this.draftUserRoles = [...(user.roles || [])];
-  }
-
-  closeUserDrawer(): void {
-    this.selectedUser = null;
-    this.draftUserRoles = [];
-    this.savingUser = false;
-  }
-
-  toggleUserRole(code: string, checked: boolean): void {
-    if (checked) {
-      if (!this.draftUserRoles.includes(code)) this.draftUserRoles = [...this.draftUserRoles, code];
-    } else {
-      this.draftUserRoles = this.draftUserRoles.filter((r) => r !== code);
-    }
-  }
-
-  isUserRoleChecked(code: string): boolean {
-    return this.draftUserRoles.includes(code);
-  }
-
-  get userEffectiveSummary(): { screen: string; items: string[] }[] {
-    const perms = new Set<string>();
-    for (const code of this.draftUserRoles) {
-      const role = this.roles.find((r) => r.code === code);
-      (role?.permissions || []).forEach((p) => perms.add(p));
-    }
-    return this.screens
-      .map((s) => {
-        const items: string[] = [];
-        for (const f of s.features) {
-          const granted = Object.entries(f.actions)
-            .filter(([, perm]) => perm && perms.has(perm))
-            .map(([act]) => this.actionLabel(act as RbacActionKey));
-          if (granted.length) {
-            items.push(`${this.featLabel(f)} (${granted.join(', ')})`);
-          }
-        }
-        return { screen: this.screenLabel(s), items };
-      })
-      .filter((x) => x.items.length > 0);
-  }
-
-  saveUserRoles(): void {
-    if (!this.selectedUser) return;
-    if (!this.draftUserRoles.length) {
-      this.toast.error(this.i18n.instant('ADMIN.RBAC_NEED_ROLE'));
-      return;
-    }
-    this.savingUser = true;
-    this.api.assignRoles(this.selectedUser.userId, this.draftUserRoles).subscribe({
-      next: (updated) => {
-        this.savingUser = false;
-        this.toast.success(this.i18n.instant('ADMIN.RBAC_ASSIGN_OK', { user: updated.username }));
-        const idx = this.users.findIndex((u) => u.userId === updated.userId);
-        if (idx >= 0) this.users[idx] = updated;
-        this.selectedUser = updated;
-        this.draftUserRoles = [...updated.roles];
-      },
-      error: (err) => {
-        this.savingUser = false;
-        this.toast.error(this.rbacErrorMessage(err, 'ADMIN.RBAC_ASSIGN_FAIL'));
-      },
-    });
-  }
-
-  // ── Roles ──
   selectRole(role: RbacRole, clearCreate = true): void {
-    if (clearCreate) this.creating = false;
-    this.selectedRole = role;
-    this.draftPerms = new Set(role.permissions || []);
-    this.draftRoleName = role.name;
-    this.draftRoleDesc = role.description || '';
-    this.draftRoleStaff = role.staff;
-  }
+      if (clearCreate) this.creating = false;
+      this.selectedRole = role;
+      this.draftPerms = new Set(role.permissions || []);
+      this.draftRoleName = role.name;
+      this.draftRoleDesc = role.description || '';
+      this.draftRoleStaff = role.staff;
+      this.expandedScreen = null;
+      // Staff roles → BO open; customer roles → IB open (save vertical space).
+      this.openPortalBo = !!role.staff;
+      this.openPortalIb = !role.staff;
+    }
+
+  closeRoleDetail(): void {
+      this.selectedRole = null;
+      this.creating = false;
+      this.draftPerms = new Set();
+      this.savingRole = false;
+      this.expandedScreen = null;
+    }
 
   startCreate(): void {
-    this.creating = true;
-    this.selectedRole = null;
-    this.newCode = '';
-    this.newName = '';
-    this.newDesc = '';
-    this.newStaff = true;
-    this.draftPerms = new Set([PERMISSIONS.IB_HOME_VIEW]);
-    this.expandedScreen = 'ib-home';
-  }
+      this.creating = true;
+      this.selectedRole = null;
+      this.newCode = '';
+      this.newName = '';
+      this.newDesc = '';
+      this.newStaff = true;
+      this.draftPerms = new Set([PERMISSIONS.IB_HOME_VIEW]);
+      this.expandedScreen = null;
+      // Default new role is staff → open BO matrix first.
+      this.openPortalBo = true;
+      this.openPortalIb = false;
+    }
+
+  togglePortalPanel(portal: 'ib' | 'bo'): void {
+      if (portal === 'ib') {
+        this.openPortalIb = !this.openPortalIb;
+      } else {
+        this.openPortalBo = !this.openPortalBo;
+      }
+    }
+
+  isPortalOpen(portal: 'ib' | 'bo'): boolean {
+      return portal === 'ib' ? this.openPortalIb : this.openPortalBo;
+    }
+
+  portalGrantedCount(screens: RbacScreenDef[]): number {
+      return screens.reduce((sum, s) => sum + this.screenPermCount(s), 0);
+    }
+
+  portalTotalCount(screens: RbacScreenDef[]): number {
+      return screens.reduce((sum, s) => sum + this.screenTotalPerms(s), 0);
+    }
 
   cancelCreate(): void {
     this.creating = false;
@@ -315,7 +226,6 @@ export class AdminRbacComponent implements OnInit {
     return f.actions[key];
   }
 
-  /** Toggle all actions on a feature */
   toggleFeatureAll(f: RbacFeatureDef, checked: boolean): void {
     Object.values(f.actions).forEach((p) => this.setPerm(p, checked));
   }
@@ -332,16 +242,78 @@ export class AdminRbacComponent implements OnInit {
   }
 
   screenPermCount(screen: RbacScreenDef): number {
-    let n = 0;
-    for (const f of screen.features) {
-      Object.values(f.actions).forEach((p) => {
-        if (p && this.draftPerms.has(p)) n++;
-      });
+      let n = 0;
+      for (const f of screen.features) {
+        Object.values(f.actions).forEach((p) => {
+          if (p && this.draftPerms.has(p)) n++;
+        });
+      }
+      return n;
     }
-    return n;
-  }
 
-  screenLabel(s: RbacScreenDef): string {
+    /** All permission codes defined on a screen. */
+    screenAllPerms(screen: RbacScreenDef): string[] {
+      const out: string[] = [];
+      for (const f of screen.features) {
+        for (const p of Object.values(f.actions)) {
+          if (p) out.push(p);
+        }
+      }
+      return out;
+    }
+
+    screenTotalPerms(screen: RbacScreenDef): number {
+      return this.screenAllPerms(screen).length;
+    }
+
+    screenAllChecked(screen: RbacScreenDef): boolean {
+      const perms = this.screenAllPerms(screen);
+      return perms.length > 0 && perms.every((p) => this.draftPerms.has(p));
+    }
+
+    screenSomeChecked(screen: RbacScreenDef): boolean {
+      const perms = this.screenAllPerms(screen);
+      const n = perms.filter((p) => this.draftPerms.has(p)).length;
+      return n > 0 && n < perms.length;
+    }
+
+    /** One-click: grant or revoke every permission on the screen. */
+    toggleScreenAll(screen: RbacScreenDef, checked: boolean): void {
+      const next = new Set(this.draftPerms);
+      for (const p of this.screenAllPerms(screen)) {
+        if (checked) next.add(p);
+        else next.delete(p);
+      }
+      this.draftPerms = next;
+    }
+
+    togglePortalAll(screens: RbacScreenDef[], checked: boolean): void {
+      const next = new Set(this.draftPerms);
+      for (const screen of screens) {
+        for (const p of this.screenAllPerms(screen)) {
+          if (checked) next.add(p);
+          else next.delete(p);
+        }
+      }
+      this.draftPerms = next;
+    }
+
+    portalAllChecked(screens: RbacScreenDef[]): boolean {
+      const perms = screens.flatMap((s) => this.screenAllPerms(s));
+      return perms.length > 0 && perms.every((p) => this.draftPerms.has(p));
+    }
+
+    portalSomeChecked(screens: RbacScreenDef[]): boolean {
+      const perms = screens.flatMap((s) => this.screenAllPerms(s));
+      const n = perms.filter((p) => this.draftPerms.has(p)).length;
+      return n > 0 && n < perms.length;
+    }
+
+    toggleScreenExpand(screenId: string): void {
+      this.expandedScreen = this.expandedScreen === screenId ? null : screenId;
+    }
+
+    screenLabel(s: RbacScreenDef): string {
     const t = this.i18n.instant(s.labelKey);
     return t !== s.labelKey ? t : s.label;
   }
@@ -360,6 +332,12 @@ export class AdminRbacComponent implements OnInit {
 
   rolePermCount(role: RbacRole): number {
     return role.permissions?.length || 0;
+  }
+
+  onScreenPanelClosed(screenId: string): void {
+    if (this.expandedScreen === screenId) {
+      this.expandedScreen = null;
+    }
   }
 
   saveRoleMatrix(): void {
@@ -430,10 +408,5 @@ export class AdminRbacComponent implements OnInit {
     const idx = this.roles.findIndex((r) => r.code === updated.code);
     if (idx >= 0) this.roles[idx] = updated;
     else this.roles = [...this.roles, updated].sort((a, b) => a.code.localeCompare(b.code));
-  }
-
-  onTabChange(index: number): void {
-    this.tabIndex = index;
-    if (index === 1) this.loadRoles();
   }
 }

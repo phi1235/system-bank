@@ -25,6 +25,7 @@ import {
   PromptDialogData,
 } from '../../../shared/components/prompt-dialog/prompt-dialog.component';
 import { UserDetailDialogComponent } from '../../../shared/components/user-detail-dialog/user-detail-dialog.component';
+import { AssignRolesDialogComponent } from '../../../shared/components/assign-roles-dialog/assign-roles-dialog.component';
 import { AuthApiService } from '../../../core/services/auth-api.service';
 import { BankApiService, RbacStaffUser } from '../../../core/services/bank-api.service';
 import { PERMISSIONS } from '../../../core/services/rbac.util';
@@ -66,6 +67,7 @@ export class AdminUsersComponent implements OnInit {
 
   canReset$ = this.store.select(selectHasPermission(PERMISSIONS.USERS_PASSWORD_RESET));
   canLock$ = this.store.select(selectHasPermission(PERMISSIONS.USERS_LOCK_EXECUTE));
+  canAssignRoles$ = this.store.select(selectHasPermission(PERMISSIONS.RBAC_USERS_ASSIGN));
   meUserId$ = this.store.select(selectUser).pipe(map((u) => u?.userId ?? null));
   meUserId: string | null = null;
 
@@ -139,30 +141,49 @@ export class AdminUsersComponent implements OnInit {
   }
 
   openDetail(u: RbacStaffUser, event?: Event): void {
-    event?.stopPropagation();
-    if (!u?.userId || this.openingId) {
-      return;
+      event?.stopPropagation();
+      if (!u?.userId || this.openingId) {
+        return;
+      }
+      this.openingId = u.userId;
+      this.bankApi.rbacUserDetail(u.userId).subscribe({
+        next: (user) => {
+          this.openingId = null;
+          this.dialog.open(UserDetailDialogComponent, {
+            data: { user },
+            width: '600px',
+            maxWidth: '95vw',
+          });
+        },
+        error: () => {
+          this.openingId = null;
+          this.dialog.open(UserDetailDialogComponent, {
+            data: { user: u },
+            width: '600px',
+            maxWidth: '95vw',
+          });
+        },
+      });
     }
-    this.openingId = u.userId;
-    this.bankApi.rbacUserDetail(u.userId).subscribe({
-      next: (user) => {
-        this.openingId = null;
-        this.dialog.open(UserDetailDialogComponent, {
-          data: { user },
-          width: '600px',
-          maxWidth: '95vw',
-        });
-      },
-      error: () => {
-        this.openingId = null;
-        this.dialog.open(UserDetailDialogComponent, {
+
+    assignRoles(u: RbacStaffUser, event?: Event): void {
+      event?.stopPropagation();
+      if (!u?.userId) {
+        return;
+      }
+      this.dialog
+        .open(AssignRolesDialogComponent, {
           data: { user: u },
-          width: '600px',
+          width: '520px',
           maxWidth: '95vw',
+        })
+        .afterClosed()
+        .subscribe((updated: RbacStaffUser | null | undefined) => {
+          if (updated) {
+            this.load();
+          }
         });
-      },
-    });
-  }
+    }
 
   async copyUserId(u: RbacStaffUser, event?: Event): Promise<void> {
     event?.stopPropagation();

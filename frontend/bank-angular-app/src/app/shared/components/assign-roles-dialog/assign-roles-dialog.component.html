@@ -1,0 +1,73 @@
+<h2 mat-dialog-title>
+  {{ 'ADMIN.RBAC_ASSIGN_TITLE' | translate }}
+</h2>
+
+<mat-dialog-content class="content">
+  <div class="user-line">
+    <strong>{{ user.username }}</strong>
+    <span class="muted">{{ user.email || '—' }}</span>
+  </div>
+
+  @if (loading) {
+    <div class="center"><mat-spinner diameter="36" /></div>
+  } @else {
+    @if (staffRoles.length) {
+      <div class="group">
+        <div class="group-label">{{ 'ADMIN.RBAC_GROUP_STAFF' | translate }}</div>
+        @for (role of staffRoles; track role.code) {
+          <label class="role-row" [class.on]="isChecked(role.code)">
+            <mat-checkbox
+              color="primary"
+              [checked]="isChecked(role.code)"
+              (change)="toggle(role.code, $event.checked)"
+            />
+            <span class="meta">
+              <strong>{{ role.name || role.code }}</strong>
+              <span class="code">{{ role.code }}</span>
+              @if (role.description) {
+                <span class="desc">{{ role.description }}</span>
+              }
+            </span>
+          </label>
+        }
+      </div>
+    }
+
+    @if (customerRoles.length) {
+      <div class="group">
+        <div class="group-label">{{ 'ADMIN.RBAC_GROUP_CUSTOMER' | translate }}</div>
+        @for (role of customerRoles; track role.code) {
+          <label class="role-row" [class.on]="isChecked(role.code)">
+            <mat-checkbox
+              color="primary"
+              [checked]="isChecked(role.code)"
+              (change)="toggle(role.code, $event.checked)"
+            />
+            <span class="meta">
+              <strong>{{ role.name || role.code }}</strong>
+              <span class="code">{{ role.code }}</span>
+              @if (role.description) {
+                <span class="desc">{{ role.description }}</span>
+              }
+            </span>
+          </label>
+        }
+      </div>
+    }
+
+    <p class="hint">
+      <mat-icon>info</mat-icon>
+      {{ 'ADMIN.RBAC_RELOGIN_HINT' | translate }}
+    </p>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="close()" [disabled]="saving">
+    {{ 'COMMON.CLOSE' | translate }}
+  </button>
+  <button mat-flat-button color="primary" type="button" (click)="save()" [disabled]="saving || loading">
+    <mat-icon>save</mat-icon>
+    {{ saving ? ('COMMON.LOADING' | translate) : ('COMMON.SAVE' | translate) }}
+  </button>
+</mat-dialog-actions>
