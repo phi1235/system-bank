@@ -16,10 +16,13 @@ import com.banksystem.customer.domain.SupportTicketMessageEntity;
 import com.banksystem.customer.domain.SupportTicketMessageRepository;
 import com.banksystem.customer.domain.SupportTicketRepository;
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
@@ -38,8 +41,12 @@ public class SupportTicketService {
   private static final int MAX_OPEN_PER_USER = 10;
   private static final String ROLE_CUSTOMER = "CUSTOMER";
   private static final String ROLE_STAFF = "STAFF";
+  /** @mention tokens: email or UUID (any resolvable customer user). */
+    private static final Pattern MENTION_PATTERN =
+        Pattern.compile(
+            "(?i)@([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[A-Z0-9._%+-]+@[A-Z0-9.-]+[.][A-Z]{2,})");
 
-  private final SupportTicketRepository ticketRepository;
+    private final SupportTicketRepository ticketRepository;
   private final SupportTicketMessageRepository messageRepository;
   private final CustomerRepository customerRepository;
   private final OpsAlertPublisher opsAlertPublisher;
@@ -229,6 +236,7 @@ public class SupportTicketService {
     SupportTicketEntity saved = ticketRepository.save(t);
     appendMessage(saved.getId(), staffId, ROLE_STAFF, message);
     customerNotifyPublisher.supportTicketNeedInfo(saved, message);
+    notifyMentions(saved, message, staffId);
     return toResponse(saved, true);
   }
 
@@ -259,6 +267,8 @@ public class SupportTicketService {
     }
     t.setUpdatedAt(now);
     SupportTicketEntity saved = ticketRepository.save(t);
+    opsAlertPublisher.supportTicketCustomerReply(saved, body);
+    notifyMentions(saved, body, userId);
     return toResponse(saved, true);
   }
 
@@ -285,6 +295,7 @@ public class SupportTicketService {
     SupportTicketEntity saved = ticketRepository.save(t);
     appendMessage(saved.getId(), staffId, ROLE_STAFF, body);
     customerNotifyPublisher.supportTicketStaffReply(saved, body);
+    notifyMentions(saved, body, staffId);
     return toResponse(saved, true);
   }
 
@@ -427,4 +438,42 @@ public class SupportTicketService {
         m.getBody(),
         m.getCreatedAt());
   }
+
+  /**
+   * Parse {@code @email} / {@code @uuid} mentions and notify resolved customer users.
+   * Best-effort; skips author and unresolved tokens.
+   */
+  private void notifyMentions(SupportTicketEntity ticket, String body, UUID authorUserId) {
+    if (body == null || body.isBlank()) {
+      return;
+    }
+    Matcher matcher = MENTION_PATTERN.matcher(body);
+    Set<UUID> notified = new HashSet<>();
+    while (matcher.find()) {
+      String token = matcher.group(1);
+      if (token == null || token.isBlank()) {
+        continue;
+      }
+      CustomerEntity target = resolveMention(token.trim());
+      if (target == null || target.getId() == null) {
+        continue;
+      }
+      if (target.getId().equals(authorUserId) || !notified.add(target.getId())) {
+        continue;
+      }
+      customerNotifyPublisher.supportTicketMention(
+          target.getId(), target.getEmail(), ticket, body);
+    }
+  }
+
+  private CustomerEntity resolveMention(String token) {
+    try {
+      UUID id = UUID.fromString(token);
+      return customerRepository.findById(id).orElse(null);
+    } catch (IllegalArgumentException ignored) {
+      // not a UUID — try email
+    }
+    return customerRepository.findByEmailIgnoreCase(token).orElse(null);
+  }
 }
+

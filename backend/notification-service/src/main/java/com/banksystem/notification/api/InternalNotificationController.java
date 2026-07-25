@@ -63,7 +63,10 @@ public class InternalNotificationController {
       String status,
       String body,
       UUID userId,
-      String audience
+      String audience,
+      String actionType,
+      String actionId,
+      String actionPath
   ) {}
 
   /** Create arbitrary notification log (password reset, OTP, custom alert). */
@@ -86,6 +89,9 @@ public class InternalNotificationController {
             ? NotificationInboxService.AUDIENCE_CUSTOMER
             : req.audience().trim().toUpperCase();
     e.setAudience(audience);
+    e.setActionType(blankToNull(req.actionType()));
+    e.setActionId(blankToNull(req.actionId()));
+    e.setActionPath(blankToNull(req.actionPath()));
     e.setCreatedAt(java.time.Instant.now());
     repository.save(e);
     NotificationItem item =
@@ -97,7 +103,10 @@ public class InternalNotificationController {
             e.getBody(),
             false,
             null,
-            e.getCreatedAt());
+            e.getCreatedAt(),
+            e.getActionType(),
+            e.getActionId(),
+            e.getActionPath());
     // Fan-out to customer SSE when user-scoped CUSTOMER inbox entry.
     if (e.getUserId() != null && NotificationInboxService.AUDIENCE_CUSTOMER.equals(audience)) {
       realtimeHub.publish(e.getUserId(), item);
@@ -129,6 +138,13 @@ public class InternalNotificationController {
         "readAt", e.getReadAt() == null ? "" : e.getReadAt().toString(),
         "createdAt", e.getCreatedAt().toString()
     );
+  }
+
+  private static String blankToNull(String v) {
+    if (v == null || v.isBlank()) {
+      return null;
+    }
+    return v.trim();
   }
 
   private void requireKey(String key) {

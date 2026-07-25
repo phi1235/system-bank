@@ -13,7 +13,10 @@ public final class NotificationDtos {
       String body,
       boolean read,
       Instant readAt,
-      Instant createdAt
+      Instant createdAt,
+      String actionType,
+      String actionId,
+      String actionPath
   ) {}
 
   public record UnreadCountResponse(long unread) {}

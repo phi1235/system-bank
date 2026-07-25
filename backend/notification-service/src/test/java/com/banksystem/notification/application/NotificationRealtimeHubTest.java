@@ -27,7 +27,10 @@ class NotificationRealtimeHubTest {
         "ok",
         false,
         null,
-        Instant.parse("2026-07-21T10:00:00Z"));
+        Instant.parse("2026-07-21T10:00:00Z"),
+        "TRANSFER",
+        "txn-1",
+        "/customer/payments/transfer?txnId=txn-1");
 
     assertDoesNotThrow(() -> hub.publish(userId, item));
     assertDoesNotThrow(() -> hub.publish(null, item));
@@ -48,7 +51,10 @@ class NotificationRealtimeHubTest {
         "transfer failed",
         false,
         null,
-        Instant.parse("2026-07-21T10:00:00Z"));
+        Instant.parse("2026-07-21T10:00:00Z"),
+        "TRANSFER",
+        "txn-1",
+        "/admin/transfers?q=txn-1");
 
     assertDoesNotThrow(() -> hub.publishOps(item));
     assertDoesNotThrow(() -> hub.publishOps(null));

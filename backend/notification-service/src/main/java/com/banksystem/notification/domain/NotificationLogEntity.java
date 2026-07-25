@@ -45,6 +45,18 @@ public class NotificationLogEntity {
   @Column(name = "read_at")
   private Instant readAt;
 
+  /** Optional deep-link entity type (SUPPORT_TICKET, TRANSFER, ...). */
+  @Column(name = "action_type", length = 40)
+  private String actionType;
+
+  /** Optional deep-link entity id (UUID string). */
+  @Column(name = "action_id", length = 64)
+  private String actionId;
+
+  /** Preferred in-app path for FE navigation, e.g. /customer/support?ticketId=... */
+  @Column(name = "action_path", length = 300)
+  private String actionPath;
+
   @Column(name = "created_at", nullable = false)
   private Instant createdAt = Instant.now();
 
@@ -126,6 +138,30 @@ public class NotificationLogEntity {
 
   public void setReadAt(Instant readAt) {
     this.readAt = readAt;
+  }
+
+  public String getActionType() {
+    return actionType;
+  }
+
+  public void setActionType(String actionType) {
+    this.actionType = actionType;
+  }
+
+  public String getActionId() {
+    return actionId;
+  }
+
+  public void setActionId(String actionId) {
+    this.actionId = actionId;
+  }
+
+  public String getActionPath() {
+    return actionPath;
+  }
+
+  public void setActionPath(String actionPath) {
+    this.actionPath = actionPath;
   }
 
   public Instant getCreatedAt() {

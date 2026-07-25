@@ -1,61 +1,67 @@
 <app-page-header
-  [title]="'ADMIN.SUPPORT_TITLE' | translate"
-  [subtitle]="'ADMIN.SUPPORT_SUB' | translate"
+  [title]="selected ? selected.subject : ('ADMIN.SUPPORT_TITLE' | translate)"
+  [subtitle]="selected ? ('ADMIN.SUPPORT_DETAIL' | translate) : ('ADMIN.SUPPORT_SUB' | translate)"
 />
 
 <div class="page-stack">
-  <mat-card class="filters-card">
-    <form class="filters" (ngSubmit)="applyFilters()">
-      <mat-form-field appearance="outline" class="grow" subscriptSizing="dynamic">
-        <mat-label>{{ 'COMMON.SEARCH' | translate }}</mat-label>
-        <mat-icon matPrefix>search</mat-icon>
-        <input matInput [(ngModel)]="q" name="q" [placeholder]="'ADMIN.SUPPORT_SEARCH_PH' | translate" />
-      </mat-form-field>
+  @if (!selected) {
+    <!-- LIST VIEW: full-width table -->
+    <mat-card class="filters-card">
+      <form class="filters" (ngSubmit)="applyFilters()">
+        <mat-form-field appearance="outline" class="grow" subscriptSizing="dynamic">
+          <mat-label>{{ 'COMMON.SEARCH' | translate }}</mat-label>
+          <mat-icon matPrefix>search</mat-icon>
+          <input matInput [(ngModel)]="q" name="q" [placeholder]="'ADMIN.SUPPORT_SEARCH_PH' | translate" />
+        </mat-form-field>
 
-      <mat-form-field appearance="outline" class="status-field" subscriptSizing="dynamic">
-        <mat-label>{{ 'COMMON.STATUS' | translate }}</mat-label>
-        <mat-select [(ngModel)]="status" name="status">
-          @for (s of statuses; track s) {
-            <mat-option [value]="s">
-              {{ s ? s : ('COMMON.ALL' | translate) }}
-            </mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
+        <mat-form-field appearance="outline" class="status-field" subscriptSizing="dynamic">
+          <mat-label>{{ 'COMMON.STATUS' | translate }}</mat-label>
+          <mat-select [(ngModel)]="status" name="status">
+            @for (s of statuses; track s) {
+              <mat-option [value]="s">
+                {{ s ? s : ('COMMON.ALL' | translate) }}
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
 
-      <mat-form-field appearance="outline" class="cat-field" subscriptSizing="dynamic">
-        <mat-label>{{ 'ADMIN.SUPPORT_CATEGORY' | translate }}</mat-label>
-        <mat-select [(ngModel)]="category" name="category">
-          @for (c of categories; track c) {
-            <mat-option [value]="c">
-              {{ c ? (('CUSTOMER.SUPPORT_CAT_' + c) | translate) : ('COMMON.ALL' | translate) }}
-            </mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
+        <mat-form-field appearance="outline" class="cat-field" subscriptSizing="dynamic">
+          <mat-label>{{ 'ADMIN.SUPPORT_CATEGORY' | translate }}</mat-label>
+          <mat-select [(ngModel)]="category" name="category">
+            @for (c of categories; track c) {
+              <mat-option [value]="c">
+                {{ c ? (('CUSTOMER.SUPPORT_CAT_' + c) | translate) : ('COMMON.ALL' | translate) }}
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
 
-      <button mat-flat-button color="primary" type="submit" [disabled]="loading">
-        {{ 'ADMIN.FILTER' | translate }}
-      </button>
-      <button mat-stroked-button type="button" (click)="clearFilters()" [disabled]="loading">
-        {{ 'ADMIN.CLEAR' | translate }}
-      </button>
-    </form>
-    <p class="meta">{{ 'ADMIN.SUPPORT_TOTAL' | translate: { total: totalElements } }}</p>
-  </mat-card>
+        <button mat-flat-button color="primary" type="submit" [disabled]="loading">
+          {{ 'ADMIN.FILTER' | translate }}
+        </button>
+        <button mat-stroked-button type="button" (click)="clearFilters()" [disabled]="loading">
+          {{ 'ADMIN.CLEAR' | translate }}
+        </button>
+      </form>
+      <p class="meta">{{ 'ADMIN.SUPPORT_TOTAL' | translate: { total: totalElements } }}</p>
+    </mat-card>
 
-  <div class="split">
     <mat-card class="table-card">
       @if (rows.length) {
         <div class="table-wrap">
-          <table mat-table [dataSource]="rows" class="full">
+          <table mat-table [dataSource]="rows" class="full ticket-table">
             <ng-container matColumnDef="createdAt">
               <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.TIME' | translate }}</th>
               <td mat-cell *matCellDef="let t">{{ t.createdAt | date: 'short' }}</td>
             </ng-container>
             <ng-container matColumnDef="subject">
               <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.SUPPORT_SUBJECT' | translate }}</th>
-              <td mat-cell *matCellDef="let t"><strong>{{ t.subject }}</strong></td>
+              <td mat-cell *matCellDef="let t">
+                <div class="subject-cell">
+                  <strong>{{ t.subject }}</strong>
+                  <span class="muted">{{ ('CUSTOMER.SUPPORT_CAT_' + t.category) | translate }} · {{ t.priority }}</span>
+                </div>
+              </td>
             </ng-container>
             <ng-container matColumnDef="category">
               <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.SUPPORT_CATEGORY' | translate }}</th>
@@ -63,7 +69,9 @@
             </ng-container>
             <ng-container matColumnDef="priority">
               <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.SUPPORT_PRIORITY' | translate }}</th>
-              <td mat-cell *matCellDef="let t">{{ t.priority }}</td>
+              <td mat-cell *matCellDef="let t">
+                <span class="prio" [ngClass]="priorityClass(t.priority)">{{ t.priority }}</span>
+              </td>
             </ng-container>
             <ng-container matColumnDef="status">
               <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.STATUS' | translate }}</th>
@@ -77,14 +85,21 @@
             </ng-container>
             <ng-container matColumnDef="actions">
               <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.ACTIONS' | translate }}</th>
-              <td mat-cell *matCellDef="let t" class="acts">
-                <button mat-button type="button" (click)="openDetail(t)">
+              <td mat-cell *matCellDef="let t" class="acts" (click)="$event.stopPropagation()">
+                <button mat-stroked-button type="button" color="primary" (click)="openDetail(t)">
+                  <mat-icon>visibility</mat-icon>
                   {{ 'ADMIN.VIEW' | translate }}
                 </button>
               </td>
             </ng-container>
             <tr mat-header-row *matHeaderRowDef="cols"></tr>
-            <tr mat-row *matRowDef="let row; columns: cols"></tr>
+            <tr
+              mat-row
+              *matRowDef="let row; columns: cols"
+              class="clickable-row"
+              (click)="openDetail(row)"
+              [attr.aria-label]="'ADMIN.VIEW' | translate"
+            ></tr>
           </table>
         </div>
         <mat-paginator
@@ -98,149 +113,252 @@
         <p class="empty">{{ loading ? ('ADMIN.LOADING' | translate) : ('ADMIN.SUPPORT_EMPTY' | translate) }}</p>
       }
     </mat-card>
+  } @else {
+    <!-- DETAIL VIEW: full width, replaces list -->
+    <div class="detail-toolbar">
+      <button mat-stroked-button type="button" class="back-btn" (click)="closeDetail()">
+        <mat-icon>arrow_back</mat-icon>
+        {{ 'ADMIN.SUPPORT_BACK_LIST' | translate }}
+      </button>
+      <div class="toolbar-meta">
+        <span class="chip status-chip" [ngClass]="statusClass(selected.status)">{{ selected.status }}</span>
+        <span class="id-pill mono" [matTooltip]="selected.id">#{{ selected.id | slice: 0:8 }}</span>
+      </div>
+    </div>
 
-    <mat-card class="detail-card">
-      <h3>{{ 'ADMIN.SUPPORT_DETAIL' | translate }}</h3>
-      @if (!selected) {
-        <p class="empty">{{ 'ADMIN.SUPPORT_DETAIL_EMPTY' | translate }}</p>
-      } @else {
-        <dl class="detail">
-          <div>
-            <dt>{{ 'COMMON.STATUS' | translate }}</dt>
-            <dd><span class="chip" [ngClass]="statusClass(selected.status)">{{ selected.status }}</span></dd>
-          </div>
-          <div>
-            <dt>ID</dt>
-            <dd class="mono">{{ selected.id }}</dd>
-          </div>
-          <div>
-            <dt>{{ 'ADMIN.USER' | translate }}</dt>
-            <dd class="mono">{{ selected.userId }}</dd>
-          </div>
-          <div>
-            <dt>{{ 'ADMIN.EMAIL' | translate }}</dt>
-            <dd>{{ selected.requesterEmail || '—' }}</dd>
-          </div>
-          <div>
-            <dt>{{ 'ADMIN.SUPPORT_SUBJECT' | translate }}</dt>
-            <dd>{{ selected.subject }}</dd>
-          </div>
-          <div class="block">
-            <dt>{{ 'ADMIN.SUPPORT_BODY' | translate }}</dt>
-            <dd class="pre">{{ selected.body }}</dd>
-          </div>
-          @if (selected.resolutionNote) {
-            <div class="block">
-              <dt>{{ 'ADMIN.SUPPORT_RESOLUTION' | translate }}</dt>
-              <dd class="pre">{{ selected.resolutionNote }}</dd>
+    <div
+      class="detail-layout"
+      [class.no-actions]="!(isOpen(selected) && (canDecide$ | async) && canShowDecide(selected))"
+    >
+      <mat-card class="detail-main">
+        <header class="detail-hero">
+          <div class="hero-top">
+            <div class="hero-badges">
+              <span class="tag cat">{{ ('CUSTOMER.SUPPORT_CAT_' + selected.category) | translate }}</span>
+              <span class="tag prio" [ngClass]="priorityClass(selected.priority)">{{ selected.priority }}</span>
             </div>
-          }
-          @if (selected.rejectReason) {
-            <div class="block">
-              <dt>{{ 'ADMIN.SUPPORT_REJECT_REASON' | translate }}</dt>
-              <dd class="pre">{{ selected.rejectReason }}</dd>
-            </div>
-          }
-        </dl>
+            <time class="hero-time" [attr.datetime]="selected.createdAt">
+              <mat-icon>schedule</mat-icon>
+              {{ selected.createdAt | date: 'medium' }}
+            </time>
+          </div>
+          <h2 class="detail-title">{{ selected.subject }}</h2>
+        </header>
 
-        <div class="thread">
-          <h4>{{ 'ADMIN.SUPPORT_THREAD' | translate }}</h4>
+        <div class="meta-cards">
+          <div class="meta-card">
+            <div class="meta-icon email"><mat-icon>mail</mat-icon></div>
+            <div class="meta-text">
+              <span class="meta-label">{{ 'ADMIN.EMAIL' | translate }}</span>
+              <span class="meta-value">{{ selected.requesterEmail || '—' }}</span>
+            </div>
+          </div>
+          <div class="meta-card">
+            <div class="meta-icon user"><mat-icon>person</mat-icon></div>
+            <div class="meta-text">
+              <span class="meta-label">{{ 'ADMIN.USER' | translate }}</span>
+              <span class="meta-value mono truncate" [matTooltip]="selected.userId || ''">{{ selected.userId || '—' }}</span>
+            </div>
+          </div>
+          <div class="meta-card">
+            <div class="meta-icon id"><mat-icon>tag</mat-icon></div>
+            <div class="meta-text">
+              <span class="meta-label">ID</span>
+              <span class="meta-value mono truncate" [matTooltip]="selected.id">{{ selected.id }}</span>
+            </div>
+          </div>
+          <div class="meta-card">
+            <div class="meta-icon status"><mat-icon>flag</mat-icon></div>
+            <div class="meta-text">
+              <span class="meta-label">{{ 'COMMON.STATUS' | translate }}</span>
+              <span class="chip status-chip" [ngClass]="statusClass(selected.status)">{{ selected.status }}</span>
+            </div>
+          </div>
+        </div>
+
+        <section class="block-section">
+          <div class="section-head">
+            <mat-icon>description</mat-icon>
+            <h3>{{ 'ADMIN.SUPPORT_BODY' | translate }}</h3>
+          </div>
+          <div class="pre body-box">{{ selected.body }}</div>
+        </section>
+
+        @if (selected.resolutionNote) {
+          <section class="block-section">
+            <div class="callout ok">
+              <div class="callout-head">
+                <mat-icon>check_circle</mat-icon>
+                <h3>{{ 'ADMIN.SUPPORT_RESOLUTION' | translate }}</h3>
+              </div>
+              <div class="pre callout-body">{{ selected.resolutionNote }}</div>
+            </div>
+          </section>
+        }
+
+        @if (selected.rejectReason) {
+          <section class="block-section">
+            <div class="callout bad">
+              <div class="callout-head">
+                <mat-icon>cancel</mat-icon>
+                <h3>{{ 'ADMIN.SUPPORT_REJECT_REASON' | translate }}</h3>
+              </div>
+              <div class="pre callout-body">{{ selected.rejectReason }}</div>
+            </div>
+          </section>
+        }
+
+        <section class="thread block-section">
+          <div class="section-head">
+            <mat-icon>forum</mat-icon>
+            <h3>{{ 'ADMIN.SUPPORT_THREAD' | translate }}</h3>
+            @if (selected.messages?.length) {
+              <span class="count-pill">{{ selected.messages?.length }}</span>
+            }
+          </div>
           @if (!selected.messages?.length) {
-            <p class="empty small">{{ 'ADMIN.SUPPORT_THREAD_EMPTY' | translate }}</p>
+            <div class="thread-empty">
+              <mat-icon>chat_bubble_outline</mat-icon>
+              <p>{{ 'ADMIN.SUPPORT_THREAD_EMPTY' | translate }}</p>
+            </div>
           } @else {
             <ul class="messages">
-              @for (m of selected.messages; track m.id) {
-                <li [class.staff]="m.authorRole === 'STAFF'" [class.customer]="m.authorRole === 'CUSTOMER'">
-                  <div class="meta">
-                    <span class="role">{{ m.authorRole }}</span>
-                    <span class="time">{{ m.createdAt | date: 'short' }}</span>
+              @for (m of selected.messages ?? []; track m.id) {
+                <li
+                  class="msg"
+                  [class.staff]="m.authorRole === 'STAFF'"
+                  [class.customer]="m.authorRole === 'CUSTOMER'"
+                >
+                  <div class="avatar" aria-hidden="true">
+                    {{ m.authorRole === 'STAFF' ? 'S' : 'C' }}
                   </div>
-                  <div class="body pre">{{ m.body }}</div>
+                  <div class="bubble">
+                    <div class="bubble-meta">
+                      <span class="role">{{ m.authorRole }}</span>
+                      <span class="time">{{ m.createdAt | date: 'short' }}</span>
+                    </div>
+                    <div class="body pre">{{ m.body }}</div>
+                  </div>
                 </li>
               }
             </ul>
-          }
-        </div>
+                      }
+                    </section>
 
-        @if (isOpen(selected)) {
-          <div class="decide">
-            @if ((canDecide$ | async) && canShowDecide(selected)) {
-              <p class="hint">{{ 'ADMIN.SUPPORT_DECIDE_HINT' | translate }}</p>
+                    @if (isOpen(selected) && (canDecide$ | async) && canShowDecide(selected)) {
+                      <section class="composer block-section">
+                        <div class="section-head">
+                          <mat-icon>chat</mat-icon>
+                          <h3>{{ 'ADMIN.SUPPORT_COMMENT' | translate }}</h3>
+                        </div>
+                        <p class="composer-hint">{{ 'ADMIN.SUPPORT_COMMENT_HINT' | translate }}</p>
+                        <mat-form-field appearance="outline" class="full" subscriptSizing="dynamic">
+                          <mat-label>{{ 'ADMIN.SUPPORT_COMMENT_PLACEHOLDER' | translate }}</mat-label>
+                          <textarea matInput rows="3" [(ngModel)]="staffMessage" name="staffMessageComposer"></textarea>
+                        </mat-form-field>
+                        <button
+                          mat-flat-button
+                          color="primary"
+                          type="button"
+                          (click)="sendStaffMessage(selected)"
+                          [disabled]="busyId === selected.id"
+                        >
+                          <mat-icon>send</mat-icon>
+                          {{ 'ADMIN.SUPPORT_COMMENT_SEND' | translate }}
+                        </button>
+                      </section>
+                    } @else if (!isOpen(selected)) {
+                      <section class="composer block-section closed-banner">
+                        <mat-icon>lock</mat-icon>
+                        <p>{{ 'ADMIN.SUPPORT_CLOSED_NO_COMMENT' | translate }}</p>
+                      </section>
+                    }
+                  </mat-card>
 
-              <mat-form-field appearance="outline" class="full">
-                <mat-label>{{ 'ADMIN.SUPPORT_STAFF_MESSAGE' | translate }}</mat-label>
-                <textarea matInput rows="2" [(ngModel)]="staffMessage" name="staffMessage"></textarea>
-              </mat-form-field>
-              <div class="acts">
-                <button
-                  mat-stroked-button
-                  type="button"
-                  (click)="sendStaffMessage(selected)"
-                  [disabled]="busyId === selected.id"
-                >
-                  {{ 'ADMIN.SUPPORT_SEND_MESSAGE' | translate }}
-                </button>
-              </div>
+                  @if (isOpen(selected) && (canDecide$ | async) && canShowDecide(selected)) {
+                    <mat-card class="action-panel">
+                      <div class="action-panel-head">
+                        <mat-icon>bolt</mat-icon>
+                        <div>
+                          <h3>{{ 'ADMIN.SUPPORT_ACTIONS' | translate }}</h3>
+                          <p class="hint">{{ 'ADMIN.SUPPORT_DECIDE_HINT' | translate }}</p>
+                        </div>
+                      </div>
 
-              <mat-form-field appearance="outline" class="full">
-                <mat-label>{{ 'ADMIN.SUPPORT_REQUEST_INFO' | translate }}</mat-label>
-                <textarea matInput rows="2" [(ngModel)]="requestInfoMessage" name="requestInfoMessage"></textarea>
-              </mat-form-field>
-              <div class="acts">
-                <button
-                  mat-stroked-button
-                  color="accent"
-                  type="button"
-                  (click)="requestInfo(selected)"
-                  [disabled]="busyId === selected.id"
-                >
-                  {{ 'ADMIN.SUPPORT_REQUEST_INFO_BTN' | translate }}
-                </button>
-              </div>
+                      <div class="action-group">
+                        <h4>
+                          <mat-icon>hourglass_empty</mat-icon>
+                          {{ 'ADMIN.SUPPORT_REQUEST_INFO' | translate }}
+                        </h4>
+                        <mat-form-field appearance="outline" class="full" subscriptSizing="dynamic">
+                          <mat-label>{{ 'ADMIN.SUPPORT_REQUEST_INFO' | translate }}</mat-label>
+                          <textarea matInput rows="2" [(ngModel)]="requestInfoMessage" name="requestInfoMessage"></textarea>
+                        </mat-form-field>
+                        <button
+                          mat-stroked-button
+                          color="accent"
+                          type="button"
+                          class="full-btn"
+                          (click)="requestInfo(selected)"
+                          [disabled]="busyId === selected.id"
+                        >
+                          <mat-icon>hourglass_empty</mat-icon>
+                          {{ 'ADMIN.SUPPORT_REQUEST_INFO_BTN' | translate }}
+                        </button>
+                      </div>
 
-              <mat-form-field appearance="outline" class="full">
-                <mat-label>{{ 'ADMIN.SUPPORT_RESOLUTION' | translate }}</mat-label>
-                <textarea matInput rows="3" [(ngModel)]="resolutionNote" name="resolutionNote"></textarea>
-              </mat-form-field>
-              <mat-form-field appearance="outline" class="full">
-                <mat-label>{{ 'ADMIN.SUPPORT_REJECT_REASON' | translate }}</mat-label>
-                <textarea matInput rows="2" [(ngModel)]="rejectReason" name="rejectReason"></textarea>
-              </mat-form-field>
-              <div class="acts">
-                @if ((canClaim$ | async) && canShowClaim(selected)) {
-                  <button
-                    mat-stroked-button
-                    type="button"
-                    (click)="claim(selected)"
-                    [disabled]="busyId === selected.id"
-                    [matTooltip]="'ADMIN.SUPPORT_CLAIM_TIP' | translate"
-                  >
-                    {{ 'ADMIN.SUPPORT_CLAIM' | translate }}
-                  </button>
-                }
-                <button
-                  mat-flat-button
-                  color="primary"
-                  type="button"
-                  (click)="resolve(selected)"
-                  [disabled]="busyId === selected.id"
-                >
-                  {{ 'ADMIN.SUPPORT_RESOLVE' | translate }}
-                </button>
-                <button
-                  mat-stroked-button
-                  color="warn"
-                  type="button"
-                  (click)="reject(selected)"
-                  [disabled]="busyId === selected.id"
-                >
-                  {{ 'ADMIN.REJECT' | translate }}
-                </button>
-              </div>
-            }
-          </div>
-        }
-      }
-    </mat-card>
-  </div>
-</div>
+                      <div class="action-group decide-group">
+                        <h4>
+                          <mat-icon>gavel</mat-icon>
+                          {{ 'ADMIN.SUPPORT_RESOLUTION' | translate }}
+                        </h4>
+                        <mat-form-field appearance="outline" class="full" subscriptSizing="dynamic">
+                          <mat-label>{{ 'ADMIN.SUPPORT_RESOLUTION' | translate }}</mat-label>
+                          <textarea matInput rows="3" [(ngModel)]="resolutionNote" name="resolutionNote"></textarea>
+                        </mat-form-field>
+                        <mat-form-field appearance="outline" class="full" subscriptSizing="dynamic">
+                          <mat-label>{{ 'ADMIN.SUPPORT_REJECT_REASON' | translate }}</mat-label>
+                          <textarea matInput rows="2" [(ngModel)]="rejectReason" name="rejectReason"></textarea>
+                        </mat-form-field>
+
+                        <div class="acts primary-acts">
+                          @if ((canClaim$ | async) && canShowClaim(selected)) {
+                            <button
+                              mat-stroked-button
+                              type="button"
+                              (click)="claim(selected)"
+                              [disabled]="busyId === selected.id"
+                              [matTooltip]="'ADMIN.SUPPORT_CLAIM_TIP' | translate"
+                            >
+                              <mat-icon>handshake</mat-icon>
+                              {{ 'ADMIN.SUPPORT_CLAIM' | translate }}
+                            </button>
+                          }
+                          <button
+                            mat-flat-button
+                            color="primary"
+                            type="button"
+                            class="grow-btn"
+                            (click)="resolve(selected)"
+                            [disabled]="busyId === selected.id"
+                          >
+                            <mat-icon>check_circle</mat-icon>
+                            {{ 'ADMIN.SUPPORT_RESOLVE' | translate }}
+                          </button>
+                          <button
+                            mat-stroked-button
+                            color="warn"
+                            type="button"
+                            (click)="reject(selected)"
+                            [disabled]="busyId === selected.id"
+                          >
+                            <mat-icon>cancel</mat-icon>
+                            {{ 'ADMIN.REJECT' | translate }}
+                          </button>
+                        </div>
+                      </div>
+                    </mat-card>
+                  }
+                </div>
+              }
+            </div>

@@ -121,6 +121,9 @@ public class NotificationInboxService {
         e.getBody() == null ? "" : e.getBody(),
         e.getReadAt() != null,
         e.getReadAt(),
-        e.getCreatedAt());
+        e.getCreatedAt(),
+        e.getActionType(),
+        e.getActionId(),
+        e.getActionPath());
   }
 }

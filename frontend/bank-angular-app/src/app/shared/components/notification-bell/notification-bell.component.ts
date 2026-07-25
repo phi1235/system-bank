@@ -24,6 +24,11 @@ import { BankApiService } from '../../../core/services/bank-api.service';
 import { NotificationStreamService } from '../../../core/services/notification-stream.service';
 import { OpsNotificationStreamService } from '../../../core/services/ops-notification-stream.service';
 import { ToastService } from '../../../core/services/toast.service';
+import {
+    resolveNotificationPath,
+    humanizeNotificationBody,
+    humanizeTemplateCode,
+  } from '../../../core/utils/notification-link.util';
 
 export type NotificationBellMode = 'customer' | 'ops';
 
@@ -201,6 +206,47 @@ export class NotificationBellComponent implements OnDestroy {
     });
   }
 
+  /** Mark read (if needed) then navigate to deep-linked entity screen. */
+  openItem(item: NotificationItem, event?: MouseEvent): void {
+    event?.stopPropagation();
+    const path = resolveNotificationPath(item, this.mode === 'ops' ? 'ops' : 'customer');
+    const after = () => {
+      if (path) {
+        this.closePanel();
+        void this.router.navigateByUrl(path);
+      }
+    };
+    if (item.read) {
+      after();
+      return;
+    }
+    const req =
+      this.mode === 'ops'
+        ? this.api.markAdminOpsNotificationRead(item.id)
+        : this.api.markNotificationRead(item.id);
+    req.subscribe({
+      next: (updated) => {
+        this.items = this.items.map((x) =>
+          x.id === updated.id ? { ...item, ...updated, read: true } : x,
+        );
+        this.setUnread(Math.max(0, this.unread - 1));
+        after();
+      },
+      error: () => {
+        this.toast.error(this.i18n.instant(this.failKey));
+        after();
+      },
+    });
+  }
+
+  hasLink(item: NotificationItem): boolean {
+    return !!resolveNotificationPath(item, this.mode === 'ops' ? 'ops' : 'customer');
+  }
+
+  displayBody(item: NotificationItem): string {
+    return humanizeNotificationBody(item.body, item.template);
+  }
+
   markAll(event?: MouseEvent): void {
     event?.stopPropagation();
     if (this.markingAll || this.unread === 0) {
@@ -244,9 +290,19 @@ export class NotificationBellComponent implements OnDestroy {
   }
 
   templateLabel(n: NotificationItem): string {
-    const key = `NOTIF_TEMPLATE.${n.template}`;
+    const tpl = (n.template || '').trim();
+    if (!tpl) {
+      return this.i18n.instant('COMMON.NOTIFICATION') !== 'COMMON.NOTIFICATION'
+        ? this.i18n.instant('COMMON.NOTIFICATION')
+        : 'Thông báo';
+    }
+    const key = `NOTIF_TEMPLATE.${tpl}`;
     const loc = this.i18n.instant(key);
-    return loc && loc !== key ? loc : n.template;
+    if (loc && loc !== key) {
+      return loc;
+    }
+    // Never show raw OPS_SUPPORT_TICKET_OPENED-style codes to operators.
+    return humanizeTemplateCode(tpl);
   }
 
   openViewAll(event?: MouseEvent): void {

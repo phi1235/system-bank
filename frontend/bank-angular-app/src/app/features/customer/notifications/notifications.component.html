@@ -75,7 +75,7 @@
                   <span class="template">{{ templateLabel(n) }}</span>
                   <time>{{ n.createdAt | date: 'medium' }}</time>
                 </div>
-                <p class="text">{{ n.body }}</p>
+                <p class="text">{{ displayBody(n) }}</p>
                 <div class="meta">
                   @if (!n.read) {
                     <span class="chip unread-chip">{{ 'CUSTOMER.NOTIF_UNREAD' | translate }}</span>
@@ -100,7 +100,7 @@
                     mat-stroked-button
                     type="button"
                     color="primary"
-                    (click)="markRead(n)"
+                    (click)="openItem(n)"
                     [disabled]="markingId === n.id"
                   >
                     <mat-icon>done</mat-icon>

@@ -11,6 +11,7 @@ import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { ActivatedRoute, Router } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { Store } from '@ngrx/store';
 import { filter, switchMap } from 'rxjs';
@@ -54,6 +55,8 @@ export class AdminSupportTicketsComponent implements OnInit {
   private readonly i18n = inject(TranslateService);
   private readonly store = inject(Store);
   private readonly dialog = inject(MatDialog);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
   readonly categories = ['', 'GENERAL', 'ACCOUNT', 'TRANSFER', 'CARD', 'KYC', 'SECURITY', 'OTHER'];
   readonly statuses = ['', 'OPEN', 'IN_PROGRESS', 'WAITING_CUSTOMER', 'RESOLVED', 'REJECTED'];
@@ -82,7 +85,26 @@ export class AdminSupportTicketsComponent implements OnInit {
     this.store.select(selectUser).subscribe((u) => {
       this.currentUserId = u?.userId ?? null;
     });
+    this.route.queryParamMap.subscribe((params) => {
+      const ticketId = params.get('ticketId')?.trim();
+      if (ticketId && this.selected?.id !== ticketId) {
+        this.openDetailById(ticketId);
+      }
+    });
     this.load();
+  }
+
+  openDetailById(id: string): void {
+    this.api.adminSupportTicket(id).subscribe({
+      next: (t) => {
+        this.selected = t;
+        this.resolutionNote = t.resolutionNote || '';
+        this.rejectReason = '';
+        this.requestInfoMessage = '';
+        this.staffMessage = '';
+      },
+      error: (err) => this.toast.error(resolveHttpErrorMessage(err, this.i18n)),
+    });
   }
 
   /** Optional take-ownership (OPEN only). Not required before decide. */
@@ -161,6 +183,29 @@ export class AdminSupportTicketsComponent implements OnInit {
       },
       error: (err) => this.toast.error(resolveHttpErrorMessage(err, this.i18n)),
     });
+  }
+
+  closeDetail(): void {
+    this.selected = null;
+    this.resolutionNote = '';
+    this.rejectReason = '';
+    this.requestInfoMessage = '';
+    this.staffMessage = '';
+  }
+
+  priorityClass(priority: string | null | undefined): string {
+    switch ((priority || '').toUpperCase()) {
+      case 'HIGH':
+      case 'URGENT':
+        return 'high';
+      case 'MEDIUM':
+      case 'NORMAL':
+        return 'medium';
+      case 'LOW':
+        return 'low';
+      default:
+        return '';
+    }
   }
 
   isOpen(t: SupportTicket | null): boolean {

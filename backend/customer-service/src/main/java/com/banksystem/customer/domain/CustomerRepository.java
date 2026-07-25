@@ -1,5 +1,6 @@
 package com.banksystem.customer.domain;
 
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -8,6 +9,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface CustomerRepository extends JpaRepository<CustomerEntity, UUID> {
+
+  Optional<CustomerEntity> findByEmailIgnoreCase(String email);
 
   /**
    * Admin customer search. Callers pass boolean flags so optional filters never rely on
