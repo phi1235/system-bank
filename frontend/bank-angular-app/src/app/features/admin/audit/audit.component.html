@@ -6,7 +6,7 @@
 <div class="page-stack">
   <mat-card class="filters-card">
         <form class="filters" [formGroup]="form" (ngSubmit)="applyFilters()">
-          <mat-form-field appearance="outline" class="action-field" subscriptSizing="dynamic">
+          <mat-form-field appearance="outline" class="filter-field action-field" subscriptSizing="dynamic" floatLabel="always">
             <mat-label>{{ 'ADMIN.ACTION' | translate }}</mat-label>
             <mat-icon matPrefix>bolt</mat-icon>
             <mat-select formControlName="action">
@@ -19,7 +19,7 @@
             </mat-select>
           </mat-form-field>
 
-          <mat-form-field appearance="outline" class="type-field" subscriptSizing="dynamic">
+          <mat-form-field appearance="outline" class="filter-field type-field" subscriptSizing="dynamic" floatLabel="always">
             <mat-label>{{ 'ADMIN.TYPE' | translate }}</mat-label>
             <mat-icon matPrefix>category</mat-icon>
             <mat-select formControlName="resourceType">
@@ -32,7 +32,7 @@
             </mat-select>
           </mat-form-field>
 
-          <mat-form-field appearance="outline" class="grow" subscriptSizing="dynamic">
+          <mat-form-field appearance="outline" class="filter-field grow" subscriptSizing="dynamic" floatLabel="always">
             <mat-label>{{ 'ADMIN.ACTOR' | translate }}</mat-label>
             <mat-icon matPrefix>person</mat-icon>
             <input
@@ -42,7 +42,7 @@
             />
           </mat-form-field>
 
-          <mat-form-field appearance="outline" class="grow" subscriptSizing="dynamic">
+          <mat-form-field appearance="outline" class="filter-field grow" subscriptSizing="dynamic" floatLabel="always">
             <mat-label>{{ 'ADMIN.RESOURCE' | translate }}</mat-label>
             <mat-icon matPrefix>link</mat-icon>
             <input
@@ -52,24 +52,23 @@
             />
           </mat-form-field>
 
-          <mat-form-field appearance="outline" class="date-field" subscriptSizing="dynamic">
+          <mat-form-field appearance="outline" class="filter-field date-field" subscriptSizing="dynamic" floatLabel="always">
             <mat-label>{{ 'ADMIN.AUDIT_FROM' | translate }}</mat-label>
             <input matInput type="date" formControlName="from" />
           </mat-form-field>
 
-          <mat-form-field appearance="outline" class="date-field" subscriptSizing="dynamic">
+          <mat-form-field appearance="outline" class="filter-field date-field" subscriptSizing="dynamic" floatLabel="always">
             <mat-label>{{ 'ADMIN.AUDIT_TO' | translate }}</mat-label>
             <input matInput type="date" formControlName="to" />
           </mat-form-field>
 
-          <button mat-flat-button color="primary" type="submit" [disabled]="loading">
+          <button mat-flat-button color="primary" type="submit" [disabled]="loading" class="filter-btn">
             {{ 'ADMIN.FILTER' | translate }}
           </button>
-          <button mat-stroked-button type="button" (click)="clearFilters()" [disabled]="loading">
+          <button mat-stroked-button type="button" (click)="clearFilters()" [disabled]="loading" class="clear-btn">
             {{ 'ADMIN.CLEAR' | translate }}
           </button>
         </form>
-        <p class="hint">{{ 'ADMIN.AUDIT_FILTER_HINT' | translate }}</p>
         <p class="meta">{{ 'ADMIN.AUDIT_TOTAL' | translate: { total: totalElements } }}</p>
       </mat-card>
 
