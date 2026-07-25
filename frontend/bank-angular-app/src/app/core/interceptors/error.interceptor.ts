@@ -14,6 +14,10 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
       if (err.status === 401 && req.url.includes('/auth/me')) {
         return throwError(() => err);
       }
+      // skip noisy 404 on profile lookup when user hasn't created a profile record yet
+      if (err.status === 404 && req.url.includes('/customers/me')) {
+        return throwError(() => err);
+      }
       // skip i18n json load failures
       if (req.url.includes('/i18n/')) {
         return throwError(() => err);

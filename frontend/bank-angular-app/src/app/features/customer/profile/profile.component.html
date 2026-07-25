@@ -6,6 +6,12 @@
 <div class="grid">
   <mat-card>
     <h3>{{ needsCreate ? ('CUSTOMER.PROFILE_CREATE' | translate) : ('CUSTOMER.PROFILE_UPDATE' | translate) }}</h3>
+    @if (needsCreate) {
+      <div class="info-alert">
+        <mat-icon>info</mat-icon>
+        <span>Tài khoản của bạn chưa có hồ sơ cá nhân. Vui lòng điền thông tin bên dưới để khởi tạo.</span>
+      </div>
+    }
     @if (profile) {
       <p class="meta">{{ 'CUSTOMER.KYC' | translate }}: <strong>{{ profile.kycStatus }}</strong>
         @if (profile.nationalIdMasked) {

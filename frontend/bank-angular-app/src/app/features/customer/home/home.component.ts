@@ -86,6 +86,7 @@ export class HomeComponent implements OnInit {
   beneficiaryCount: number | null = null;
   openingId: string | null = null;
   refreshing = false;
+  needsProfile = false;
 
   ngOnInit(): void {
     this.refresh();
@@ -97,10 +98,22 @@ export class HomeComponent implements OnInit {
     this.store.dispatch(TransfersActions.loadHistory({ page: 0, size: 5 }));
     this.loadUnread();
     this.loadBeneficiaries();
+    this.checkProfile();
     // Clear spinner after a short tick — store loading flags drive real UI
     setTimeout(() => {
       this.refreshing = false;
     }, 400);
+  }
+
+  checkProfile(): void {
+    this.api.getProfile().subscribe({
+      next: () => {
+        this.needsProfile = false;
+      },
+      error: () => {
+        this.needsProfile = true;
+      },
+    });
   }
 
   activeAccounts(list: Account[] | null | undefined): Account[] {

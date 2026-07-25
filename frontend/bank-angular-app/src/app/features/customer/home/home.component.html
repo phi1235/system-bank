@@ -30,6 +30,17 @@
   <app-loading />
 } @else {
   <div class="home">
+    @if (needsProfile) {
+      <div class="alert warn" role="status">
+        <mat-icon>assignment_ind</mat-icon>
+        <div>
+          <strong>{{ 'ADMIN.PROFILE_NOTICE_TITLE' | translate }}</strong>
+          <p>{{ 'ADMIN.PROFILE_NOTICE_BODY' | translate }}</p>
+        </div>
+        <a mat-flat-button color="primary" routerLink="/customer/profile">{{ 'ADMIN.PROFILE_UPDATE_NOW' | translate }}</a>
+      </div>
+    }
+
     @if (!(hasActiveSource(accounts$ | async)) && (accounts$ | async)?.length) {
       <div class="alert warn" role="status">
         <mat-icon>ac_unit</mat-icon>
