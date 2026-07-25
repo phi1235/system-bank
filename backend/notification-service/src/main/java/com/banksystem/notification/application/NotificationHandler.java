@@ -48,7 +48,6 @@ public class NotificationHandler {
       JsonNode root = objectMapper.readTree(rawPayload);
       String eventIdStr = text(root, "eventId");
       if (eventIdStr == null || eventIdStr.isBlank()) {
-        // fallback: use transactionId + eventType as synthetic id for older payloads
         JsonNode data = root.path("data");
         eventIdStr = text(root, "eventType") + ":" + text(data, "transactionId");
       }
@@ -85,11 +84,12 @@ public class NotificationHandler {
 
       boolean success = eventType != null && eventType.contains("COMPLETED");
       String template = success ? "TRANSFER_COMPLETED" : "TRANSFER_FAILED";
-      String subject = success ? "Transfer completed" : "Transfer failed/compensated";
-      String body = buildBody(success, transactionId, amount, currency, description, finalStatus, failureReason);
+      String subject = success ? "Chuyển khoản thành công" : "Chuyển khoản thất bại";
+      String body =
+          buildBody(success, transactionId, amount, currency, description, finalStatus, failureReason);
 
       emailSender.send(recipient, subject, body);
-      smsSender.send("+84000000000", subject + " txn=" + transactionId);
+      smsSender.send("+840****0000", subject);
 
       NotificationLogEntity logEntity = new NotificationLogEntity();
       logEntity.setId(UUID.randomUUID());
@@ -101,17 +101,20 @@ public class NotificationHandler {
       logEntity.setBody(body);
       logEntity.setUserId(ownerUserId);
       logEntity.setAudience(NotificationInboxService.AUDIENCE_CUSTOMER);
+      if (transactionId != null && !transactionId.isBlank()) {
+        logEntity.setActionType("TRANSFER");
+        logEntity.setActionId(transactionId);
+        logEntity.setActionPath("/customer/payments/transfer?txnId=" + transactionId);
+      }
       logEntity.setCreatedAt(Instant.now());
       notificationLogRepository.save(logEntity);
       if (ownerUserId != null) {
         realtimeHub.publish(ownerUserId, toItem(logEntity));
       }
 
-      // Staff ops alert for failures (shared inbox, not user-scoped)
       if (!success) {
         NotificationLogEntity ops = new NotificationLogEntity();
         ops.setId(UUID.randomUUID());
-        // Deterministic secondary event id so reprocessing stays unique under unique(event_id)
         ops.setEventId(UUID.nameUUIDFromBytes(("ops:" + eventId).getBytes()));
         ops.setChannel("OPS");
         ops.setRecipient("ops@bank.local");
@@ -120,6 +123,11 @@ public class NotificationHandler {
         ops.setBody(buildOpsBody(transactionId, amount, currency, ownerUserId, finalStatus, failureReason));
         ops.setUserId(null);
         ops.setAudience(NotificationInboxService.AUDIENCE_OPS);
+        if (transactionId != null && !transactionId.isBlank()) {
+          ops.setActionType("TRANSFER");
+          ops.setActionId(transactionId);
+          ops.setActionPath("/admin/transfers?q=" + transactionId);
+        }
         ops.setCreatedAt(Instant.now());
         notificationLogRepository.save(ops);
         realtimeHub.publishOps(toItem(ops));
@@ -150,7 +158,10 @@ public class NotificationHandler {
         e.getBody() == null ? "" : e.getBody(),
         false,
         null,
-        e.getCreatedAt());
+        e.getCreatedAt(),
+        e.getActionType(),
+        e.getActionId(),
+        e.getActionPath());
   }
 
   private String buildBody(
@@ -161,13 +172,22 @@ public class NotificationHandler {
       String description,
       String finalStatus,
       String failureReason) {
+    String cur = currency == null || currency.isBlank() ? "VND" : currency;
+    String amt = amount == null || amount.isBlank() ? "" : amount;
     if (success) {
-      return "Your transfer " + transactionId + " of " + amount + " " + currency
-          + " completed successfully. " + (description == null ? "" : description);
+      String head =
+          amt.isEmpty()
+              ? "Chuyển khoản thành công."
+              : "Chuyển khoản " + amt + " " + cur + " thành công.";
+      if (description != null && !description.isBlank()) {
+        return head + " " + description.trim();
+      }
+      return head;
     }
-    return "Your transfer " + transactionId + " ended as " + (finalStatus == null ? "FAILED" : finalStatus)
-        + ". Reason: " + (failureReason == null ? "n/a" : failureReason)
-        + ". Amount: " + amount + " " + currency;
+    String status = finalStatus == null || finalStatus.isBlank() ? "FAILED" : finalStatus;
+    String reason = failureReason == null || failureReason.isBlank() ? "n/a" : failureReason.trim();
+    String amtPart = amt.isEmpty() ? "" : " (" + amt + " " + cur + ")";
+    return "Chuyển khoản không thành công" + amtPart + ". Trạng thái: " + status + ". Lý do: " + reason;
   }
 
   private String buildOpsBody(
@@ -177,12 +197,17 @@ public class NotificationHandler {
       UUID ownerUserId,
       String finalStatus,
       String failureReason) {
-    return "Transfer failed"
-        + " txn=" + (transactionId == null ? "n/a" : transactionId)
-        + " amount=" + amount + " " + (currency == null ? "" : currency)
-        + " userId=" + (ownerUserId == null ? "n/a" : ownerUserId)
-        + " status=" + (finalStatus == null ? "FAILED" : finalStatus)
-        + " reason=" + (failureReason == null ? "n/a" : failureReason);
+    String cur = currency == null || currency.isBlank() ? "" : currency;
+    String amt = amount == null ? "0" : amount;
+    String status = finalStatus == null || finalStatus.isBlank() ? "FAILED" : finalStatus;
+    String reason = failureReason == null || failureReason.isBlank() ? "n/a" : failureReason.trim();
+    return "Chuyển khoản thất bại: "
+        + amt
+        + (cur.isEmpty() ? "" : " " + cur)
+        + " · trạng thái "
+        + status
+        + " · lý do: "
+        + reason;
   }
 
   private String text(JsonNode node, String field) {

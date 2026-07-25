@@ -183,6 +183,12 @@ export interface NotificationItem {
   read: boolean;
   readAt: string | null;
   createdAt: string;
+  /** Optional deep-link entity type (SUPPORT_TICKET, TRANSFER, ...). */
+  actionType?: string | null;
+  /** Optional deep-link entity id. */
+  actionId?: string | null;
+  /** Preferred in-app path, e.g. /customer/support?ticketId=... */
+  actionPath?: string | null;
 }
 
 /** Customer support ticket (create + staff approve/resolve). */

@@ -9,6 +9,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { ActivatedRoute, Router } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { Store } from '@ngrx/store';
 import { map } from 'rxjs';
@@ -21,6 +23,10 @@ import { LoadingComponent } from '../../../shared/components/loading/loading.com
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { selectPermissions } from '../../../store/auth/auth.selectors';
 
+/**
+ * Customer IB support: list → detail (no dual-pane).
+ * Create is a collapsible panel on the list view only.
+ */
 @Component({
   selector: 'app-customer-support',
   standalone: true,
@@ -35,6 +41,7 @@ import { selectPermissions } from '../../../store/auth/auth.selectors';
     MatPaginatorModule,
     MatSelectModule,
     MatTableModule,
+    MatTooltipModule,
     TranslateModule,
     PageHeaderComponent,
     LoadingComponent,
@@ -47,10 +54,12 @@ export class CustomerSupportComponent implements OnInit {
   private readonly toast = inject(ToastService);
   private readonly i18n = inject(TranslateService);
   private readonly store = inject(Store);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
   readonly categories = ['GENERAL', 'ACCOUNT', 'TRANSFER', 'CARD', 'KYC', 'SECURITY', 'OTHER'] as const;
   readonly priorities = ['LOW', 'NORMAL', 'HIGH'] as const;
-  readonly cols = ['createdAt', 'category', 'subject', 'priority', 'status', 'actions'];
+  readonly cols = ['createdAt', 'subject', 'status', 'actions'];
 
   /** Create form only when admin granted ib:support:create (separate from view). */
   readonly canCreate$ = this.store
@@ -60,28 +69,70 @@ export class CustomerSupportComponent implements OnInit {
   rows: SupportTicket[] = [];
   selected: SupportTicket | null = null;
   loading = false;
+  detailLoading = false;
   submitting = false;
   replying = false;
+  /** Collapsed by default — keep list clean. */
+  showCreate = false;
   pageIndex = 0;
   pageSize = 10;
   totalElements = 0;
   replyBody = '';
 
-  form = {
-    category: 'GENERAL',
-    subject: '',
-    body: '',
-    priority: 'NORMAL',
-  };
+  form = this.emptyForm();
 
   ngOnInit(): void {
+    this.route.queryParamMap.subscribe((params) => {
+      const ticketId = params.get('ticketId')?.trim();
+      if (ticketId) {
+        if (this.selected?.id !== ticketId) {
+          this.openDetailById(ticketId);
+        }
+      }
+    });
     this.load();
+  }
+
+  closeDetail(): void {
+    this.selected = null;
+    this.replyBody = '';
+    // Drop deep-link query so back stays on list
+    if (this.route.snapshot.queryParamMap.get('ticketId')) {
+      void this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { ticketId: null },
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
+      });
+    }
+  }
+
+  openDetailById(id: string): void {
+    this.detailLoading = true;
+    this.api.mySupportTicket(id).subscribe({
+      next: (t) => {
+        this.selected = t;
+        this.replyBody = '';
+        this.showCreate = false;
+        this.detailLoading = false;
+      },
+      error: (err) => {
+        this.detailLoading = false;
+        this.toast.error(resolveHttpErrorMessage(err, this.i18n));
+      },
+    });
   }
 
   canReply(t: SupportTicket | null): boolean {
     if (!t) return false;
     const s = (t.status || '').toUpperCase();
     return s === 'OPEN' || s === 'IN_PROGRESS' || s === 'WAITING_CUSTOMER';
+  }
+
+  isClosed(t: SupportTicket | null): boolean {
+    if (!t) return false;
+    const s = (t.status || '').toUpperCase();
+    return s === 'RESOLVED' || s === 'REJECTED';
   }
 
   load(): void {
@@ -93,8 +144,9 @@ export class CustomerSupportComponent implements OnInit {
         this.loading = false;
         if (this.selected) {
           const still = this.rows.find((r) => r.id === this.selected?.id);
-          if (still) {
-            this.selected = still;
+          if (still && !this.selected.messages?.length) {
+            // Keep richer detail payload if we already loaded messages
+            this.selected = { ...still, messages: this.selected.messages };
           }
         }
       },
@@ -116,10 +168,22 @@ export class CustomerSupportComponent implements OnInit {
   openDetail(row: SupportTicket): void {
     this.selected = row;
     this.replyBody = '';
+    this.showCreate = false;
+    this.detailLoading = true;
     this.api.mySupportTicket(row.id).subscribe({
-      next: (t) => (this.selected = t),
-      error: (err) => this.toast.error(resolveHttpErrorMessage(err, this.i18n)),
+      next: (t) => {
+        this.selected = t;
+        this.detailLoading = false;
+      },
+      error: (err) => {
+        this.detailLoading = false;
+        this.toast.error(resolveHttpErrorMessage(err, this.i18n));
+      },
     });
+  }
+
+  toggleCreate(): void {
+    this.showCreate = !this.showCreate;
   }
 
   submit(): void {
@@ -140,10 +204,11 @@ export class CustomerSupportComponent implements OnInit {
       .subscribe({
         next: (t) => {
           this.submitting = false;
-          this.form = { category: 'GENERAL', subject: '', body: '', priority: 'NORMAL' };
+          this.form = this.emptyForm();
+          this.showCreate = false;
           this.toast.success(this.i18n.instant('CUSTOMER.SUPPORT_CREATE_OK'));
-          this.selected = t;
           this.pageIndex = 0;
+          this.selected = t;
           this.load();
         },
         error: (err) => {
@@ -191,5 +256,48 @@ export class CustomerSupportComponent implements OnInit {
       default:
         return '';
     }
+  }
+
+  priorityClass(priority: string): string {
+    switch ((priority || '').toUpperCase()) {
+      case 'HIGH':
+        return 'high';
+      case 'LOW':
+        return 'low';
+      default:
+        return 'normal';
+    }
+  }
+
+  roleLabel(role: string | null | undefined): string {
+    const r = (role || '').toUpperCase();
+    if (r === 'STAFF') {
+      return this.i18n.instant('CUSTOMER.SUPPORT_ROLE_STAFF');
+    }
+    if (r === 'CUSTOMER') {
+      return this.i18n.instant('CUSTOMER.SUPPORT_ROLE_ME');
+    }
+    return role || '—';
+  }
+
+  roleInitial(role: string | null | undefined): string {
+    const r = (role || '').toUpperCase();
+    if (r === 'STAFF') return 'S';
+    if (r === 'CUSTOMER') return 'B';
+    return '?';
+  }
+
+  private emptyForm(): {
+    category: string;
+    subject: string;
+    body: string;
+    priority: string;
+  } {
+    return {
+      category: 'GENERAL',
+      subject: '',
+      body: '',
+      priority: 'NORMAL',
+    };
   }
 }

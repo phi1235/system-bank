@@ -16,6 +16,12 @@ import { BankApiService } from '../../../core/services/bank-api.service';
 import { NotificationStreamService } from '../../../core/services/notification-stream.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { resolveHttpErrorMessage } from '../../../core/utils/http-error.util';
+import {
+  resolveNotificationPath,
+  humanizeNotificationBody,
+  humanizeTemplateCode,
+} from '../../../core/utils/notification-link.util';
+import { Router } from '@angular/router';
 import { LoadingComponent } from '../../../shared/components/loading/loading.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 
@@ -47,6 +53,7 @@ export class CustomerNotificationsComponent implements OnInit, OnDestroy {
   private readonly stream = inject(NotificationStreamService);
   private readonly toast = inject(ToastService);
   private readonly i18n = inject(TranslateService);
+  private readonly router = inject(Router);
   private liveSub?: Subscription;
 
   items: NotificationItem[] = [];
@@ -149,6 +156,33 @@ export class CustomerNotificationsComponent implements OnInit, OnDestroy {
     });
   }
 
+  openItem(item: NotificationItem): void {
+    const path = resolveNotificationPath(item, 'customer');
+    const go = () => {
+      if (path) {
+        void this.router.navigateByUrl(path);
+      }
+    };
+    if (item.read) {
+      go();
+      return;
+    }
+    this.markingId = item.id;
+    this.api.markNotificationRead(item.id).subscribe({
+      next: (updated) => {
+        this.markingId = null;
+        this.items = this.items.map((x) => (x.id === updated.id ? { ...item, ...updated, read: true } : x));
+        this.stream.setUnreadCount(Math.max(0, this.unreadCount - 1));
+        go();
+      },
+      error: (err) => {
+        this.markingId = null;
+        this.toast.error(resolveHttpErrorMessage(err, this.i18n));
+        go();
+      },
+    });
+  }
+
   markAll(): void {
     if (this.markingAll || this.unreadCount === 0) {
       return;
@@ -168,6 +202,10 @@ export class CustomerNotificationsComponent implements OnInit, OnDestroy {
     });
   }
 
+  displayBody(n: NotificationItem): string {
+    return humanizeNotificationBody(n.body, n.template);
+  }
+
   iconFor(n: NotificationItem): string {
     if (n.template?.includes('FAILED') || n.template?.startsWith('OPS_')) {
       return 'error_outline';
@@ -183,9 +221,16 @@ export class CustomerNotificationsComponent implements OnInit, OnDestroy {
   }
 
   templateLabel(n: NotificationItem): string {
-    const key = `NOTIF_TEMPLATE.${n.template}`;
+    const tpl = (n.template || '').trim();
+    if (!tpl) {
+      return 'Thông báo';
+    }
+    const key = `NOTIF_TEMPLATE.${tpl}`;
     const loc = this.i18n.instant(key);
-    return loc && loc !== key ? loc : n.template;
+    if (loc && loc !== key) {
+      return loc;
+    }
+    return humanizeTemplateCode(tpl);
   }
 
   transferIdFromBody(body: string | null | undefined): string | null {

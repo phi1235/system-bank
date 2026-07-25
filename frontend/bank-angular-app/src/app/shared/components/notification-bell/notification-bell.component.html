@@ -55,11 +55,12 @@
       <ul class="panel-list">
         @for (n of items; track n.id) {
           <li
-            class="panel-item"
-            [class.unread]="!n.read"
-            [class.bad]="isBad(n)"
-            (click)="markRead(n, $event)"
-          >
+                      class="panel-item"
+                      [class.unread]="!n.read"
+                      [class.bad]="isBad(n)"
+                      [class.clickable]="hasLink(n)"
+                      (click)="openItem(n, $event)"
+                    >
             <div class="icon-wrap" [class.bad]="isBad(n)" [class.ok]="n.template === 'TRANSFER_COMPLETED'">
               <mat-icon>{{ iconFor(n) }}</mat-icon>
             </div>
@@ -68,7 +69,7 @@
                 <span class="template">{{ templateLabel(n) }}</span>
                 <time>{{ n.createdAt | date: 'medium' }}</time>
               </div>
-              <p class="text">{{ n.body }}</p>
+              <p class="text">{{ displayBody(n) }}</p>
             </div>
             @if (!n.read) {
               <span class="dot" aria-hidden="true"></span>

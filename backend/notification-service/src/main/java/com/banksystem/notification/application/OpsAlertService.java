@@ -47,6 +47,9 @@ public class OpsAlertService {
     ops.setBody(req.body().trim());
     ops.setUserId(null);
     ops.setAudience(NotificationInboxService.AUDIENCE_OPS);
+    ops.setActionType(blankToNull(req.actionType()));
+    ops.setActionId(blankToNull(req.actionId()));
+    ops.setActionPath(blankToNull(req.actionPath()));
     ops.setCreatedAt(Instant.now());
 
     try {
@@ -75,6 +78,13 @@ public class OpsAlertService {
     }
   }
 
+  private static String blankToNull(String v) {
+    if (v == null || v.isBlank()) {
+      return null;
+    }
+    return v.trim();
+  }
+
   private NotificationItem toItem(NotificationLogEntity e) {
     return new NotificationItem(
         e.getId().toString(),
@@ -84,6 +94,9 @@ public class OpsAlertService {
         e.getBody() == null ? "" : e.getBody(),
         e.getReadAt() != null,
         e.getReadAt(),
-        e.getCreatedAt());
+        e.getCreatedAt(),
+        e.getActionType(),
+        e.getActionId(),
+        e.getActionPath());
   }
 }
