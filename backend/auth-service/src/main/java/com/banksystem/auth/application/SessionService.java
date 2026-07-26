@@ -3,10 +3,12 @@ package com.banksystem.auth.application;
 import com.banksystem.auth.api.dto.AuthDtos.SessionResponse;
 import com.banksystem.auth.domain.AuthAuditLogEntity;
 import com.banksystem.auth.domain.AuthAuditLogRepository;
+import com.banksystem.auth.infrastructure.jwt.JwtService;
 import com.banksystem.auth.infrastructure.redis.SessionStore;
 import com.banksystem.auth.infrastructure.redis.SessionStore.SessionMeta;
 import com.banksystem.auth.infrastructure.redis.TokenStore;
 import com.banksystem.common.exception.BusinessException;
+import io.jsonwebtoken.Claims;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -20,14 +22,36 @@ public class SessionService {
   private final SessionStore sessionStore;
   private final TokenStore tokenStore;
   private final AuthAuditLogRepository auditLogRepository;
+  private final JwtService jwtService;
 
   public SessionService(
       SessionStore sessionStore,
       TokenStore tokenStore,
-      AuthAuditLogRepository auditLogRepository) {
+      AuthAuditLogRepository auditLogRepository,
+      JwtService jwtService) {
     this.sessionStore = sessionStore;
     this.tokenStore = tokenStore;
     this.auditLogRepository = auditLogRepository;
+    this.jwtService = jwtService;
+  }
+
+  /**
+   * Resolve the refresh-token JTI from a raw refresh JWT (or null when absent/invalid).
+   * Lets the API layer mark which session is "this device" without touching JWT internals.
+   */
+  public String resolveRefreshJti(String refreshToken) {
+    if (refreshToken == null || refreshToken.isBlank()) {
+      return null;
+    }
+    try {
+      Claims claims = jwtService.parse(refreshToken);
+      if (!jwtService.isType(claims, JwtService.TYPE_REFRESH)) {
+        return null;
+      }
+      return claims.getId();
+    } catch (Exception ex) {
+      return null;
+    }
   }
 
   public void trackRefreshSession(

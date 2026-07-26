@@ -7,6 +7,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { Account } from '../../../../core/models/domain.model';
 import { MoneyVndPipe } from '../../../../shared/pipes/money-vnd.pipe';
+import { EnumLabelPipe } from '../../../../shared/pipes/enum-label.pipe';
 import { copyText } from '../../../../core/utils/transfer-receipt.util';
 import { ToastService } from '../../../../core/services/toast.service';
 import { AdminTopUpDialogComponent } from '../admin-top-up-dialog/admin-top-up-dialog.component';
@@ -27,6 +28,7 @@ export interface AdminAccountDetailDialogData {
     MatTooltipModule,
     TranslateModule,
     MoneyVndPipe,
+    EnumLabelPipe,
   ],
   templateUrl: './admin-account-detail-dialog.component.html',
   styleUrl: './admin-account-detail-dialog.component.scss',
@@ -38,11 +40,11 @@ export class AdminAccountDetailDialogComponent {
   private readonly i18n = inject(TranslateService);
   private readonly dialog = inject(MatDialog);
 
-  async copy(val: string, label: string): Promise<void> {
+  async copy(val: string): Promise<void> {
     if (!val) return;
     const ok = await copyText(val);
     this.toast[ok ? 'success' : 'error'](
-      ok ? `Đã sao chép ${label}` : `Không thể sao chép ${label}`
+      this.i18n.instant(ok ? 'ADMIN.ACCOUNT_COPY_OK' : 'ADMIN.ACCOUNT_COPY_FAIL')
     );
   }
 

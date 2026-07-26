@@ -100,7 +100,9 @@ export class NotificationSandboxComponent implements OnInit {
     const textToCopy = otpMatch ? otpMatch[0] : item.body;
     const ok = await copyText(textToCopy);
     this.toast[ok ? 'success' : 'error'](
-      otpMatch ? `Đã sao chép mã OTP: ${otpMatch[0]}` : 'Đã sao chép nội dung thông báo'
+      otpMatch
+        ? this.i18n.instant('SANDBOX.COPY_OTP_OK', { otp: otpMatch[0] })
+        : this.i18n.instant('SANDBOX.COPY_BODY_OK')
     );
   }
 

@@ -14,9 +14,7 @@ import com.banksystem.auth.api.dto.AuthDtos.UserMeResponse;
 import com.banksystem.auth.application.AuthService;
 import com.banksystem.auth.application.SessionService;
 import com.banksystem.auth.config.UserPrincipal;
-import com.banksystem.auth.infrastructure.jwt.JwtService;
 import com.banksystem.common.api.ApiResponse;
-import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -40,12 +38,10 @@ public class AuthController {
 
   private final AuthService authService;
   private final SessionService sessionService;
-  private final JwtService jwtService;
 
-  public AuthController(AuthService authService, SessionService sessionService, JwtService jwtService) {
+  public AuthController(AuthService authService, SessionService sessionService) {
     this.authService = authService;
     this.sessionService = sessionService;
-    this.jwtService = jwtService;
   }
 
   @PostMapping("/register")
@@ -140,18 +136,6 @@ public class AuthController {
    * Header: X-Refresh-Token: &lt;refresh jwt&gt;
    */
   private String currentRefreshJti(HttpServletRequest request) {
-    String refresh = request.getHeader("X-Refresh-Token");
-    if (refresh == null || refresh.isBlank()) {
-      return null;
-    }
-    try {
-      Claims claims = jwtService.parse(refresh);
-      if (!jwtService.isType(claims, JwtService.TYPE_REFRESH)) {
-        return null;
-      }
-      return claims.getId();
-    } catch (Exception ex) {
-      return null;
-    }
+    return sessionService.resolveRefreshJti(request.getHeader("X-Refresh-Token"));
   }
 }

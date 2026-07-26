@@ -2,8 +2,8 @@
   <div class="title-box">
     <mat-icon class="icon">account_balance</mat-icon>
     <div>
-      <h2>Chi tiết tài khoản</h2>
-      <p class="sub">Thông tin quản trị và số dư khả dụng</p>
+      <h2>{{ 'ADMIN.ACC_DETAIL_TITLE' | translate }}</h2>
+      <p class="sub">{{ 'ADMIN.ACC_DETAIL_SUB' | translate }}</p>
     </div>
   </div>
   <button mat-icon-button type="button" (click)="close()">
@@ -15,46 +15,46 @@
   <div class="account-card">
     <div class="stk-row">
       <div>
-        <span class="lbl">Số tài khoản (STK)</span>
+        <span class="lbl">{{ 'ADMIN.ACC_DETAIL_NUMBER' | translate }}</span>
         <div class="stk-val">
           <span>{{ data.account.accountNumber }}</span>
-          <button mat-icon-button type="button" class="copy-btn" (click)="copy(data.account.accountNumber, 'Số tài khoản')">
+          <button mat-icon-button type="button" class="copy-btn" (click)="copy(data.account.accountNumber)">
             <mat-icon>content_copy</mat-icon>
           </button>
         </div>
       </div>
       <span class="status-badge" [class.ok]="data.account.status === 'ACTIVE'" [class.bad]="data.account.status === 'FROZEN'">
-        {{ data.account.status === 'ACTIVE' ? 'Hoạt động' : (data.account.status === 'FROZEN' ? 'Đã khóa' : 'Đã đóng') }}
+        {{ data.account.status | enumLabel:'ACCOUNT_STATUS' }}
       </span>
     </div>
 
     <div class="bal-box">
-      <span class="lbl">Số dư hiện tại</span>
+      <span class="lbl">{{ 'ADMIN.ACC_DETAIL_BALANCE' | translate }}</span>
       <span class="bal-val">{{ data.account.balance | moneyVnd: data.account.currency }}</span>
     </div>
   </div>
 
   <div class="detail-rows">
     <div class="detail-item">
-      <span class="k">Loại tài khoản</span>
-      <span class="v">{{ data.account.accountType === 'PAYMENT' ? 'Tài khoản Thanh toán' : 'Tài khoản Tiết kiệm' }}</span>
+      <span class="k">{{ 'ADMIN.ACCOUNT_TYPE_LABEL' | translate }}</span>
+      <span class="v">{{ data.account.accountType | enumLabel:'ACCOUNT_TYPE' }}</span>
     </div>
 
     <div class="detail-item">
-      <span class="k">Mã khách hàng sở hữu</span>
+      <span class="k">{{ 'ADMIN.ACC_DETAIL_OWNER' | translate }}</span>
       <div class="v copy-line">
         <span>{{ data.account.userId }}</span>
-        <button mat-icon-button type="button" class="copy-btn" (click)="copy(data.account.userId, 'Mã khách hàng')">
+        <button mat-icon-button type="button" class="copy-btn" (click)="copy(data.account.userId)">
           <mat-icon>content_copy</mat-icon>
         </button>
       </div>
     </div>
 
     <div class="detail-item">
-      <span class="k">Mã ID tài khoản (System UUID)</span>
+      <span class="k">{{ 'ADMIN.ACC_DETAIL_UUID' | translate }}</span>
       <div class="v copy-line">
         <span>{{ data.account.id }}</span>
-        <button mat-icon-button type="button" class="copy-btn" (click)="copy(data.account.id, 'Mã ID tài khoản')">
+        <button mat-icon-button type="button" class="copy-btn" (click)="copy(data.account.id)">
           <mat-icon>content_copy</mat-icon>
         </button>
       </div>
@@ -62,7 +62,7 @@
 
     @if (data.account.createdAt) {
       <div class="detail-item">
-        <span class="k">Ngày mở tài khoản</span>
+        <span class="k">{{ 'ADMIN.ACC_DETAIL_OPENED' | translate }}</span>
         <span class="v">{{ data.account.createdAt | date: 'dd/MM/yyyy HH:mm:ss' }}</span>
       </div>
     }
@@ -70,11 +70,11 @@
 </mat-dialog-content>
 
 <mat-dialog-actions class="dialog-actions">
-  <button mat-stroked-button type="button" (click)="close()">Đóng</button>
+  <button mat-stroked-button type="button" (click)="close()">{{ 'COMMON.CLOSE' | translate }}</button>
   @if (data.canTopUp && data.account.status === 'ACTIVE') {
     <button mat-flat-button class="topup-btn" type="button" (click)="openTopUp()">
       <mat-icon>add_circle</mat-icon>
-      Lập lệnh Nạp tiền
+      {{ 'ADMIN.ACC_DETAIL_TOPUP_CTA' | translate }}
     </button>
   }
 </mat-dialog-actions>

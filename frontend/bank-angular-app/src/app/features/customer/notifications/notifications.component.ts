@@ -223,7 +223,7 @@ export class CustomerNotificationsComponent implements OnInit, OnDestroy {
   templateLabel(n: NotificationItem): string {
     const tpl = (n.template || '').trim();
     if (!tpl) {
-      return 'Thông báo';
+      return this.i18n.instant('COMMON.NOTIFICATION');
     }
     const key = `NOTIF_TEMPLATE.${tpl}`;
     const loc = this.i18n.instant(key);

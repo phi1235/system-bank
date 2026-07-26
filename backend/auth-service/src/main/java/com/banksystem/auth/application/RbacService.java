@@ -239,7 +239,7 @@ public class RbacService {
         .toList();
 
     // Ensure catalog rows exist (auto-register unknown codes so UI catalog stays in sync)
-    Set<String> known = permissionRepository.findAll().stream()
+    Set<String> known = permissionRepository.findAllById(next).stream()
         .map(PermissionEntity::getCode)
         .collect(Collectors.toSet());
     for (String p : next) {
@@ -284,7 +284,9 @@ public class RbacService {
       throw new BusinessException("INVALID_ROLES", "At least one role is required", HttpStatus.BAD_REQUEST);
     }
 
-    Set<String> known = roleRepository.findAll().stream().map(RoleEntity::getCode).collect(Collectors.toSet());
+    Set<String> known = roleRepository.findAllById(nextRoles).stream()
+        .map(RoleEntity::getCode)
+        .collect(Collectors.toSet());
     for (String role : nextRoles) {
       if (!known.contains(role)) {
         throw new BusinessException("UNKNOWN_ROLE", "Unknown role: " + role, HttpStatus.BAD_REQUEST);
@@ -308,9 +310,7 @@ public class RbacService {
   }
 
   private long countFullAdmins() {
-    return userRepository.findAll().stream()
-        .filter(u -> isFullAdmin(u.roleList()))
-        .count();
+    return userRepository.countByAnyRole(FULL_ADMIN_ROLES);
   }
 
   private boolean isFullAdmin(List<String> roles) {
