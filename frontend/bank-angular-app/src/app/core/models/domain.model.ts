@@ -289,3 +289,39 @@ export interface ReconRunDetail {
   run: ReconRun;
   items: ReconItem[];
 }
+
+/** Term-deposit (so tiet kiem) product offered to customers. */
+export interface DepositProduct {
+  code: string;
+  tenorMonths: number;
+  rateBps: number;
+  earlyRateBps: number;
+  minAmount: number;
+}
+
+export interface DepositQuote {
+  productCode: string;
+  tenorMonths: number;
+  rateBps: number;
+  amount: number;
+  openDate: string;
+  maturityDate: string;
+  days: number;
+  expectedInterest: number;
+  totalAtMaturity: number;
+}
+
+export interface TermDeposit {
+  id: string;
+  sourceAccountId: string;
+  productCode: string;
+  tenorMonths: number;
+  amount: number;
+  rateBps: number;
+  earlyRateBps: number;
+  openedAt: string;
+  maturityDate: string;
+  status: string;
+  interest: number;
+  closedAt: string | null;
+}

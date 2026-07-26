@@ -62,8 +62,7 @@ export const CUSTOMER_ROUTES: Routes = [
       {
         path: 'wealth',
         canActivate: [permissionGuard([PERMISSIONS.IB_WEALTH_VIEW])],
-        loadComponent: () => import('./placeholder/placeholder.component').then((m) => m.PlaceholderComponent),
-        data: { titleKey: 'NAV.WEALTH', subtitleKey: 'CUSTOMER.WEALTH_SUB' },
+        loadComponent: () => import('./wealth/wealth.component').then((m) => m.WealthComponent),
       },
       {
         path: 'support',

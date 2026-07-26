@@ -9,6 +9,8 @@ import {
   BankItem,
   Beneficiary,
   CustomerProfile,
+  DepositProduct,
+  DepositQuote,
   LedgerEntry,
   NotificationItem,
   OutboxCounts,
@@ -16,6 +18,7 @@ import {
   ReconRun,
   ReconRunDetail,
   SupportTicket,
+  TermDeposit,
   TopUpResponse,
   TransactionReport,
   Transfer,
@@ -119,6 +122,27 @@ export class BankApiService {
 
   openAccount(accountType = 'PAYMENT'): Observable<Account> {
     return this.api.post('/accounts', { accountType });
+  }
+
+  // Term deposits (so tiet kiem)
+  depositProducts(): Observable<DepositProduct[]> {
+    return this.api.get('/deposits/products');
+  }
+
+  depositQuote(productCode: string, amount: number): Observable<DepositQuote> {
+    return this.api.get('/deposits/quote', { productCode, amount });
+  }
+
+  openDeposit(sourceAccountId: string, productCode: string, amount: number): Observable<TermDeposit> {
+    return this.api.post('/deposits', { sourceAccountId, productCode, amount });
+  }
+
+  myDeposits(): Observable<TermDeposit[]> {
+    return this.api.get('/deposits');
+  }
+
+  closeDeposit(id: string): Observable<TermDeposit> {
+    return this.api.post(`/deposits/${id}/close`, {});
   }
 
   getAccount(id: string): Observable<Account> {

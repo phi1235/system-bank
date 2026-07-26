@@ -1,0 +1,159 @@
+.page-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.two-col {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.open-card,
+.rates-card,
+.table-card {
+  padding: 16px;
+
+  h3 {
+    margin: 0 0 12px;
+    font-size: 15px;
+  }
+}
+
+.full-width {
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.quote-loading {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0;
+}
+
+.quote-box {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  background: rgba(0, 150, 136, 0.04);
+
+  .quote-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    font-size: 14px;
+
+    .interest {
+      color: #2e7d32;
+    }
+
+    &.total {
+      border-top: 1px dashed rgba(0, 0, 0, 0.2);
+      margin-top: 4px;
+      padding-top: 8px;
+    }
+  }
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.rates {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+
+  th {
+    text-align: left;
+    color: rgba(0, 0, 0, 0.6);
+    font-weight: 500;
+    padding: 6px 8px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+  }
+
+  td {
+    padding: 8px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  .rate {
+    font-weight: 600;
+    color: #00695c;
+  }
+}
+
+.hint {
+  margin: 12px 0 0;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.55);
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table.full {
+  width: 100%;
+}
+
+.money {
+  white-space: nowrap;
+}
+
+.interest {
+  color: #2e7d32;
+}
+
+.chip {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  background: rgba(0, 0, 0, 0.08);
+
+  &.ok {
+    background: rgba(46, 125, 50, 0.12);
+    color: #2e7d32;
+  }
+
+  &.warn {
+    background: rgba(239, 108, 0, 0.12);
+    color: #ef6c00;
+  }
+
+  &.done {
+    background: rgba(21, 101, 192, 0.12);
+    color: #1565c0;
+  }
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 32px 0;
+  color: rgba(0, 0, 0, 0.55);
+
+  mat-icon {
+    font-size: 40px;
+    width: 40px;
+    height: 40px;
+  }
+
+  .empty-title {
+    font-weight: 600;
+    margin: 8px 0 0;
+  }
+
+  .empty-hint {
+    margin: 0;
+    font-size: 13px;
+  }
+}

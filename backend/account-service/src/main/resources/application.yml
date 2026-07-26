@@ -37,6 +37,9 @@ bank:
     initial-balance: ${ACCOUNT_INITIAL_BALANCE}
     topup:
       max-amount: 50000000
+  deposit:
+    # Banking-day zone for maturity dates and interest day counts.
+    zone: ${DEPOSIT_ZONE:Asia/Bangkok}
   gateway:
     signing-secret: ${GATEWAY_SIGNING_SECRET}
     max-clock-skew-seconds: ${GATEWAY_MAX_CLOCK_SKEW_SECONDS}
