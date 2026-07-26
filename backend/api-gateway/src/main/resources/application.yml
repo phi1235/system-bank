@@ -76,6 +76,10 @@ spring:
           uri: lb://ACCOUNT-SERVICE
           predicates:
             - Path=/api/v1/admin/accounts/**
+        - id: admin-routes-deposits
+          uri: lb://ACCOUNT-SERVICE
+          predicates:
+            - Path=/api/v1/admin/deposits/**
         - id: admin-routes-transactions
           uri: lb://TRANSACTION-SERVICE
           predicates:

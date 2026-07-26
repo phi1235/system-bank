@@ -39,6 +39,16 @@
             <span matListItemTitle>{{ 'NAV.ADMIN_ACCOUNTS' | translate }}</span>
           </a>
         }
+        @if (canDeposits$ | async) {
+          <a mat-list-item routerLink="/admin/deposits" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+            <mat-icon matListItemIcon>savings</mat-icon>
+            <span matListItemTitle>{{ 'NAV.ADMIN_DEPOSITS' | translate }}</span>
+          </a>
+          <a mat-list-item routerLink="/admin/deposits/contracts" routerLinkActive="active">
+            <mat-icon matListItemIcon>list_alt</mat-icon>
+            <span matListItemTitle>{{ 'NAV.ADMIN_DEPOSIT_CONTRACTS' | translate }}</span>
+          </a>
+        }
         @if (canTx$ | async) {
           <a mat-list-item routerLink="/admin/transactions" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
             <mat-icon matListItemIcon>swap_horiz</mat-icon>

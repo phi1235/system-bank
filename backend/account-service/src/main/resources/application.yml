@@ -40,14 +40,19 @@ bank:
   deposit:
     # Banking-day zone for maturity dates and interest day counts.
     zone: ${DEPOSIT_ZONE:Asia/Bangkok}
+    # Nightly accrual + maturity batch; opt-in. Manual runs via admin API always work.
+    batch:
+      enabled: ${DEPOSIT_BATCH_ENABLED:false}
+      cron: ${DEPOSIT_BATCH_CRON:0 15 0 * * *}
   gateway:
     signing-secret: ${GATEWAY_SIGNING_SECRET}
     max-clock-skew-seconds: ${GATEWAY_MAX_CLOCK_SKEW_SECONDS}
   internal:
     api-key: ${ACCOUNT_INTERNAL_API_KEY}
     notification-api-key: ${NOTIFICATION_INTERNAL_API_KEY}
-    # Key presented when pushing audit logs to transaction-service (key identifies the target).
+    # Keys presented when calling other services (key identifies the target).
     transaction-api-key: ${TRANSACTION_INTERNAL_API_KEY}
+    customer-api-key: ${CUSTOMER_INTERNAL_API_KEY}
 
 management:
   endpoints:
@@ -67,6 +72,11 @@ management:
   zipkin:
     tracing:
       endpoint: ${ZIPKIN_ENDPOINT}
+
+mybatis:
+  mapper-locations: classpath:mybatis/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
 
 springdoc:
   swagger-ui:

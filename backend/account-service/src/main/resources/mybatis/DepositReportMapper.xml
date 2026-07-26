@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.banksystem.account.infrastructure.mybatis.DepositReportMapper">
+
+  <resultMap id="totalsRow"
+             type="com.banksystem.account.api.dto.DepositDtos$DepositTotalsRow">
+    <constructor>
+      <arg column="open_count" javaType="_long"/>
+      <arg column="open_principal" javaType="java.math.BigDecimal"/>
+      <arg column="open_accrued" javaType="java.math.BigDecimal"/>
+      <arg column="due_in_7_days" javaType="_long"/>
+      <arg column="matured_count" javaType="_long"/>
+      <arg column="closed_early_count" javaType="_long"/>
+    </constructor>
+  </resultMap>
+
+  <select id="totals" resultMap="totalsRow">
+    SELECT COUNT(*) FILTER (WHERE t.status = 'OPEN')                                  AS open_count,
+           COALESCE(SUM(t.amount)           FILTER (WHERE t.status = 'OPEN'), 0)      AS open_principal,
+           COALESCE(SUM(t.accrued_interest) FILTER (WHERE t.status = 'OPEN'), 0)      AS open_accrued,
+           COUNT(*) FILTER (WHERE t.status = 'OPEN'
+                              AND t.maturity_date &lt;= #{today} + 7)                  AS due_in_7_days,
+           COUNT(*) FILTER (WHERE t.status = 'MATURED')                               AS matured_count,
+           COUNT(*) FILTER (WHERE t.status = 'CLOSED_EARLY')                          AS closed_early_count
+    FROM term_deposits t
+  </select>
+
+  <resultMap id="tenorRow"
+             type="com.banksystem.account.api.dto.DepositDtos$DepositTenorRow">
+    <constructor>
+      <arg column="code" javaType="java.lang.String"/>
+      <arg column="tenor_months" javaType="_int"/>
+      <arg column="rate_bps" javaType="_int"/>
+      <arg column="open_count" javaType="_long"/>
+      <arg column="open_principal" javaType="java.math.BigDecimal"/>
+      <arg column="open_accrued" javaType="java.math.BigDecimal"/>
+    </constructor>
+  </resultMap>
+
+  <!-- LEFT JOIN keeps tenors with zero deposits visible in the admin table. -->
+  <select id="byProduct" resultMap="tenorRow">
+    SELECT p.code                                                                     AS code,
+           p.tenor_months                                                             AS tenor_months,
+           p.rate_bps                                                                 AS rate_bps,
+           COUNT(t.id) FILTER (WHERE t.status = 'OPEN')                               AS open_count,
+           COALESCE(SUM(t.amount)           FILTER (WHERE t.status = 'OPEN'), 0)      AS open_principal,
+           COALESCE(SUM(t.accrued_interest) FILTER (WHERE t.status = 'OPEN'), 0)      AS open_accrued
+    FROM deposit_products p
+    LEFT JOIN term_deposits t ON t.product_code = p.code
+    GROUP BY p.code, p.tenor_months, p.rate_bps
+    ORDER BY p.tenor_months
+  </select>
+
+</mapper>

@@ -33,6 +33,7 @@ class TermDepositPersistenceIntegrationTest {
   @Autowired private DepositProductRepository productRepository;
   @Autowired private TermDepositRepository depositRepository;
   @Autowired private AccountRepository accountRepository;
+  @Autowired private jakarta.persistence.EntityManager entityManager;
 
   @Test
   void migrationSeedsFourActiveProductsOrderedByTenor() {
@@ -66,6 +67,82 @@ class TermDepositPersistenceIntegrationTest {
     assertEquals(2, mine.size());
     assertTrue(mine.get(0).getOpenedAt().isAfter(mine.get(1).getOpenedAt()));
     assertEquals(TermDepositStatus.OPEN, mine.get(0).getStatus());
+  }
+
+  /** Flag+sentinel admin search on real Postgres (the 42P18-safe pattern). */
+  @Test
+  void adminSearchFiltersByFlagsWithoutNullBinds() {
+    UUID userA = UUID.randomUUID();
+    UUID userB = UUID.randomUUID();
+    AccountEntity account = new AccountEntity();
+    account.setId(UUID.randomUUID());
+    account.setUserId(userA);
+    account.setAccountNumber("1234509878");
+    account.setAccountType("PAYMENT");
+    account.setCurrency("VND");
+    account.setBalance(new BigDecimal("0.00"));
+    account.setStatus("ACTIVE");
+    accountRepository.save(account);
+
+    TermDepositEntity d1 = deposit(userA, account.getId(), Instant.parse("2026-07-01T03:00:00Z"));
+    TermDepositEntity d2 = deposit(userB, account.getId(), Instant.parse("2026-07-02T03:00:00Z"));
+    d2.setProductCode("TD1M");
+    TermDepositEntity d3 = deposit(userA, account.getId(), Instant.parse("2026-07-03T03:00:00Z"));
+    d3.setStatus(TermDepositStatus.CLOSED_EARLY);
+    depositRepository.saveAll(List.of(d1, d2, d3));
+
+    var page = org.springframework.data.domain.PageRequest.of(0, 20);
+    // No filters — every flag false, sentinel bounds (the old NULL-bind crash path)
+    assertEquals(3, depositRepository.searchAdmin(
+        false, TermDepositStatus.OPEN, false, "", false, new UUID(0, 0), false, new UUID(0, 0),
+        LocalDate.of(1970, 1, 1), LocalDate.of(9999, 12, 31), page).getTotalElements());
+    // Status filter
+    assertEquals(2, depositRepository.searchAdmin(
+        true, TermDepositStatus.OPEN, false, "", false, new UUID(0, 0), false, new UUID(0, 0),
+        LocalDate.of(1970, 1, 1), LocalDate.of(9999, 12, 31), page).getTotalElements());
+    // User + product filters combined
+    assertEquals(1, depositRepository.searchAdmin(
+        false, TermDepositStatus.OPEN, true, "TD1M", true, userB, false, new UUID(0, 0),
+        LocalDate.of(1970, 1, 1), LocalDate.of(9999, 12, 31), page).getTotalElements());
+  }
+
+  /** The set-based accrual UPDATE runs Postgres-only SQL (AT TIME ZONE, date arithmetic). */
+  @Test
+  void accrualUpdatesOpenDepositsSetBased() {
+    UUID userId = UUID.randomUUID();
+    AccountEntity account = new AccountEntity();
+    account.setId(UUID.randomUUID());
+    account.setUserId(userId);
+    account.setAccountNumber("1234509877");
+    account.setAccountType("PAYMENT");
+    account.setCurrency("VND");
+    account.setBalance(new BigDecimal("0.00"));
+    account.setStatus("ACTIVE");
+    accountRepository.save(account);
+
+    // Opened exactly 30 banking days ago (same wall time — date diff is stable).
+    TermDepositEntity open =
+        deposit(userId, account.getId(), Instant.now().minusSeconds(30L * 24 * 3600));
+    open.setAmount(new BigDecimal("10000000.00"));
+    open.setRateBps(460);
+    TermDepositEntity closed =
+        deposit(userId, account.getId(), Instant.now().minusSeconds(30L * 24 * 3600));
+    closed.setStatus(TermDepositStatus.CLOSED_EARLY);
+    depositRepository.saveAll(List.of(open, closed));
+    entityManager.flush();
+
+    int updated = depositRepository.accrueDailyInterest("Asia/Bangkok");
+    entityManager.clear();
+
+    assertEquals(1, updated);
+    // 10,000,000 * 4.60% * 30/365 = 37,808.22
+    assertEquals(
+        new BigDecimal("37808.22"),
+        depositRepository.findById(open.getId()).orElseThrow().getAccruedInterest());
+    // CLOSED_EARLY row untouched
+    assertEquals(
+        new BigDecimal("0.00"),
+        depositRepository.findById(closed.getId()).orElseThrow().getAccruedInterest());
   }
 
   private TermDepositEntity deposit(UUID userId, UUID accountId, Instant openedAt) {

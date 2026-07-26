@@ -4,6 +4,7 @@ import com.banksystem.common.api.PageResponse;
 import com.banksystem.common.exception.BusinessException;
 import com.banksystem.common.security.CryptoUtils;
 import com.banksystem.customer.api.dto.CustomerDtos.CreateProfileRequest;
+import com.banksystem.customer.api.dto.CustomerDtos.CustomerNameResponse;
 import com.banksystem.customer.api.dto.CustomerDtos.CustomerResponse;
 import com.banksystem.customer.api.dto.CustomerDtos.KycUpdateRequest;
 import com.banksystem.customer.api.dto.CustomerDtos.UpdateProfileRequest;
@@ -64,6 +65,14 @@ public class CustomerAppService {
   @Transactional(readOnly = true)
   public CustomerResponse getMe(UUID userId) {
     return toResponse(require(userId));
+  }
+
+  /** Internal batch display-name lookup; unknown ids are simply absent from the result. */
+  @Transactional(readOnly = true)
+  public List<CustomerNameResponse> namesByIds(List<UUID> userIds) {
+    return repository.findAllById(userIds).stream()
+        .map(c -> new CustomerNameResponse(c.getId().toString(), c.getFullName()))
+        .toList();
   }
 
   @Transactional

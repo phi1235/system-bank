@@ -150,6 +150,37 @@ class TermDepositServiceTest {
   }
 
   @Test
+  void matureCreditsFullTermInterestWithMatureRef() {
+    // Opened 2026-01-26 BKK, matures 2026-07-26 -> 181 days at 4.60%
+    TermDepositEntity deposit = openDeposit(Instant.parse("2026-01-26T03:00:00Z"));
+    deposit.setMaturityDate(LocalDate.of(2026, 7, 26));
+    when(depositRepository.findById(deposit.getId())).thenReturn(Optional.of(deposit));
+    when(moneyService.credit(eq(accountId), any()))
+        .thenReturn(new MoneyResult(UUID.randomUUID().toString(), BigDecimal.ZERO));
+
+    boolean processed = service.mature(deposit.getId());
+
+    assertEquals(true, processed);
+    ArgumentCaptor<MoneyCommand> cmd = ArgumentCaptor.forClass(MoneyCommand.class);
+    verify(moneyService).credit(eq(accountId), cmd.capture());
+    // 10,000,000 * 4.60% * 181/365 = 228,109.59
+    assertEquals(new BigDecimal("10228109.59"), cmd.getValue().amount());
+    assertEquals("DEP-" + deposit.getId() + "-mature", cmd.getValue().referenceId());
+    assertEquals(TermDepositStatus.MATURED, deposit.getStatus());
+    assertEquals(new BigDecimal("228109.59"), deposit.getAccruedInterest());
+  }
+
+  @Test
+  void matureSkipsAlreadyProcessedDeposit() {
+    TermDepositEntity deposit = openDeposit(NOW.minusSeconds(3600));
+    deposit.setStatus(TermDepositStatus.MATURED);
+    when(depositRepository.findById(deposit.getId())).thenReturn(Optional.of(deposit));
+
+    assertEquals(false, service.mature(deposit.getId()));
+    verify(moneyService, never()).credit(any(), any());
+  }
+
+  @Test
   void closeEarlyRejectsNonOpenDeposit() {
     TermDepositEntity deposit = openDeposit(NOW.minusSeconds(3600));
     deposit.setStatus(TermDepositStatus.CLOSED_EARLY);

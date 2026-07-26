@@ -1,0 +1,87 @@
+<app-page-header [title]="'ADMIN.DEPOSITS_TITLE' | translate" [subtitle]="'ADMIN.DEPOSITS_SUB' | translate">
+  <button mat-stroked-button type="button" (click)="load()" [disabled]="loading">
+    <mat-icon>refresh</mat-icon>
+    {{ 'COMMON.REFRESH' | translate }}
+  </button>
+  <a mat-stroked-button routerLink="/admin/deposits/contracts">
+    <mat-icon>list_alt</mat-icon>
+    {{ 'ADMIN.DEPOSITS_GO_CONTRACTS' | translate }}
+  </a>
+  @if (canRunBatch$ | async) {
+    <button mat-flat-button color="primary" type="button" (click)="runBatch()" [disabled]="running || loading">
+      <mat-icon>play_arrow</mat-icon>
+      {{ (running ? 'ADMIN.DEPOSITS_BATCH_RUNNING' : 'ADMIN.DEPOSITS_BATCH_BTN') | translate }}
+    </button>
+  }
+</app-page-header>
+
+@if (loading) {
+  <div class="loading-wrap"><mat-spinner diameter="36" /></div>
+} @else if (summary) {
+  <div class="page-stack">
+    <div class="kpi-grid">
+      <mat-card class="stat-card">
+        <div class="stat-label">{{ 'ADMIN.DEPOSITS_OPEN_PRINCIPAL' | translate }}</div>
+        <div class="stat-value">{{ summary.totals.openPrincipal | moneyVnd }}</div>
+        <div class="stat-hint">{{ summary.totals.openCount | number }} {{ 'ADMIN.DEPOSITS_OPEN_COUNT' | translate }}</div>
+      </mat-card>
+      <mat-card class="stat-card">
+        <div class="stat-label">{{ 'ADMIN.DEPOSITS_ACCRUED' | translate }}</div>
+        <div class="stat-value">{{ summary.totals.openAccrued | moneyVnd }}</div>
+      </mat-card>
+      <mat-card class="stat-card">
+        <div class="stat-label">{{ 'ADMIN.DEPOSITS_DUE_7D' | translate }}</div>
+        <div class="stat-value" [class.warn]="summary.totals.dueIn7Days > 0">{{ summary.totals.dueIn7Days | number }}</div>
+      </mat-card>
+      <mat-card class="stat-card">
+        <div class="stat-label">{{ 'ADMIN.DEPOSITS_SETTLED' | translate }}</div>
+        <div class="stat-value">{{ summary.totals.maturedCount + summary.totals.closedEarlyCount | number }}</div>
+        <div class="stat-hint">{{ summary.totals.maturedCount | number }} {{ 'ADMIN.DEPOSITS_MATURED' | translate }} · {{ summary.totals.closedEarlyCount | number }} {{ 'ADMIN.DEPOSITS_CLOSED_EARLY' | translate }}</div>
+      </mat-card>
+    </div>
+
+    <mat-card class="table-card">
+      <h3>{{ 'ADMIN.DEPOSITS_PRODUCTS_TITLE' | translate }}</h3>
+      <table mat-table [dataSource]="products" class="full">
+        <ng-container matColumnDef="tenor">
+          <th mat-header-cell *matHeaderCellDef>{{ 'CUSTOMER.WEALTH_TENOR' | translate }}</th>
+          <td mat-cell *matCellDef="let p">{{ p.tenorMonths }} {{ 'CUSTOMER.WEALTH_MONTHS' | translate }} <code>{{ p.code }}</code></td>
+        </ng-container>
+        <ng-container matColumnDef="rate">
+          <th mat-header-cell *matHeaderCellDef>{{ 'CUSTOMER.WEALTH_RATE' | translate }}</th>
+          <td mat-cell *matCellDef="let p">{{ ratePct(p.rateBps) }}%</td>
+        </ng-container>
+        <ng-container matColumnDef="earlyRate">
+          <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.DEPOSITS_EARLY_RATE' | translate }}</th>
+          <td mat-cell *matCellDef="let p">{{ ratePct(p.earlyRateBps) }}%</td>
+        </ng-container>
+        <ng-container matColumnDef="min">
+          <th mat-header-cell *matHeaderCellDef>{{ 'CUSTOMER.WEALTH_MIN' | translate }}</th>
+          <td mat-cell *matCellDef="let p" class="money">{{ p.minAmount | moneyVnd }}</td>
+        </ng-container>
+        <ng-container matColumnDef="active">
+          <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.STATUS' | translate }}</th>
+          <td mat-cell *matCellDef="let p">
+            <span class="chip" [class.ok]="p.active" [class.bad]="!p.active">
+              {{ (p.active ? 'ADMIN.DEPOSITS_PRODUCT_ACTIVE' : 'ADMIN.DEPOSITS_PRODUCT_INACTIVE') | translate }}
+            </span>
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef></th>
+          <td mat-cell *matCellDef="let p">
+            @if (canManageProducts$ | async) {
+              <button mat-stroked-button type="button" (click)="editProduct(p)">
+                <mat-icon>edit</mat-icon>
+                {{ 'ADMIN.DEPOSITS_EDIT_BTN' | translate }}
+              </button>
+            }
+          </td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="productCols"></tr>
+        <tr mat-row *matRowDef="let row; columns: productCols"></tr>
+      </table>
+      <p class="hint">{{ 'ADMIN.DEPOSITS_EDIT_HINT' | translate }} · {{ 'ADMIN.DEPOSITS_HINT' | translate }}</p>
+    </mat-card>
+  </div>
+}
