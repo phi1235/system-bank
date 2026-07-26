@@ -13,8 +13,11 @@ import {
   NotificationItem,
   OutboxCounts,
   OutboxEvent,
+  ReconRun,
+  ReconRunDetail,
   SupportTicket,
   TopUpResponse,
+  TransactionReport,
   Transfer,
   TransferDetail,
   TransferQuote,
@@ -354,6 +357,34 @@ export class BankApiService {
       from: filters?.from,
       to: filters?.to,
     });
+  }
+
+  /** Aggregated transfer report; dates as yyyy-MM-dd banking days (defaults: last 30 days). */
+  adminTransactionReport(filters?: {
+    from?: string;
+    to?: string;
+    accountId?: string;
+    top?: number;
+  }): Observable<TransactionReport> {
+    return this.api.get('/admin/transactions/reports', {
+      from: filters?.from,
+      to: filters?.to,
+      accountId: filters?.accountId,
+      top: filters?.top,
+    });
+  }
+
+  adminReconRuns(page = 0, size = 20): Observable<PageResponse<ReconRun>> {
+    return this.api.get('/admin/recon/runs', { page, size });
+  }
+
+  adminReconRun(id: string): Observable<ReconRunDetail> {
+    return this.api.get(`/admin/recon/runs/${id}`);
+  }
+
+  /** Manual reconciliation run for one banking date (yyyy-MM-dd). */
+  adminRunRecon(date: string): Observable<ReconRun> {
+    return this.api.post('/admin/recon/runs', { date });
   }
 
   /**

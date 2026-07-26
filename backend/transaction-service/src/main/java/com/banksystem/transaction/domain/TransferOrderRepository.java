@@ -15,6 +15,10 @@ public interface TransferOrderRepository extends JpaRepository<TransferOrderEnti
 
   Page<TransferOrderEntity> findByUserIdOrderByCreatedAtDesc(UUID userId, Pageable pageable);
 
+  /** Reconciliation: all orders of one banking day, [from, to) in UTC instants. */
+  java.util.List<TransferOrderEntity> findByCreatedAtGreaterThanEqualAndCreatedAtLessThan(
+      Instant from, Instant to);
+
   /**
    * History search. Callers must pass non-null from/to bounds (use epoch/far-future when
    * the UI omits a range). Optional status uses a boolean flag so Postgres never sees an

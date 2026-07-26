@@ -58,7 +58,7 @@ Browser (Angular) ──► API Gateway (JWT · CORS · rate limit)
 |-------|------------|
 | Backend | Java 21, Spring Boot 3.3, Spring Cloud 2023.0 |
 | Communication | OpenFeign, Resilience4j, Apache Kafka |
-| Data | PostgreSQL 16, Flyway, Redis 7 |
+| Data | PostgreSQL 16, Flyway, JPA (writes) + MyBatis (reporting read models), Redis 7 |
 | Security | JWT (HS256), BCrypt + pepper-bound password, AES-GCM (PII/MFA) |
 | Frontend | Angular 19, NgRx, Angular Material, ngx-translate (vi/en) |
 > **Note:** frontend/ui-mockups/ is a **static design prototype** (hard-coded sample copy/data for UX review). The production UI is frontend/bank-angular-app/ with API + i18n.
@@ -82,10 +82,15 @@ Browser (Angular) ──► API Gateway (JWT · CORS · rate limit)
 - Customer list & KYC update
 - Account freeze / unfreeze
 - Transaction monitor & audit log
+- Transaction report dashboard (daily volume, status breakdown, top accounts — MyBatis read model)
+- End-of-day reconciliation: transfer orders vs account-service ledger, discrepancy report
 
 ### Platform patterns
 - **Saga** transfer: debit → credit; credit failure → compensate (refund)
 - **Transactional outbox** → Kafka → notification consumer (idempotent)
+- **End-of-day reconciliation**: nightly (opt-in `RECON_ENABLED`) or manual run compares
+  `transfer_orders` against ledger entries pulled from account-service (DB-per-service — no
+  cross-DB join) and persists discrepancies (missing debit/credit/refund, amount mismatch, stale in-flight)
 - Gateway **rate limit** (login + global) via Redis
 - Distributed **tracing** (Micrometer → Zipkin) and **metrics** (Prometheus)
 - Gateway strips caller identity headers, then signs downstream identity with **HMAC-SHA256**

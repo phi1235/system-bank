@@ -3,8 +3,10 @@ package com.banksystem.account.api.dto;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 
 public final class AccountDtos {
   private AccountDtos() {}
@@ -58,5 +60,17 @@ public final class AccountDtos {
       BigDecimal amount,
       BigDecimal balanceAfter,
       String channel
+  ) {}
+
+  /** Internal reconciliation lookup: ledger entries for a batch of reference ids. */
+  public record LedgerSearchRequest(@NotNull @Size(min = 1, max = 2000) List<String> referenceIds) {}
+
+  public record InternalLedgerEntryResponse(
+      String id,
+      String accountId,
+      String entryType,
+      BigDecimal amount,
+      String referenceId,
+      Instant createdAt
   ) {}
 }

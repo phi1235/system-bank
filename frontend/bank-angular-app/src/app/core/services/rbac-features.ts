@@ -279,6 +279,18 @@ export const RBAC_SCREENS: RbacScreenDef[] = [
         label: 'Monitor giao dịch',
         actions: { view: PERMISSIONS.TX_LIST_VIEW },
       },
+      {
+        id: 'report',
+        labelKey: 'ADMIN.FEAT_TX_REPORT',
+        label: 'Báo cáo giao dịch',
+        actions: { view: PERMISSIONS.TX_REPORT_VIEW },
+      },
+      {
+        id: 'recon',
+        labelKey: 'ADMIN.FEAT_TX_RECON',
+        label: 'Đối soát cuối ngày',
+        actions: { view: PERMISSIONS.TX_RECON_VIEW, execute: PERMISSIONS.TX_RECON_EXECUTE },
+      },
     ],
   },
   {

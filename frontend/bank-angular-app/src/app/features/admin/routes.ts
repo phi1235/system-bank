@@ -36,6 +36,18 @@ export const ADMIN_ROUTES: Routes = [
         loadComponent: () => import('./transfers/transfers.component').then((m) => m.AdminTransfersComponent),
       },
       {
+        path: 'transactions/report',
+        canActivate: [permissionGuard([PERMISSIONS.TX_REPORT_VIEW])],
+        loadComponent: () =>
+          import('./transaction-report/transaction-report.component').then((m) => m.AdminTransactionReportComponent),
+      },
+      {
+        path: 'reconciliation',
+        canActivate: [permissionGuard([PERMISSIONS.TX_RECON_VIEW])],
+        loadComponent: () =>
+          import('./reconciliation/reconciliation.component').then((m) => m.AdminReconciliationComponent),
+      },
+      {
         path: 'outbox',
         canActivate: [permissionGuard([PERMISSIONS.TX_LIST_VIEW])],
         loadComponent: () => import('./outbox/outbox.component').then((m) => m.AdminOutboxComponent),
