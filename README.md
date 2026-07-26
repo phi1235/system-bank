@@ -6,6 +6,21 @@ Distributed banking demo: service isolation, transfer saga, event-driven notific
 
 ---
 
+## Screenshots
+
+<!-- Capture at 1440px wide, light theme. Suggested flow: docs/screenshots/README.md -->
+
+| Customer — internet banking | Admin — back office |
+|---|---|
+| ![Transfer](docs/screenshots/customer-transfer.png) | ![Transaction monitor](docs/screenshots/admin-monitor.png) |
+| ![Transfer history](docs/screenshots/customer-history.png) | ![Transaction report](docs/screenshots/admin-report.png) |
+
+| Observability |
+|---|
+| ![Grafana dashboard](docs/screenshots/grafana.png) |
+
+---
+
 ## Architecture overview
 
 ```
@@ -46,7 +61,7 @@ Browser (Angular) ──► API Gateway (JWT · CORS · rate limit)
 | Data | PostgreSQL 16, Flyway, Redis 7 |
 | Security | JWT (HS256), BCrypt + pepper-bound password, AES-GCM (PII/MFA) |
 | Frontend | Angular 19, NgRx, Angular Material, ngx-translate (vi/en) |
-> **Note:** rontend/ui-mockups/ is a **static design prototype** (hard-coded sample copy/data for UX review). The production UI is rontend/bank-angular-app/ with API + i18n.
+> **Note:** frontend/ui-mockups/ is a **static design prototype** (hard-coded sample copy/data for UX review). The production UI is frontend/bank-angular-app/ with API + i18n.
 
 | Ops | Docker Compose, Eureka, Zipkin, Prometheus, Grafana |
 | CI | Hybrid: GitHub Actions light gate + Jenkins local Docker (heavy verify/package); deploy phase 2 |

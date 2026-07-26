@@ -122,6 +122,11 @@ management:
     tracing:
       endpoint: ${ZIPKIN_ENDPOINT}
 
+mybatis:
+  mapper-locations: classpath:mybatis/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
