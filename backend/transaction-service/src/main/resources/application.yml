@@ -63,6 +63,8 @@ bank:
     signing-secret: ${GATEWAY_SIGNING_SECRET}
     max-clock-skew-seconds: ${GATEWAY_MAX_CLOCK_SKEW_SECONDS}
   internal:
+    # Own key: callers (e.g. account-service audit push) must present this.
+    api-key: ${TRANSACTION_INTERNAL_API_KEY}
     account-api-key: ${ACCOUNT_INTERNAL_API_KEY}
     notification-api-key: ${NOTIFICATION_INTERNAL_API_KEY}
   beneficiary:

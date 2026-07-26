@@ -6,21 +6,6 @@ Distributed banking demo: service isolation, transfer saga, event-driven notific
 
 ---
 
-## Screenshots
-
-<!-- Capture at 1440px wide, light theme. Suggested flow: docs/screenshots/README.md -->
-
-| Customer — internet banking | Admin — back office |
-|---|---|
-| ![Transfer](docs/screenshots/customer-transfer.png) | ![Transaction monitor](docs/screenshots/admin-monitor.png) |
-| ![Transfer history](docs/screenshots/customer-history.png) | ![Transaction report](docs/screenshots/admin-report.png) |
-
-| Observability |
-|---|
-| ![Grafana dashboard](docs/screenshots/grafana.png) |
-
----
-
 ## Architecture overview
 
 ```

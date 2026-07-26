@@ -17,6 +17,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -47,6 +48,7 @@ public class AdminAccountService {
     this(accountRepository, access, mapper, opsAlertPublisher, moneyService, null, "", maxTopUpAmount);
   }
 
+  @Autowired
   public AdminAccountService(
       AccountRepository accountRepository,
       AccountAccessService access,
@@ -54,7 +56,7 @@ public class AdminAccountService {
       OpsAlertPublisher opsAlertPublisher,
       AccountMoneyService moneyService,
       com.banksystem.account.infrastructure.feign.AuditClient auditClient,
-      @Value("${bank.internal.api-key}") String internalApiKey,
+      @Value("${bank.internal.transaction-api-key}") String internalApiKey,
       @Value("${bank.account.topup.max-amount:50000000}") BigDecimal maxTopUpAmount) {
     this.accountRepository = accountRepository;
     this.access = access;
