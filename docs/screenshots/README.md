@@ -10,4 +10,4 @@ Referenced from the root `README.md`. Capture at **1440px wide**, light theme, s
 | `admin-report.png` | Admin portal → transaction report (daily volume / status breakdown) |
 | `grafana.png` | Grafana dashboard with service metrics (Prometheus datasource) |
 
-Optional extras: `admin-rbac.png` (role/permission matrix), `zipkin-trace.png` (one transfer trace across services).
+Optional extras: `admin-recon.png` (reconciliation runs + discrepancy list), `admin-rbac.png` (role/permission matrix), `zipkin-trace.png` (one transfer trace across services).

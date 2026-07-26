@@ -221,3 +221,71 @@ export interface SupportTicket {
   rejectedBy: string | null;
   messages?: SupportTicketMessage[] | null;
 }
+
+/** One banking-day bucket of the admin transaction report. */
+export interface DailyVolumePoint {
+  day: string;
+  totalCount: number;
+  completedCount: number;
+  failedCount: number;
+  completedAmount: number;
+  feeAmount: number;
+}
+
+export interface StatusBreakdownRow {
+  status: string;
+  count: number;
+  totalAmount: number;
+}
+
+export interface TopAccountRow {
+  fromAccountId: string;
+  transferCount: number;
+  totalAmount: number;
+}
+
+export interface TransactionReport {
+  from: string;
+  to: string;
+  zone: string;
+  totalCount: number;
+  completedCount: number;
+  failedCount: number;
+  successRate: number;
+  completedAmount: number;
+  feeAmount: number;
+  avgCompletedAmount: number;
+  daily: DailyVolumePoint[];
+  byStatus: StatusBreakdownRow[];
+  topSourceAccounts: TopAccountRow[];
+}
+
+/** End-of-day reconciliation run (transfer_orders vs account-service ledger). */
+export interface ReconRun {
+  id: string;
+  businessDate: string;
+  zone: string;
+  triggerType: string;
+  status: string;
+  startedAt: string;
+  finishedAt: string | null;
+  ordersChecked: number;
+  ledgerEntriesSeen: number;
+  discrepancyCount: number;
+  errorDetail: string | null;
+}
+
+export interface ReconItem {
+  id: string;
+  transferId: string | null;
+  kind: string;
+  entryRef: string | null;
+  expectedAmount: number | null;
+  actualAmount: number | null;
+  detail: string | null;
+}
+
+export interface ReconRunDetail {
+  run: ReconRun;
+  items: ReconItem[];
+}

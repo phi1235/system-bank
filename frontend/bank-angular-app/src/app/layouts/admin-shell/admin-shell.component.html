@@ -40,10 +40,24 @@
           </a>
         }
         @if (canTx$ | async) {
-          <a mat-list-item routerLink="/admin/transactions" routerLinkActive="active">
+          <a mat-list-item routerLink="/admin/transactions" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
             <mat-icon matListItemIcon>swap_horiz</mat-icon>
             <span matListItemTitle>{{ 'NAV.ADMIN_TX' | translate }}</span>
           </a>
+        }
+        @if (canTxReport$ | async) {
+          <a mat-list-item routerLink="/admin/transactions/report" routerLinkActive="active">
+            <mat-icon matListItemIcon>bar_chart</mat-icon>
+            <span matListItemTitle>{{ 'NAV.ADMIN_TX_REPORT' | translate }}</span>
+          </a>
+        }
+        @if (canRecon$ | async) {
+          <a mat-list-item routerLink="/admin/reconciliation" routerLinkActive="active">
+            <mat-icon matListItemIcon>fact_check</mat-icon>
+            <span matListItemTitle>{{ 'NAV.ADMIN_RECON' | translate }}</span>
+          </a>
+        }
+        @if (canTx$ | async) {
           <a mat-list-item routerLink="/admin/outbox" routerLinkActive="active">
             <mat-icon matListItemIcon>outbox</mat-icon>
             <span matListItemTitle>{{ 'NAV.ADMIN_OUTBOX' | translate }}</span>

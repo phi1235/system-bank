@@ -1,0 +1,116 @@
+<app-page-header [title]="'ADMIN.RECON_TITLE' | translate" [subtitle]="'ADMIN.RECON_SUB' | translate" />
+
+<div class="page-stack">
+  @if (canExecute$ | async) {
+    <mat-card class="run-card">
+      <form class="run-form" (ngSubmit)="runNow()">
+        <mat-form-field appearance="outline" class="date-field" subscriptSizing="dynamic">
+          <mat-label>{{ 'ADMIN.RECON_DATE' | translate }}</mat-label>
+          <input matInput type="date" [(ngModel)]="runDate" name="runDate" required />
+        </mat-form-field>
+        <button mat-flat-button color="primary" type="submit" [disabled]="!runDate || running">
+          <mat-icon>play_arrow</mat-icon>
+          {{ (running ? 'ADMIN.RECON_RUNNING' : 'ADMIN.RECON_RUN_NOW') | translate }}
+        </button>
+        <span class="hint">{{ 'ADMIN.RECON_RUN_HINT' | translate }}</span>
+      </form>
+    </mat-card>
+  }
+
+  <mat-card class="table-card">
+    @if (rows.length) {
+      <div class="table-wrap">
+        <table mat-table [dataSource]="rows" class="full">
+          <ng-container matColumnDef="businessDate">
+            <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.RECON_BUSINESS_DATE' | translate }}</th>
+            <td mat-cell *matCellDef="let r">{{ r.businessDate }}</td>
+          </ng-container>
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.STATUS' | translate }}</th>
+            <td mat-cell *matCellDef="let r">
+              <span class="chip"
+                    [class.ok]="r.status === 'MATCHED'"
+                    [class.warn]="r.status === 'RUNNING'"
+                    [class.bad]="r.status === 'MISMATCHED' || r.status === 'FAILED'"
+                    [matTooltip]="r.errorDetail || ''">{{ 'ADMIN.RECON_STATUS_' + r.status | translate }}</span>
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="triggerType">
+            <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.RECON_TRIGGER' | translate }}</th>
+            <td mat-cell *matCellDef="let r">{{ r.triggerType }}</td>
+          </ng-container>
+          <ng-container matColumnDef="ordersChecked">
+            <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.RECON_ORDERS' | translate }}</th>
+            <td mat-cell *matCellDef="let r">{{ r.ordersChecked | number }}</td>
+          </ng-container>
+          <ng-container matColumnDef="discrepancyCount">
+            <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.RECON_DISCREPANCIES' | translate }}</th>
+            <td mat-cell *matCellDef="let r">
+              <span [class.bad-text]="r.discrepancyCount > 0">{{ r.discrepancyCount | number }}</span>
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="startedAt">
+            <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.TIME' | translate }}</th>
+            <td mat-cell *matCellDef="let r">{{ r.startedAt | date: 'short' }}</td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="runCols"></tr>
+          <tr mat-row *matRowDef="let row; columns: runCols" class="clickable-row"
+              [class.selected]="selectedRun?.id === row.id" (click)="openDetail(row)"></tr>
+        </table>
+      </div>
+    } @else if (!loading) {
+      <div class="empty-state">
+        <mat-icon>fact_check</mat-icon>
+        <p class="empty-title">{{ 'ADMIN.RECON_EMPTY' | translate }}</p>
+        <p class="empty-hint">{{ 'ADMIN.RECON_EMPTY_HINT' | translate }}</p>
+      </div>
+    }
+    <mat-paginator [length]="totalElements" [pageIndex]="pageIndex" [pageSize]="pageSize"
+                   [pageSizeOptions]="[10, 20, 50]" (page)="page($event)" [disabled]="loading" />
+  </mat-card>
+
+  @if (selectedRun) {
+    <mat-card class="table-card">
+      <h3>
+        {{ 'ADMIN.RECON_ITEMS_TITLE' | translate: { date: selectedRun.businessDate } }}
+        <span class="meta">· {{ selectedRun.ordersChecked | number }} {{ 'ADMIN.RECON_ORDERS' | translate }} · {{ selectedRun.ledgerEntriesSeen | number }} {{ 'ADMIN.RECON_LEDGER' | translate }}</span>
+      </h3>
+      @if (itemsLoading) {
+        <div class="loading-wrap"><mat-spinner diameter="28" /></div>
+      } @else if (selectedRun.discrepancyCount === 0) {
+        <p class="all-matched"><mat-icon inline>check_circle</mat-icon> {{ 'ADMIN.RECON_ALL_MATCHED' | translate }}</p>
+      } @else if (items.length) {
+        <div class="table-wrap">
+          <table mat-table [dataSource]="items" class="full">
+            <ng-container matColumnDef="kind">
+              <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.RECON_KIND' | translate }}</th>
+              <td mat-cell *matCellDef="let i"><span class="chip bad">{{ i.kind }}</span></td>
+            </ng-container>
+            <ng-container matColumnDef="transferId">
+              <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.TX_ID' | translate }}</th>
+              <td mat-cell *matCellDef="let i"><code [matTooltip]="i.transferId || ''">{{ shortId(i.transferId) }}</code></td>
+            </ng-container>
+            <ng-container matColumnDef="entryRef">
+              <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.RECON_ENTRY_REF' | translate }}</th>
+              <td mat-cell *matCellDef="let i"><code [matTooltip]="i.entryRef || ''">{{ shortId(i.entryRef) }}</code></td>
+            </ng-container>
+            <ng-container matColumnDef="expectedAmount">
+              <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.RECON_EXPECTED' | translate }}</th>
+              <td mat-cell *matCellDef="let i" class="money">{{ i.expectedAmount | moneyVnd }}</td>
+            </ng-container>
+            <ng-container matColumnDef="actualAmount">
+              <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.RECON_ACTUAL' | translate }}</th>
+              <td mat-cell *matCellDef="let i" class="money">{{ i.actualAmount | moneyVnd }}</td>
+            </ng-container>
+            <ng-container matColumnDef="detail">
+              <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.RECON_DETAIL' | translate }}</th>
+              <td mat-cell *matCellDef="let i">{{ i.detail }}</td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="itemCols"></tr>
+            <tr mat-row *matRowDef="let row; columns: itemCols"></tr>
+          </table>
+        </div>
+      }
+    </mat-card>
+  }
+</div>

@@ -288,6 +288,9 @@ services:
       NOTIFICATION_INTERNAL_API_KEY: ${NOTIFICATION_INTERNAL_API_KEY:?NOTIFICATION_INTERNAL_API_KEY must be set in infra/.env}
       GATEWAY_SIGNING_SECRET: ${GATEWAY_SIGNING_SECRET:?GATEWAY_SIGNING_SECRET must be set in infra/.env}
       SAGA_FAIL_CREDIT: ${SAGA_FAIL_CREDIT}
+      # End-of-day reconciliation: nightly schedule is opt-in; manual admin runs always work.
+      RECON_ENABLED: ${RECON_ENABLED:-false}
+      RECON_CRON: ${RECON_CRON:-0 30 0 * * *}
       TRANSFER_FEE_ENABLED: ${TRANSFER_FEE_ENABLED:-true}
       TRANSFER_FEE_FLAT: ${TRANSFER_FEE_FLAT:-0}
       TRANSFER_FEE_PERCENT: ${TRANSFER_FEE_PERCENT:-0}

@@ -1,6 +1,8 @@
 package com.banksystem.account.domain;
 
 import java.time.Instant;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
@@ -12,6 +14,8 @@ import org.springframework.data.repository.query.Param;
 public interface LedgerEntryRepository extends JpaRepository<LedgerEntryEntity, UUID> {
   Optional<LedgerEntryEntity> findByAccountIdAndReferenceIdAndEntryType(
       UUID accountId, String referenceId, String entryType);
+
+  List<LedgerEntryEntity> findByReferenceIdIn(Collection<String> referenceIds);
 
   @Query("""
       SELECT e FROM LedgerEntryEntity e

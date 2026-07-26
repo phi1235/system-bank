@@ -80,6 +80,12 @@ bank:
     max-attempts: ${OUTBOX_MAX_ATTEMPTS:10}
     base-delay-ms: ${OUTBOX_BASE_DELAY_MS:1000}
     max-delay-ms: ${OUTBOX_MAX_DELAY_MS:300000}
+  # End-of-day ledger reconciliation (transfer_orders vs account-service ledger).
+  # Scheduled run is opt-in; manual runs via POST /api/v1/admin/recon/runs always work.
+  recon:
+    enabled: ${RECON_ENABLED:false}
+    # Default 00:30 banking-day zone, reconciling the previous banking day.
+    cron: ${RECON_CRON:0 30 0 * * *}
   # mock (default) | http — real switch URL/key only via env
   napas:
     provider: ${NAPAS_PROVIDER:mock}
