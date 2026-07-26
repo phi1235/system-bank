@@ -17,15 +17,21 @@ public interface LedgerEntryRepository extends JpaRepository<LedgerEntryEntity, 
 
   List<LedgerEntryEntity> findByReferenceIdIn(Collection<String> referenceIds);
 
+  /**
+   * Statement search. Callers must pass non-null time bounds (EPOCH/FAR_FUTURE sentinels) and a
+   * boolean flag for the optional type — Postgres cannot infer the type of an untyped NULL bind
+   * in {@code (:param IS NULL OR ...)} ({@code could not determine data type of parameter}).
+   */
   @Query("""
       SELECT e FROM LedgerEntryEntity e
       WHERE e.accountId = :accountId
-        AND (:entryType IS NULL OR e.entryType = :entryType)
-        AND (:fromTs IS NULL OR e.createdAt >= :fromTs)
-        AND (:toTs IS NULL OR e.createdAt <= :toTs)
+        AND (:hasType = false OR e.entryType = :entryType)
+        AND e.createdAt >= :fromTs
+        AND e.createdAt <= :toTs
       """)
   Page<LedgerEntryEntity> search(
       @Param("accountId") UUID accountId,
+      @Param("hasType") boolean hasType,
       @Param("entryType") String entryType,
       @Param("fromTs") Instant fromTs,
       @Param("toTs") Instant toTs,

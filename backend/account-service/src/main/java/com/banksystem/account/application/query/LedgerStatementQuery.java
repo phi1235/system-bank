@@ -15,6 +15,10 @@ public final class LedgerStatementQuery {
   /** Cap for CSV export (non-secret product knob). */
   public static final int MAX_EXPORT_ROWS = 5_000;
 
+  /** Sentinel bounds so the repository never binds an untyped NULL timestamp (Postgres 42P18). */
+  public static final Instant EPOCH = Instant.EPOCH;
+  public static final Instant FAR_FUTURE = Instant.parse("9999-12-31T23:59:59Z");
+
   private final UUID accountId;
   private final int page;
   private final int size;
@@ -53,7 +57,8 @@ public final class LedgerStatementQuery {
           "from must be before or equal to to",
           org.springframework.http.HttpStatus.BAD_REQUEST);
     }
-    return new LedgerStatementQuery(accountId, p, s, type, from, to);
+    return new LedgerStatementQuery(
+        accountId, p, s, type, from == null ? EPOCH : from, to == null ? FAR_FUTURE : to);
   }
 
   public UUID accountId() {
@@ -70,6 +75,15 @@ public final class LedgerStatementQuery {
 
   public LedgerEntryType entryType() {
     return entryType;
+  }
+
+  public boolean hasEntryType() {
+    return entryType != null;
+  }
+
+  /** Never null — empty string when no type filter (see repository flag pattern). */
+  public String entryTypeName() {
+    return entryType == null ? "" : entryType.name();
   }
 
   public Instant from() {

@@ -75,7 +75,13 @@ class CustomerAccountServiceStatementTest {
 
     LedgerEntryEntity debit = entry("DEBIT", "1000.00");
     LedgerEntryEntity credit = entry("CREDIT", "500.00");
-    when(ledgerEntryRepository.search(eq(accountId), isNull(), isNull(), isNull(), any(Pageable.class)))
+    when(ledgerEntryRepository.search(
+            eq(accountId),
+            eq(false),
+            eq(""),
+            eq(LedgerStatementQuery.EPOCH),
+            eq(LedgerStatementQuery.FAR_FUTURE),
+            any(Pageable.class)))
         .thenReturn(new PageImpl<>(List.of(debit, credit)));
 
     GatewayUser owner = user(ownerId, List.of("ib:accounts:view"));
@@ -91,7 +97,13 @@ class CustomerAccountServiceStatementTest {
   void statement_allowsStaffLookup() {
     AccountEntity account = account(ownerId);
     when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
-    when(ledgerEntryRepository.search(eq(accountId), eq("CREDIT"), isNull(), isNull(), any(Pageable.class)))
+    when(ledgerEntryRepository.search(
+            eq(accountId),
+            eq(true),
+            eq("CREDIT"),
+            eq(LedgerStatementQuery.EPOCH),
+            eq(LedgerStatementQuery.FAR_FUTURE),
+            any(Pageable.class)))
         .thenReturn(new PageImpl<>(List.of(entry("CREDIT", "10.00"))));
 
     GatewayUser staff = user(otherId, List.of("accounts:lookup:view"));
@@ -110,7 +122,13 @@ class CustomerAccountServiceStatementTest {
 
     LedgerEntryEntity withComma = entry("DEBIT", "1000.00");
     withComma.setDescription("Transfer, \"internal\"");
-    when(ledgerEntryRepository.search(eq(accountId), isNull(), isNull(), isNull(), any(Pageable.class)))
+    when(ledgerEntryRepository.search(
+            eq(accountId),
+            eq(false),
+            eq(""),
+            eq(LedgerStatementQuery.EPOCH),
+            eq(LedgerStatementQuery.FAR_FUTURE),
+            any(Pageable.class)))
         .thenReturn(new PageImpl<>(List.of(withComma, entry("CREDIT", "500.00"))));
 
     GatewayUser owner = user(ownerId, List.of("ib:accounts:view"));
