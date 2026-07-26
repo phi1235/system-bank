@@ -45,4 +45,18 @@ public interface UserRepository extends JpaRepository<UserEntity, UUID> {
       @Param("hasQ") boolean hasQ,
       @Param("q") String q,
       Pageable pageable);
+
+  /**
+   * Count users holding any of the given role codes (pass them upper-cased).
+   * Roles are stored as a CSV column, so tokens are unnested and trimmed in SQL
+   * instead of loading every user into memory.
+   */
+  @Query(value = """
+      SELECT COUNT(*) FROM users u
+      WHERE EXISTS (
+        SELECT 1 FROM unnest(string_to_array(u.roles, ',')) AS t(role)
+        WHERE UPPER(TRIM(t.role)) IN (:roles)
+      )
+      """, nativeQuery = true)
+  long countByAnyRole(@Param("roles") java.util.Collection<String> roles);
 }

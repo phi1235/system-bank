@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 
 import com.banksystem.auth.api.dto.AuthDtos.SessionResponse;
 import com.banksystem.auth.domain.AuthAuditLogRepository;
+import com.banksystem.auth.infrastructure.jwt.JwtService;
 import com.banksystem.auth.infrastructure.redis.SessionStore;
 import com.banksystem.auth.infrastructure.redis.SessionStore.SessionMeta;
 import com.banksystem.auth.infrastructure.redis.TokenStore;
@@ -29,6 +30,7 @@ class SessionServiceTest {
   private SessionStore sessionStore;
   private TokenStore tokenStore;
   private AuthAuditLogRepository auditLogRepository;
+  private JwtService jwtService;
   private SessionService service;
   private final UUID userId = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
 
@@ -37,7 +39,8 @@ class SessionServiceTest {
     sessionStore = mock(SessionStore.class);
     tokenStore = mock(TokenStore.class);
     auditLogRepository = mock(AuthAuditLogRepository.class);
-    service = new SessionService(sessionStore, tokenStore, auditLogRepository);
+    jwtService = mock(JwtService.class);
+    service = new SessionService(sessionStore, tokenStore, auditLogRepository, jwtService);
   }
 
   @Test

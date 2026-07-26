@@ -9,7 +9,7 @@
     @if (needsCreate) {
       <div class="info-alert">
         <mat-icon>info</mat-icon>
-        <span>Tài khoản của bạn chưa có hồ sơ cá nhân. Vui lòng điền thông tin bên dưới để khởi tạo.</span>
+        <span>{{ 'CUSTOMER.PROFILE_MISSING_BANNER' | translate }}</span>
       </div>
     }
     @if (profile) {

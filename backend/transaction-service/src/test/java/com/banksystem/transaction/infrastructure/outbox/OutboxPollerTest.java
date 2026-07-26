@@ -23,6 +23,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.AbstractPlatformTransactionManager;
+import org.springframework.transaction.support.DefaultTransactionStatus;
+import org.springframework.transaction.support.TransactionTemplate;
 
 class OutboxPollerTest {
 
@@ -49,9 +53,33 @@ class OutboxPollerTest {
         retryPolicy,
         metrics,
         opsAlertPublisher,
+        noOpTransactionTemplate(),
         50,
+        120,
         "tx.completed",
         "tx.failed");
+  }
+
+  /** Real TransactionTemplate over a no-op manager so callbacks execute inline. */
+  private static TransactionTemplate noOpTransactionTemplate() {
+    return new TransactionTemplate(new AbstractPlatformTransactionManager() {
+      @Override
+      protected Object doGetTransaction() {
+        return new Object();
+      }
+
+      @Override
+      protected void doBegin(Object transaction, TransactionDefinition definition) {
+      }
+
+      @Override
+      protected void doCommit(DefaultTransactionStatus status) {
+      }
+
+      @Override
+      protected void doRollback(DefaultTransactionStatus status) {
+      }
+    });
   }
 
   @Test

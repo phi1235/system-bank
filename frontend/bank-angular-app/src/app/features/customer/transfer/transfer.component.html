@@ -9,8 +9,8 @@
     <div class="form-header">
       <mat-icon class="header-icon">swap_horiz</mat-icon>
       <div>
-        <h2>Chuyển tiền trực tuyến</h2>
-        <p class="sub">Chuyển tiền nhanh nội bộ SystemBank & Liên ngân hàng 24/7 NAPAS</p>
+        <h2>{{ 'TRANSFER.FORM_TITLE' | translate }}</h2>
+        <p class="sub">{{ 'TRANSFER.FORM_SUB' | translate }}</p>
       </div>
     </div>
 
@@ -48,7 +48,7 @@
       <div class="step-card">
         <div class="step-header">
           <span class="step-badge">1</span>
-          <h3>Tài khoản nguồn</h3>
+          <h3>{{ 'TRANSFER.STEP_SOURCE' | translate }}</h3>
         </div>
 
         <mat-form-field appearance="outline" class="compact-field">
@@ -84,7 +84,7 @@
       <div class="step-card">
         <div class="step-header">
           <span class="step-badge">2</span>
-          <h3>Thông tin người nhận</h3>
+          <h3>{{ 'TRANSFER.STEP_RECIPIENT' | translate }}</h3>
         </div>
 
         <div class="recipient-grid">
@@ -121,7 +121,7 @@
             </mat-form-field>
             <a routerLink="/customer/payments/beneficiaries" class="shortcut-btn">
               <mat-icon>manage_accounts</mat-icon>
-              <span>Danh bạ</span>
+              <span>{{ 'TRANSFER.BENEFICIARY_SHORTCUT' | translate }}</span>
             </a>
           </div>
 
@@ -152,7 +152,7 @@
             <div class="inquiry-badge success">
               <mat-icon>verified</mat-icon>
               <div>
-                <span class="lbl">Chủ tài khoản thụ hưởng:</span>
+                <span class="lbl">{{ 'TRANSFER.INQUIRY_OWNER_LABEL' | translate }}</span>
                 <strong class="owner">{{ inquiryResult.accountName }}</strong>
               </div>
             </div>
@@ -169,7 +169,7 @@
       <div class="step-card">
         <div class="step-header">
           <span class="step-badge">3</span>
-          <h3>Số tiền & Nội dung chuyển</h3>
+          <h3>{{ 'TRANSFER.STEP_AMOUNT' | translate }}</h3>
         </div>
 
         <div class="row-2">
@@ -232,9 +232,9 @@
     <mat-card class="summary-card" [class.loading]="quoteLoading">
       <div class="summary-header">
         <mat-icon>receipt_long</mat-icon>
-        <h3>Tóm tắt giao dịch</h3>
+        <h3>{{ 'TRANSFER.SUMMARY_TITLE' | translate }}</h3>
         @if (quoteLoading) {
-          <span class="updating-tag">Đang tính...</span>
+          <span class="updating-tag">{{ 'TRANSFER.SUMMARY_CALCULATING' | translate }}</span>
         }
       </div>
 
@@ -243,49 +243,49 @@
       } @else if (quote) {
         <div class="receipt-rows">
           <div class="receipt-row">
-            <span class="label">Hình thức chuyển</span>
-            <span class="value badge-mode">{{ activeTab === 'INTERNAL' ? 'Nội bộ SystemBank' : 'Liên ngân hàng 24/7' }}</span>
+            <span class="label">{{ 'TRANSFER.SUMMARY_MODE' | translate }}</span>
+            <span class="value badge-mode">{{ (activeTab === 'INTERNAL' ? 'TRANSFER.MODE_INTERNAL' : 'TRANSFER.MODE_INTERBANK') | translate }}</span>
           </div>
 
           @if (inquiryResult) {
             <div class="receipt-row highlight">
-              <span class="label">Người nhận</span>
+              <span class="label">{{ 'TRANSFER.SUMMARY_RECIPIENT' | translate }}</span>
               <span class="value owner">{{ inquiryResult.accountName }}</span>
             </div>
           }
 
           <div class="receipt-row">
-            <span class="label">Số tiền chuyển</span>
+            <span class="label">{{ 'TRANSFER.SUMMARY_AMOUNT' | translate }}</span>
             <span class="value money">{{ form.controls.amount.value | moneyVnd }}</span>
           </div>
 
           <div class="receipt-row">
-            <span class="label">Phí giao dịch</span>
+            <span class="label">{{ 'TRANSFER.SUMMARY_FEE' | translate }}</span>
             <span class="value fee">{{ quote.feeAmount | moneyVnd: quote.currency }}</span>
           </div>
 
           <div class="receipt-divider"></div>
 
           <div class="receipt-row total">
-            <span class="label">Tổng trừ tài khoản</span>
+            <span class="label">{{ 'TRANSFER.SUMMARY_TOTAL_DEBIT' | translate }}</span>
             <span class="value total-amount">{{ quote.totalDebit | moneyVnd: quote.currency }}</span>
           </div>
 
           <div class="limit-box">
             <div class="limit-info">
-              <span>Hạn mức khả dụng trong ngày:</span>
+              <span>{{ 'TRANSFER.LIMIT_REMAINING' | translate }}</span>
               <strong>{{ quote.remainingToday | moneyVnd: quote.currency }}</strong>
             </div>
             <div class="limit-bar">
               <div class="limit-fill" [style.width.%]="((quote.dailyLimit - quote.remainingToday) / quote.dailyLimit) * 100"></div>
             </div>
-            <div class="limit-sub">Tối đa 1 giao dịch: {{ quote.maxPerTransaction | moneyVnd: quote.currency }}</div>
+            <div class="limit-sub">{{ 'TRANSFER.LIMIT_PER_TX' | translate }} {{ quote.maxPerTransaction | moneyVnd: quote.currency }}</div>
           </div>
         </div>
       } @else {
         <div class="summary-placeholder">
           <mat-icon>calculate</mat-icon>
-          <p>Nhập số tài khoản và số tiền để xem tóm tắt phí & hạn mức giao dịch real-time.</p>
+          <p>{{ 'TRANSFER.SUMMARY_EMPTY_HINT' | translate }}</p>
         </div>
       }
     </mat-card>
@@ -294,26 +294,26 @@
       <mat-card class="result-card" [class.ok]="t.status === 'COMPLETED'" [class.warn]="t.status !== 'COMPLETED'">
         <div class="result-header">
           <mat-icon>{{ t.status === 'COMPLETED' ? 'check_circle' : 'error' }}</mat-icon>
-          <h3>Kết quả giao dịch</h3>
+          <h3>{{ 'TRANSFER.RESULT_TITLE' | translate }}</h3>
         </div>
         <div class="result-body">
           <div class="result-item">
-            <span class="k">Mã giao dịch</span>
+            <span class="k">{{ 'TRANSFER.RESULT_TX_ID' | translate }}</span>
             <strong class="v mono">{{ t.transactionId }}</strong>
           </div>
           <div class="result-item">
-            <span class="k">Trạng thái</span>
+            <span class="k">{{ 'TRANSFER.RESULT_STATUS' | translate }}</span>
             <span class="status-chip" [class.ok]="t.status === 'COMPLETED'" [class.bad]="t.status !== 'COMPLETED'">
               {{ t.status | transferStatus }}
             </span>
           </div>
           <div class="result-item">
-            <span class="k">Số tiền thực trừ</span>
+            <span class="k">{{ 'TRANSFER.RESULT_TOTAL_DEBITED' | translate }}</span>
             <strong class="v amount">{{ (t.amount + (t.feeAmount || 0)) | moneyVnd: t.currency }}</strong>
           </div>
           @if (t.failureReason) {
             <div class="result-item">
-              <span class="k">Lý do thất bại</span>
+              <span class="k">{{ 'TRANSFER.RESULT_FAIL_REASON' | translate }}</span>
               <span class="v reason">{{ t.failureReason | friendlyTransferError }}</span>
             </div>
           }
@@ -321,11 +321,11 @@
         <div class="result-actions">
           <button mat-stroked-button type="button" (click)="copyLastReceipt(t)">
             <mat-icon>content_paste</mat-icon>
-            Biên nhận
+            {{ 'TRANSFER.RESULT_RECEIPT' | translate }}
           </button>
           <button mat-stroked-button type="button" (click)="openLastDetail(t)">
             <mat-icon>info</mat-icon>
-            Chi tiết
+            {{ 'TRANSFER.RESULT_DETAIL' | translate }}
           </button>
         </div>
       </mat-card>

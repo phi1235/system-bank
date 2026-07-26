@@ -292,9 +292,7 @@ export class NotificationBellComponent implements OnDestroy {
   templateLabel(n: NotificationItem): string {
     const tpl = (n.template || '').trim();
     if (!tpl) {
-      return this.i18n.instant('COMMON.NOTIFICATION') !== 'COMMON.NOTIFICATION'
-        ? this.i18n.instant('COMMON.NOTIFICATION')
-        : 'Thông báo';
+      return this.i18n.instant('COMMON.NOTIFICATION');
     }
     const key = `NOTIF_TEMPLATE.${tpl}`;
     const loc = this.i18n.instant(key);
