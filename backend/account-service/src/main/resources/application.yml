@@ -43,6 +43,8 @@ bank:
   internal:
     api-key: ${ACCOUNT_INTERNAL_API_KEY}
     notification-api-key: ${NOTIFICATION_INTERNAL_API_KEY}
+    # Key presented when pushing audit logs to transaction-service (key identifies the target).
+    transaction-api-key: ${TRANSACTION_INTERNAL_API_KEY}
 
 management:
   endpoints:
