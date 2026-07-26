@@ -150,6 +150,39 @@ public class TermDepositService {
     return toResponse(deposit, tenorOf(deposit));
   }
 
+  /**
+   * Batch maturity settlement: principal + full-term interest back to source with ref
+   * {@code DEP-{id}-mature}. Idempotent — an already-processed deposit is skipped, and the
+   * ledger unique (account, ref, type) blocks double credits. One call = one transaction so a
+   * failing deposit never rolls back its batch siblings.
+   */
+  @Transactional
+  public boolean mature(UUID depositId) {
+    TermDepositEntity deposit = requireDeposit(depositId);
+    if (deposit.getStatus() != TermDepositStatus.OPEN) {
+      return false;
+    }
+    LocalDate openDate = LocalDate.ofInstant(deposit.getOpenedAt(), zone);
+    long days = DepositInterestCalculator.daysBetween(openDate, deposit.getMaturityDate());
+    BigDecimal interest =
+        DepositInterestCalculator.interest(deposit.getAmount(), deposit.getRateBps(), days);
+
+    moneyService.credit(
+        deposit.getSourceAccountId(),
+        new MoneyCommand(
+            deposit.getAmount().add(interest),
+            "DEP-" + deposit.getId() + "-mature",
+            "Tat toan dao han so tiet kiem",
+            "DEP-" + deposit.getId() + "-mature"));
+
+    deposit.setStatus(TermDepositStatus.MATURED);
+    deposit.setAccruedInterest(interest);
+    deposit.setClosedAt(Instant.now(clock));
+    deposit.setUpdatedAt(Instant.now(clock));
+    depositRepository.save(deposit);
+    return true;
+  }
+
   @Transactional(readOnly = true)
   public List<TermDepositResponse> listMine(UUID userId) {
     return depositRepository.findByUserIdOrderByOpenedAtDesc(userId).stream()
@@ -227,6 +260,11 @@ public class TermDepositService {
 
   private DepositProductResponse toProductResponse(DepositProductEntity p) {
     return new DepositProductResponse(
-        p.getCode(), p.getTenorMonths(), p.getRateBps(), p.getEarlyRateBps(), p.getMinAmount());
+        p.getCode(),
+        p.getTenorMonths(),
+        p.getRateBps(),
+        p.getEarlyRateBps(),
+        p.getMinAmount(),
+        p.isActive());
   }
 }

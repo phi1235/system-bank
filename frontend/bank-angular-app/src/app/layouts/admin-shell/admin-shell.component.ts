@@ -61,6 +61,7 @@ export class AdminShellComponent implements OnInit, OnDestroy {
   canCustomers$ = this.store.select(selectHasPermission(PERMISSIONS.CUSTOMERS_LIST_VIEW));
   canSupportTickets$ = this.store.select(selectHasPermission(PERMISSIONS.SUPPORT_TICKETS_LIST));
   canAccounts$ = this.store.select(selectHasPermission(PERMISSIONS.ACCOUNTS_LOOKUP_VIEW));
+  canDeposits$ = this.store.select(selectHasPermission(PERMISSIONS.DEPOSITS_SUMMARY_VIEW));
   canTx$ = this.store.select(selectHasPermission(PERMISSIONS.TX_LIST_VIEW));
   canTxReport$ = this.store.select(selectHasPermission(PERMISSIONS.TX_REPORT_VIEW));
   canRecon$ = this.store.select(selectHasPermission(PERMISSIONS.TX_RECON_VIEW));

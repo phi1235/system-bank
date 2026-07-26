@@ -232,9 +232,13 @@ services:
       ACCOUNT_INTERNAL_API_KEY: ${ACCOUNT_INTERNAL_API_KEY:?ACCOUNT_INTERNAL_API_KEY must be set in infra/.env}
       NOTIFICATION_INTERNAL_API_KEY: ${NOTIFICATION_INTERNAL_API_KEY:?NOTIFICATION_INTERNAL_API_KEY must be set in infra/.env}
       TRANSACTION_INTERNAL_API_KEY: ${TRANSACTION_INTERNAL_API_KEY:?TRANSACTION_INTERNAL_API_KEY must be set in infra/.env}
+      CUSTOMER_INTERNAL_API_KEY: ${CUSTOMER_INTERNAL_API_KEY:?CUSTOMER_INTERNAL_API_KEY must be set in infra/.env}
       GATEWAY_SIGNING_SECRET: ${GATEWAY_SIGNING_SECRET:?GATEWAY_SIGNING_SECRET must be set in infra/.env}
       ACCOUNT_MAX_PER_USER: ${ACCOUNT_MAX_PER_USER}
       ACCOUNT_INITIAL_BALANCE: ${ACCOUNT_INITIAL_BALANCE}
+      # Term-deposit nightly batch: opt-in; manual admin runs always work.
+      DEPOSIT_BATCH_ENABLED: ${DEPOSIT_BATCH_ENABLED:-false}
+      DEPOSIT_BATCH_CRON: ${DEPOSIT_BATCH_CRON:-0 15 0 * * *}
       # Flyway placeholders for fee-income GL seed (V2__fee_income_account.sql)
       # Values only from infra/.env — no defaults in this pushed file.
       FEE_INCOME_ACCOUNT_ID: ${FEE_INCOME_ACCOUNT_ID:?FEE_INCOME_ACCOUNT_ID must be set in infra/.env}

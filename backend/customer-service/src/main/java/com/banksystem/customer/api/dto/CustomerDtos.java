@@ -1,9 +1,18 @@
 package com.banksystem.customer.api.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import java.util.List;
+import java.util.UUID;
 
 public final class CustomerDtos {
   private CustomerDtos() {}
+
+  /** Internal batch display-name lookup (e.g. deposit back office enriching owner columns). */
+  public record CustomerNamesRequest(@NotNull @Size(min = 1, max = 500) List<UUID> userIds) {}
+
+  public record CustomerNameResponse(String userId, String fullName) {}
 
   public record CreateProfileRequest(
       @NotBlank String fullName,

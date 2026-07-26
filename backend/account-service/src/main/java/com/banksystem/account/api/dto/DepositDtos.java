@@ -1,6 +1,8 @@
 package com.banksystem.account.api.dto;
 
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
@@ -18,7 +20,32 @@ public final class DepositDtos {
       int tenorMonths,
       int rateBps,
       int earlyRateBps,
-      BigDecimal minAmount) {}
+      BigDecimal minAmount,
+      boolean active) {}
+
+  /** Admin partial update; null fields are left unchanged. Contracts keep their snapshots. */
+  public record UpdateDepositProductRequest(
+      @Min(0) @Max(3000) Integer rateBps,
+      @Min(0) @Max(3000) Integer earlyRateBps,
+      @DecimalMin("1") BigDecimal minAmount,
+      Boolean active) {}
+
+  /** Admin drill-down row: one contract with its owner (name/number enriched for humans). */
+  public record AdminTermDepositRow(
+      String id,
+      String userId,
+      String ownerName,
+      String sourceAccountId,
+      String sourceAccountNumber,
+      String productCode,
+      int tenorMonths,
+      BigDecimal amount,
+      int rateBps,
+      BigDecimal accruedInterest,
+      Instant openedAt,
+      LocalDate maturityDate,
+      String status,
+      Instant closedAt) {}
 
   public record DepositQuoteResponse(
       String productCode,
@@ -35,6 +62,29 @@ public final class DepositDtos {
       @NotNull UUID sourceAccountId,
       @NotBlank String productCode,
       @NotNull @DecimalMin("0.01") BigDecimal amount) {}
+
+  /** Whole-book funding totals (admin, MyBatis read model). */
+  public record DepositTotalsRow(
+      long openCount,
+      BigDecimal openPrincipal,
+      BigDecimal openAccrued,
+      long dueIn7Days,
+      long maturedCount,
+      long closedEarlyCount) {}
+
+  /** Per-product funding breakdown (admin, MyBatis read model). */
+  public record DepositTenorRow(
+      String code,
+      int tenorMonths,
+      int rateBps,
+      long openCount,
+      BigDecimal openPrincipal,
+      BigDecimal openAccrued) {}
+
+  public record DepositAdminSummaryResponse(
+      DepositTotalsRow totals, java.util.List<DepositTenorRow> byProduct) {}
+
+  public record BatchRunResponse(int accruedUpdated, int matured, int failed) {}
 
   public record TermDepositResponse(
       String id,

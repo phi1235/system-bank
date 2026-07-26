@@ -291,6 +291,21 @@ export const RBAC_SCREENS: RbacScreenDef[] = [
         label: 'Đối soát cuối ngày',
         actions: { view: PERMISSIONS.TX_RECON_VIEW, execute: PERMISSIONS.TX_RECON_EXECUTE },
       },
+      {
+        id: 'deposits',
+        labelKey: 'ADMIN.FEAT_DEPOSITS',
+        label: 'Huy động vốn (sổ tiết kiệm)',
+        actions: {
+          view: PERMISSIONS.DEPOSITS_SUMMARY_VIEW,
+          execute: PERMISSIONS.DEPOSITS_BATCH_EXECUTE,
+        },
+      },
+      {
+        id: 'deposit-products',
+        labelKey: 'ADMIN.FEAT_DEPOSIT_PRODUCTS',
+        label: 'Quản lý lãi suất sổ tiết kiệm',
+        actions: { manage: PERMISSIONS.DEPOSITS_PRODUCTS_MANAGE },
+      },
     ],
   },
   {

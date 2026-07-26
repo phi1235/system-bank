@@ -1,0 +1,152 @@
+.page-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.loading-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 48px 0;
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.stat-card {
+  padding: 16px;
+
+  .stat-label {
+    font-size: 13px;
+    color: rgba(0, 0, 0, 0.6);
+  }
+
+  .stat-value {
+    font-size: 24px;
+    font-weight: 600;
+    margin-top: 4px;
+
+    &.warn {
+      color: #ef6c00;
+    }
+  }
+
+  .stat-hint {
+    margin-top: 4px;
+    font-size: 12px;
+    color: rgba(0, 0, 0, 0.55);
+  }
+}
+
+.table-card {
+  padding: 16px;
+
+  h3 {
+    margin: 0 0 8px;
+    font-size: 15px;
+
+    .meta {
+      font-weight: 400;
+      font-size: 13px;
+      color: rgba(0, 0, 0, 0.55);
+    }
+  }
+
+  .table-wrap {
+    overflow-x: auto;
+  }
+
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 12px;
+
+    .grow {
+      flex: 1 1 220px;
+    }
+
+    .status-field {
+      flex: 0 0 160px;
+    }
+
+    .date-field {
+      flex: 0 0 165px;
+    }
+  }
+
+  .interest {
+    color: #2e7d32;
+  }
+
+  .stk {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+  }
+
+  table.full {
+    width: 100%;
+  }
+
+  .money {
+    white-space: nowrap;
+  }
+
+  .hint {
+    margin: 12px 0 0;
+    font-size: 12px;
+    color: rgba(0, 0, 0, 0.55);
+  }
+}
+
+.chip {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  background: rgba(0, 0, 0, 0.08);
+
+  &.ok {
+    background: rgba(46, 125, 50, 0.12);
+    color: #2e7d32;
+  }
+
+  &.warn {
+    background: rgba(239, 108, 0, 0.12);
+    color: #ef6c00;
+  }
+
+  &.bad {
+    background: rgba(198, 40, 40, 0.12);
+    color: #c62828;
+  }
+
+  &.done {
+    background: rgba(21, 101, 192, 0.12);
+    color: #1565c0;
+  }
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 24px 0;
+  color: rgba(0, 0, 0, 0.55);
+
+  mat-icon {
+    font-size: 36px;
+    width: 36px;
+    height: 36px;
+  }
+
+  .empty-title {
+    font-weight: 600;
+    margin: 8px 0 0;
+  }
+}

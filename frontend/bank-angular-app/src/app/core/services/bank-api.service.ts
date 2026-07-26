@@ -5,10 +5,13 @@ import {
   Account,
   AccountInquiryRequest,
   AccountInquiryResponse,
+  AdminTermDeposit,
   AuditLog,
   BankItem,
   Beneficiary,
   CustomerProfile,
+  DepositAdminSummary,
+  DepositBatchResult,
   DepositProduct,
   DepositQuote,
   LedgerEntry,
@@ -143,6 +146,53 @@ export class BankApiService {
 
   closeDeposit(id: string): Observable<TermDeposit> {
     return this.api.post(`/deposits/${id}/close`, {});
+  }
+
+  adminDepositSummary(): Observable<DepositAdminSummary> {
+    return this.api.get('/admin/deposits/summary');
+  }
+
+  /** Manual accrual + maturity run (same job as the nightly scheduler). */
+  adminRunDepositBatch(): Observable<DepositBatchResult> {
+    return this.api.post('/admin/deposits/batch', {});
+  }
+
+  adminDeposits(
+    page = 0,
+    size = 20,
+    filters?: {
+      status?: string;
+      productCode?: string;
+      userId?: string;
+      accountId?: string;
+      accountNumber?: string;
+      maturityFrom?: string;
+      maturityTo?: string;
+    },
+  ): Observable<PageResponse<AdminTermDeposit>> {
+    return this.api.get('/admin/deposits', {
+      page,
+      size,
+      status: filters?.status,
+      productCode: filters?.productCode,
+      userId: filters?.userId,
+      accountId: filters?.accountId,
+      accountNumber: filters?.accountNumber,
+      maturityFrom: filters?.maturityFrom,
+      maturityTo: filters?.maturityTo,
+    });
+  }
+
+  adminAllDepositProducts(): Observable<DepositProduct[]> {
+    return this.api.get('/admin/deposits/products');
+  }
+
+  /** Partial update; existing contracts keep their rate snapshots. */
+  adminUpdateDepositProduct(
+    code: string,
+    body: { rateBps?: number; earlyRateBps?: number; minAmount?: number; active?: boolean },
+  ): Observable<DepositProduct> {
+    return this.api.patch(`/admin/deposits/products/${code}`, body);
   }
 
   getAccount(id: string): Observable<Account> {

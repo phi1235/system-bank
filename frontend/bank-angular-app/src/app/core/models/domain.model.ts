@@ -297,6 +297,7 @@ export interface DepositProduct {
   rateBps: number;
   earlyRateBps: number;
   minAmount: number;
+  active: boolean;
 }
 
 export interface DepositQuote {
@@ -323,5 +324,53 @@ export interface TermDeposit {
   maturityDate: string;
   status: string;
   interest: number;
+  closedAt: string | null;
+}
+
+/** Admin funding summary over term deposits. */
+export interface DepositTotals {
+  openCount: number;
+  openPrincipal: number;
+  openAccrued: number;
+  dueIn7Days: number;
+  maturedCount: number;
+  closedEarlyCount: number;
+}
+
+export interface DepositTenorSummary {
+  code: string;
+  tenorMonths: number;
+  rateBps: number;
+  openCount: number;
+  openPrincipal: number;
+  openAccrued: number;
+}
+
+export interface DepositAdminSummary {
+  totals: DepositTotals;
+  byProduct: DepositTenorSummary[];
+}
+
+export interface DepositBatchResult {
+  accruedUpdated: number;
+  matured: number;
+  failed: number;
+}
+
+/** Admin drill-down row: one term-deposit contract with its owner. */
+export interface AdminTermDeposit {
+  id: string;
+  userId: string;
+  ownerName: string | null;
+  sourceAccountId: string;
+  sourceAccountNumber: string | null;
+  productCode: string;
+  tenorMonths: number;
+  amount: number;
+  rateBps: number;
+  accruedInterest: number;
+  openedAt: string;
+  maturityDate: string;
+  status: string;
   closedAt: string | null;
 }

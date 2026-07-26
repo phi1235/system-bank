@@ -31,6 +31,17 @@ export const ADMIN_ROUTES: Routes = [
         loadComponent: () => import('./accounts/accounts.component').then((m) => m.AdminAccountsComponent),
       },
       {
+        path: 'deposits',
+        canActivate: [permissionGuard([PERMISSIONS.DEPOSITS_SUMMARY_VIEW])],
+        loadComponent: () => import('./deposits/deposits.component').then((m) => m.AdminDepositsComponent),
+      },
+      {
+        path: 'deposits/contracts',
+        canActivate: [permissionGuard([PERMISSIONS.DEPOSITS_SUMMARY_VIEW])],
+        loadComponent: () =>
+          import('./deposits/deposit-contracts.component').then((m) => m.AdminDepositContractsComponent),
+      },
+      {
         path: 'transactions',
         canActivate: [permissionGuard([PERMISSIONS.TX_LIST_VIEW])],
         loadComponent: () => import('./transfers/transfers.component').then((m) => m.AdminTransfersComponent),
