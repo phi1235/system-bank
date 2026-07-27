@@ -46,4 +46,8 @@ public final class CardDtos {
 
   public record UpdateCardLimitRequest(
       @NotNull @DecimalMin("0") BigDecimal dailyLimit) {}
+
+  public record BatchApproveRequest(@NotNull @Size(min = 1, max = 100) java.util.List<java.util.UUID> ids) {}
+
+  public record BatchApproveResult(int approvedCount, int failedCount, java.util.List<String> errors) {}
 }

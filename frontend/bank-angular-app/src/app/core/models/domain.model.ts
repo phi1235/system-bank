@@ -402,6 +402,15 @@ export interface AdminCard {
   dailyLimit: number;
   rejectReason: string | null;
   requestedAt: string;
+  email?: string | null;
+  phone?: string | null;
+  kycStatus?: string | null;
+}
+
+export interface BatchApproveResult {
+  approvedCount: number;
+  failedCount: number;
+  errors: string[];
 }
 
 export interface CardReveal {

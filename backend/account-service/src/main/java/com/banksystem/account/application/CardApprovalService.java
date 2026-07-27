@@ -1,6 +1,7 @@
 package com.banksystem.account.application;
 
 import com.banksystem.account.api.dto.CardDtos.AdminCardRow;
+import com.banksystem.account.api.dto.CardDtos.BatchApproveResult;
 import com.banksystem.account.api.dto.CardDtos.CardResponse;
 import com.banksystem.account.domain.AccountEntity;
 import com.banksystem.account.domain.AccountRepository;
@@ -83,7 +84,7 @@ public class CardApprovalService {
   }
 
   @Transactional(readOnly = true)
-  public PageResponse<AdminCardRow> queue(String status, Integer page, Integer size) {
+  public PageResponse<AdminCardRow> queue(String status, Integer page, Integer size, String q) {
     CardStatus parsed = parseStatus(status == null || status.isBlank() ? "REQUESTED" : status);
     int p = page == null || page < 0 ? 0 : page;
     int s = size == null || size < 1 ? 20 : Math.min(size, 100);
@@ -111,10 +112,46 @@ public class CardApprovalService {
                         c.getDailyLimit(),
                         c.getRejectReason(),
                         c.getCreatedAt()))
+            .filter(row -> {
+              if (q == null || q.isBlank()) {
+                return true;
+              }
+              String term = q.trim().toLowerCase();
+              return (row.ownerName() != null && row.ownerName().toLowerCase().contains(term))
+                  || (row.accountNumber() != null && row.accountNumber().toLowerCase().contains(term))
+                  || (row.userId() != null && row.userId().toLowerCase().contains(term))
+                  || (row.id() != null && row.id().toLowerCase().contains(term));
+            })
             .toList();
     return new PageResponse<>(
         rows, result.getNumber(), result.getSize(), result.getTotalElements(),
         result.getTotalPages());
+  }
+
+  @Transactional(readOnly = true)
+  public PageResponse<AdminCardRow> queue(String status, Integer page, Integer size) {
+    return queue(status, page, size, null);
+  }
+
+  /** Checker batch approves requested cards. */
+  @Transactional
+  public BatchApproveResult batchApprove(List<UUID> cardIds, UUID staffId) {
+    if (cardIds == null || cardIds.isEmpty()) {
+      return new BatchApproveResult(0, 0, List.of());
+    }
+    int approved = 0;
+    int failed = 0;
+    List<String> errors = new java.util.ArrayList<>();
+    for (UUID id : cardIds) {
+      try {
+        approve(id, staffId);
+        approved++;
+      } catch (Exception ex) {
+        failed++;
+        errors.add("Card " + id + ": " + ex.getMessage());
+      }
+    }
+    return new BatchApproveResult(approved, failed, errors);
   }
 
   /** Checker approves: the PAN comes into existence here, never earlier. */

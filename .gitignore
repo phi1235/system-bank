@@ -74,4 +74,5 @@ coverage/
 
 # Local agent briefs (not product)
 .agy-briefs/
+.agents/
 

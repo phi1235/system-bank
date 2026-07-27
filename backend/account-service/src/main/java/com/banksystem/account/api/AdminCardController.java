@@ -1,6 +1,8 @@
 package com.banksystem.account.api;
 
 import com.banksystem.account.api.dto.CardDtos.AdminCardRow;
+import com.banksystem.account.api.dto.CardDtos.BatchApproveRequest;
+import com.banksystem.account.api.dto.CardDtos.BatchApproveResult;
 import com.banksystem.account.api.dto.CardDtos.CardResponse;
 import com.banksystem.account.api.dto.CardDtos.RejectCardRequest;
 import com.banksystem.account.application.CardApprovalService;
@@ -38,14 +40,21 @@ public class AdminCardController {
   public ApiResponse<PageResponse<AdminCardRow>> list(
       @RequestParam(required = false) String status,
       @RequestParam(required = false) Integer page,
-      @RequestParam(required = false) Integer size) {
-    return ApiResponse.ok(service.queue(status, page, size));
+      @RequestParam(required = false) Integer size,
+      @RequestParam(required = false) String q) {
+    return ApiResponse.ok(service.queue(status, page, size, q));
   }
 
   @PostMapping("/{id}/approve")
   @RequirePermission("cards:approve:execute")
   public ApiResponse<CardResponse> approve(@PathVariable UUID id) {
     return ApiResponse.ok(service.approve(id, UserContext.requireUser().userId()));
+  }
+
+  @PostMapping("/batch-approve")
+  @RequirePermission("cards:approve:execute")
+  public ApiResponse<BatchApproveResult> batchApprove(@Valid @RequestBody BatchApproveRequest request) {
+    return ApiResponse.ok(service.batchApprove(request.ids(), UserContext.requireUser().userId()));
   }
 
   @PostMapping("/{id}/reject")
