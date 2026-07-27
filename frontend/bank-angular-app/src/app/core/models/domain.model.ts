@@ -374,3 +374,38 @@ export interface AdminTermDeposit {
   status: string;
   closedAt: string | null;
 }
+
+/** Virtual debit card; PAN always masked except explicit reveal. */
+export interface Card {
+  id: string;
+  accountId: string;
+  accountNumber: string | null;
+  /** Null while the request awaits approval. */
+  maskedPan: string | null;
+  brand: string;
+  status: string;
+  dailyLimit: number;
+  expiresOn: string | null;
+  /** Set only when status is REJECTED. */
+  rejectReason: string | null;
+  createdAt: string;
+}
+
+/** Staff approval-queue row. */
+export interface AdminCard {
+  id: string;
+  userId: string;
+  ownerName: string | null;
+  accountId: string;
+  accountNumber: string | null;
+  status: string;
+  dailyLimit: number;
+  rejectReason: string | null;
+  requestedAt: string;
+}
+
+export interface CardReveal {
+  id: string;
+  pan: string;
+  expiresOn: string;
+}

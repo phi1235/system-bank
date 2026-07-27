@@ -39,6 +39,12 @@
             <span matListItemTitle>{{ 'NAV.ADMIN_ACCOUNTS' | translate }}</span>
           </a>
         }
+        @if (canAccounts$ | async) {
+          <a mat-list-item routerLink="/admin/cards" routerLinkActive="active">
+            <mat-icon matListItemIcon>credit_score</mat-icon>
+            <span matListItemTitle>{{ 'NAV.ADMIN_CARDS' | translate }}</span>
+          </a>
+        }
         @if (canDeposits$ | async) {
           <a mat-list-item routerLink="/admin/deposits" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
             <mat-icon matListItemIcon>savings</mat-icon>

@@ -234,6 +234,8 @@ services:
       TRANSACTION_INTERNAL_API_KEY: ${TRANSACTION_INTERNAL_API_KEY:?TRANSACTION_INTERNAL_API_KEY must be set in infra/.env}
       CUSTOMER_INTERNAL_API_KEY: ${CUSTOMER_INTERNAL_API_KEY:?CUSTOMER_INTERNAL_API_KEY must be set in infra/.env}
       GATEWAY_SIGNING_SECRET: ${GATEWAY_SIGNING_SECRET:?GATEWAY_SIGNING_SECRET must be set in infra/.env}
+      # Card PAN encryption at rest
+      AES_SECRET_KEY: ${AES_SECRET_KEY:?AES_SECRET_KEY must be set in infra/.env}
       ACCOUNT_MAX_PER_USER: ${ACCOUNT_MAX_PER_USER}
       ACCOUNT_INITIAL_BALANCE: ${ACCOUNT_INITIAL_BALANCE}
       # Term-deposit nightly batch: opt-in; manual admin runs always work.

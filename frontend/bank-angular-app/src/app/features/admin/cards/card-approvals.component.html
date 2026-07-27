@@ -1,0 +1,93 @@
+<app-page-header [title]="'ADMIN.CARDS_TITLE' | translate" [subtitle]="'ADMIN.CARDS_SUB' | translate">
+  <button mat-stroked-button type="button" (click)="load()" [disabled]="loading">
+    <mat-icon>refresh</mat-icon>
+    {{ 'COMMON.REFRESH' | translate }}
+  </button>
+</app-page-header>
+
+<div class="page-stack">
+  <mat-card class="table-card">
+    <div class="filters">
+      <mat-form-field appearance="outline" class="status-field" subscriptSizing="dynamic">
+        <mat-label>{{ 'COMMON.STATUS' | translate }}</mat-label>
+        <mat-select [(ngModel)]="fStatus" name="fStatus" (selectionChange)="changeStatus()">
+          @for (s of statusOptions; track s) {
+            <mat-option [value]="s">{{ 'CUSTOMER.CARDS_STATUS_' + s | translate }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <span class="meta">{{ totalElements | number }} {{ 'ADMIN.CARDS_COUNT' | translate }}</span>
+    </div>
+
+    @if (rows.length) {
+      <div class="table-wrap">
+        <table mat-table [dataSource]="rows" class="full">
+          <ng-container matColumnDef="owner">
+            <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.DEPOSITS_OWNER' | translate }}</th>
+            <td mat-cell *matCellDef="let r">
+              @if (r.ownerName) {
+                <span [matTooltip]="r.userId">{{ r.ownerName }}</span>
+              } @else {
+                <code [matTooltip]="r.userId">{{ shortId(r.userId) }}</code>
+              }
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="account">
+            <th mat-header-cell *matHeaderCellDef>{{ 'CUSTOMER.WEALTH_SOURCE' | translate }}</th>
+            <td mat-cell *matCellDef="let r">
+              @if (r.accountNumber) {
+                <span class="stk" [matTooltip]="r.accountId">{{ r.accountNumber }}</span>
+              } @else {
+                <code [matTooltip]="r.accountId">{{ shortId(r.accountId) }}</code>
+              }
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="requestedAt">
+            <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.CARDS_REQUESTED_AT' | translate }}</th>
+            <td mat-cell *matCellDef="let r">{{ r.requestedAt | date: 'short' }}</td>
+          </ng-container>
+          <ng-container matColumnDef="dailyLimit">
+            <th mat-header-cell *matHeaderCellDef>{{ 'CUSTOMER.CARDS_DAILY_LIMIT' | translate }}</th>
+            <td mat-cell *matCellDef="let r" class="money">{{ r.dailyLimit | moneyVnd }}</td>
+          </ng-container>
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.STATUS' | translate }}</th>
+            <td mat-cell *matCellDef="let r">
+              <span class="chip"
+                    [class.warn]="r.status === 'REQUESTED' || r.status === 'PENDING_ACTIVATION' || r.status === 'LOCKED'"
+                    [class.ok]="r.status === 'ACTIVE'"
+                    [class.bad]="r.status === 'REJECTED' || r.status === 'CLOSED'"
+                    [matTooltip]="r.rejectReason || ''">
+                {{ 'CUSTOMER.CARDS_STATUS_' + r.status | translate }}
+              </span>
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef></th>
+            <td mat-cell *matCellDef="let r">
+              @if (r.status === 'REQUESTED' && (canDecide$ | async)) {
+                <button mat-flat-button color="primary" type="button"
+                        (click)="approve(r)" [disabled]="busyId === r.id">
+                  <mat-icon>check</mat-icon> {{ 'ADMIN.CARDS_APPROVE_BTN' | translate }}
+                </button>
+                <button mat-stroked-button color="warn" type="button"
+                        (click)="openReject(r)" [disabled]="busyId === r.id">
+                  <mat-icon>close</mat-icon> {{ 'ADMIN.CARDS_REJECT_BTN' | translate }}
+                </button>
+              }
+            </td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="cols"></tr>
+          <tr mat-row *matRowDef="let row; columns: cols"></tr>
+        </table>
+      </div>
+    } @else if (!loading) {
+      <div class="empty-state">
+        <mat-icon>credit_score</mat-icon>
+        <p class="empty-title">{{ 'ADMIN.CARDS_EMPTY' | translate }}</p>
+      </div>
+    }
+    <mat-paginator [length]="totalElements" [pageIndex]="pageIndex" [pageSize]="pageSize"
+                   [pageSizeOptions]="[10, 20, 50]" (page)="page($event)" [disabled]="loading" />
+  </mat-card>
+</div>
