@@ -8,101 +8,157 @@
           <div class="s">{{ 'ADMIN.BO_SUB' | translate }}</div>
         </div>
       </div>
-      <mat-nav-list>
+
+      <mat-nav-list class="sidebar-categories">
+        <!-- STANDALONE: DASHBOARD -->
         @if (canDashboard$ | async) {
-          <a mat-list-item routerLink="/admin" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+          <a mat-list-item routerLink="/admin" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="top-item">
             <mat-icon matListItemIcon>dashboard</mat-icon>
             <span matListItemTitle>{{ 'NAV.ADMIN_DASHBOARD' | translate }}</span>
           </a>
         }
-        @if (canUsers$ | async) {
-          <a mat-list-item routerLink="/admin/users" routerLinkActive="active">
-            <mat-icon matListItemIcon>manage_accounts</mat-icon>
-            <span matListItemTitle>{{ 'NAV.ADMIN_USERS' | translate }}</span>
-          </a>
+
+        <!-- 1. QUẢN LÝ KHÁCH HÀNG & HỖ TRỢ -->
+        <div class="nav-category-header" (click)="toggleCategory('customers')" [class.expanded]="expandedCategories['customers']">
+          <div class="cat-left">
+            <mat-icon class="cat-icon">people</mat-icon>
+            <span>{{ 'ADMIN.NAV_CAT_CUSTOMERS' | translate }}</span>
+          </div>
+          <mat-icon class="chevron-icon">{{ expandedCategories['customers'] ? 'expand_less' : 'expand_more' }}</mat-icon>
+        </div>
+        @if (expandedCategories['customers']) {
+          <div class="sub-menu-group">
+            @if (canCustomers$ | async) {
+              <a mat-list-item routerLink="/admin/customers" routerLinkActive="active">
+                <mat-icon matListItemIcon>badge</mat-icon>
+                <span matListItemTitle>{{ 'NAV.ADMIN_CUSTOMERS' | translate }}</span>
+              </a>
+            }
+            @if (canSupportTickets$ | async) {
+              <a mat-list-item routerLink="/admin/support-tickets" routerLinkActive="active">
+                <mat-icon matListItemIcon>support_agent</mat-icon>
+                <span matListItemTitle>{{ 'NAV.ADMIN_SUPPORT' | translate }}</span>
+              </a>
+            }
+          </div>
         }
-        @if (canCustomers$ | async) {
-          <a mat-list-item routerLink="/admin/customers" routerLinkActive="active">
-            <mat-icon matListItemIcon>people</mat-icon>
-            <span matListItemTitle>{{ 'NAV.ADMIN_CUSTOMERS' | translate }}</span>
-          </a>
+
+        <!-- 2. SẢN PHẨM & DỊCH VỤ -->
+        <div class="nav-category-header" (click)="toggleCategory('products')" [class.expanded]="expandedCategories['products']">
+          <div class="cat-left">
+            <mat-icon class="cat-icon">account_balance</mat-icon>
+            <span>{{ 'ADMIN.NAV_CAT_PRODUCTS' | translate }}</span>
+          </div>
+          <mat-icon class="chevron-icon">{{ expandedCategories['products'] ? 'expand_less' : 'expand_more' }}</mat-icon>
+        </div>
+        @if (expandedCategories['products']) {
+          <div class="sub-menu-group">
+            @if (canAccounts$ | async) {
+              <a mat-list-item routerLink="/admin/accounts" routerLinkActive="active">
+                <mat-icon matListItemIcon>account_balance_wallet</mat-icon>
+                <span matListItemTitle>{{ 'NAV.ADMIN_ACCOUNTS' | translate }}</span>
+              </a>
+              <a mat-list-item routerLink="/admin/cards" routerLinkActive="active">
+                <mat-icon matListItemIcon>credit_score</mat-icon>
+                <span matListItemTitle>{{ 'NAV.ADMIN_CARDS' | translate }}</span>
+              </a>
+            }
+            @if (canDeposits$ | async) {
+              <a mat-list-item routerLink="/admin/deposits" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+                <mat-icon matListItemIcon>savings</mat-icon>
+                <span matListItemTitle>{{ 'NAV.ADMIN_DEPOSITS' | translate }}</span>
+              </a>
+              <a mat-list-item routerLink="/admin/deposits/contracts" routerLinkActive="active">
+                <mat-icon matListItemIcon>receipt_long</mat-icon>
+                <span matListItemTitle>{{ 'NAV.ADMIN_DEPOSIT_CONTRACTS' | translate }}</span>
+              </a>
+            }
+          </div>
         }
-        @if (canSupportTickets$ | async) {
-          <a mat-list-item routerLink="/admin/support-tickets" routerLinkActive="active">
-            <mat-icon matListItemIcon>support_agent</mat-icon>
-            <span matListItemTitle>{{ 'NAV.ADMIN_SUPPORT' | translate }}</span>
-          </a>
+
+        <!-- 3. GIAO DỊCH & ĐỐI SOÁT -->
+        <div class="nav-category-header" (click)="toggleCategory('transactions')" [class.expanded]="expandedCategories['transactions']">
+          <div class="cat-left">
+            <mat-icon class="cat-icon">swap_horiz</mat-icon>
+            <span>{{ 'ADMIN.NAV_CAT_TRANSACTIONS' | translate }}</span>
+          </div>
+          <mat-icon class="chevron-icon">{{ expandedCategories['transactions'] ? 'expand_less' : 'expand_more' }}</mat-icon>
+        </div>
+        @if (expandedCategories['transactions']) {
+          <div class="sub-menu-group">
+            @if (canTx$ | async) {
+              <a mat-list-item routerLink="/admin/transactions" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+                <mat-icon matListItemIcon>multiple_stop</mat-icon>
+                <span matListItemTitle>{{ 'NAV.ADMIN_TX' | translate }}</span>
+              </a>
+            }
+            @if (canTxReport$ | async) {
+              <a mat-list-item routerLink="/admin/transactions/report" routerLinkActive="active">
+                <mat-icon matListItemIcon>bar_chart</mat-icon>
+                <span matListItemTitle>{{ 'NAV.ADMIN_TX_REPORT' | translate }}</span>
+              </a>
+            }
+            @if (canRecon$ | async) {
+              <a mat-list-item routerLink="/admin/reconciliation" routerLinkActive="active">
+                <mat-icon matListItemIcon>fact_check</mat-icon>
+                <span matListItemTitle>{{ 'NAV.ADMIN_RECON' | translate }}</span>
+              </a>
+            }
+          </div>
         }
-        @if (canAccounts$ | async) {
-          <a mat-list-item routerLink="/admin/accounts" routerLinkActive="active">
-            <mat-icon matListItemIcon>account_balance</mat-icon>
-            <span matListItemTitle>{{ 'NAV.ADMIN_ACCOUNTS' | translate }}</span>
-          </a>
+
+        <!-- 4. QUẢN TRỊ & TUÂN THỦ -->
+        <div class="nav-category-header" (click)="toggleCategory('system')" [class.expanded]="expandedCategories['system']">
+          <div class="cat-left">
+            <mat-icon class="cat-icon">admin_panel_settings</mat-icon>
+            <span>{{ 'ADMIN.NAV_CAT_SYSTEM' | translate }}</span>
+          </div>
+          <mat-icon class="chevron-icon">{{ expandedCategories['system'] ? 'expand_less' : 'expand_more' }}</mat-icon>
+        </div>
+        @if (expandedCategories['system']) {
+          <div class="sub-menu-group">
+            @if (canUsers$ | async) {
+              <a mat-list-item routerLink="/admin/users" routerLinkActive="active">
+                <mat-icon matListItemIcon>manage_accounts</mat-icon>
+                <span matListItemTitle>{{ 'NAV.ADMIN_USERS' | translate }}</span>
+              </a>
+            }
+            @if (canRbac$ | async) {
+              <a mat-list-item routerLink="/admin/rbac" routerLinkActive="active">
+                <mat-icon matListItemIcon>shield_person</mat-icon>
+                <span matListItemTitle>{{ 'NAV.ADMIN_RBAC' | translate }}</span>
+              </a>
+            }
+            @if (canRisk$ | async) {
+              <a mat-list-item routerLink="/admin/risk" routerLinkActive="active">
+                <mat-icon matListItemIcon>gavel</mat-icon>
+                <span matListItemTitle>{{ 'NAV.ADMIN_RISK' | translate }}</span>
+              </a>
+            }
+            @if (canAudit$ | async) {
+              <a mat-list-item routerLink="/admin/audit" routerLinkActive="active">
+                <mat-icon matListItemIcon>history</mat-icon>
+                <span matListItemTitle>{{ 'NAV.ADMIN_AUDIT' | translate }}</span>
+              </a>
+            }
+            @if (canTx$ | async) {
+              <a mat-list-item routerLink="/admin/outbox" routerLinkActive="active">
+                <mat-icon matListItemIcon>outbox</mat-icon>
+                <span matListItemTitle>{{ 'NAV.ADMIN_OUTBOX' | translate }}</span>
+              </a>
+            }
+          </div>
         }
-        @if (canAccounts$ | async) {
-          <a mat-list-item routerLink="/admin/cards" routerLinkActive="active">
-            <mat-icon matListItemIcon>credit_score</mat-icon>
-            <span matListItemTitle>{{ 'NAV.ADMIN_CARDS' | translate }}</span>
-          </a>
-        }
-        @if (canDeposits$ | async) {
-          <a mat-list-item routerLink="/admin/deposits" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-            <mat-icon matListItemIcon>savings</mat-icon>
-            <span matListItemTitle>{{ 'NAV.ADMIN_DEPOSITS' | translate }}</span>
-          </a>
-          <a mat-list-item routerLink="/admin/deposits/contracts" routerLinkActive="active">
-            <mat-icon matListItemIcon>list_alt</mat-icon>
-            <span matListItemTitle>{{ 'NAV.ADMIN_DEPOSIT_CONTRACTS' | translate }}</span>
-          </a>
-        }
-        @if (canTx$ | async) {
-          <a mat-list-item routerLink="/admin/transactions" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-            <mat-icon matListItemIcon>swap_horiz</mat-icon>
-            <span matListItemTitle>{{ 'NAV.ADMIN_TX' | translate }}</span>
-          </a>
-        }
-        @if (canTxReport$ | async) {
-          <a mat-list-item routerLink="/admin/transactions/report" routerLinkActive="active">
-            <mat-icon matListItemIcon>bar_chart</mat-icon>
-            <span matListItemTitle>{{ 'NAV.ADMIN_TX_REPORT' | translate }}</span>
-          </a>
-        }
-        @if (canRecon$ | async) {
-          <a mat-list-item routerLink="/admin/reconciliation" routerLinkActive="active">
-            <mat-icon matListItemIcon>fact_check</mat-icon>
-            <span matListItemTitle>{{ 'NAV.ADMIN_RECON' | translate }}</span>
-          </a>
-        }
-        @if (canTx$ | async) {
-          <a mat-list-item routerLink="/admin/outbox" routerLinkActive="active">
-            <mat-icon matListItemIcon>outbox</mat-icon>
-            <span matListItemTitle>{{ 'NAV.ADMIN_OUTBOX' | translate }}</span>
-          </a>
-        }
-        @if (canAudit$ | async) {
-          <a mat-list-item routerLink="/admin/audit" routerLinkActive="active">
-            <mat-icon matListItemIcon>history</mat-icon>
-            <span matListItemTitle>{{ 'NAV.ADMIN_AUDIT' | translate }}</span>
-          </a>
-        }
-        @if (canRbac$ | async) {
-          <a mat-list-item routerLink="/admin/rbac" routerLinkActive="active">
-            <mat-icon matListItemIcon>admin_panel_settings</mat-icon>
-            <span matListItemTitle>{{ 'NAV.ADMIN_RBAC' | translate }}</span>
-          </a>
-        }
-        @if (canRisk$ | async) {
-          <a mat-list-item routerLink="/admin/risk" routerLinkActive="active">
-            <mat-icon matListItemIcon>shield</mat-icon>
-            <span matListItemTitle>{{ 'NAV.ADMIN_RISK' | translate }}</span>
-          </a>
-        }
-        <a mat-list-item href="http://localhost:4201" target="_blank">
-          <mat-icon matListItemIcon>mark_email_read</mat-icon>
+
+        <!-- STANDALONE: DEV UTILITIES -->
+        <div class="dev-divider"></div>
+        <a mat-list-item href="http://localhost:4201" target="_blank" class="dev-item">
+          <mat-icon matListItemIcon>terminal</mat-icon>
           <span matListItemTitle>Dev Sandbox (Port 4201)</span>
         </a>
       </mat-nav-list>
     </mat-sidenav>
+
     <mat-sidenav-content>
       <mat-toolbar class="bo-top">
         <span class="title">{{ 'ADMIN.SHELL_TITLE' | translate }}</span>

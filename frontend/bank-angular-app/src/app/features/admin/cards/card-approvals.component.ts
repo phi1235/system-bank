@@ -3,9 +3,11 @@ import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
@@ -20,6 +22,7 @@ import { resolveHttpErrorMessage } from '../../../core/utils/http-error.util';
 import { selectHasPermission } from '../../../store/auth/auth.selectors';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { MoneyVndPipe } from '../../../shared/pipes/money-vnd.pipe';
+import { CardDetailDialogComponent } from './card-detail-dialog.component';
 import { RejectCardDialogComponent } from './reject-card-dialog.component';
 
 /** Card approval queue: staff approve (PAN is generated then) or reject with a reason. */
@@ -31,9 +34,11 @@ import { RejectCardDialogComponent } from './reject-card-dialog.component';
     FormsModule,
     MatButtonModule,
     MatCardModule,
+    MatCheckboxModule,
     MatDialogModule,
     MatFormFieldModule,
     MatIconModule,
+    MatInputModule,
     MatPaginatorModule,
     MatSelectModule,
     MatTableModule,
@@ -59,13 +64,17 @@ export class AdminCardApprovalsComponent implements OnInit {
   rows: AdminCard[] = [];
   loading = false;
   busyId: string | null = null;
+  batchBusy = false;
   pageIndex = 0;
   pageSize = 20;
   totalElements = 0;
   fStatus = 'REQUESTED';
+  searchQuery = '';
+
+  selectedCardIds = new Set<string>();
 
   readonly statusOptions = ['REQUESTED', 'PENDING_ACTIVATION', 'ACTIVE', 'LOCKED', 'REJECTED', 'CLOSED'];
-  cols = ['owner', 'account', 'requestedAt', 'dailyLimit', 'status', 'actions'];
+  cols = ['select', 'owner', 'account', 'requestedAt', 'dailyLimit', 'status', 'actions'];
 
   ngOnInit(): void {
     this.load();
@@ -73,7 +82,8 @@ export class AdminCardApprovalsComponent implements OnInit {
 
   load(): void {
     this.loading = true;
-    this.api.adminCards(this.fStatus, this.pageIndex, this.pageSize).subscribe({
+    this.selectedCardIds.clear();
+    this.api.adminCards(this.fStatus, this.pageIndex, this.pageSize, this.searchQuery).subscribe({
       next: (p) => {
         this.rows = p.items || [];
         this.totalElements = p.totalElements ?? this.rows.length;
@@ -88,6 +98,17 @@ export class AdminCardApprovalsComponent implements OnInit {
     });
   }
 
+  onSearch(): void {
+    this.pageIndex = 0;
+    this.load();
+  }
+
+  clearSearch(): void {
+    this.searchQuery = '';
+    this.pageIndex = 0;
+    this.load();
+  }
+
   changeStatus(): void {
     this.pageIndex = 0;
     this.load();
@@ -99,8 +120,52 @@ export class AdminCardApprovalsComponent implements OnInit {
     this.load();
   }
 
+  // Checkbox helpers
+  isAllSelected(): boolean {
+    const eligibleRows = this.rows.filter((r) => r.status === 'REQUESTED');
+    if (!eligibleRows.length) {
+      return false;
+    }
+    return eligibleRows.every((r) => this.selectedCardIds.has(r.id));
+  }
+
+  toggleAll(): void {
+    if (this.isAllSelected()) {
+      this.selectedCardIds.clear();
+    } else {
+      this.rows
+        .filter((r) => r.status === 'REQUESTED')
+        .forEach((r) => this.selectedCardIds.add(r.id));
+    }
+  }
+
+  toggleSelect(id: string): void {
+    if (this.selectedCardIds.has(id)) {
+      this.selectedCardIds.delete(id);
+    } else {
+      this.selectedCardIds.add(id);
+    }
+  }
+
+  openDetail(row: AdminCard): void {
+    let canDecide = false;
+    this.canDecide$.subscribe((res) => (canDecide = !!res)).unsubscribe();
+
+    this.dialog
+      .open(CardDetailDialogComponent, {
+        data: { card: row, canDecide },
+        width: '640px',
+      })
+      .afterClosed()
+      .subscribe((updated) => {
+        if (updated) {
+          this.load();
+        }
+      });
+  }
+
   approve(row: AdminCard): void {
-    if (this.busyId) {
+    if (this.busyId || this.batchBusy) {
       return;
     }
     this.busyId = row.id;
@@ -114,6 +179,33 @@ export class AdminCardApprovalsComponent implements OnInit {
       },
       error: (err) => {
         this.busyId = null;
+        this.toast.error(resolveHttpErrorMessage(err, this.i18n));
+      },
+    });
+  }
+
+  batchApprove(): void {
+    const ids = Array.from(this.selectedCardIds);
+    if (!ids.length || this.batchBusy) {
+      return;
+    }
+
+    const confirmMsg = this.i18n.instant('ADMIN.CARDS_BATCH_CONFIRM', { count: ids.length });
+    if (!confirm(confirmMsg)) {
+      return;
+    }
+
+    this.batchBusy = true;
+    this.api.adminBatchApproveCards(ids).subscribe({
+      next: (res) => {
+        this.batchBusy = false;
+        this.toast.success(
+          this.i18n.instant('ADMIN.CARDS_BATCH_SUCCESS', { approved: res.approvedCount }),
+        );
+        this.load();
+      },
+      error: (err) => {
+        this.batchBusy = false;
         this.toast.error(resolveHttpErrorMessage(err, this.i18n));
       },
     });

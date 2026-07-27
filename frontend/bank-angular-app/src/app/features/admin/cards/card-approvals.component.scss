@@ -7,19 +7,59 @@
 .table-card {
   padding: 16px;
 
-  .filters {
+  .toolbar-flex {
     display: flex;
-    gap: 12px;
+    justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
 
-    .status-field {
-      flex: 0 0 200px;
+    .filters {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      flex: 1;
+
+      .status-field {
+        flex: 0 0 190px;
+      }
+
+      .search-field {
+        flex: 1;
+        min-width: 220px;
+        max-width: 380px;
+      }
+
+      .search-btn {
+        height: 44px;
+        min-width: 44px;
+        padding: 0;
+        border-radius: 8px;
+      }
     }
 
-    .meta {
-      font-size: 13px;
-      color: rgba(0, 0, 0, 0.55);
+    .actions-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      .batch-btn {
+        height: 40px;
+        border-radius: 8px;
+        font-weight: 600;
+
+        mat-icon {
+          margin-right: 4px;
+        }
+      }
+
+      .meta {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.6);
+        white-space: nowrap;
+      }
     }
   }
 
@@ -31,41 +71,55 @@
     width: 100%;
   }
 
+  .chk-col {
+    width: 48px;
+    text-align: center;
+  }
+
+  .owner-name {
+    font-weight: 600;
+  }
+
   .money {
     white-space: nowrap;
+    font-weight: 600;
   }
 
   .stk {
     font-variant-numeric: tabular-nums;
     font-weight: 600;
+    color: #38bdf8;
   }
 
-  td .mat-mdc-outlined-button + .mat-mdc-outlined-button,
-  td button + button {
-    margin-left: 8px;
+  .row-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: flex-end;
   }
 }
 
 .chip {
   display: inline-block;
-  padding: 2px 10px;
+  padding: 4px 12px;
   border-radius: 12px;
   font-size: 12px;
-  background: rgba(0, 0, 0, 0.08);
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.08);
 
   &.ok {
-    background: rgba(46, 125, 50, 0.12);
-    color: #2e7d32;
+    background: rgba(16, 185, 129, 0.16);
+    color: #34d399;
   }
 
   &.warn {
-    background: rgba(239, 108, 0, 0.12);
-    color: #ef6c00;
+    background: rgba(245, 158, 11, 0.16);
+    color: #fbbf24;
   }
 
   &.bad {
-    background: rgba(198, 40, 40, 0.12);
-    color: #c62828;
+    background: rgba(239, 68, 68, 0.16);
+    color: #f87171;
   }
 }
 
@@ -75,7 +129,7 @@
   align-items: center;
   gap: 4px;
   padding: 32px 0;
-  color: rgba(0, 0, 0, 0.55);
+  color: rgba(255, 255, 255, 0.55);
 
   mat-icon {
     font-size: 40px;

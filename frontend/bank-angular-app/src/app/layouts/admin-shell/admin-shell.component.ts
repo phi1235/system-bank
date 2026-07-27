@@ -5,7 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { Subscription, filter, map, take } from 'rxjs';
@@ -50,8 +50,11 @@ export class AdminShellComponent implements OnInit, OnDestroy {
   private readonly api = inject(BankApiService);
   private readonly toast = inject(ToastService);
   private readonly i18n = inject(TranslateService);
+  private readonly router = inject(Router);
+
   private liveSub?: Subscription;
   private permSub?: Subscription;
+  private routeSub?: Subscription;
 
   username$ = this.store.select(selectUsername);
   roles$ = this.store.select(selectRoles);
@@ -87,7 +90,24 @@ export class AdminShellComponent implements OnInit, OnDestroy {
     }),
   );
 
+  // Collapsible Multi-item Category State
+  expandedCategories: Record<string, boolean> = {
+    customers: false,
+    products: false,
+    transactions: false,
+    system: false,
+  };
+
+  toggleCategory(key: string): void {
+    this.expandedCategories[key] = !this.expandedCategories[key];
+  }
+
   ngOnInit(): void {
+    this.syncCategoryWithUrl(this.router.url);
+    this.routeSub = this.router.events
+      .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
+      .subscribe((e) => this.syncCategoryWithUrl(e.urlAfterRedirects));
+
     this.permSub = this.canOpsNotifications$
       .pipe(
         filter((ok) => !!ok),
@@ -109,11 +129,37 @@ export class AdminShellComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.liveSub?.unsubscribe();
     this.permSub?.unsubscribe();
+    this.routeSub?.unsubscribe();
     this.stream.disconnect();
   }
 
   logout(): void {
     this.stream.disconnect();
     this.store.dispatch(AuthActions.logout());
+  }
+
+  private syncCategoryWithUrl(url: string): void {
+    if (url.startsWith('/admin/customers') || url.startsWith('/admin/support-tickets')) {
+      this.expandedCategories['customers'] = true;
+    } else if (
+      url.startsWith('/admin/accounts') ||
+      url.startsWith('/admin/cards') ||
+      url.startsWith('/admin/deposits')
+    ) {
+      this.expandedCategories['products'] = true;
+    } else if (
+      url.startsWith('/admin/transactions') ||
+      url.startsWith('/admin/reconciliation')
+    ) {
+      this.expandedCategories['transactions'] = true;
+    } else if (
+      url.startsWith('/admin/users') ||
+      url.startsWith('/admin/rbac') ||
+      url.startsWith('/admin/risk') ||
+      url.startsWith('/admin/audit') ||
+      url.startsWith('/admin/outbox')
+    ) {
+      this.expandedCategories['system'] = true;
+    }
   }
 }

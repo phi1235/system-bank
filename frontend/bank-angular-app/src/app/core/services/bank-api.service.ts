@@ -8,6 +8,7 @@ import {
   AdminCard,
   AdminTermDeposit,
   AuditLog,
+  BatchApproveResult,
   Card,
   CardReveal,
   BankItem,
@@ -153,12 +154,16 @@ export class BankApiService {
   }
 
   /** Staff card approval queue (default REQUESTED, oldest first). */
-  adminCards(status = 'REQUESTED', page = 0, size = 20): Observable<PageResponse<AdminCard>> {
-    return this.api.get('/admin/cards', { status, page, size });
+  adminCards(status = 'REQUESTED', page = 0, size = 20, q = ''): Observable<PageResponse<AdminCard>> {
+    return this.api.get('/admin/cards', { status, page, size, q });
   }
 
   adminApproveCard(id: string): Observable<Card> {
     return this.api.post(`/admin/cards/${id}/approve`, {});
+  }
+
+  adminBatchApproveCards(ids: string[]): Observable<BatchApproveResult> {
+    return this.api.post('/admin/cards/batch-approve', { ids });
   }
 
   adminRejectCard(id: string, reason: string): Observable<Card> {
