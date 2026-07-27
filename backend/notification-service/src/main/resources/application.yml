@@ -17,13 +17,13 @@ spring:
   flyway:
     enabled: true
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP}
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
     consumer:
-      group-id: ${KAFKA_CONSUMER_GROUP}
+      group-id: ${KAFKA_CONSUMER_GROUP:notification-service}
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      enable-auto-commit: ${KAFKA_ENABLE_AUTO_COMMIT}
+      enable-auto-commit: ${KAFKA_ENABLE_AUTO_COMMIT:false}
   mail:
     host: ${SMTP_HOST:}
     port: ${SMTP_PORT:587}
@@ -81,10 +81,10 @@ management:
       application: ${spring.application.name}
   tracing:
     sampling:
-      probability: ${TRACING_SAMPLE_PROBABILITY}
+      probability: ${TRACING_SAMPLE_PROBABILITY:1.0}
   zipkin:
     tracing:
-      endpoint: ${ZIPKIN_ENDPOINT}
+      endpoint: ${ZIPKIN_ENDPOINT:http://localhost:9411/api/v2/spans}
 
 logging:
   pattern:

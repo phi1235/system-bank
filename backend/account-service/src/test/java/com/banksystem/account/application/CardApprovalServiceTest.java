@@ -11,11 +11,12 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.banksystem.account.api.dto.CardDtos.CardResponse;
-import com.banksystem.account.domain.AccountRepository;
-import com.banksystem.account.domain.CardEntity;
-import com.banksystem.account.domain.CardRepository;
-import com.banksystem.account.domain.CardStatus;
+import com.banksystem.account.api.dto.card.CardDtos.CardResponse;
+import com.banksystem.account.application.card.CardApprovalService;
+import com.banksystem.account.domain.entity.card.CardEntity;
+import com.banksystem.account.domain.enums.card.CardStatus;
+import com.banksystem.account.domain.repository.account.AccountRepository;
+import com.banksystem.account.domain.repository.card.CardRepository;
 import com.banksystem.account.infrastructure.feign.AuditClient;
 import com.banksystem.account.infrastructure.feign.CustomerClient;
 import com.banksystem.account.infrastructure.feign.NotificationClient;

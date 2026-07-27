@@ -1,10 +1,10 @@
-package com.banksystem.account.application.query;
+package com.banksystem.account.application.account.query;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.banksystem.account.domain.LedgerEntryType;
+import com.banksystem.account.domain.enums.account.LedgerEntryType;
 import com.banksystem.common.exception.BusinessException;
 import java.time.Instant;
 import java.util.UUID;

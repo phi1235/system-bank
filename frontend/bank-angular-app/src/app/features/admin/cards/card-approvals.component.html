@@ -113,12 +113,12 @@
             <th mat-header-cell *matHeaderCellDef></th>
             <td mat-cell *matCellDef="let r">
               <div class="row-actions">
-                <button mat-icon-button color="accent" type="button" (click)="openDetail(r)" matTooltip="{{ 'ADMIN.CARDS_DETAIL_BTN' | translate }}">
-                  <mat-icon>visibility</mat-icon>
+                <button mat-stroked-button color="accent" type="button" (click)="openDetail(r)">
+                  <mat-icon>visibility</mat-icon> {{ 'ADMIN.CARDS_DETAIL_BTN' | translate }}
                 </button>
                 @if (r.status === 'REQUESTED' && (canDecide$ | async)) {
                   <button mat-flat-button color="primary" type="button"
-                          (click)="approve(r)" [disabled]="busyId === r.id || batchBusy">
+                          (click)="openDetail(r)" [disabled]="busyId === r.id || batchBusy">
                     <mat-icon>check</mat-icon> {{ 'ADMIN.CARDS_APPROVE_BTN' | translate }}
                   </button>
                   <button mat-stroked-button color="warn" type="button"
