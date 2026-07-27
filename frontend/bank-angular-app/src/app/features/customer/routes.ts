@@ -56,8 +56,7 @@ export const CUSTOMER_ROUTES: Routes = [
       {
         path: 'cards',
         canActivate: [permissionGuard([PERMISSIONS.IB_CARDS_VIEW])],
-        loadComponent: () => import('./placeholder/placeholder.component').then((m) => m.PlaceholderComponent),
-        data: { titleKey: 'NAV.CARDS', subtitleKey: 'CUSTOMER.CARDS_SUB' },
+        loadComponent: () => import('./cards/cards.component').then((m) => m.CardsComponent),
       },
       {
         path: 'wealth',

@@ -263,6 +263,12 @@ export const RBAC_SCREENS: RbacScreenDef[] = [
         label: 'Nạp tiền tài khoản (Cash-in)',
         actions: { execute: PERMISSIONS.ACCOUNTS_TOPUP_EXECUTE },
       },
+      {
+        id: 'card-approvals',
+        labelKey: 'ADMIN.FEAT_CARDS_APPROVE',
+        label: 'Duyệt yêu cầu mở thẻ',
+        actions: { execute: PERMISSIONS.CARDS_APPROVE_EXECUTE },
+      },
     ],
   },
   {

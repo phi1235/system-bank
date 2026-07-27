@@ -5,8 +5,11 @@ import {
   Account,
   AccountInquiryRequest,
   AccountInquiryResponse,
+  AdminCard,
   AdminTermDeposit,
   AuditLog,
+  Card,
+  CardReveal,
   BankItem,
   Beneficiary,
   CustomerProfile,
@@ -125,6 +128,41 @@ export class BankApiService {
 
   openAccount(accountType = 'PAYMENT'): Observable<Account> {
     return this.api.post('/accounts', { accountType });
+  }
+
+  // Virtual debit cards
+  myCards(): Observable<Card[]> {
+    return this.api.get('/cards');
+  }
+
+  issueCard(accountId: string): Observable<Card> {
+    return this.api.post(`/accounts/${accountId}/cards`, {});
+  }
+
+  cardAction(id: string, action: 'activate' | 'lock' | 'unlock' | 'close'): Observable<Card> {
+    return this.api.post(`/cards/${id}/${action}`, {});
+  }
+
+  updateCardLimit(id: string, dailyLimit: number): Observable<Card> {
+    return this.api.patch(`/cards/${id}/limits`, { dailyLimit });
+  }
+
+  /** Owner-only full PAN reveal (active card). */
+  revealCard(id: string): Observable<CardReveal> {
+    return this.api.post(`/cards/${id}/reveal`, {});
+  }
+
+  /** Staff card approval queue (default REQUESTED, oldest first). */
+  adminCards(status = 'REQUESTED', page = 0, size = 20): Observable<PageResponse<AdminCard>> {
+    return this.api.get('/admin/cards', { status, page, size });
+  }
+
+  adminApproveCard(id: string): Observable<Card> {
+    return this.api.post(`/admin/cards/${id}/approve`, {});
+  }
+
+  adminRejectCard(id: string, reason: string): Observable<Card> {
+    return this.api.post(`/admin/cards/${id}/reject`, { reason });
   }
 
   // Term deposits (so tiet kiem)

@@ -20,6 +20,7 @@ export const PERMISSIONS = {
   ACCOUNTS_LOOKUP_VIEW: 'accounts:lookup:view',
   ACCOUNTS_FREEZE_EXECUTE: 'accounts:freeze:execute',
   ACCOUNTS_TOPUP_EXECUTE: 'accounts:topup:execute',
+  CARDS_APPROVE_EXECUTE: 'cards:approve:execute',
   DEPOSITS_SUMMARY_VIEW: 'deposits:summary:view',
   DEPOSITS_BATCH_EXECUTE: 'deposits:batch:execute',
   DEPOSITS_PRODUCTS_MANAGE: 'deposits:products:manage',
