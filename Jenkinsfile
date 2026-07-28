@@ -235,7 +235,7 @@ pipeline {
 
   post {
     always {
-      cleanWs(deleteDirs: true, notFailFailBuild: true)
+      cleanWs(deleteDirs: true, notFailBuild: true)
     }
     success {
       echo "SUCCESS — ref=${params.BRANCH_NAME} sha=${env.GIT_SHA} Targets=[FE:${env.DO_BUILD_FE}, BE:${env.TARGET_SERVICES}]"
