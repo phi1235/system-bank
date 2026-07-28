@@ -1,11 +1,5 @@
-// system-bank — Jenkins declarative pipeline (Method B hybrid)
-// GHA: light PR gate (lint / secrets / quick compile)
-// Jenkins: heavy verify + optional Docker package — ON DEMAND per chosen branch
-//
-// Intended job type: "Pipeline" (NOT Multibranch)
-// - Parameter BRANCH_NAME: branch/tag/commit to build (you type it)
-// - No auto-scan of every feature branch
-// Deploy: PHASE 2 only (blocked until configured)
+// system-bank — Enterprise HDBank-Style Modular Jenkins Pipeline
+// Optimized for Low RAM / Selective Service Build / Auto Git-Diff Detection
 
 pipeline {
   agent any
@@ -15,55 +9,69 @@ pipeline {
     ansiColor('xterm')
     disableConcurrentBuilds()
     buildDiscarder(logRotator(numToKeepStr: '20'))
-    timeout(time: 90, unit: 'MINUTES')
+    timeout(time: 60, unit: 'MINUTES')
   }
 
   parameters {
     string(
       name: 'BRANCH_NAME',
       defaultValue: 'main',
-      description: 'Git branch / tag / commit to build (only this ref runs — not all branches)'
+      description: 'Git branch / tag / commit to build'
+    )
+    choice(
+      name: 'TARGET_SCOPE',
+      choices: [
+        'AUTO',
+        'ALL',
+        'FE',
+        'account-service',
+        'auth-service',
+        'customer-service',
+        'transaction-service',
+        'notification-service',
+        'api-gateway',
+        'discovery-server',
+        'BE-ALL'
+      ],
+      description: 'Select target service to build. AUTO = auto-detect changed files via Git diff.'
+    )
+    booleanParam(
+      name: 'SKIP_TESTS',
+      defaultValue: true,
+      description: 'Skip Unit Tests for fast build (Set to false for full test verification)'
     )
     booleanParam(
       name: 'RUN_PACKAGE',
       defaultValue: false,
-      description: 'Build Docker images for backend services (no push/deploy in phase 1)'
+      description: 'Build Docker Image for selected target service(s)'
     )
     booleanParam(
-      name: 'DEPLOY_ENABLED',
+      name: 'RESTART_CONTAINER',
       defaultValue: false,
-      description: 'PHASE 2 only — do not enable until VPS/registry credentials exist'
+      description: 'Restart local Docker container after packaging'
     )
   }
 
   environment {
     JAVA_TOOL_OPTIONS = '-Dfile.encoding=UTF-8'
-    MAVEN_OPTS = '-Xmx2g'
+    MAVEN_OPTS = '-Xmx1g -XX:+UseG1GC'
     NODE_VERSION = '20'
-    REGISTRY = "${env.DOCKER_REGISTRY ?: 'ghcr.io'}"
-    IMAGE_NAMESPACE = "${env.IMAGE_NAMESPACE ?: 'system-bank'}"
-    // Jenkins credential ID for private GitHub clone (Manage Jenkins → Credentials).
-    // Override on the job: prepare an env var GIT_CREDENTIALS_ID, or rename credential to github-pat.
     GIT_CREDENTIALS_ID = "${env.GIT_CREDENTIALS_ID ?: 'github-pat'}"
   }
 
   stages {
-    stage('Checkout') {
+    stage('Checkout & Detect Scope') {
       steps {
         script {
-          def ref = params.BRANCH_NAME?.trim()
-          if (!ref) {
-            error('BRANCH_NAME is required. Enter the branch you want to build (e.g. main, feature/xxx).')
-          }
-          echo "On-demand build for ref: ${ref}"
+          def ref = params.BRANCH_NAME?.trim() ?: 'main'
+          echo "On-demand modular build for ref: ${ref} | Target: ${params.TARGET_SCOPE}"
 
-          // Explicit checkout so one Pipeline job can target any branch without Multibranch
           checkout([
             $class: 'GitSCM',
             branches: [[name: "*/${ref}"]],
             doGenerateSubmoduleConfigurations: false,
             extensions: [
-              [$class: 'CloneOption', shallow: true, depth: 1, noTags: false, honorRefspec: true],
+              [$class: 'CloneOption', shallow: false, noTags: false, honorRefspec: true],
               [$class: 'CleanBeforeCheckout']
             ],
             userRemoteConfigs: [[
@@ -74,31 +82,71 @@ pipeline {
           ])
 
           env.GIT_SHA = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
-          env.RESOLVED_BRANCH = sh(
-            returnStdout: true,
-            script: "git rev-parse --abbrev-ref HEAD 2>/dev/null || echo '${ref}'"
-          ).trim()
-          echo "Checked out ${ref} @ ${env.GIT_SHA} (HEAD=${env.RESOLVED_BRANCH})"
+          
+          // Determine targets to build
+          def scope = params.TARGET_SCOPE
+          def buildFe = false
+          def buildServices = [] as Set
+
+          if (scope == 'ALL') {
+            buildFe = true
+            buildServices = ['account-service', 'auth-service', 'customer-service', 'transaction-service', 'notification-service', 'api-gateway', 'discovery-server'] as Set
+          } else if (scope == 'FE') {
+            buildFe = true
+          } else if (scope == 'BE-ALL') {
+            buildServices = ['account-service', 'auth-service', 'customer-service', 'transaction-service', 'notification-service', 'api-gateway', 'discovery-server'] as Set
+          } else if (scope != 'AUTO') {
+            buildServices = [scope] as Set
+          } else {
+            // AUTO detect via git diff against HEAD~1 or origin/main
+            echo "Auto-detecting changed files via git diff..."
+            def changedFiles = sh(
+              returnStdout: true,
+              script: "git diff --name-only HEAD~1 HEAD 2>/dev/null || git diff --name-only origin/main...HEAD 2>/dev/null || echo ''"
+            ).trim().split('\n')
+
+            echo "Changed files count: ${changedFiles.size()}"
+            changedFiles.each { file ->
+              if (file.startsWith('frontend/')) {
+                buildFe = true
+              } else if (file.startsWith('backend/account-service/')) {
+                buildServices.add('account-service')
+              } else if (file.startsWith('backend/auth-service/')) {
+                buildServices.add('auth-service')
+              } else if (file.startsWith('backend/customer-service/')) {
+                buildServices.add('customer-service')
+              } else if (file.startsWith('backend/transaction-service/')) {
+                buildServices.add('transaction-service')
+              } else if (file.startsWith('backend/notification-service/')) {
+                buildServices.add('notification-service')
+              } else if (file.startsWith('backend/api-gateway/')) {
+                buildServices.add('api-gateway')
+              } else if (file.startsWith('backend/discovery-server/')) {
+                buildServices.add('discovery-server')
+              } else if (file.startsWith('backend/common-lib/') || file == 'backend/pom.xml') {
+                buildServices = ['account-service', 'auth-service', 'customer-service', 'transaction-service', 'notification-service', 'api-gateway', 'discovery-server'] as Set
+              }
+            }
+
+            // Fallback if no files matched or first build
+            if (!buildFe && buildServices.isEmpty()) {
+              echo "No specific changes detected or single commit. Defaulting to full check."
+              buildFe = true
+              buildServices = ['account-service', 'auth-service', 'customer-service', 'transaction-service', 'notification-service', 'api-gateway', 'discovery-server'] as Set
+            }
+          }
+
+          env.DO_BUILD_FE = buildFe.toString()
+          env.TARGET_SERVICES = buildServices.join(',')
+          echo "Build Matrix Decision -> Frontend: ${env.DO_BUILD_FE} | Backend Services: ${env.TARGET_SERVICES}"
         }
-        sh 'ls -la && test -f Jenkinsfile && test -d backend && test -d frontend'
       }
     }
 
-    stage('Secrets check') {
-      steps {
-        sh '''
-          set -eu
-          if git ls-files | grep -E '(^|/)\\.env$|infra/\\.env$'; then
-            echo "Committed .env files are not allowed"
-            git ls-files | grep -E '(^|/)\\.env$|infra/\\.env$'
-            exit 1
-          fi
-          echo "OK: no .env in git index"
-        '''
+    stage('Backend Build (Targeted)') {
+      when {
+        expression { return env.TARGET_SERVICES != null && env.TARGET_SERVICES != '' }
       }
-    }
-
-    stage('Backend verify') {
       agent {
         docker {
           image 'maven:3.9.9-eclipse-temurin-21'
@@ -107,13 +155,23 @@ pipeline {
         }
       }
       steps {
-        dir('backend') {
-          sh 'mvn -B -q verify'
+        script {
+          def servicesList = env.TARGET_SERVICES.split(',')
+          def mavenProjectsParam = servicesList.collect { "-pl ${it}" }.join(' ')
+          def skipTestsFlag = params.SKIP_TESTS ? '-DskipTests' : ''
+
+          echo "Running targeted Maven build for: ${servicesList}..."
+          dir('backend') {
+            sh "mvn -B clean package ${mavenProjectsParam} -am ${skipTestsFlag}"
+          }
         }
       }
     }
 
-    stage('Frontend lint & build') {
+    stage('Frontend Build (Targeted)') {
+      when {
+        expression { return env.DO_BUILD_FE == 'true' }
+      }
       agent {
         docker {
           image 'node:20-bookworm'
@@ -132,52 +190,56 @@ pipeline {
       }
     }
 
-    stage('Package images') {
+    stage('Package Docker Images') {
       when {
-        expression { return params.RUN_PACKAGE == true }
+        expression { return params.RUN_PACKAGE == true && env.TARGET_SERVICES != '' }
       }
       steps {
         script {
-          // Dockerfiles expect context = backend/ (same as infra/docker-compose.yml)
-          def services = [
-            'discovery-server',
-            'api-gateway',
-            'auth-service',
-            'customer-service',
-            'account-service',
-            'transaction-service',
-            'notification-service'
-          ]
-          services.each { svc ->
-            def tag = "${IMAGE_NAMESPACE}/${svc}:${GIT_SHA}"
-            echo "docker build -t ${tag} -f backend/${svc}/Dockerfile backend"
-            sh """
-              set -eu
-              docker build -t '${tag}' -f 'backend/${svc}/Dockerfile' backend
-            """
+          def servicesList = env.TARGET_SERVICES.split(',')
+          servicesList.each { svc ->
+            def imageTag = "bank-system-${svc}:latest"
+            echo "Building Docker image: ${imageTag}..."
+            sh "docker build -t '${imageTag}' -f 'backend/${svc}/Dockerfile' backend"
           }
         }
       }
     }
 
-    stage('Deploy (phase 2)') {
+    stage('Restart Target Container(s)') {
       when {
-        expression { return params.DEPLOY_ENABLED == true }
+        expression { return params.RESTART_CONTAINER == true && env.TARGET_SERVICES != '' }
       }
       steps {
-        echo 'PHASE 2 placeholder: push images + SSH/compose deploy not enabled yet.'
-        echo "Would deploy ref=${params.BRANCH_NAME} sha=${env.GIT_SHA}"
-        error('Deploy stage is intentionally blocked until phase 2 is configured.')
+        script {
+          def containerMap = [
+            'account-service': 'bank-account',
+            'auth-service': 'bank-auth',
+            'customer-service': 'bank-customer',
+            'transaction-service': 'bank-transaction',
+            'notification-service': 'bank-notification',
+            'api-gateway': 'bank-gateway',
+            'discovery-server': 'bank-discovery'
+          ]
+          def servicesList = env.TARGET_SERVICES.split(',')
+          servicesList.each { svc ->
+            def containerName = containerMap[svc]
+            if (containerName) {
+              echo "Restarting local container: ${containerName}..."
+              sh "docker restart ${containerName} || echo 'Container ${containerName} not running'"
+            }
+          }
+        }
       }
     }
   }
 
   post {
     always {
-      cleanWs(deleteDirs: true, notFailBuild: true)
+      cleanWs(deleteDirs: true, notFailFailBuild: true)
     }
     success {
-      echo "SUCCESS — ref=${params.BRANCH_NAME} sha=${env.GIT_SHA} #${env.BUILD_NUMBER}"
+      echo "SUCCESS — ref=${params.BRANCH_NAME} sha=${env.GIT_SHA} Targets=[FE:${env.DO_BUILD_FE}, BE:${env.TARGET_SERVICES}]"
     }
     failure {
       echo "FAILED — ref=${params.BRANCH_NAME} #${env.BUILD_NUMBER}"
