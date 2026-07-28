@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 
-@FeignClient(name = "TRANSACTION-SERVICE")
+@FeignClient(name = "TRANSACTION-SERVICE", url = "${TRANSACTION_SERVICE_URL:}")
 public interface AuditClient {
 
   record CreateAuditLogRequest(

@@ -2,8 +2,8 @@ package com.banksystem.account.infrastructure.mybatis;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.banksystem.account.api.dto.DepositDtos.DepositTenorRow;
-import com.banksystem.account.api.dto.DepositDtos.DepositTotalsRow;
+import com.banksystem.account.api.dto.deposit.DepositDtos.DepositTenorRow;
+import com.banksystem.account.api.dto.deposit.DepositDtos.DepositTotalsRow;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.Instant;

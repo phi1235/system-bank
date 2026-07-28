@@ -9,11 +9,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.banksystem.account.api.dto.DepositDtos.DepositProductResponse;
-import com.banksystem.account.api.dto.DepositDtos.UpdateDepositProductRequest;
-import com.banksystem.account.domain.DepositProductEntity;
-import com.banksystem.account.domain.DepositProductRepository;
-import com.banksystem.account.domain.TermDepositRepository;
+import com.banksystem.account.api.dto.deposit.DepositDtos.DepositProductResponse;
+import com.banksystem.account.api.dto.deposit.DepositDtos.UpdateDepositProductRequest;
+import com.banksystem.account.application.deposit.DepositAdminService;
+import com.banksystem.account.domain.entity.deposit.DepositProductEntity;
+import com.banksystem.account.domain.repository.account.AccountRepository;
+import com.banksystem.account.domain.repository.deposit.DepositProductRepository;
+import com.banksystem.account.domain.repository.deposit.TermDepositRepository;
 import com.banksystem.account.infrastructure.feign.AuditClient;
 import com.banksystem.account.infrastructure.mybatis.DepositReportMapper;
 import com.banksystem.common.exception.BusinessException;

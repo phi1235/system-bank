@@ -2,7 +2,12 @@ package com.banksystem.account.domain;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.banksystem.account.application.query.LedgerStatementQuery;
+import com.banksystem.account.application.account.query.LedgerStatementQuery;
+import com.banksystem.account.domain.entity.account.AccountEntity;
+import com.banksystem.account.domain.entity.account.LedgerEntryEntity;
+import com.banksystem.account.domain.enums.account.LedgerEntryType;
+import com.banksystem.account.domain.repository.account.AccountRepository;
+import com.banksystem.account.domain.repository.account.LedgerEntryRepository;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
