@@ -237,8 +237,8 @@ pipeline {
           ]
 
           if (env.DO_BUILD_FE == 'true') {
-            echo "Starting/Restarting Frontend container: bank-frontend..."
-            sh "docker start bank-frontend 2>/dev/null || docker restart bank-frontend || echo 'Container bank-frontend not found'"
+            echo "Restarting Frontend container: bank-frontend..."
+            sh "docker restart bank-frontend || docker start bank-frontend || echo 'Container bank-frontend not found'"
           }
 
           if (env.TARGET_SERVICES != '') {
@@ -246,8 +246,8 @@ pipeline {
             servicesList.each { svc ->
               def containerName = containerMap[svc]
               if (containerName) {
-                echo "Starting/Restarting local container: ${containerName}..."
-                sh "docker start ${containerName} 2>/dev/null || docker restart ${containerName} || echo 'Container ${containerName} not found'"
+                echo "Restarting local container: ${containerName}..."
+                sh "docker restart ${containerName} || docker start ${containerName} || echo 'Container ${containerName} not found'"
               }
             }
           }
