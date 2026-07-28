@@ -151,7 +151,6 @@ pipeline {
         docker {
           image 'maven:3.9.9-eclipse-temurin-21'
           reuseNode true
-          args '-v $HOME/.m2:/root/.m2'
         }
       }
       steps {
