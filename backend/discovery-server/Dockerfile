@@ -16,7 +16,7 @@ COPY notification-service/pom.xml notification-service/
 COPY discovery-server/src discovery-server/src
 
 RUN --mount=type=cache,target=/root/.m2 \
-    mvn -q -pl discovery-server -am package -DskipTests
+    mvn -q -pl discovery-server -am package -Dmaven.test.skip=true
 
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app

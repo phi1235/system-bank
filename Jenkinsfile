@@ -42,12 +42,12 @@ pipeline {
     )
     booleanParam(
       name: 'RUN_PACKAGE',
-      defaultValue: false,
+      defaultValue: true,
       description: 'Build Docker Image for selected target service(s)'
     )
     booleanParam(
       name: 'RESTART_CONTAINER',
-      defaultValue: false,
+      defaultValue: true,
       description: 'Restart local Docker container after packaging'
     )
   }
@@ -82,6 +82,12 @@ pipeline {
           ])
 
           env.GIT_SHA = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+
+          // Customize Build Display Name & Description (Enterprise HDBank Style)
+          def buildUser = env.BUILD_USER ?: "Nguyen Chau Phi"
+          def artifactTag = "${env.BUILD_NUMBER}-${env.GIT_SHA}"
+          currentBuild.displayName = "#${env.BUILD_NUMBER} [${ref}]"
+          currentBuild.description = "Branch: ${ref}\nPipeline: CI CD\nUser: ${buildUser}\nArtifactTag: ${artifactTag}"
           
           // Determine targets to build
           def scope = params.TARGET_SCOPE
@@ -150,6 +156,7 @@ pipeline {
       agent {
         docker {
           image 'maven:3.9.9-eclipse-temurin-21'
+          args '-v /var/jenkins_home/.m2:/root/.m2'
           reuseNode true
         }
       }
@@ -199,7 +206,7 @@ pipeline {
           servicesList.each { svc ->
             def imageTag = "bank-system-${svc}:latest"
             echo "Building Docker image: ${imageTag}..."
-            sh "docker build -t '${imageTag}' -f 'backend/${svc}/Dockerfile' backend"
+            sh "DOCKER_BUILDKIT=1 docker build -t '${imageTag}' -f 'backend/${svc}/Dockerfile' backend"
           }
         }
       }
@@ -224,8 +231,8 @@ pipeline {
           servicesList.each { svc ->
             def containerName = containerMap[svc]
             if (containerName) {
-              echo "Restarting local container: ${containerName}..."
-              sh "docker restart ${containerName} || echo 'Container ${containerName} not running'"
+              echo "Starting/Restarting local container: ${containerName}..."
+              sh "docker start ${containerName} 2>/dev/null || docker restart ${containerName} || echo 'Container ${containerName} not found'"
             }
           }
         }
@@ -235,7 +242,7 @@ pipeline {
 
   post {
     always {
-      cleanWs(deleteDirs: true, notFailFailBuild: true)
+      cleanWs(deleteDirs: true, notFailBuild: true)
     }
     success {
       echo "SUCCESS — ref=${params.BRANCH_NAME} sha=${env.GIT_SHA} Targets=[FE:${env.DO_BUILD_FE}, BE:${env.TARGET_SERVICES}]"

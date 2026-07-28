@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 
-@FeignClient(name = "NOTIFICATION-SERVICE", url = "${NOTIFICATION_SERVICE_URL:}")
+@FeignClient(name = "NOTIFICATION-SERVICE")
 public interface NotificationClient {
 
   @PostMapping("/internal/notifications/ops-alerts")

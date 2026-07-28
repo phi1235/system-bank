@@ -21,13 +21,13 @@ spring:
       host: ${REDIS_HOST}
       port: ${REDIS_PORT}
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
+    bootstrap-servers: ${KAFKA_BOOTSTRAP}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
-      acks: ${KAFKA_PRODUCER_ACKS:all}
+      acks: ${KAFKA_PRODUCER_ACKS}
       properties:
-        enable.idempotence: ${KAFKA_PRODUCER_IDEMPOTENCE:true}
+        enable.idempotence: ${KAFKA_PRODUCER_IDEMPOTENCE}
 
 eureka:
   client:
@@ -125,10 +125,10 @@ management:
       application: ${spring.application.name}
   tracing:
     sampling:
-      probability: ${TRACING_SAMPLE_PROBABILITY:1.0}
+      probability: ${TRACING_SAMPLE_PROBABILITY}
   zipkin:
     tracing:
-      endpoint: ${ZIPKIN_ENDPOINT:http://localhost:9411/api/v2/spans}
+      endpoint: ${ZIPKIN_ENDPOINT}
 
 mybatis:
   mapper-locations: classpath:mybatis/*.xml

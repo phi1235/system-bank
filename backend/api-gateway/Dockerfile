@@ -16,7 +16,7 @@ COPY common-lib/src common-lib/src
 COPY api-gateway/src api-gateway/src
 
 RUN --mount=type=cache,target=/root/.m2 \
-    mvn -q -pl api-gateway -am package -DskipTests
+    mvn -q -pl api-gateway -am package -Dmaven.test.skip=true
 
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app

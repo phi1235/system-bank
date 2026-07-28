@@ -11,16 +11,14 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.banksystem.account.api.dto.card.CardDtos.CardResponse;
-import com.banksystem.account.api.dto.card.CardDtos.CardRevealResponse;
-import com.banksystem.account.api.dto.card.CardDtos.UpdateCardLimitRequest;
-import com.banksystem.account.application.account.AccountAccessService;
-import com.banksystem.account.application.card.CardService;
-import com.banksystem.account.domain.entity.account.AccountEntity;
-import com.banksystem.account.domain.entity.card.CardEntity;
-import com.banksystem.account.domain.enums.card.CardStatus;
-import com.banksystem.account.domain.repository.account.AccountRepository;
-import com.banksystem.account.domain.repository.card.CardRepository;
+import com.banksystem.account.api.dto.CardDtos.CardResponse;
+import com.banksystem.account.api.dto.CardDtos.CardRevealResponse;
+import com.banksystem.account.api.dto.CardDtos.UpdateCardLimitRequest;
+import com.banksystem.account.domain.AccountEntity;
+import com.banksystem.account.domain.CardEntity;
+import com.banksystem.account.domain.CardRepository;
+import com.banksystem.account.domain.CardStatus;
+import com.banksystem.account.domain.AccountRepository;
 import com.banksystem.common.exception.BusinessException;
 import com.banksystem.common.security.CryptoUtils;
 import com.banksystem.common.security.GatewayUser;
@@ -36,8 +34,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
-import com.banksystem.account.application.common.OpsAlertPublisher;
-
 class CardServiceTest {
 
   private static final Instant NOW = Instant.parse("2026-07-27T03:00:00Z");
@@ -46,7 +42,6 @@ class CardServiceTest {
   private CardRepository cardRepository;
   private AccountAccessService access;
   private AccountRepository accountRepository;
-  private OpsAlertPublisher opsAlertPublisher;
   private CardService service;
 
   private final UUID accountId = UUID.randomUUID();
@@ -58,13 +53,11 @@ class CardServiceTest {
     cardRepository = mock(CardRepository.class);
     access = mock(AccountAccessService.class);
     accountRepository = mock(AccountRepository.class);
-    opsAlertPublisher = mock(OpsAlertPublisher.class);
     service =
         new CardService(
             cardRepository,
             access,
             accountRepository,
-            opsAlertPublisher,
             Clock.fixed(NOW, ZoneOffset.UTC),
             "Asia/Bangkok",
             AES_KEY,
