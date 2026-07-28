@@ -82,6 +82,15 @@ pipeline {
           ])
 
           env.GIT_SHA = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+
+          // Customize Build Display Name & Description (Enterprise HDBank Style)
+          def buildUser = env.BUILD_USER ?: "Nguyen Chau Phi"
+          def artifactTag = "${env.BUILD_NUMBER}-${env.GIT_SHA}"
+          currentBuild.displayName = "#${env.BUILD_NUMBER} [${ref}]"
+          currentBuild.description = """<b>Branch:</b> ${ref}<br/>
+<b>Pipeline:</b> CI CD<br/>
+<b>User:</b> ${buildUser}<br/>
+<b>ArtifactTag:</b> ${artifactTag}"""
           
           // Determine targets to build
           def scope = params.TARGET_SCOPE
