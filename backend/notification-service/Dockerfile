@@ -16,7 +16,7 @@ COPY common-lib/src common-lib/src
 COPY notification-service/src notification-service/src
 
 RUN --mount=type=cache,target=/root/.m2 \
-    mvn -q -pl notification-service -am package -DskipTests
+    mvn -q -pl notification-service -am package -Dmaven.test.skip=true
 
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app

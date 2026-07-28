@@ -16,7 +16,7 @@ COPY common-lib/src common-lib/src
 COPY transaction-service/src transaction-service/src
 
 RUN --mount=type=cache,target=/root/.m2 \
-    mvn -q -pl transaction-service -am package -DskipTests
+    mvn -q -pl transaction-service -am package -Dmaven.test.skip=true
 
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app

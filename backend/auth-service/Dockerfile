@@ -17,7 +17,7 @@ COPY common-lib/src common-lib/src
 COPY auth-service/src auth-service/src
 
 RUN --mount=type=cache,target=/root/.m2 \
-    mvn -q -pl auth-service -am package -DskipTests
+    mvn -q -pl auth-service -am package -Dmaven.test.skip=true
 
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
