@@ -87,10 +87,7 @@ pipeline {
           def buildUser = env.BUILD_USER ?: "Nguyen Chau Phi"
           def artifactTag = "${env.BUILD_NUMBER}-${env.GIT_SHA}"
           currentBuild.displayName = "#${env.BUILD_NUMBER} [${ref}]"
-          currentBuild.description = """<b>Branch:</b> ${ref}<br/>
-<b>Pipeline:</b> CI CD<br/>
-<b>User:</b> ${buildUser}<br/>
-<b>ArtifactTag:</b> ${artifactTag}"""
+          currentBuild.description = "Branch: ${ref}\nPipeline: CI CD\nUser: ${buildUser}\nArtifactTag: ${artifactTag}"
           
           // Determine targets to build
           def scope = params.TARGET_SCOPE
