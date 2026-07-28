@@ -42,12 +42,12 @@ pipeline {
     )
     booleanParam(
       name: 'RUN_PACKAGE',
-      defaultValue: false,
+      defaultValue: true,
       description: 'Build Docker Image for selected target service(s)'
     )
     booleanParam(
       name: 'RESTART_CONTAINER',
-      defaultValue: false,
+      defaultValue: true,
       description: 'Restart local Docker container after packaging'
     )
   }
@@ -156,6 +156,7 @@ pipeline {
       agent {
         docker {
           image 'maven:3.9.9-eclipse-temurin-21'
+          args '-v /var/jenkins_home/.m2:/root/.m2'
           reuseNode true
         }
       }
