@@ -181,6 +181,7 @@ pipeline {
       agent {
         docker {
           image 'node:20-bookworm'
+          args '-v /var/jenkins_home/.npm:/root/.npm'
           reuseNode true
         }
       }
@@ -198,15 +199,22 @@ pipeline {
 
     stage('Package Docker Images') {
       when {
-        expression { return params.RUN_PACKAGE == true && env.TARGET_SERVICES != '' }
+        expression { return params.RUN_PACKAGE == true && (env.TARGET_SERVICES != '' || env.DO_BUILD_FE == 'true') }
       }
       steps {
         script {
-          def servicesList = env.TARGET_SERVICES.split(',')
-          servicesList.each { svc ->
-            def imageTag = "bank-system-${svc}:latest"
-            echo "Building Docker image: ${imageTag}..."
-            sh "DOCKER_BUILDKIT=1 docker build -t '${imageTag}' -f 'backend/${svc}/Dockerfile' backend"
+          if (env.DO_BUILD_FE == 'true') {
+            echo "Building Frontend Docker image: bank-system-frontend:latest..."
+            sh "DOCKER_BUILDKIT=1 docker build -t 'bank-system-frontend:latest' -f 'frontend/bank-angular-app/Dockerfile' frontend/bank-angular-app"
+          }
+
+          if (env.TARGET_SERVICES != '') {
+            def servicesList = env.TARGET_SERVICES.split(',')
+            servicesList.each { svc ->
+              def imageTag = "bank-system-${svc}:latest"
+              echo "Building Docker image: ${imageTag}..."
+              sh "DOCKER_BUILDKIT=1 docker build -t '${imageTag}' -f 'backend/${svc}/Dockerfile' backend"
+            }
           }
         }
       }
@@ -214,7 +222,7 @@ pipeline {
 
     stage('Restart Target Container(s)') {
       when {
-        expression { return params.RESTART_CONTAINER == true && env.TARGET_SERVICES != '' }
+        expression { return params.RESTART_CONTAINER == true && (env.TARGET_SERVICES != '' || env.DO_BUILD_FE == 'true') }
       }
       steps {
         script {
@@ -227,12 +235,20 @@ pipeline {
             'api-gateway': 'bank-gateway',
             'discovery-server': 'bank-discovery'
           ]
-          def servicesList = env.TARGET_SERVICES.split(',')
-          servicesList.each { svc ->
-            def containerName = containerMap[svc]
-            if (containerName) {
-              echo "Starting/Restarting local container: ${containerName}..."
-              sh "docker start ${containerName} 2>/dev/null || docker restart ${containerName} || echo 'Container ${containerName} not found'"
+
+          if (env.DO_BUILD_FE == 'true') {
+            echo "Starting/Restarting Frontend container: bank-frontend..."
+            sh "docker start bank-frontend 2>/dev/null || docker restart bank-frontend || echo 'Container bank-frontend not found'"
+          }
+
+          if (env.TARGET_SERVICES != '') {
+            def servicesList = env.TARGET_SERVICES.split(',')
+            servicesList.each { svc ->
+              def containerName = containerMap[svc]
+              if (containerName) {
+                echo "Starting/Restarting local container: ${containerName}..."
+                sh "docker start ${containerName} 2>/dev/null || docker restart ${containerName} || echo 'Container ${containerName} not found'"
+              }
             }
           }
         }
