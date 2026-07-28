@@ -205,7 +205,7 @@ pipeline {
         script {
           if (env.DO_BUILD_FE == 'true') {
             echo "Building Frontend Docker image: bank-system-frontend:latest..."
-            sh "DOCKER_BUILDKIT=1 docker build -t 'bank-system-frontend:latest' -f 'frontend/bank-angular-app/Dockerfile' frontend/bank-angular-app"
+            sh "DOCKER_BUILDKIT=1 docker build --no-cache -t 'bank-system-frontend:latest' -f 'frontend/bank-angular-app/Dockerfile' frontend/bank-angular-app"
           }
 
           if (env.TARGET_SERVICES != '') {
