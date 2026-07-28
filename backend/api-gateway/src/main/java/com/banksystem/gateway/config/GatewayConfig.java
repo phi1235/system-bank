@@ -16,7 +16,7 @@ public class GatewayConfig {
       @Value("${bank.cors.allowed-origins:http://localhost:4200,http://localhost:5173,http://localhost:4201,http://127.0.0.1:4201,https://phinguyenit.id.vn,https://app.phinguyenit.id.vn}") String origins) {
     CorsConfiguration config = new CorsConfiguration();
     config.setAllowCredentials(true);
-    config.setAllowedOrigins(List.of(origins.split(",")));
+    config.addAllowedOriginPattern("*");
     config.addAllowedHeader("*");
     config.addAllowedMethod("*");
     config.addExposedHeader("X-Correlation-Id");
