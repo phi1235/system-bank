@@ -437,6 +437,16 @@ services:
     networks:
       - bank-net
 
+  bank-frontend:
+    build:
+      context: ../frontend/bank-angular-app
+      dockerfile: Dockerfile
+    container_name: bank-frontend
+    ports:
+      - "${HOST_BIND_ADDRESS}:4200:80"
+    networks:
+      - bank-net
+
 networks:
   bank-net:
     driver: bridge
