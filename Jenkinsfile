@@ -206,7 +206,7 @@ pipeline {
           servicesList.each { svc ->
             def imageTag = "bank-system-${svc}:latest"
             echo "Building Docker image: ${imageTag}..."
-            sh "docker build -t '${imageTag}' -f 'backend/${svc}/Dockerfile' backend"
+            sh "DOCKER_BUILDKIT=1 docker build -t '${imageTag}' -f 'backend/${svc}/Dockerfile' backend"
           }
         }
       }
@@ -231,8 +231,8 @@ pipeline {
           servicesList.each { svc ->
             def containerName = containerMap[svc]
             if (containerName) {
-              echo "Restarting local container: ${containerName}..."
-              sh "docker restart ${containerName} || echo 'Container ${containerName} not running'"
+              echo "Starting/Restarting local container: ${containerName}..."
+              sh "docker start ${containerName} 2>/dev/null || docker restart ${containerName} || echo 'Container ${containerName} not found'"
             }
           }
         }
