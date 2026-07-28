@@ -58,6 +58,10 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
 
   @Override
   public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+    if (org.springframework.web.cors.reactive.CorsUtils.isPreFlightRequest(exchange.getRequest())
+        || org.springframework.http.HttpMethod.OPTIONS.equals(exchange.getRequest().getMethod())) {
+      return chain.filter(exchange);
+    }
     String path = exchange.getRequest().getURI().getPath();
     if (isPublic(path)) {
       return chain.filter(exchange);
