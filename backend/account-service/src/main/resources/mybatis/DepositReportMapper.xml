@@ -4,7 +4,7 @@
 <mapper namespace="com.banksystem.account.infrastructure.mybatis.DepositReportMapper">
 
   <resultMap id="totalsRow"
-             type="com.banksystem.account.api.dto.deposit.DepositDtos$DepositTotalsRow">
+             type="com.banksystem.account.api.dto.DepositDtos$DepositTotalsRow">
     <constructor>
       <arg column="open_count" javaType="_long"/>
       <arg column="open_principal" javaType="java.math.BigDecimal"/>
@@ -27,7 +27,7 @@
   </select>
 
   <resultMap id="tenorRow"
-             type="com.banksystem.account.api.dto.deposit.DepositDtos$DepositTenorRow">
+             type="com.banksystem.account.api.dto.DepositDtos$DepositTenorRow">
     <constructor>
       <arg column="code" javaType="java.lang.String"/>
       <arg column="tenor_months" javaType="_int"/>

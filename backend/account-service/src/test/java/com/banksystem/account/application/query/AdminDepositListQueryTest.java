@@ -1,11 +1,11 @@
-package com.banksystem.account.application.deposit.query;
+package com.banksystem.account.application.query;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.banksystem.account.domain.enums.deposit.TermDepositStatus;
+import com.banksystem.account.domain.TermDepositStatus;
 import com.banksystem.common.exception.BusinessException;
 import java.time.LocalDate;
 import java.util.UUID;

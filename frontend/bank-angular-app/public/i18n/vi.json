@@ -1432,7 +1432,6 @@
     "OPS_OUTBOX_DEAD": "Outbox bị kẹt (DEAD)",
     "OPS_ACCOUNT_FROZEN": "Tài khoản bị đóng băng",
     "OPS_ACCOUNT_UNFROZEN": "Tài khoản được mở khóa",
-    "OPS_CARD_REQUESTED": "Yêu cầu phát hành thẻ mới",
     "OPS_KYC_UPDATED": "Cập nhật KYC",
     "SUPPORT_TICKET_STAFF_REPLY": "Nhân viên phản hồi ticket",
     "SUPPORT_TICKET_NEED_INFO": "Yêu cầu bổ sung thông tin",

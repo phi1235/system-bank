@@ -7,12 +7,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.banksystem.account.api.dto.deposit.DepositDtos.BatchRunResponse;
-import com.banksystem.account.application.deposit.DepositBatchService;
-import com.banksystem.account.application.deposit.TermDepositService;
-import com.banksystem.account.domain.entity.deposit.TermDepositEntity;
-import com.banksystem.account.domain.enums.deposit.TermDepositStatus;
-import com.banksystem.account.domain.repository.deposit.TermDepositRepository;
+import com.banksystem.account.api.dto.DepositDtos.BatchRunResponse;
+import com.banksystem.account.domain.TermDepositEntity;
+import com.banksystem.account.domain.TermDepositRepository;
+import com.banksystem.account.domain.TermDepositStatus;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;

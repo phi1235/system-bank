@@ -1432,7 +1432,6 @@
     "OPS_OUTBOX_DEAD": "Outbox stuck (DEAD)",
     "OPS_ACCOUNT_FROZEN": "Account frozen",
     "OPS_ACCOUNT_UNFROZEN": "Account unfrozen",
-    "OPS_CARD_REQUESTED": "New card issuance request",
     "OPS_KYC_UPDATED": "KYC updated",
     "SUPPORT_TICKET_STAFF_REPLY": "Staff replied on ticket",
     "SUPPORT_TICKET_NEED_INFO": "More information requested",

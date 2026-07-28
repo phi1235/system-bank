@@ -130,10 +130,10 @@ management:
       application: ${spring.application.name}
   tracing:
     sampling:
-      probability: ${TRACING_SAMPLE_PROBABILITY:1.0}
+      probability: ${TRACING_SAMPLE_PROBABILITY}
   zipkin:
     tracing:
-      endpoint: ${ZIPKIN_ENDPOINT:http://localhost:9411/api/v2/spans}
+      endpoint: ${ZIPKIN_ENDPOINT}
 
 logging:
   pattern:
