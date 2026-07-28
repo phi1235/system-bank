@@ -107,8 +107,7 @@
     "PWD_CHANGED_OK": "Đã đổi mật khẩu",
     "PWD_CHANGE_FAIL": "Đổi mật khẩu thất bại",
     "DEMO_HINT": "Gợi ý: Đăng ký tài khoản mới hoặc dùng tài khoản demo để thử nghiệm",
-    "FILL_DEMO_ALICE": "Tự điền demo (alice / password123)",
-    "SANDBOX_LINK": "Xem nhật ký OTP / SMS / Email →"
+    "FILL_DEMO_ALICE": "Tự điền demo (alice / password123)"
   },
   "CUSTOMER": {
     "HOME_TITLE": "Tổng quan",

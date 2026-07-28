@@ -107,8 +107,7 @@
     "PWD_CHANGED_OK": "Password changed successfully",
     "PWD_CHANGE_FAIL": "Password change failed",
     "DEMO_HINT": "Hint: Register a new account or use demo credentials for testing",
-    "FILL_DEMO_ALICE": "Auto-fill demo (alice / password123)",
-    "SANDBOX_LINK": "View OTP / SMS / Email logs →"
+    "FILL_DEMO_ALICE": "Auto-fill demo (alice / password123)"
   },
   "CUSTOMER": {
     "HOME_TITLE": "Overview",
