@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 
 /** Batch display-name lookup for back-office enrichment (deposit owner columns). */
-@FeignClient(name = "CUSTOMER-SERVICE", contextId = "customerClient")
+@FeignClient(name = "CUSTOMER-SERVICE", contextId = "customerClient", url = "${CUSTOMER_SERVICE_URL:}")
 public interface CustomerClient {
 
   record CustomerNamesRequest(List<UUID> userIds) {}

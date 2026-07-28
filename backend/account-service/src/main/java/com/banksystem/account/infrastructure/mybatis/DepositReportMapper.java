@@ -1,7 +1,7 @@
 package com.banksystem.account.infrastructure.mybatis;
 
-import com.banksystem.account.api.dto.DepositDtos.DepositTenorRow;
-import com.banksystem.account.api.dto.DepositDtos.DepositTotalsRow;
+import com.banksystem.account.api.dto.deposit.DepositDtos.DepositTenorRow;
+import com.banksystem.account.api.dto.deposit.DepositDtos.DepositTotalsRow;
 import java.time.LocalDate;
 import java.util.List;
 import org.apache.ibatis.annotations.Mapper;

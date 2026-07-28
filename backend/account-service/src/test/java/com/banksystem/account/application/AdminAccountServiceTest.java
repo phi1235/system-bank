@@ -11,12 +11,24 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.banksystem.account.api.dto.AccountDtos.AccountResponse;
-import com.banksystem.account.application.query.AdminAccountSearchQuery;
-import com.banksystem.account.domain.AccountEntity;
-import com.banksystem.account.domain.AccountRepository;
+import com.banksystem.account.api.dto.account.AccountDtos.AccountResponse;
+import com.banksystem.account.api.dto.account.AccountDtos.MoneyCommand;
+import com.banksystem.account.api.dto.account.AccountDtos.MoneyResult;
+import com.banksystem.account.api.dto.account.AccountDtos.TopUpRequest;
+import com.banksystem.account.api.dto.account.AccountDtos.TopUpResponse;
+import com.banksystem.account.application.account.AccountAccessService;
+import com.banksystem.account.application.account.AccountMapper;
+import com.banksystem.account.application.account.AccountMoneyService;
+import com.banksystem.account.application.account.AdminAccountService;
+import com.banksystem.account.application.account.query.AdminAccountSearchQuery;
+import com.banksystem.account.application.common.OpsAlertPublisher;
+import com.banksystem.account.domain.entity.account.AccountEntity;
+import com.banksystem.account.domain.enums.account.AccountStatus;
+import com.banksystem.account.domain.enums.account.AccountType;
+import com.banksystem.account.domain.repository.account.AccountRepository;
 import com.banksystem.common.api.PageResponse;
 import com.banksystem.common.exception.BusinessException;
+import com.banksystem.common.security.GatewayUser;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -27,12 +39,6 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-
-import com.banksystem.account.api.dto.AccountDtos.MoneyCommand;
-import com.banksystem.account.api.dto.AccountDtos.MoneyResult;
-import com.banksystem.account.api.dto.AccountDtos.TopUpRequest;
-import com.banksystem.account.api.dto.AccountDtos.TopUpResponse;
-import com.banksystem.common.security.GatewayUser;
 
 class AdminAccountServiceTest {
 
