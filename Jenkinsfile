@@ -157,7 +157,7 @@ pipeline {
         script {
           def servicesList = env.TARGET_SERVICES.split(',')
           def mavenProjectsParam = servicesList.collect { "-pl ${it}" }.join(' ')
-          def skipTestsFlag = params.SKIP_TESTS ? '-DskipTests' : ''
+          def skipTestsFlag = params.SKIP_TESTS ? '-Dmaven.test.skip=true' : ''
 
           echo "Running targeted Maven build for: ${servicesList}..."
           dir('backend') {
