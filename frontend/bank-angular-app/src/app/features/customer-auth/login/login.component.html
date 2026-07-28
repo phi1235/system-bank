@@ -31,14 +31,6 @@
     <div class="links">
       <a routerLink="/auth/register">{{ 'AUTH.REGISTER_LINK' | translate }}</a>
       <a routerLink="/auth/forgot-password">{{ 'AUTH.FORGOT_LINK' | translate }}</a>
-      <a href="http://localhost:4201" target="_blank">{{ 'AUTH.SANDBOX_LINK' | translate }}</a>
-      <a routerLink="/admin/login">{{ 'AUTH.BO_LINK' | translate }}</a>
-    </div>
-    <div class="demo-fill-row" style="margin-top: 1rem; text-align: center;">
-      <button mat-stroked-button type="button" (click)="fillDemo()" style="font-size: 0.8rem; color: #38bdf8; border-color: #0284c7;">
-        <mat-icon style="font-size: 1.1rem; width: 1.1rem; height: 1.1rem; vertical-align: middle;">auto_fix_high</mat-icon>
-        {{ 'AUTH.FILL_DEMO_ALICE' | translate }}
-      </button>
     </div>
     <div class="lang-row">
       <app-lang-switcher />
