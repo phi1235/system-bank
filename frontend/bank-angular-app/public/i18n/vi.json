@@ -23,6 +23,10 @@
     "LANG_VI": "Tiếng Việt",
     "LANG_EN": "English",
     "REASON": "Lý do",
+    "SMART_OTP_TITLE": "Nhập mã PIN Smart OTP",
+    "SMART_OTP_PIN_HINT": "Vui lòng nhập 6 số mã PIN Smart OTP giao dịch của bạn.",
+    "HIGH_AMOUNT_OTP_TITLE": "Xác thực OTP SMS (Giao dịch lớn)",
+    "HIGH_AMOUNT_WARNING": "Giao dịch từ 10.000.000 VND trở lên cần xác thực thêm bước OTP SMS bảo vệ.",
     "SOFT_OTP_VERIFY": "Xác thực Soft OTP",
     "SOFT_OTP_HINT": "Vui lòng nhập 6 chữ số mã OTP đã được gửi đến thiết bị của bạn.",
     "TRANSACTION_AMOUNT": "Số tiền giao dịch",
@@ -30,6 +34,10 @@
     "OTP_EXPIRES_IN": "Mã OTP hết hạn sau",
     "RESEND_OTP": "Gửi lại mã OTP",
     "CONFIRM": "Xác nhận",
+    "INVALID_PIN": "Mã PIN Smart OTP không đúng (Demo PIN: 123456)",
+    "INVALID_SMS_OTP": "Mã OTP SMS không hợp lệ",
+    "DEMO_PIN_HINT": "(Demo PIN: 123456)",
+    "DEV_BYPASS_HINT": "Dev/QC Bypass: 111111",
     "YES": "Có",
     "NO": "Không",
     "COPY": "Sao chép"
@@ -59,7 +67,11 @@
     "CASHFLOW_OVERVIEW": "TỔNG QUAN DÒNG TIỀN (VND)",
     "EXPENSE_CATEGORIES": "CƠ CẤU CHI TIÊU",
     "INCOME": "Thu nhập",
-    "EXPENSE": "Chi tiêu"
+    "EXPENSE": "Chi tiêu",
+    "CAT_TRANSFER": "Chuyển khoản & Thanh toán",
+    "CAT_BILL": "Thanh toán Hóa đơn",
+    "CAT_DEPOSIT": "Gửi Tiết kiệm",
+    "CAT_CARD": "Chi tiêu Thẻ"
   },
   "NAV": {
     "HOME": "Tổng quan",
