@@ -19,6 +19,10 @@ import {
   ConfirmDialogComponent,
   ConfirmDialogData,
 } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
+import {
+  SoftOtpDialogComponent,
+  SoftOtpDialogData,
+} from '../../../shared/components/soft-otp-dialog/soft-otp-dialog.component';
 import { TransferDetailDialogComponent } from '../../../shared/components/transfer-detail-dialog/transfer-detail-dialog.component';
 import { FriendlyTransferErrorPipe } from '../../../shared/pipes/friendly-transfer-error.pipe';
 import { EnumLabelPipe } from '../../../shared/pipes/enum-label.pipe';
@@ -352,22 +356,17 @@ export class TransferComponent implements OnInit, OnDestroy {
     const bankName = bankObj ? bankObj.shortName : 'SystemBank';
     const recipientName = this.inquiryResult ? this.inquiryResult.accountName : '';
 
-    const data: ConfirmDialogData = {
-      title: this.i18n.instant('CUSTOMER.CONFIRM_TITLE'),
-      message: this.i18n.instant('CUSTOMER.CONFIRM_MSG', {
-        amount: amount.toLocaleString('vi-VN'),
-        fee: Number(fee).toLocaleString('vi-VN'),
-        total: Number(total).toLocaleString('vi-VN'),
-        to: v.toAccountNumber + (recipientName ? ` (${recipientName} - ${bankName})` : ''),
-        desc: v.description || '',
-      }),
-      confirmLabel: this.i18n.instant('CUSTOMER.CONFIRM_TRANSFER'),
-      destructive: false,
+    const otpData: SoftOtpDialogData = {
+      title: this.i18n.instant('COMMON.SMART_OTP_TITLE'),
+      amount: amount,
+      recipientName: recipientName || undefined,
+      recipientAccount: v.toAccountNumber,
     };
+
     this.dialog
-      .open(ConfirmDialogComponent, { data, width: '440px' })
+      .open(SoftOtpDialogComponent, { data: otpData, width: '440px', disableClose: true })
       .afterClosed()
-      .pipe(filter(Boolean))
+      .pipe(filter((res) => !!res && !!res.otp))
       .subscribe(() => {
         const key = crypto.randomUUID();
         this.store.dispatch(

@@ -12,7 +12,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { forkJoin } from 'rxjs';
+import { filter, forkJoin } from 'rxjs';
 import { Account, DepositProduct, DepositQuote, TermDeposit } from '../../../core/models/domain.model';
 import { BankApiService } from '../../../core/services/bank-api.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -21,6 +21,10 @@ import {
   ConfirmDialogComponent,
   ConfirmDialogData,
 } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
+import {
+  SoftOtpDialogComponent,
+  SoftOtpDialogData,
+} from '../../../shared/components/soft-otp-dialog/soft-otp-dialog.component';
 import { LoadingComponent } from '../../../shared/components/loading/loading.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { MoneyVndPipe } from '../../../shared/pipes/money-vnd.pipe';
@@ -131,20 +135,32 @@ export class WealthComponent implements OnInit {
     if (!this.canQuote || !this.sourceAccountId || this.submitting) {
       return;
     }
-    this.submitting = true;
-    this.api.openDeposit(this.sourceAccountId, this.productCode, this.amount as number).subscribe({
-      next: () => {
-        this.submitting = false;
-        this.amount = null;
-        this.quote = null;
-        this.toast.success(this.i18n.instant('CUSTOMER.WEALTH_OPEN_DONE'));
-        this.load();
-      },
-      error: (err) => {
-        this.submitting = false;
-        this.toast.error(resolveHttpErrorMessage(err, this.i18n));
-      },
-    });
+
+    const otpData: SoftOtpDialogData = {
+      title: this.i18n.instant('COMMON.SMART_OTP_TITLE'),
+      amount: this.amount as number,
+    };
+
+    this.dialog
+      .open(SoftOtpDialogComponent, { data: otpData, width: '440px', disableClose: true })
+      .afterClosed()
+      .pipe(filter((res) => !!res && !!res.otp))
+      .subscribe(() => {
+        this.submitting = true;
+        this.api.openDeposit(this.sourceAccountId, this.productCode, this.amount as number).subscribe({
+          next: () => {
+            this.submitting = false;
+            this.amount = null;
+            this.quote = null;
+            this.toast.success(this.i18n.instant('CUSTOMER.WEALTH_OPEN_DONE'));
+            this.load();
+          },
+          error: (err) => {
+            this.submitting = false;
+            this.toast.error(resolveHttpErrorMessage(err, this.i18n));
+          },
+        });
+      });
   }
 
   confirmClose(d: TermDeposit): void {
