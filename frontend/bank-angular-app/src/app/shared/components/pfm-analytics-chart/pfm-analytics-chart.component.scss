@@ -1,0 +1,17 @@
+.chart-bar-container {
+  height: 140px;
+}
+.bars {
+  height: 120px;
+}
+.bar {
+  width: 14px;
+  min-height: 4px;
+  transition: height 0.3s ease-in-out;
+}
+.legend-box {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  display: inline-block;
+}
