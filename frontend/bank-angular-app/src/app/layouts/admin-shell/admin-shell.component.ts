@@ -8,7 +8,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { Subscription, filter, map, take } from 'rxjs';
+import { Subject, Subscription, filter, map, take, takeUntil } from 'rxjs';
 import { BankApiService } from '../../core/services/bank-api.service';
 import { OpsNotificationStreamService } from '../../core/services/ops-notification-stream.service';
 import { PERMISSIONS } from '../../core/services/rbac.util';
@@ -52,6 +52,7 @@ export class AdminShellComponent implements OnInit, OnDestroy {
   private readonly i18n = inject(TranslateService);
   private readonly router = inject(Router);
 
+  private readonly destroy$ = new Subject<void>();
   private liveSub?: Subscription;
   private permSub?: Subscription;
   private routeSub?: Subscription;
@@ -105,28 +106,39 @@ export class AdminShellComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.syncCategoryWithUrl(this.router.url);
     this.routeSub = this.router.events
-      .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
+      .pipe(
+        filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+        takeUntil(this.destroy$),
+      )
       .subscribe((e) => this.syncCategoryWithUrl(e.urlAfterRedirects));
 
     this.permSub = this.canOpsNotifications$
       .pipe(
         filter((ok) => !!ok),
         take(1),
+        takeUntil(this.destroy$),
       )
       .subscribe(() => {
-        this.api.adminOpsNotificationUnreadCount().subscribe({
-          next: (r) => this.stream.setUnreadCount(r?.unread ?? 0),
-          error: () => this.stream.setUnreadCount(0),
-        });
+        this.api
+          .adminOpsNotificationUnreadCount()
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: (r) => this.stream.setUnreadCount(r?.unread ?? 0),
+            error: () => this.stream.setUnreadCount(0),
+          });
         this.stream.connect();
-        this.liveSub = this.stream.liveEvents$.subscribe((item) => {
-          const preview = (item.body || item.template || '').slice(0, 80);
-          this.toast.info(this.i18n.instant('ADMIN.NOTIF_LIVE', { text: preview }));
-        });
+        this.liveSub = this.stream.liveEvents$
+          .pipe(takeUntil(this.destroy$))
+          .subscribe((item) => {
+            const preview = (item.body || item.template || '').slice(0, 80);
+            this.toast.info(this.i18n.instant('ADMIN.NOTIF_LIVE', { text: preview }));
+          });
       });
   }
 
   ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
     this.liveSub?.unsubscribe();
     this.permSub?.unsubscribe();
     this.routeSub?.unsubscribe();

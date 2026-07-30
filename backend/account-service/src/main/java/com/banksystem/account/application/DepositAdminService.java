@@ -31,6 +31,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -159,6 +160,7 @@ public class DepositAdminService {
   }
 
   @Transactional
+  @CacheEvict(value = "depositProducts", allEntries = true)
   public DepositProductResponse updateProduct(
       String code, UpdateDepositProductRequest request, UUID actorUserId) {
     DepositProductEntity product =

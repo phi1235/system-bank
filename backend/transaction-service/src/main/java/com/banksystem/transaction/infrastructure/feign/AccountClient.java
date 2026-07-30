@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 
-@FeignClient(name = "ACCOUNT-SERVICE")
+@FeignClient(name = "ACCOUNT-SERVICE", fallback = AccountClientFallback.class)
 public interface AccountClient {
 
   @GetMapping("/internal/accounts/{id}")
