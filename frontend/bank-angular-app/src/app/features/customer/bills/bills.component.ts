@@ -7,10 +7,16 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { TranslateModule } from '@ngx-translate/core';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { filter } from 'rxjs';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { FormControlErrorComponent } from '../../../shared/components/form-control-error/form-control-error.component';
 import { ToastService } from '../../../core/services/toast.service';
+import {
+  SoftOtpDialogComponent,
+  SoftOtpDialogData,
+} from '../../../shared/components/soft-otp-dialog/soft-otp-dialog.component';
 
 export interface BillCategory {
   id: string;
@@ -37,6 +43,7 @@ export interface BillProvider {
     MatSelectModule,
     MatButtonModule,
     MatIconModule,
+    MatDialogModule,
     TranslateModule,
     PageHeaderComponent,
     FormControlErrorComponent,
@@ -47,6 +54,8 @@ export interface BillProvider {
 export class BillsComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly toast = inject(ToastService);
+  private readonly dialog = inject(MatDialog);
+  private readonly i18n = inject(TranslateService);
 
   billForm!: FormGroup;
   inquiryResult: { customerName: string; amount: number; period: string } | null = null;
@@ -118,12 +127,26 @@ export class BillsComponent implements OnInit {
 
   payBill(): void {
     if (!this.inquiryResult) return;
-    this.submittingPayment = true;
-    setTimeout(() => {
-      this.submittingPayment = false;
-      this.toast.success('Thanh toán hóa đơn thành công!');
-      this.inquiryResult = null;
-      this.billForm.reset({ categoryId: 'ELECTRICITY' });
-    }, 800);
+
+    const otpData: SoftOtpDialogData = {
+      title: this.i18n.instant('COMMON.SMART_OTP_TITLE'),
+      amount: this.inquiryResult.amount,
+      recipientName: this.inquiryResult.customerName,
+      recipientAccount: this.billForm.value.customerCode,
+    };
+
+    this.dialog
+      .open(SoftOtpDialogComponent, { data: otpData, width: '440px', disableClose: true })
+      .afterClosed()
+      .pipe(filter((res) => !!res && !!res.otp))
+      .subscribe(() => {
+        this.submittingPayment = true;
+        setTimeout(() => {
+          this.submittingPayment = false;
+          this.toast.success('Thanh toán hóa đơn thành công!');
+          this.inquiryResult = null;
+          this.billForm.reset({ categoryId: 'ELECTRICITY' });
+        }, 800);
+      });
   }
 }
