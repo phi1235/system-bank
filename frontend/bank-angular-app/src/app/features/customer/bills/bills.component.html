@@ -1,0 +1,106 @@
+<app-page-header
+  [title]="'BILLS.TITLE' | translate"
+  [subtitle]="'BILLS.SUBTITLE' | translate">
+</app-page-header>
+
+<div class="container-fluid py-3">
+  <div class="row">
+    <!-- Left Column: Service Category Grid & Bill Form -->
+    <div class="col-lg-7 mb-4">
+      <mat-card class="shadow-sm border-0 rounded-4">
+        <mat-card-content class="p-4">
+          <h5 class="fw-bold mb-3">{{ 'BILLS.SELECT_SERVICE' | translate }}</h5>
+          <div class="row row-cols-2 row-cols-md-4 g-3 mb-4">
+            <div *ngFor="let cat of categories" class="col">
+              <button
+                type="button"
+                class="btn w-100 p-3 rounded-3 text-center border service-card"
+                [class.btn-primary]="billForm.value.categoryId === cat.id"
+                [class.btn-outline-light]="billForm.value.categoryId !== cat.id"
+                [class.text-dark]="billForm.value.categoryId !== cat.id"
+                (click)="billForm.patchValue({ categoryId: cat.id }); onCategoryChange(cat.id)"
+              >
+                <mat-icon class="d-block mx-auto mb-1 fs-3">{{ cat.icon }}</mat-icon>
+                <span class="small font-weight-bold d-block">{{ cat.nameKey | translate }}</span>
+              </button>
+            </div>
+          </div>
+
+          <form [formGroup]="billForm" (ngSubmit)="inquireBill()" class="mt-4">
+            <div class="mb-3">
+              <mat-form-field appearance="outline" class="w-100">
+                <mat-label>{{ 'BILLS.PROVIDER' | translate }}</mat-label>
+                <mat-select formControlName="providerId">
+                  <mat-option *ngFor="let p of selectedCategoryProviders" [value]="p.id">
+                    {{ p.name }} ({{ p.code }})
+                  </mat-option>
+                </mat-select>
+                <app-form-control-error [control]="billForm.get('providerId')"></app-form-control-error>
+              </mat-form-field>
+            </div>
+
+            <div class="mb-3">
+              <mat-form-field appearance="outline" class="w-100">
+                <mat-label>{{ 'BILLS.CUSTOMER_CODE' | translate }}</mat-label>
+                <input matInput formControlName="customerCode" placeholder="Ví dụ: PE0100123456" />
+                <mat-icon matSuffix>badge</mat-icon>
+                <app-form-control-error [control]="billForm.get('customerCode')"></app-form-control-error>
+              </mat-form-field>
+            </div>
+
+            <div class="d-flex justify-content-end">
+              <button mat-raised-button color="primary" type="submit" [disabled]="loadingInquiry">
+                <mat-icon class="me-1">search</mat-icon>
+                {{ loadingInquiry ? ('COMMON.LOADING' | translate) : ('BILLS.INQUIRE' | translate) }}
+              </button>
+            </div>
+          </form>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Right Column: Inquiry Result & Payment Confirmation -->
+    <div class="col-lg-5 mb-4">
+      <mat-card class="shadow-sm border-0 rounded-4 h-100">
+        <mat-card-content class="p-4 d-flex flex-column justify-content-between h-100">
+          <div>
+            <h5 class="fw-bold mb-3">{{ 'BILLS.INQUIRY_RESULT' | translate }}</h5>
+
+            <div *ngIf="!inquiryResult && !loadingInquiry" class="text-center py-5 text-muted">
+              <mat-icon class="fs-1 opacity-50 mb-2">receipt_long</mat-icon>
+              <p>{{ 'BILLS.INQUIRY_HINT' | translate }}</p>
+            </div>
+
+            <div *ngIf="inquiryResult" class="inquiry-card card bg-light border-0 p-3 rounded-3 mb-4">
+              <div class="d-flex justify-content-between border-bottom pb-2 mb-2">
+                <span class="text-muted">{{ 'BILLS.CUSTOMER_NAME' | translate }}</span>
+                <span class="fw-bold">{{ inquiryResult.customerName }}</span>
+              </div>
+              <div class="d-flex justify-content-between border-bottom pb-2 mb-2">
+                <span class="text-muted">{{ 'BILLS.PERIOD' | translate }}</span>
+                <span>{{ inquiryResult.period }}</span>
+              </div>
+              <div class="d-flex justify-content-between pt-1">
+                <span class="fw-bold">{{ 'BILLS.TOTAL_AMOUNT' | translate }}</span>
+                <span class="fw-bold text-success fs-5">{{ inquiryResult.amount | number }} VND</span>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="inquiryResult" class="pt-3 border-top">
+            <button
+              mat-raised-button
+              color="accent"
+              class="w-100 py-2 fs-6 text-white"
+              [disabled]="submittingPayment"
+              (click)="payBill()"
+            >
+              <mat-icon class="me-1">payments</mat-icon>
+              {{ submittingPayment ? ('COMMON.LOADING' | translate) : ('BILLS.PAY_NOW' | translate) }}
+            </button>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+</div>
