@@ -238,7 +238,7 @@ pipeline {
 
           if (env.DO_BUILD_FE == 'true') {
             echo "Recreating Frontend container: bank-frontend..."
-            sh "docker-compose -f infra/docker-compose.yml up -d --no-deps bank-frontend || (docker rm -f bank-frontend && docker run -d --name bank-frontend -p 80:80 bank-system-bank-frontend:latest)"
+            sh "docker-compose -f infra/docker-compose.yml up -d --no-deps bank-frontend"
           }
 
           if (env.TARGET_SERVICES != '') {
