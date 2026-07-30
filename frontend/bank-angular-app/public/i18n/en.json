@@ -1446,5 +1446,13 @@
     "PENDING": "Pending review",
     "VERIFIED": "Verified",
     "REJECTED": "Rejected"
+  },
+  "VALIDATION": {
+    "REQUIRED": "This field is required",
+    "MIN_LENGTH": "Minimum {{requiredLength}} characters",
+    "MAX_LENGTH": "Maximum {{requiredLength}} characters",
+    "PATTERN": "Invalid format",
+    "EMAIL": "Invalid email address",
+    "MIN": "Minimum value is {{min}}"
   }
 }

@@ -1446,5 +1446,13 @@
     "PENDING": "Chờ duyệt",
     "VERIFIED": "Đã xác minh",
     "REJECTED": "Từ chối"
+  },
+  "VALIDATION": {
+    "REQUIRED": "Trường này là bắt buộc",
+    "MIN_LENGTH": "Tối thiểu {{requiredLength}} ký tự",
+    "MAX_LENGTH": "Tối đa {{requiredLength}} ký tự",
+    "PATTERN": "Định dạng không hợp lệ",
+    "EMAIL": "Email không đúng định dạng",
+    "MIN": "Giá trị tối thiểu là {{min}}"
   }
 }

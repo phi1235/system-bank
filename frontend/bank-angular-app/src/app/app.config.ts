@@ -10,6 +10,7 @@ import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { refreshInterceptor } from './core/interceptors/refresh.interceptor';
 import { correlationInterceptor } from './core/interceptors/correlation.interceptor';
 import { errorInterceptor } from './core/interceptors/error.interceptor';
+import { httpRetryInterceptor } from './core/interceptors/http-retry.interceptor';
 import { provideAppI18n } from './core/i18n/translate.providers';
 import { NotificationStreamService } from './core/services/notification-stream.service';
 import { OpsNotificationStreamService } from './core/services/ops-notification-stream.service';
@@ -24,7 +25,15 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
-    provideHttpClient(withInterceptors([correlationInterceptor, authInterceptor, refreshInterceptor, errorInterceptor])),
+    provideHttpClient(
+      withInterceptors([
+        correlationInterceptor,
+        authInterceptor,
+        refreshInterceptor,
+        httpRetryInterceptor,
+        errorInterceptor,
+      ]),
+    ),
     provideAnimationsAsync(),
     ...provideAppI18n(),
     // Explicit root providers so admin/customer notification bells always resolve DI
