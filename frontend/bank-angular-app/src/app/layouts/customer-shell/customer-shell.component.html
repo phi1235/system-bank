@@ -14,6 +14,7 @@
       }
       @if (canTransfer$ | async) {
         <a routerLink="/customer/payments/transfer" routerLinkActive="active">{{ 'NAV.TRANSFER' | translate }}</a>
+        <a routerLink="/customer/payments/bills" routerLinkActive="active">{{ 'NAV.BILLS' | translate }}</a>
         <a routerLink="/customer/payments/beneficiaries" routerLinkActive="active">{{ 'NAV.BENEFICIARIES' | translate }}</a>
       }
       @if (canCards$ | async) {
