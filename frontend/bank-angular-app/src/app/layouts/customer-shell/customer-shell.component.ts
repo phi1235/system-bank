@@ -7,7 +7,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { Subscription, filter, take } from 'rxjs';
+import { Subject, Subscription, filter, take, takeUntil } from 'rxjs';
 import { BankApiService } from '../../core/services/bank-api.service';
 import { NotificationStreamService } from '../../core/services/notification-stream.service';
 import { PERMISSIONS } from '../../core/services/rbac.util';
@@ -42,8 +42,8 @@ export class CustomerShellComponent implements OnInit, OnDestroy {
   private readonly api = inject(BankApiService);
   private readonly toast = inject(ToastService);
   private readonly i18n = inject(TranslateService);
+  private readonly destroy$ = new Subject<void>();
   private liveSub?: Subscription;
-  private permSub?: Subscription;
 
   username$ = this.store.select(selectUsername);
 
@@ -58,27 +58,34 @@ export class CustomerShellComponent implements OnInit, OnDestroy {
   canNotifications$ = this.store.select(selectHasPermission(PERMISSIONS.IB_NOTIFICATIONS_VIEW));
 
   ngOnInit(): void {
-    this.permSub = this.canNotifications$
+    this.canNotifications$
       .pipe(
         filter((ok) => !!ok),
         take(1),
+        takeUntil(this.destroy$),
       )
       .subscribe(() => {
-        this.api.notificationUnreadCount().subscribe({
-          next: (r) => this.stream.setUnreadCount(r?.unread ?? 0),
-          error: () => this.stream.setUnreadCount(0),
-        });
+        this.api
+          .notificationUnreadCount()
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: (r) => this.stream.setUnreadCount(r?.unread ?? 0),
+            error: () => this.stream.setUnreadCount(0),
+          });
         this.stream.connect();
-        this.liveSub = this.stream.liveEvents$.subscribe((item) => {
-          const preview = (item.body || item.template || '').slice(0, 80);
-          this.toast.info(this.i18n.instant('CUSTOMER.NOTIF_LIVE', { text: preview }));
-        });
+        this.liveSub = this.stream.liveEvents$
+          .pipe(takeUntil(this.destroy$))
+          .subscribe((item) => {
+            const preview = (item.body || item.template || '').slice(0, 80);
+            this.toast.info(this.i18n.instant('CUSTOMER.NOTIF_LIVE', { text: preview }));
+          });
       });
   }
 
   ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
     this.liveSub?.unsubscribe();
-    this.permSub?.unsubscribe();
     this.stream.disconnect();
   }
 

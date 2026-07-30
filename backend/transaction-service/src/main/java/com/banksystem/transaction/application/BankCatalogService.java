@@ -3,6 +3,7 @@ package com.banksystem.transaction.application;
 import com.banksystem.transaction.domain.BankEntity;
 import com.banksystem.transaction.domain.BankRepository;
 import java.util.List;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +27,7 @@ public class BankCatalogService {
   }
 
   @Transactional(readOnly = true)
+  @Cacheable(value = "napasBanks", key = "'all'")
   public List<BankItem> listBanks() {
     List<BankEntity> list = bankRepository.findByStatusOrderByShortNameAsc("ACTIVE");
     return list.stream()

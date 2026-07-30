@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -56,6 +57,7 @@ public class TermDepositService {
   }
 
   @Transactional(readOnly = true)
+  @Cacheable(value = "depositProducts")
   public List<DepositProductResponse> products() {
     return productRepository.findByActiveTrueOrderByTenorMonthsAsc().stream()
         .map(this::toProductResponse)
