@@ -238,7 +238,7 @@ pipeline {
 
           if (env.DO_BUILD_FE == 'true') {
             echo "Recreating Frontend container: bank-frontend..."
-            sh "docker-compose -f infra/docker-compose.yml up -d --no-deps bank-frontend"
+            sh "docker compose -f infra/docker-compose.yml up -d --no-deps bank-frontend || docker-compose -f infra/docker-compose.yml up -d --no-deps bank-frontend || docker restart bank-frontend"
           }
 
           if (env.TARGET_SERVICES != '') {
@@ -247,7 +247,7 @@ pipeline {
               def containerName = containerMap[svc]
               if (containerName) {
                 echo "Recreating local container: ${containerName}..."
-                sh "docker-compose -f infra/docker-compose.yml up -d --no-deps ${containerName} || docker restart ${containerName} || echo 'Container ${containerName} not found'"
+                sh "docker compose -f infra/docker-compose.yml up -d --no-deps ${containerName} || docker-compose -f infra/docker-compose.yml up -d --no-deps ${containerName} || docker restart ${containerName} || echo 'Container ${containerName} not found'"
               }
             }
           }
