@@ -1,18 +1,202 @@
-.otp-dialog-container {
-  min-width: 320px;
-  max-width: 440px;
+:host {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
 }
+
+/* ── Global/Scoped Dialog Overrides ── */
+::ng-deep {
+  .mat-mdc-dialog-surface {
+    border-radius: 24px !important;
+    overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25) !important;
+  }
+
+  .otp-dialog-container {
+    width: 100% !important;
+    min-width: 360px;
+    max-width: 440px;
+    position: relative;
+    box-sizing: border-box;
+    margin: 0 auto;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #059669, #10b981, #34d399);
+    }
+
+    mat-dialog-content,
+    .mat-mdc-dialog-content,
+    .content-body {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      gap: 18px !important;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      width: 100% !important;
+    }
+
+    mat-dialog-actions,
+    .mat-mdc-dialog-actions,
+    .actions-bar {
+      display: flex !important;
+      justify-content: flex-end !important;
+      align-items: center !important;
+      gap: 8px !important;
+      padding: 16px 0 0 !important;
+      margin: 0 !important;
+      border-top: 1px solid #e2e8f0 !important;
+      min-height: 0 !important;
+      width: 100% !important;
+    }
+  }
+}
+
+/* ── Component Internal Styles ── */
+.otp-header {
+  width: 100%;
+  box-sizing: border-box;
+  text-align: center;
+
+  .otp-icon-badge {
+    width: 58px;
+    height: 58px;
+    border-radius: 18px;
+    background: #f0fdf4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.18);
+    margin: 0 auto;
+
+    mat-icon {
+      font-size: 32px;
+      width: 32px;
+      height: 32px;
+      color: #10b981;
+    }
+
+    &.warning-badge {
+      background: #fffbe6;
+      box-shadow: 0 4px 16px rgba(245, 158, 11, 0.18);
+
+      mat-icon {
+        color: #f59e0b;
+      }
+    }
+  }
+
+  .dialog-title {
+    font-size: 1.3rem !important;
+    letter-spacing: -0.01em;
+    font-weight: 700;
+    color: #0f172a;
+  }
+}
+
+/* ── Clean Minimal Transaction Summary Card ── */
+.transaction-summary-card {
+  background: #f8fafc !important;
+  color: #0f172a;
+  border: 1px solid #e2e8f0;
+  width: 100% !important;
+  box-sizing: border-box;
+  text-align: center !important;
+
+  .tx-label-tag {
+    color: #64748b;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+  }
+
+  .tx-amount-value {
+    color: #059669 !important;
+    font-size: 1.65rem !important;
+    letter-spacing: -0.02em;
+  }
+
+  .tx-recipient-info {
+    color: #475569;
+    font-size: 0.85rem;
+  }
+}
+
+/* ── OTP PIN Input Boxes ── */
 .otp-input-box {
   width: 44px;
   height: 52px;
   font-size: 1.5rem;
-  font-weight: 700;
+  font-weight: 800;
   text-align: center;
-  border-radius: 8px;
-  border: 2px solid #ced4da;
+  border-radius: 12px;
+  border: 2px solid #cbd5e1;
+  background: #ffffff;
+  color: #0f172a;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+  box-sizing: border-box;
 
   &:focus {
-    border-color: #0d6efd;
-    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    border-color: #10b981;
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2);
+    background: #ffffff;
+    transform: translateY(-2px) scale(1.04);
   }
+
+  &.border-warning {
+    border-color: #f59e0b;
+
+    &:focus {
+      border-color: #d97706;
+      box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.2);
+    }
+  }
+}
+
+.demo-pin-pill {
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  font-weight: 500;
+}
+
+/* ── Dialog Action Buttons ── */
+.btn-cancel {
+  color: #64748b !important;
+  font-weight: 600 !important;
+  border-radius: 12px !important;
+
+  &:hover {
+    background: #f1f5f9 !important;
+  }
+}
+
+.btn-confirm-otp {
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;
+  color: #ffffff !important;
+  border-radius: 12px !important;
+  font-weight: 600 !important;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3) !important;
+
+  &:hover:not(:disabled) {
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45) !important;
+    transform: translateY(-1px);
+  }
+}
+
+.tracking-wider {
+  letter-spacing: 0.08em;
+}
+
+.min-width-auto {
+  min-width: auto !important;
 }

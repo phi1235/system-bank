@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 
 /** Reconciliation-only ledger lookup; separate contextId to coexist with {@link AccountClient}. */
-@FeignClient(name = "ACCOUNT-SERVICE", contextId = "ledgerClient")
+@FeignClient(name = "ACCOUNT-SERVICE", contextId = "ledgerClient", url = "${bank.feign.account-url}")
 public interface LedgerClient {
 
   @PostMapping("/internal/ledger/search")

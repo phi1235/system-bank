@@ -1,26 +1,39 @@
 <div class="otp-dialog-container p-4">
-  <!-- Step 1: Smart OTP PIN Entry -->
-  <ng-container *ngIf="step === 'PIN'">
-    <h2 mat-dialog-title class="dialog-title text-center font-weight-bold">
-      <mat-icon class="align-middle color-primary">lock</mat-icon>
-      {{ (data.title || 'COMMON.SMART_OTP_TITLE') | translate }}
-    </h2>
 
-    <mat-dialog-content class="my-3">
-      <p class="text-muted text-center mb-3">
-        {{ 'COMMON.SMART_OTP_PIN_HINT' | translate }}
-      </p>
+  <!-- Centered Header Area -->
+  <div class="otp-header text-center mb-3">
+    <!-- Icon Badge (Centered) -->
+    <div class="otp-icon-badge mx-auto mb-3" [class.warning-badge]="step === 'SMS_OTP'">
+      <mat-icon>{{ step === 'PIN' ? 'shield' : 'verified_user' }}</mat-icon>
+    </div>
+    
+    <!-- Title & Subtitle (Centered) -->
+    <h4 class="dialog-title font-weight-bold mb-1 text-center" [class.text-dark]="step === 'PIN'" [class.text-warning]="step === 'SMS_OTP'">
+      {{ (step === 'PIN' ? (data.title || 'COMMON.SMART_OTP_TITLE') : 'COMMON.HIGH_AMOUNT_OTP_TITLE') | translate }}
+    </h4>
+    <p class="text-muted small mb-0 text-center">
+      {{ (step === 'PIN' ? 'COMMON.SMART_OTP_PIN_HINT' : 'COMMON.HIGH_AMOUNT_WARNING') | translate }}
+    </p>
+  </div>
 
-      <div *ngIf="data.amount" class="transaction-summary card bg-light p-3 mb-4 rounded text-center">
-        <div class="small text-secondary">{{ 'COMMON.TRANSACTION_AMOUNT' | translate }}</div>
-        <div class="h4 font-weight-bold text-success my-1">{{ data.amount | number }} VND</div>
-        <div *ngIf="data.recipientName" class="small text-muted">
-          {{ 'COMMON.RECIPIENT' | translate }}: <strong>{{ data.recipientName }}</strong> ({{ data.recipientAccount }})
+  <!-- Body Content -->
+  <mat-dialog-content class="content-body w-100">
+    <!-- Step 1: PIN Input -->
+    <ng-container *ngIf="step === 'PIN'">
+      <!-- Clean Minimal Invoice Card (Centered) -->
+      <div *ngIf="data.amount" class="transaction-summary-card p-3 rounded-3 text-center w-100">
+        <span class="tx-label-tag text-uppercase tracking-wider small d-block mb-1 text-center">{{ 'COMMON.TRANSACTION_AMOUNT' | translate }}</span>
+        <div class="tx-amount-value h3 font-weight-bold mb-1 text-center">{{ data.amount | number }} VND</div>
+        <div *ngIf="data.recipientName" class="tx-recipient-info small text-center">
+          <span class="text-secondary">{{ 'COMMON.RECIPIENT' | translate }}:</span>
+          <strong class="ms-1 text-dark">{{ data.recipientName }}</strong>
+          <span *ngIf="data.recipientAccount" class="ms-1 text-muted">({{ data.recipientAccount }})</span>
         </div>
       </div>
 
-      <form [formGroup]="pinForm" class="d-flex justify-content-center gap-2 my-4">
-        <div formArrayName="pinDigits" class="d-flex gap-2">
+      <!-- PIN Inputs Form (Centered) -->
+      <form [formGroup]="pinForm" class="otp-form w-100 d-flex justify-content-center">
+        <div formArrayName="pinDigits" class="d-flex gap-2 justify-content-center align-items-center">
           <input
             *ngFor="let control of pinDigitsControls.controls; let i = index"
             type="password"
@@ -33,30 +46,22 @@
         </div>
       </form>
 
-      <div *ngIf="pinError" class="text-danger text-center small mt-2">
+      <!-- PIN Error Message -->
+      <div *ngIf="pinError" class="text-danger text-center small fw-semibold w-100">
         {{ pinError }}
       </div>
-      <div class="text-muted text-center small mt-2">
-        <small>{{ 'COMMON.DEMO_PIN_HINT' | translate }}</small>
+
+      <!-- Hint Badge (Centered) -->
+      <div class="text-center w-100">
+        <small class="demo-pin-pill px-3 py-1 rounded-pill d-inline-block">{{ 'COMMON.DEMO_PIN_HINT' | translate }}</small>
       </div>
-    </mat-dialog-content>
-  </ng-container>
+    </ng-container>
 
-  <!-- Step 2: High Amount OTP SMS Verification (>= 10M VND) -->
-  <ng-container *ngIf="step === 'SMS_OTP'">
-    <h2 mat-dialog-title class="dialog-title text-center font-weight-bold text-warning">
-      <mat-icon class="align-middle me-1">verified_user</mat-icon>
-      {{ 'COMMON.HIGH_AMOUNT_OTP_TITLE' | translate }}
-    </h2>
-
-    <mat-dialog-content class="my-3">
-      <div class="alert alert-warning text-center small mb-3">
-        <mat-icon class="align-middle me-1 fs-6">warning</mat-icon>
-        {{ 'COMMON.HIGH_AMOUNT_WARNING' | translate }}
-      </div>
-
-      <form [formGroup]="smsForm" class="d-flex justify-content-center gap-2 my-3">
-        <div formArrayName="smsDigits" class="d-flex gap-2">
+    <!-- Step 2: SMS OTP Input -->
+    <ng-container *ngIf="step === 'SMS_OTP'">
+      <!-- SMS Inputs Form (Centered) -->
+      <form [formGroup]="smsForm" class="otp-form w-100 d-flex justify-content-center">
+        <div formArrayName="smsDigits" class="d-flex gap-2 justify-content-center align-items-center">
           <input
             *ngFor="let control of smsDigitsControls.controls; let i = index"
             type="text"
@@ -69,38 +74,38 @@
         </div>
       </form>
 
-      <div *ngIf="smsError" class="text-danger text-center small mt-1">
+      <!-- SMS Error Message -->
+      <div *ngIf="smsError" class="text-danger text-center small fw-semibold w-100">
         {{ smsError }}
       </div>
 
-      <div class="text-center mt-3">
+      <!-- Countdown/Resend Link -->
+      <div class="text-center w-100">
         <span *ngIf="countdown > 0" class="text-secondary small">
-          {{ 'COMMON.OTP_EXPIRES_IN' | translate }}: <strong class="text-danger">{{ countdown }}s</strong>
+          {{ 'COMMON.OTP_EXPIRES_IN' | translate }}: <strong class="text-danger fs-6">{{ countdown }}s</strong>
         </span>
         <span *ngIf="countdown === 0">
-          <button mat-button color="primary" (click)="resendSmsOtp()">
-            <mat-icon>refresh</mat-icon>
+          <button mat-button color="primary" class="p-0 min-width-auto" (click)="resendSmsOtp()">
+            <mat-icon class="align-middle me-1">refresh</mat-icon>
             {{ 'COMMON.RESEND_OTP' | translate }}
           </button>
         </span>
       </div>
+    </ng-container>
+  </mat-dialog-content>
 
-      <div class="text-muted text-center small mt-2">
-        <small class="badge bg-light text-dark border">{{ 'COMMON.DEV_BYPASS_HINT' | translate }}</small>
-      </div>
-    </mat-dialog-content>
-  </ng-container>
-
-  <mat-dialog-actions align="end" class="gap-2">
-    <button mat-button (click)="cancel()">{{ 'COMMON.CANCEL' | translate }}</button>
+  <!-- Actions Bar -->
+  <mat-dialog-actions align="end" class="actions-bar w-100 mt-3">
+    <button mat-button class="btn-cancel px-4" (click)="cancel()">{{ 'COMMON.CANCEL' | translate }}</button>
     <button
       *ngIf="step === 'SMS_OTP'"
       mat-raised-button
-      color="primary"
+      class="btn-confirm-otp px-4 py-2"
       [disabled]="smsForm.invalid || isSubmitting"
       (click)="confirmSms()"
     >
       {{ 'COMMON.CONFIRM' | translate }}
     </button>
   </mat-dialog-actions>
+
 </div>

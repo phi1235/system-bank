@@ -50,6 +50,7 @@ export class CustomerShellComponent implements OnInit, OnDestroy {
   canHome$ = this.store.select(selectHasPermission(PERMISSIONS.IB_HOME_VIEW));
   canAccounts$ = this.store.select(selectHasPermission(PERMISSIONS.IB_ACCOUNTS_VIEW));
   canTransfer$ = this.store.select(selectHasPermission(PERMISSIONS.IB_TRANSFER_VIEW));
+  canBills$ = this.store.select(selectHasPermission(PERMISSIONS.IB_BILLS_VIEW));
   canCards$ = this.store.select(selectHasPermission(PERMISSIONS.IB_CARDS_VIEW));
   canWealth$ = this.store.select(selectHasPermission(PERMISSIONS.IB_WEALTH_VIEW));
   canSupport$ = this.store.select(selectHasPermission(PERMISSIONS.IB_SUPPORT_VIEW));

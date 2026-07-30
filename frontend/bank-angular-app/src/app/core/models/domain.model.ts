@@ -418,3 +418,52 @@ export interface CardReveal {
   pan: string;
   expiresOn: string;
 }
+
+// ── Bill Payments ──
+
+export interface BillCategoryItem {
+  id: string;
+  name: string;
+  iconUrl: string;
+  icon?: string;
+  sampleCode?: string;
+  themeClass?: string;
+  displayOrder: number;
+}
+
+export interface BillProviderItem {
+  id: string;
+  categoryId: string;
+  name: string;
+  code: string;
+}
+
+export interface BillInquiryResult {
+  customerName: string;
+  amount: number;
+  period: string;
+  providerId: string;
+  customerCode: string;
+}
+
+export interface BillPayResult {
+  paymentId: string;
+  status: string;
+  transactionRef: string;
+  amount: number;
+  fee: number;
+  createdAt: string;
+}
+
+export interface BillPaymentHistory {
+  id: string;
+  categoryId: string;
+  providerId: string;
+  customerCode: string;
+  customerName: string;
+  amount: number;
+  fee: number;
+  status: string;
+  transactionRef: string;
+  createdAt: string;
+}

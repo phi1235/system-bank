@@ -167,10 +167,18 @@
         @if (canOpsNotifications$ | async) {
           <app-notification-bell mode="ops" />
         }
-        <span class="env">{{ 'COMMON.DEV' | translate }}</span>
-        <span class="role">{{ roleBadge$ | async }}</span>
-        <span class="user">{{ username$ | async }}</span>
-        <button mat-button type="button" (click)="logout()">{{ 'COMMON.LOGOUT' | translate }}</button>
+        <button mat-button class="user-menu-btn" [matMenuTriggerFor]="userMenu">
+          <mat-icon class="me-1">account_circle</mat-icon>
+          <span class="username-txt">{{ username$ | async }}</span>
+          <mat-icon class="ms-1">expand_more</mat-icon>
+        </button>
+
+        <mat-menu #userMenu="matMenu" xPosition="before">
+          <button mat-menu-item (click)="logout()">
+            <mat-icon color="warn">logout</mat-icon>
+            <span class="text-danger fw-semibold">{{ 'COMMON.LOGOUT' | translate }}</span>
+          </button>
+        </mat-menu>
       </mat-toolbar>
       <div class="bo-main">
         <router-outlet />

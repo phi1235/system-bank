@@ -197,6 +197,30 @@ export const RBAC_SCREENS: RbacScreenDef[] = [
       },
     ],
   },
+  {
+    id: 'ib-bills',
+    portal: 'ib',
+    labelKey: 'ADMIN.SCR_IB_BILLS',
+    label: 'IB · Thanh toán hóa đơn',
+    icon: 'receipt',
+    description: 'Thanh toán hóa đơn điện, nước, internet, truyền hình',
+    features: [
+      {
+        id: 'view',
+        labelKey: 'ADMIN.FEAT_IB_BILLS_VIEW',
+        label: 'Xem menu & tra cứu hóa đơn',
+        hint: 'Menu Thanh toán hóa đơn & tra cứu',
+        actions: { view: PERMISSIONS.IB_BILLS_VIEW },
+      },
+      {
+        id: 'execute',
+        labelKey: 'ADMIN.FEAT_IB_BILLS_EXEC',
+        label: 'Thực hiện thanh toán hóa đơn',
+        hint: 'Xác nhận OTP & thanh toán',
+        actions: { execute: PERMISSIONS.IB_BILLS_EXECUTE },
+      },
+    ],
+  },
 
   // ─── Back Office ───
   {

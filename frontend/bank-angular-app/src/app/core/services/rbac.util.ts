@@ -51,6 +51,8 @@ export const PERMISSIONS = {
   IB_PROFILE_EDIT: 'ib:profile:edit',
   IB_PROFILE_MFA: 'ib:profile:mfa',
   IB_CARDS_VIEW: 'ib:cards:view',
+  IB_BILLS_VIEW: 'ib:bills:view',
+  IB_BILLS_EXECUTE: 'ib:bills:execute',
   IB_WEALTH_VIEW: 'ib:wealth:view',
   IB_SUPPORT_VIEW: 'ib:support:view',
   IB_SUPPORT_CREATE: 'ib:support:create',

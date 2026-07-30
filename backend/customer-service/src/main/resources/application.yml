@@ -25,6 +25,8 @@ eureka:
     prefer-ip-address: true
 
 bank:
+  feign:
+    notification-url: ${FEIGN_NOTIFICATION_URL:}
   aes:
     secret-key: ${AES_SECRET_KEY}
   gateway:
