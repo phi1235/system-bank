@@ -59,6 +59,9 @@ resilience4j:
         waitDuration: ${RETRY_WAIT_DURATION}
 
 bank:
+  feign:
+    notification-url: ${FEIGN_NOTIFICATION_URL:}
+    account-url: ${FEIGN_ACCOUNT_URL:}
   gateway:
     signing-secret: ${GATEWAY_SIGNING_SECRET}
     max-clock-skew-seconds: ${GATEWAY_MAX_CLOCK_SKEW_SECONDS}

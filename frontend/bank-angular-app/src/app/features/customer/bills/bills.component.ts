@@ -13,22 +13,19 @@ import { filter } from 'rxjs';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { FormControlErrorComponent } from '../../../shared/components/form-control-error/form-control-error.component';
 import { ToastService } from '../../../core/services/toast.service';
+import { BankApiService } from '../../../core/services/bank-api.service';
+import { BillCategoryItem, BillInquiryResult, BillProviderItem } from '../../../core/models/domain.model';
 import {
   SoftOtpDialogComponent,
   SoftOtpDialogData,
 } from '../../../shared/components/soft-otp-dialog/soft-otp-dialog.component';
 
-export interface BillCategory {
+export interface DisplayCategory {
   id: string;
-  nameKey: string;
-  icon: string;
-}
-
-export interface BillProvider {
-  id: string;
-  categoryId: string;
   name: string;
-  code: string;
+  icon: string;
+  themeClass: string;
+  sampleCode: string;
 }
 
 @Component({
@@ -56,75 +53,114 @@ export class BillsComponent implements OnInit {
   private readonly toast = inject(ToastService);
   private readonly dialog = inject(MatDialog);
   private readonly i18n = inject(TranslateService);
+  private readonly api = inject(BankApiService);
 
   billForm!: FormGroup;
-  inquiryResult: { customerName: string; amount: number; period: string } | null = null;
+  inquiryResult: BillInquiryResult | null = null;
   loadingInquiry = false;
   submittingPayment = false;
 
-  categories: BillCategory[] = [
-    { id: 'ELECTRICITY', nameKey: 'BILLS.CAT_ELECTRICITY', icon: 'bolt' },
-    { id: 'WATER', nameKey: 'BILLS.CAT_WATER', icon: 'water_drop' },
-    { id: 'INTERNET', nameKey: 'BILLS.CAT_INTERNET', icon: 'wifi' },
-    { id: 'MOBILE_TOPUP', nameKey: 'BILLS.CAT_MOBILE', icon: 'phone_android' },
-  ];
+  /** Categories loaded from API */
+  categories: DisplayCategory[] = [];
 
-  providers: Record<string, BillProvider[]> = {
-    ELECTRICITY: [
-      { id: 'EVN_HANOI', categoryId: 'ELECTRICITY', name: 'EVN Hà Nội', code: 'EVNHN' },
-      { id: 'EVN_HCM', categoryId: 'ELECTRICITY', name: 'EVN TP.Hồ Chí Minh', code: 'EVNHCM' },
-    ],
-    WATER: [
-      { id: 'HAWACO', categoryId: 'WATER', name: 'Nước sạch Hà Nội', code: 'HAWACO' },
-      { id: 'SAWACO', categoryId: 'WATER', name: 'Nước sạch Sài Gòn', code: 'SAWACO' },
-    ],
-    INTERNET: [
-      { id: 'VIETTEL_NET', categoryId: 'INTERNET', name: 'Viettel Telecom', code: 'VTNET' },
-      { id: 'FPT_TELECOM', categoryId: 'INTERNET', name: 'FPT Telecom', code: 'FPTNET' },
-    ],
-    MOBILE_TOPUP: [
-      { id: 'VT_TOPUP', categoryId: 'MOBILE_TOPUP', name: 'Viettel Mobile', code: 'VTTOPUP' },
-      { id: 'VINA_TOPUP', categoryId: 'MOBILE_TOPUP', name: 'VinaPhone', code: 'VINATOPUP' },
-    ],
-  };
+  /** All providers grouped by category (loaded from API) */
+  allProviders: BillProviderItem[] = [];
 
-  selectedCategoryProviders: BillProvider[] = [];
+  /** Providers for the currently selected category */
+  selectedCategoryProviders: BillProviderItem[] = [];
 
   ngOnInit(): void {
     this.billForm = this.fb.group({
-      categoryId: ['ELECTRICITY', Validators.required],
+      categoryId: ['', Validators.required],
       providerId: ['', Validators.required],
       customerCode: ['', [Validators.required, Validators.minLength(4)]],
     });
 
-    this.onCategoryChange('ELECTRICITY');
+    this.loadCategories();
+    this.loadAllProviders();
+  }
+
+  /** Load categories from Backend API (All data comes directly from Database) */
+  private loadCategories(): void {
+    this.api.billCategories().subscribe({
+      next: (items: BillCategoryItem[]) => {
+        this.categories = items.map((c) => ({
+          id: c.id,
+          name: c.name,
+          icon: c.icon || 'receipt',
+          themeClass: c.themeClass || 'cat-default',
+          sampleCode: c.sampleCode || '',
+        }));
+        if (this.categories.length > 0) {
+          this.billForm.patchValue({ categoryId: this.categories[0].id });
+          this.onCategoryChange(this.categories[0].id);
+        }
+      },
+      error: () => this.toast.error(this.i18n.instant('COMMON.LOAD_ERROR')),
+    });
+  }
+
+  get currentSampleCode(): string {
+    const catId = this.billForm?.value?.categoryId;
+    const cat = this.categories.find((c) => c.id === catId);
+    return cat ? cat.sampleCode : '';
+  }
+
+  fillSampleCode(): void {
+    if (this.currentSampleCode) {
+      this.billForm.patchValue({ customerCode: this.currentSampleCode });
+    }
+  }
+
+  /** Load all providers from Backend API */
+  private loadAllProviders(): void {
+    this.api.billProviders().subscribe({
+      next: (providers: BillProviderItem[]) => {
+        this.allProviders = providers;
+        // Refresh filtered list if category is already selected
+        const catId = this.billForm.value.categoryId;
+        if (catId) {
+          this.selectedCategoryProviders = this.allProviders.filter((p) => p.categoryId === catId);
+        }
+      },
+      error: () => this.toast.error(this.i18n.instant('COMMON.LOAD_ERROR')),
+    });
+  }
+
+  get selectedProvider(): BillProviderItem | undefined {
+    const providerId = this.billForm?.value?.providerId;
+    return this.allProviders.find((p) => p.id === providerId);
   }
 
   onCategoryChange(catId: string): void {
-    this.selectedCategoryProviders = this.providers[catId] || [];
+    this.selectedCategoryProviders = this.allProviders.filter((p) => p.categoryId === catId);
     this.billForm.patchValue({ providerId: '', customerCode: '' });
     this.inquiryResult = null;
   }
 
+  /** Inquiry bill from Backend API */
   inquireBill(): void {
     if (this.billForm.invalid) {
       this.billForm.markAllAsTouched();
       return;
     }
 
+    const v = this.billForm.value;
     this.loadingInquiry = true;
-    setTimeout(() => {
-      this.loadingInquiry = false;
-      const code = this.billForm.value.customerCode;
-      this.inquiryResult = {
-        customerName: 'NGUYEN VAN A',
-        amount: 450000,
-        period: 'Tháng 07/2026',
-      };
-      this.toast.info('Đã tra cứu xong thông tin hóa đơn.');
-    }, 600);
+    this.api.billInquiry(v.providerId, v.customerCode).subscribe({
+      next: (result: BillInquiryResult) => {
+        this.loadingInquiry = false;
+        this.inquiryResult = result;
+        this.toast.info(this.i18n.instant('BILLS.INQUIRY_SUCCESS'));
+      },
+      error: () => {
+        this.loadingInquiry = false;
+        this.toast.error(this.i18n.instant('BILLS.INQUIRY_NOT_FOUND'));
+      },
+    });
   }
 
+  /** Pay bill via Backend API with OTP confirmation */
   payBill(): void {
     if (!this.inquiryResult) return;
 
@@ -141,12 +177,19 @@ export class BillsComponent implements OnInit {
       .pipe(filter((res) => !!res && !!res.otp))
       .subscribe(() => {
         this.submittingPayment = true;
-        setTimeout(() => {
-          this.submittingPayment = false;
-          this.toast.success('Thanh toán hóa đơn thành công!');
-          this.inquiryResult = null;
-          this.billForm.reset({ categoryId: 'ELECTRICITY' });
-        }, 800);
+        const v = this.billForm.value;
+        this.api.billPay(v.providerId, v.customerCode, this.inquiryResult!.amount).subscribe({
+          next: () => {
+            this.submittingPayment = false;
+            this.toast.success(this.i18n.instant('BILLS.PAY_SUCCESS'));
+            this.inquiryResult = null;
+            this.billForm.patchValue({ providerId: '', customerCode: '' });
+          },
+          error: () => {
+            this.submittingPayment = false;
+            this.toast.error(this.i18n.instant('BILLS.PAY_ERROR'));
+          },
+        });
       });
   }
 }

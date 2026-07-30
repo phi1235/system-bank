@@ -8,6 +8,7 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 /**
@@ -25,7 +26,7 @@ public class OpsAlertPublisher {
   private final String apiKey;
 
   public OpsAlertPublisher(
-      NotificationClient notificationClient,
+      @Lazy NotificationClient notificationClient,
       @Value("${bank.internal.notification-api-key}") String apiKey) {
     this.notificationClient = notificationClient;
     this.apiKey = apiKey;

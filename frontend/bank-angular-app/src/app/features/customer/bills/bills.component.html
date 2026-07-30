@@ -3,104 +3,171 @@
   [subtitle]="'BILLS.SUBTITLE' | translate">
 </app-page-header>
 
-<div class="container-fluid py-3">
-  <div class="row">
-    <!-- Left Column: Service Category Grid & Bill Form -->
-    <div class="col-lg-7 mb-4">
-      <mat-card class="shadow-sm border-0 rounded-4">
-        <mat-card-content class="p-4">
-          <h5 class="fw-bold mb-3">{{ 'BILLS.SELECT_SERVICE' | translate }}</h5>
-          <div class="row row-cols-2 row-cols-md-4 g-3 mb-4">
-            <div *ngFor="let cat of categories" class="col">
-              <button
-                type="button"
-                class="btn w-100 p-3 rounded-3 text-center border service-card"
-                [class.btn-primary]="billForm.value.categoryId === cat.id"
-                [class.btn-outline-light]="billForm.value.categoryId !== cat.id"
-                [class.text-dark]="billForm.value.categoryId !== cat.id"
-                (click)="billForm.patchValue({ categoryId: cat.id }); onCategoryChange(cat.id)"
-              >
-                <mat-icon class="d-block mx-auto mb-1 fs-3">{{ cat.icon }}</mat-icon>
-                <span class="small font-weight-bold d-block">{{ cat.nameKey | translate }}</span>
-              </button>
+<div class="bills-page-container py-4">
+  <!-- 2-Column CSS Grid Layout -->
+  <div class="bills-layout-grid">
+    <!-- Left Column Card: Service Category & Inquiry Form -->
+    <div class="bills-card form-section-card">
+      <div class="card-inner-padding">
+        <!-- Section Header -->
+        <div class="section-header-block mb-4">
+          <h5 class="section-title fw-bold text-dark mb-1">{{ 'BILLS.SELECT_SERVICE' | translate }}</h5>
+          <p class="section-subtitle text-muted small mb-0">{{ 'BILLS.SELECT_SERVICE_SUBTITLE' | translate }}</p>
+        </div>
+
+        <!-- Service Category Grid (4 Columns) -->
+        <div class="category-grid-container mb-4">
+          <div
+            *ngFor="let cat of categories"
+            class="cat-tile-item"
+            [class.active]="billForm.value.categoryId === cat.id"
+            [ngClass]="cat.themeClass"
+            (click)="billForm.patchValue({ categoryId: cat.id }); onCategoryChange(cat.id)"
+          >
+            <div class="cat-tile-icon-bg">
+              <mat-icon>{{ cat.icon }}</mat-icon>
             </div>
+            <span class="cat-tile-name">{{ cat.name }}</span>
+            <div class="cat-active-bar"></div>
+          </div>
+        </div>
+
+        <div class="card-divider mb-4"></div>
+
+        <!-- Form -->
+        <form [formGroup]="billForm" (ngSubmit)="inquireBill()" class="bills-inquiry-form">
+          <!-- Provider -->
+          <div class="mb-4">
+            <mat-form-field appearance="outline" class="w-100 custom-mat-field">
+              <mat-label>{{ 'BILLS.PROVIDER' | translate }}</mat-label>
+              <mat-select formControlName="providerId">
+                <mat-select-trigger *ngIf="selectedProvider">
+                  <span>{{ selectedProvider.name }} <strong class="text-muted">({{ selectedProvider.code }})</strong></span>
+                </mat-select-trigger>
+
+                <mat-option *ngFor="let p of selectedCategoryProviders" [value]="p.id">
+                  <div class="d-flex align-items-center">
+                    <mat-icon class="me-2 text-secondary fs-5">domain</mat-icon>
+                    <span>{{ p.name }} <strong class="text-muted">({{ p.code }})</strong></span>
+                  </div>
+                </mat-option>
+              </mat-select>
+              <app-form-control-error [control]="billForm.get('providerId')"></app-form-control-error>
+            </mat-form-field>
           </div>
 
-          <form [formGroup]="billForm" (ngSubmit)="inquireBill()" class="mt-4">
-            <div class="mb-3">
-              <mat-form-field appearance="outline" class="w-100">
-                <mat-label>{{ 'BILLS.PROVIDER' | translate }}</mat-label>
-                <mat-select formControlName="providerId">
-                  <mat-option *ngFor="let p of selectedCategoryProviders" [value]="p.id">
-                    {{ p.name }} ({{ p.code }})
-                  </mat-option>
-                </mat-select>
-                <app-form-control-error [control]="billForm.get('providerId')"></app-form-control-error>
-              </mat-form-field>
-            </div>
-
-            <div class="mb-3">
-              <mat-form-field appearance="outline" class="w-100">
-                <mat-label>{{ 'BILLS.CUSTOMER_CODE' | translate }}</mat-label>
-                <input matInput formControlName="customerCode" placeholder="Ví dụ: PE0100123456" />
-                <mat-icon matSuffix>badge</mat-icon>
-                <app-form-control-error [control]="billForm.get('customerCode')"></app-form-control-error>
-              </mat-form-field>
-            </div>
-
-            <div class="d-flex justify-content-end">
-              <button mat-raised-button color="primary" type="submit" [disabled]="loadingInquiry">
-                <mat-icon class="me-1">search</mat-icon>
-                {{ loadingInquiry ? ('COMMON.LOADING' | translate) : ('BILLS.INQUIRE' | translate) }}
-              </button>
-            </div>
-          </form>
-        </mat-card-content>
-      </mat-card>
-    </div>
-
-    <!-- Right Column: Inquiry Result & Payment Confirmation -->
-    <div class="col-lg-5 mb-4">
-      <mat-card class="shadow-sm border-0 rounded-4 h-100">
-        <mat-card-content class="p-4 d-flex flex-column justify-content-between h-100">
-          <div>
-            <h5 class="fw-bold mb-3">{{ 'BILLS.INQUIRY_RESULT' | translate }}</h5>
-
-            <div *ngIf="!inquiryResult && !loadingInquiry" class="text-center py-5 text-muted">
-              <mat-icon class="fs-1 opacity-50 mb-2">receipt_long</mat-icon>
-              <p>{{ 'BILLS.INQUIRY_HINT' | translate }}</p>
-            </div>
-
-            <div *ngIf="inquiryResult" class="inquiry-card card bg-light border-0 p-3 rounded-3 mb-4">
-              <div class="d-flex justify-content-between border-bottom pb-2 mb-2">
-                <span class="text-muted">{{ 'BILLS.CUSTOMER_NAME' | translate }}</span>
-                <span class="fw-bold">{{ inquiryResult.customerName }}</span>
-              </div>
-              <div class="d-flex justify-content-between border-bottom pb-2 mb-2">
-                <span class="text-muted">{{ 'BILLS.PERIOD' | translate }}</span>
-                <span>{{ inquiryResult.period }}</span>
-              </div>
-              <div class="d-flex justify-content-between pt-1">
-                <span class="fw-bold">{{ 'BILLS.TOTAL_AMOUNT' | translate }}</span>
-                <span class="fw-bold text-success fs-5">{{ inquiryResult.amount | number }} VND</span>
-              </div>
-            </div>
+          <!-- Customer Code -->
+          <div class="mb-3">
+            <mat-form-field appearance="outline" class="w-100 custom-mat-field">
+              <mat-label>{{ 'BILLS.CUSTOMER_CODE' | translate }}</mat-label>
+              <input matInput formControlName="customerCode" [placeholder]="'BILLS.CUSTOMER_CODE_PLACEHOLDER' | translate" />
+              <mat-icon matSuffix class="text-secondary">pin</mat-icon>
+              <app-form-control-error [control]="billForm.get('customerCode')"></app-form-control-error>
+            </mat-form-field>
           </div>
 
-          <div *ngIf="inquiryResult" class="pt-3 border-top">
+          <!-- Demo Code Auto-Fill Pill -->
+          <div *ngIf="currentSampleCode" class="demo-code-banner p-3 rounded-3 mb-4">
+            <span class="demo-code-label text-muted small fw-semibold me-2">{{ 'BILLS.SAMPLE_HINTS' | translate }}</span>
             <button
-              mat-raised-button
-              color="accent"
-              class="w-100 py-2 fs-6 text-white"
-              [disabled]="submittingPayment"
-              (click)="payBill()"
+              type="button"
+              class="btn btn-sm demo-code-chip shadow-sm rounded-pill px-3 py-1"
+              (click)="fillSampleCode()"
             >
-              <mat-icon class="me-1">payments</mat-icon>
-              {{ submittingPayment ? ('COMMON.LOADING' | translate) : ('BILLS.PAY_NOW' | translate) }}
+              <mat-icon class="fs-6 me-1 text-success align-middle">auto_fix_high</mat-icon>
+              <code class="align-middle fs-6">{{ currentSampleCode }}</code>
             </button>
           </div>
-        </mat-card-content>
-      </mat-card>
+
+          <!-- Submit Button -->
+          <div class="pt-2 d-flex justify-content-start">
+            <button
+              mat-raised-button
+              type="submit"
+              class="btn-submit-inquiry px-4 py-2"
+              [disabled]="loadingInquiry"
+            >
+              <mat-icon class="me-2">{{ loadingInquiry ? 'sync' : 'search' }}</mat-icon>
+              {{ loadingInquiry ? ('COMMON.LOADING' | translate) : ('BILLS.INQUIRE' | translate) }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Right Column Card: E-Receipt Ticket -->
+    <div class="bills-card receipt-section-card">
+      <div class="card-inner-padding d-flex flex-column justify-content-between h-100">
+        <div>
+          <!-- Receipt Header -->
+          <div class="receipt-header-row mb-4 pb-3">
+            <h5 class="receipt-title fw-bold text-dark mb-0">{{ 'BILLS.INQUIRY_RESULT' | translate }}</h5>
+            <span *ngIf="inquiryResult" class="status-badge unpaid-badge">
+              {{ 'BILLS.STATUS_UNPAID' | translate }}
+            </span>
+          </div>
+
+          <!-- Empty State -->
+          <div *ngIf="!inquiryResult && !loadingInquiry" class="empty-receipt-state text-center py-5">
+            <div class="empty-receipt-icon mx-auto mb-3">
+              <mat-icon>receipt_long</mat-icon>
+            </div>
+            <h6 class="fw-bold text-dark mb-2">{{ 'BILLS.EMPTY_INQUIRY_TITLE' | translate }}</h6>
+            <p class="text-muted small px-3 mb-0">{{ 'BILLS.INQUIRY_HINT' | translate }}</p>
+          </div>
+
+          <!-- Loading State -->
+          <div *ngIf="loadingInquiry" class="loading-receipt-state text-center py-5">
+            <div class="spinner-border text-success mb-3" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="text-muted small mb-0">{{ 'BILLS.LOADING_INQUIRY' | translate }}</p>
+          </div>
+
+          <!-- Digital Invoice Receipt Ticket -->
+          <div *ngIf="inquiryResult" class="e-receipt-ticket-wrapper p-4 rounded-4 mb-4">
+            <div class="ticket-header text-center pb-3 mb-3">
+              <span class="ticket-badge-tag text-uppercase fw-bold mb-1 d-block">{{ 'BILLS.E_INVOICE_TITLE' | translate }}</span>
+              <h3 class="ticket-amount-val text-success fw-bold mb-0">{{ inquiryResult.amount | number }} VND</h3>
+            </div>
+
+            <div class="ticket-details-list">
+              <div class="ticket-row">
+                <span class="ticket-label">{{ 'BILLS.CUSTOMER_NAME' | translate }}</span>
+                <span class="ticket-val text-dark fw-bold text-end">{{ inquiryResult.customerName }}</span>
+              </div>
+
+              <div class="ticket-row">
+                <span class="ticket-label">{{ 'BILLS.PERIOD' | translate }}</span>
+                <span class="ticket-val text-dark text-end">{{ inquiryResult.period }}</span>
+              </div>
+
+              <div class="ticket-row">
+                <span class="ticket-label">{{ 'BILLS.SERVICE_FEE' | translate }}</span>
+                <span class="ticket-val text-success fw-semibold text-end">{{ 'BILLS.FREE_FEE' | translate }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment Button & Security Note -->
+        <div *ngIf="inquiryResult" class="receipt-action-footer pt-4 mt-2 border-top">
+          <button
+            mat-raised-button
+            class="btn-pay-bill w-100 py-3 text-white fw-bold"
+            [disabled]="submittingPayment"
+            (click)="payBill()"
+          >
+            <mat-icon class="me-2">verified_user</mat-icon>
+            {{ submittingPayment ? ('COMMON.LOADING' | translate) : ('BILLS.PAY_NOW' | translate) }}
+          </button>
+          
+          <div class="security-badge-note text-center mt-3 text-muted small d-flex align-items-center justify-content-center">
+            <mat-icon class="fs-6 me-1 text-success">lock</mat-icon>
+            <span>{{ 'BILLS.SECURITY_NOTE' | translate }}</span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>

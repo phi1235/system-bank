@@ -9,6 +9,11 @@ import {
   AdminTermDeposit,
   AuditLog,
   BatchApproveResult,
+  BillCategoryItem,
+  BillInquiryResult,
+  BillPayResult,
+  BillPaymentHistory,
+  BillProviderItem,
   Card,
   CardReveal,
   BankItem,
@@ -630,6 +635,28 @@ export class BankApiService {
   assignRoles(userId: string, roles: string[]): Observable<RbacStaffUser> {
     return this.api.put(`/admin/rbac/users/${userId}/roles`, { roles });
   }
+
+  // ── Bill Payments ──
+
+  billCategories(): Observable<BillCategoryItem[]> {
+    return this.api.get('/bills/categories');
+  }
+
+  billProviders(categoryId?: string): Observable<BillProviderItem[]> {
+    return this.api.get('/bills/providers', categoryId ? { categoryId } : {});
+  }
+
+  billInquiry(providerId: string, customerCode: string): Observable<BillInquiryResult> {
+    return this.api.post('/bills/inquiry', { providerId, customerCode });
+  }
+
+  billPay(providerId: string, customerCode: string, amount: number): Observable<BillPayResult> {
+    return this.api.post('/bills/pay', { providerId, customerCode, amount });
+  }
+
+  billHistory(page = 0, size = 20): Observable<PageResponse<BillPaymentHistory>> {
+    return this.api.get('/bills/history', { page, size });
+  }
 }
 
 export interface RbacRole {
@@ -670,3 +697,6 @@ export interface RbacStaffUser {
   openResetTicket?: boolean;
   createdAt?: string | null;
 }
+
+// ── Bill Payment API Methods (added to BankApiService class above) ──
+// These are injected into the class via the partial below.

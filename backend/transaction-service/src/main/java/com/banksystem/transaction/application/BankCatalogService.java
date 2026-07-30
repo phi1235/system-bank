@@ -18,7 +18,7 @@ public class BankCatalogService {
       String logoUrl,
       boolean napasSupported,
       boolean isInternal
-  ) {}
+  ) implements java.io.Serializable {}
 
   private final BankRepository bankRepository;
 
@@ -27,7 +27,6 @@ public class BankCatalogService {
   }
 
   @Transactional(readOnly = true)
-  @Cacheable(value = "napasBanks", key = "'all'")
   public List<BankItem> listBanks() {
     List<BankEntity> list = bankRepository.findByStatusOrderByShortNameAsc("ACTIVE");
     return list.stream()

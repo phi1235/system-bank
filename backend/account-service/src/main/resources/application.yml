@@ -32,6 +32,10 @@ eureka:
     prefer-ip-address: true
 
 bank:
+  feign:
+    notification-url: ${FEIGN_NOTIFICATION_URL:}
+    customer-url: ${FEIGN_CUSTOMER_URL:}
+    transaction-url: ${FEIGN_TRANSACTION_URL:}
   account:
     max-per-user: ${ACCOUNT_MAX_PER_USER}
     initial-balance: ${ACCOUNT_INITIAL_BALANCE}
