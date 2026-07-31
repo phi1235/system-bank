@@ -6,6 +6,7 @@ import com.banksystem.transaction.api.dto.ReportDtos.StatusBreakdownRow;
 import com.banksystem.transaction.api.dto.ReportDtos.TopAccountRow;
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -22,18 +23,18 @@ public interface TransactionReportMapper {
   ReportSummaryRow summary(
       @Param("fromTs") Instant fromTs,
       @Param("toTs") Instant toTs,
-      @Param("fromAccountId") String fromAccountId);
+      @Param("fromAccountId") UUID fromAccountId);
 
   List<DailyVolumePoint> dailyVolume(
       @Param("fromTs") Instant fromTs,
       @Param("toTs") Instant toTs,
       @Param("zone") String zone,
-      @Param("fromAccountId") String fromAccountId);
+      @Param("fromAccountId") UUID fromAccountId);
 
   List<StatusBreakdownRow> statusBreakdown(
       @Param("fromTs") Instant fromTs,
       @Param("toTs") Instant toTs,
-      @Param("fromAccountId") String fromAccountId);
+      @Param("fromAccountId") UUID fromAccountId);
 
   List<TopAccountRow> topSourceAccounts(
       @Param("fromTs") Instant fromTs, @Param("toTs") Instant toTs, @Param("limit") int limit);

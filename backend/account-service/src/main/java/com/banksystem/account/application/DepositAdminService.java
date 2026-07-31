@@ -115,8 +115,17 @@ public class DepositAdminService {
 
     Map<UUID, String> accountNumbers = accountNumbersFor(page.getContent());
     Map<String, String> ownerNames = ownerNamesFor(page.getContent());
+    Map<String, Integer> productTenors =
+        productRepository.findAll().stream()
+            .collect(
+                Collectors.toMap(
+                    DepositProductEntity::getCode,
+                    DepositProductEntity::getTenorMonths,
+                    (a, b) -> a));
     List<AdminTermDepositRow> items =
-        page.getContent().stream().map(d -> toRow(d, accountNumbers, ownerNames)).toList();
+        page.getContent().stream()
+            .map(d -> toRow(d, accountNumbers, ownerNames, productTenors))
+            .toList();
     return new PageResponse<>(
         items, page.getNumber(), page.getSize(), page.getTotalElements(), page.getTotalPages());
   }
@@ -209,12 +218,11 @@ public class DepositAdminService {
   }
 
   private AdminTermDepositRow toRow(
-      TermDepositEntity d, Map<UUID, String> accountNumbers, Map<String, String> ownerNames) {
-    int tenor =
-        productRepository
-            .findById(d.getProductCode())
-            .map(DepositProductEntity::getTenorMonths)
-            .orElse(0);
+      TermDepositEntity d,
+      Map<UUID, String> accountNumbers,
+      Map<String, String> ownerNames,
+      Map<String, Integer> productTenors) {
+    int tenor = productTenors.getOrDefault(d.getProductCode(), 0);
     return new AdminTermDepositRow(
         d.getId().toString(),
         d.getUserId().toString(),

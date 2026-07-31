@@ -115,9 +115,10 @@ class TransactionReportServiceTest {
 
   @Test
   void accountScopedReportSkipsTopRankingAndPassesAccountToQueries() {
-    String accountId = UUID.randomUUID().toString();
+    String accountIdStr = UUID.randomUUID().toString();
+    UUID accountId = UUID.fromString(accountIdStr);
 
-    TransactionReportResponse res = service.report(null, null, accountId, null);
+    TransactionReportResponse res = service.report(null, null, accountIdStr, null);
 
     assertTrue(res.topSourceAccounts().isEmpty());
     verify(mapper, never()).topSourceAccounts(any(), any(), anyInt());
