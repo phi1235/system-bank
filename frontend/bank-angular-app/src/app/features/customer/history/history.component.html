@@ -23,11 +23,13 @@
     </mat-form-field>
     <mat-form-field appearance="outline">
       <mat-label>{{ 'CUSTOMER.HISTORY_FROM' | translate }}</mat-label>
-      <input matInput type="date" formControlName="from" />
+      <mat-icon matPrefix (click)="hfInput.showPicker()">calendar_month</mat-icon>
+      <input matInput type="date" #hfInput formControlName="from" placeholder="YYYY-MM-DD" (click)="hfInput.showPicker()" />
     </mat-form-field>
     <mat-form-field appearance="outline">
       <mat-label>{{ 'CUSTOMER.HISTORY_TO' | translate }}</mat-label>
-      <input matInput type="date" formControlName="to" />
+      <mat-icon matPrefix (click)="htInput.showPicker()">calendar_month</mat-icon>
+      <input matInput type="date" #htInput formControlName="to" placeholder="YYYY-MM-DD" (click)="htInput.showPicker()" />
     </mat-form-field>
     <div class="filter-actions">
       <button mat-flat-button color="primary" type="submit">
@@ -36,6 +38,10 @@
       </button>
       <button mat-stroked-button type="button" (click)="resetFilters()">
         {{ 'CUSTOMER.HISTORY_RESET' | translate }}
+      </button>
+      <button mat-flat-button color="accent" type="button" (click)="exportCsv()">
+        <mat-icon>file_download</mat-icon>
+        {{ 'COMMON.EXPORT_CSV' | translate }}
       </button>
     </div>
   </form>

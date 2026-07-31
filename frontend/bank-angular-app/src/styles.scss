@@ -733,4 +733,55 @@ code {
   }
 }
 
+/* Clean UI Badge Pills for IDs & Accounts */
+.acc-pill, .user-pill, .txn-badge, .ref-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+
+  mat-icon.sub-icon {
+    font-size: 15px;
+    width: 15px;
+    height: 15px;
+    line-height: 15px;
+  }
+}
+
+.acc-pill {
+  background-color: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.user-pill {
+  background-color: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.txn-badge {
+  background-color: #fefce8;
+  color: #a16207;
+  border: 1px solid #fef08a;
+}
+
+.ref-badge {
+  background-color: #f8fafc;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+.stk-val {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: 0.03em;
+}
+
 

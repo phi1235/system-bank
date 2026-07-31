@@ -24,6 +24,7 @@ import {
 import { OutboxDetailDialogComponent } from '../../../shared/components/outbox-detail-dialog/outbox-detail-dialog.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { EnumLabelPipe } from '../../../shared/pipes/enum-label.pipe';
+import { exportToCsv } from '../../../core/utils/csv-export.util';
 
 @Component({
   selector: 'app-admin-outbox',
@@ -143,6 +144,24 @@ export class AdminOutboxComponent implements OnInit {
           this.toast.error(resolveHttpErrorMessage(err, this.i18n));
         },
       });
+  }
+
+  exportCsv(): void {
+    if (!this.rows.length) return;
+    exportToCsv(
+      `outbox_events_${new Date().toISOString().slice(0, 10)}`,
+      [
+        { key: 'createdAt', label: 'Time' },
+        { key: 'id', label: 'Event ID' },
+        { key: 'aggregateType', label: 'Aggregate Type' },
+        { key: 'aggregateId', label: 'Aggregate ID' },
+        { key: 'eventType', label: 'Event Type' },
+        { key: 'status', label: 'Status' },
+        { key: 'retryCount', label: 'Retry Count' },
+      ],
+      this.rows as unknown as Record<string, unknown>[],
+    );
+    this.toast.success(this.i18n.instant('COMMON.EXPORT_SUCCESS'));
   }
 
   openDetail(row: OutboxEvent): void {

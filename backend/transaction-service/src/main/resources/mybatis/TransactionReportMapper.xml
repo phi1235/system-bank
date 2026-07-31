@@ -109,4 +109,34 @@
     LIMIT #{limit}
   </select>
 
+  <resultMap id="exportReportRow"
+             type="com.banksystem.transaction.api.dto.ReportDtos$ExportReportRow">
+    <constructor>
+      <arg column="id" javaType="java.lang.String"/>
+      <arg column="created_at" javaType="java.lang.String"/>
+      <arg column="from_account_id" javaType="java.lang.String"/>
+      <arg column="to_account_number" javaType="java.lang.String"/>
+      <arg column="amount" javaType="java.math.BigDecimal"/>
+      <arg column="fee_amount" javaType="java.math.BigDecimal"/>
+      <arg column="currency" javaType="java.lang.String"/>
+      <arg column="status" javaType="java.lang.String"/>
+      <arg column="description" javaType="java.lang.String"/>
+    </constructor>
+  </resultMap>
+
+  <select id="streamExport" fetchSize="1000" resultMap="exportReportRow">
+    SELECT t.id::text                        AS id,
+           (t.created_at AT TIME ZONE 'UTC')::text AS created_at,
+           t.from_account_id::text          AS from_account_id,
+           t.to_account_number              AS to_account_number,
+           t.amount                         AS amount,
+           COALESCE(t.fee_amount, 0)        AS fee_amount,
+           t.currency                       AS currency,
+           t.status                         AS status,
+           COALESCE(t.description, '')      AS description
+    FROM transfer_orders t
+    WHERE <include refid="reportFilter"/>
+    ORDER BY t.created_at DESC
+  </select>
+
 </mapper>

@@ -496,6 +496,18 @@ export class BankApiService {
     });
   }
 
+  downloadTransactionReportCsv(filters?: {
+    from?: string;
+    to?: string;
+    accountId?: string;
+  }): Observable<Blob> {
+    return this.api.getBlob('/admin/transactions/reports/export-csv', {
+      from: filters?.from,
+      to: filters?.to,
+      accountId: filters?.accountId,
+    });
+  }
+
   adminReconRuns(page = 0, size = 20): Observable<PageResponse<ReconRun>> {
     return this.api.get('/admin/recon/runs', { page, size });
   }

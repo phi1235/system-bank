@@ -8,7 +8,6 @@
         <form class="filters" [formGroup]="form" (ngSubmit)="applyFilters()">
           <mat-form-field appearance="outline" class="filter-field action-field" subscriptSizing="dynamic" floatLabel="always">
             <mat-label>{{ 'ADMIN.ACTION' | translate }}</mat-label>
-            <mat-icon matPrefix>bolt</mat-icon>
             <mat-select formControlName="action">
               <mat-option value="">{{ 'COMMON.ALL' | translate }}</mat-option>
               @for (a of actionOptions; track a) {
@@ -21,7 +20,6 @@
 
           <mat-form-field appearance="outline" class="filter-field type-field" subscriptSizing="dynamic" floatLabel="always">
             <mat-label>{{ 'ADMIN.TYPE' | translate }}</mat-label>
-            <mat-icon matPrefix>category</mat-icon>
             <mat-select formControlName="resourceType">
               <mat-option value="">{{ 'COMMON.ALL' | translate }}</mat-option>
               @for (t of resourceTypeOptions; track t) {
@@ -33,33 +31,33 @@
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="filter-field grow" subscriptSizing="dynamic" floatLabel="always">
-            <mat-label>{{ 'ADMIN.ACTOR' | translate }}</mat-label>
-            <mat-icon matPrefix>person</mat-icon>
+            <mat-label>{{ 'ADMIN.AUDIT_ACCOUNT_NO' | translate }}</mat-label>
             <input
               matInput
-              formControlName="actorUserId"
-              [placeholder]="'ADMIN.AUDIT_ACTOR_PH' | translate"
+              formControlName="accountNo"
+              [placeholder]="'ADMIN.AUDIT_ACCOUNT_PH' | translate"
             />
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="filter-field grow" subscriptSizing="dynamic" floatLabel="always">
-            <mat-label>{{ 'ADMIN.RESOURCE' | translate }}</mat-label>
-            <mat-icon matPrefix>link</mat-icon>
+            <mat-label>{{ 'ADMIN.ACTOR' | translate }}</mat-label>
             <input
               matInput
-              formControlName="resourceId"
-              [placeholder]="'ADMIN.AUDIT_RESOURCE_PH' | translate"
+              formControlName="actorUsername"
+              [placeholder]="'ADMIN.AUDIT_ACTOR_PH' | translate"
             />
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="filter-field date-field" subscriptSizing="dynamic" floatLabel="always">
             <mat-label>{{ 'ADMIN.AUDIT_FROM' | translate }}</mat-label>
-            <input matInput type="date" formControlName="from" />
+            <mat-icon matPrefix (click)="afInput.showPicker()">calendar_month</mat-icon>
+            <input matInput type="date" #afInput formControlName="from" placeholder="YYYY-MM-DD" (click)="afInput.showPicker()" />
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="filter-field date-field" subscriptSizing="dynamic" floatLabel="always">
             <mat-label>{{ 'ADMIN.AUDIT_TO' | translate }}</mat-label>
-            <input matInput type="date" formControlName="to" />
+            <mat-icon matPrefix (click)="atInput.showPicker()">calendar_month</mat-icon>
+            <input matInput type="date" #atInput formControlName="to" placeholder="YYYY-MM-DD" (click)="atInput.showPicker()" />
           </mat-form-field>
 
           <button mat-flat-button color="primary" type="submit" [disabled]="loading" class="filter-btn">
@@ -67,6 +65,10 @@
           </button>
           <button mat-stroked-button type="button" (click)="clearFilters()" [disabled]="loading" class="clear-btn">
             {{ 'ADMIN.CLEAR' | translate }}
+          </button>
+          <button mat-flat-button color="accent" type="button" (click)="exportCsv()" [disabled]="loading || !rows.length" class="export-btn">
+            <mat-icon>file_download</mat-icon>
+            {{ 'COMMON.EXPORT_CSV' | translate }}
           </button>
         </form>
         <p class="meta">{{ 'ADMIN.AUDIT_TOTAL' | translate: { total: totalElements } }}</p>
@@ -84,21 +86,23 @@
                 <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.ACTION' | translate }}</th>
                 <td mat-cell *matCellDef="let a"><span class="chip info">{{ a.action }}</span></td>
               </ng-container>
+              <ng-container matColumnDef="accountNo">
+                <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.AUDIT_ACCOUNT_NO' | translate }}</th>
+                <td mat-cell *matCellDef="let a">
+                  <strong class="stk-val">{{ getAccountNo(a) }}</strong>
+                </td>
+              </ng-container>
               <ng-container matColumnDef="actorUserId">
                 <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.ACTOR' | translate }}</th>
                 <td mat-cell *matCellDef="let a">
-                  <code [matTooltip]="a.actorUserId || ''">{{ shortId(a.actorUserId) }}</code>
+                  <span class="user-pill">
+                    <mat-icon class="sub-icon">person</mat-icon> {{ getActorName(a.actorUserId) }}
+                  </span>
                 </td>
               </ng-container>
               <ng-container matColumnDef="resourceType">
                 <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.TYPE' | translate }}</th>
                 <td mat-cell *matCellDef="let a"><strong>{{ a.resourceType || '—' }}</strong></td>
-              </ng-container>
-              <ng-container matColumnDef="resourceId">
-                <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.RESOURCE' | translate }}</th>
-                <td mat-cell *matCellDef="let a">
-                  <code [matTooltip]="a.resourceId || ''">{{ shortId(a.resourceId) }}</code>
-                </td>
               </ng-container>
               <ng-container matColumnDef="ip">
                 <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.IP' | translate }}</th>

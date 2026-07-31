@@ -56,6 +56,7 @@ export class AdminTransactionReportComponent implements OnInit {
   to = '';
   accountId = '';
   loading = false;
+  exporting = false;
   report: TransactionReport | null = null;
   bars: ChartBar[] = [];
   maxCompletedAmount = 0;
@@ -80,6 +81,32 @@ export class AdminTransactionReportComponent implements OnInit {
     this.to = '';
     this.accountId = '';
     this.load();
+  }
+
+  exportCsv(): void {
+    this.exporting = true;
+    this.api
+      .downloadTransactionReportCsv({
+        from: this.from || undefined,
+        to: this.to || undefined,
+        accountId: this.accountId.trim() || undefined,
+      })
+      .subscribe({
+        next: (blob) => {
+          this.exporting = false;
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `transaction_report_${new Date().toISOString().slice(0, 10)}.csv`;
+          a.click();
+          window.URL.revokeObjectURL(url);
+          this.toast.success(this.i18n.instant('COMMON.EXPORT_SUCCESS'));
+        },
+        error: (err) => {
+          this.exporting = false;
+          this.toast.error(resolveHttpErrorMessage(err, this.i18n));
+        },
+      });
   }
 
   load(): void {

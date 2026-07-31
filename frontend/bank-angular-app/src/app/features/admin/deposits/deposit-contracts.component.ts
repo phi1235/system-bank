@@ -17,6 +17,7 @@ import { ToastService } from '../../../core/services/toast.service';
 import { resolveHttpErrorMessage } from '../../../core/utils/http-error.util';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { MoneyVndPipe } from '../../../shared/pipes/money-vnd.pipe';
+import { exportToCsv } from '../../../core/utils/csv-export.util';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -88,6 +89,27 @@ export class AdminDepositContractsComponent implements OnInit {
     this.fMaturityTo = '';
     this.pageIndex = 0;
     this.loadList();
+  }
+
+  exportCsv(): void {
+    if (!this.rows.length) return;
+    exportToCsv(
+      `deposit_contracts_${new Date().toISOString().slice(0, 10)}`,
+      [
+        { key: 'ownerName', label: 'Owner' },
+        { key: 'sourceAccountNumber', label: 'Source Account' },
+        { key: 'productCode', label: 'Product Code' },
+        { key: 'tenorMonths', label: 'Tenor (Months)' },
+        { key: 'amount', label: 'Principal Amount' },
+        { key: 'rateBps', label: 'Rate (bps)' },
+        { key: 'accruedInterest', label: 'Accrued Interest' },
+        { key: 'openedAt', label: 'Opened At' },
+        { key: 'maturityDate', label: 'Maturity Date' },
+        { key: 'status', label: 'Status' },
+      ],
+      this.rows as unknown as Record<string, unknown>[],
+    );
+    this.toast.success(this.i18n.instant('COMMON.EXPORT_SUCCESS'));
   }
 
   loadList(): void {
