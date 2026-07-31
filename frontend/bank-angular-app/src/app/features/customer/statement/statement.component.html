@@ -108,11 +108,13 @@
           </mat-form-field>
           <mat-form-field appearance="outline">
             <mat-label>{{ 'CUSTOMER.STATEMENT_FROM' | translate }}</mat-label>
-            <input matInput type="date" formControlName="from" />
+            <mat-icon matPrefix (click)="sfInput.showPicker()">calendar_month</mat-icon>
+            <input matInput type="date" #sfInput formControlName="from" placeholder="YYYY-MM-DD" (click)="sfInput.showPicker()" />
           </mat-form-field>
           <mat-form-field appearance="outline">
             <mat-label>{{ 'CUSTOMER.STATEMENT_TO' | translate }}</mat-label>
-            <input matInput type="date" formControlName="to" />
+            <mat-icon matPrefix (click)="stInput.showPicker()">calendar_month</mat-icon>
+            <input matInput type="date" #stInput formControlName="to" placeholder="YYYY-MM-DD" (click)="stInput.showPicker()" />
           </mat-form-field>
           <div class="filter-actions">
             <button mat-flat-button color="primary" type="submit" [disabled]="loading">
@@ -126,6 +128,16 @@
               [disabled]="loading || !hasActiveFilters"
             >
               {{ 'CUSTOMER.STATEMENT_RESET' | translate }}
+            </button>
+            <button
+              mat-flat-button
+              color="accent"
+              type="button"
+              (click)="exportCsv()"
+              [disabled]="loading || !rows.length"
+            >
+              <mat-icon>file_download</mat-icon>
+              {{ 'COMMON.EXPORT_CSV' | translate }}
             </button>
           </div>
         </form>
@@ -237,7 +249,9 @@
                 <td mat-cell *matCellDef="let r">
                   @if (r.referenceId) {
                     <div class="ref-cell">
-                      <code class="ref" [matTooltip]="r.referenceId">{{ r.referenceId | slice: 0:8 }}…</code>
+                      <span class="ref-badge">
+                        <mat-icon class="sub-icon">receipt</mat-icon> {{ r.referenceId | slice: 0:8 }}…
+                      </span>
                       <button
                         mat-icon-button
                         type="button"

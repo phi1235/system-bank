@@ -43,12 +43,14 @@
 
           <mat-form-field appearance="outline" class="date-field" subscriptSizing="dynamic">
             <mat-label>{{ 'ADMIN.TX_FROM' | translate }}</mat-label>
-            <input matInput type="date" [(ngModel)]="from" name="from" />
+            <mat-icon matPrefix (click)="fromInput.showPicker()">calendar_month</mat-icon>
+            <input matInput type="date" #fromInput [(ngModel)]="from" name="from" placeholder="YYYY-MM-DD" (click)="fromInput.showPicker()" />
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="date-field" subscriptSizing="dynamic">
             <mat-label>{{ 'ADMIN.TX_TO' | translate }}</mat-label>
-            <input matInput type="date" [(ngModel)]="to" name="to" />
+            <mat-icon matPrefix (click)="toInput.showPicker()">calendar_month</mat-icon>
+            <input matInput type="date" #toInput [(ngModel)]="to" name="to" placeholder="YYYY-MM-DD" (click)="toInput.showPicker()" />
           </mat-form-field>
 
           <button mat-flat-button color="primary" type="submit" [disabled]="loading">
@@ -56,6 +58,10 @@
           </button>
           <button mat-stroked-button type="button" (click)="clearFilters()" [disabled]="loading">
             {{ 'ADMIN.CLEAR' | translate }}
+          </button>
+          <button mat-flat-button color="accent" type="button" (click)="exportCsv()" [disabled]="loading || !rows.length">
+            <mat-icon>file_download</mat-icon>
+            {{ 'COMMON.EXPORT_CSV' | translate }}
           </button>
         </form>
         <p class="hint">{{ 'ADMIN.TX_FILTER_HINT' | translate }}</p>
@@ -96,17 +102,23 @@
               <ng-container matColumnDef="fromAccountId">
                 <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.FROM' | translate }}</th>
                 <td mat-cell *matCellDef="let t">
-                  <code [matTooltip]="t.fromAccountId || ''">{{ shortId(t.fromAccountId) }}</code>
+                  <span class="acc-pill">
+                    <mat-icon class="sub-icon">account_balance_wallet</mat-icon> {{ shortId(t.fromAccountId) }}
+                  </span>
                 </td>
               </ng-container>
               <ng-container matColumnDef="toAccountNumber">
                 <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.TO' | translate }}</th>
-                <td mat-cell *matCellDef="let t">{{ t.toAccountNumber || '—' }}</td>
+                <td mat-cell *matCellDef="let t">
+                  <strong class="stk-val">{{ t.toAccountNumber || '—' }}</strong>
+                </td>
               </ng-container>
               <ng-container matColumnDef="transactionId">
                 <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.TXN' | translate }}</th>
                 <td mat-cell *matCellDef="let t">
-                  <code [matTooltip]="t.transactionId || ''">{{ shortId(t.transactionId) }}</code>
+                  <span class="txn-badge">
+                    <mat-icon class="sub-icon">receipt_long</mat-icon> {{ shortId(t.transactionId) }}
+                  </span>
                 </td>
               </ng-container>
               <ng-container matColumnDef="actions">

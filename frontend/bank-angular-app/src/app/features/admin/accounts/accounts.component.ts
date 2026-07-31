@@ -28,6 +28,7 @@ import { resolveHttpErrorMessage } from '../../../core/utils/http-error.util';
 import { copyText } from '../../../core/utils/transfer-receipt.util';
 import { Account } from '../../../core/models/domain.model';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { exportToCsv } from '../../../core/utils/csv-export.util';
 import { Store } from '@ngrx/store';
 import { selectHasPermission } from '../../../store/auth/auth.selectors';
 import { filter, switchMap } from 'rxjs';
@@ -155,6 +156,24 @@ export class AdminAccountsComponent implements OnInit {
     this.form.reset({ q: '', status: '', accountType: '' });
     this.pageIndex = 0;
     this.load();
+  }
+
+  exportCsv(): void {
+    if (!this.rows.length) return;
+    exportToCsv(
+      `accounts_${new Date().toISOString().slice(0, 10)}`,
+      [
+        { key: 'accountNumber', label: 'Account Number (STK)' },
+        { key: 'userId', label: 'Owner User ID' },
+        { key: 'accountType', label: 'Account Type' },
+        { key: 'balance', label: 'Balance' },
+        { key: 'currency', label: 'Currency' },
+        { key: 'status', label: 'Status' },
+        { key: 'createdAt', label: 'Created At' },
+      ],
+      this.rows as unknown as Record<string, unknown>[],
+    );
+    this.toast.success(this.i18n.instant('COMMON.EXPORT_SUCCESS'));
   }
 
   select(account: Account): void {

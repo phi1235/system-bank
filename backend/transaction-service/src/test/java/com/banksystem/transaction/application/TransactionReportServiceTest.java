@@ -133,6 +133,20 @@ class TransactionReportServiceTest {
     verify(mapper).topSourceAccounts(any(), any(), eq(TransactionReportService.MAX_TOP));
   }
 
+  @Test
+  void exportCsvStreamDelegatesToMapperCursor() {
+    java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+    org.apache.ibatis.cursor.Cursor<com.banksystem.transaction.api.dto.ReportDtos.ExportReportRow> emptyCursor =
+        mock(org.apache.ibatis.cursor.Cursor.class);
+    when(emptyCursor.iterator()).thenReturn(java.util.Collections.emptyIterator());
+    when(mapper.streamExport(any(), any(), any())).thenReturn(emptyCursor);
+
+    service.exportCsvStream(null, null, null, out);
+
+    verify(mapper).streamExport(any(), any(), any());
+    assertTrue(out.toString(java.nio.charset.StandardCharsets.UTF_8).contains("ID"));
+  }
+
   private static ReportSummaryRow emptySummary() {
     return new ReportSummaryRow(0, 0, 0, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO);
   }

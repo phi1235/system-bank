@@ -6,7 +6,8 @@
       <form class="run-form" (ngSubmit)="runNow()">
         <mat-form-field appearance="outline" class="date-field" subscriptSizing="dynamic">
           <mat-label>{{ 'ADMIN.RECON_DATE' | translate }}</mat-label>
-          <input matInput type="date" [(ngModel)]="runDate" name="runDate" required />
+          <mat-icon matPrefix (click)="rdInput.showPicker()">calendar_month</mat-icon>
+          <input matInput type="date" #rdInput [(ngModel)]="runDate" name="runDate" placeholder="YYYY-MM-DD" (click)="rdInput.showPicker()" required />
         </mat-form-field>
         <button mat-flat-button color="primary" type="submit" [disabled]="!runDate || running">
           <mat-icon>play_arrow</mat-icon>

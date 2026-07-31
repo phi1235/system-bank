@@ -5,12 +5,14 @@
     <form class="filters" (ngSubmit)="applyFilters()">
       <mat-form-field appearance="outline" class="date-field" subscriptSizing="dynamic">
         <mat-label>{{ 'ADMIN.TX_FROM' | translate }}</mat-label>
-        <input matInput type="date" [(ngModel)]="from" name="from" />
+        <mat-icon matPrefix>calendar_month</mat-icon>
+        <input matInput type="date" [(ngModel)]="from" name="from" placeholder="YYYY-MM-DD" />
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="date-field" subscriptSizing="dynamic">
         <mat-label>{{ 'ADMIN.TX_TO' | translate }}</mat-label>
-        <input matInput type="date" [(ngModel)]="to" name="to" />
+        <mat-icon matPrefix>calendar_month</mat-icon>
+        <input matInput type="date" [(ngModel)]="to" name="to" placeholder="YYYY-MM-DD" />
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="grow" subscriptSizing="dynamic">
@@ -21,6 +23,10 @@
 
       <button mat-flat-button color="primary" type="submit" [disabled]="loading">{{ 'ADMIN.FILTER' | translate }}</button>
       <button mat-stroked-button type="button" (click)="clearFilters()" [disabled]="loading">{{ 'ADMIN.CLEAR' | translate }}</button>
+      <button mat-flat-button color="accent" type="button" (click)="exportCsv()" [disabled]="loading || exporting">
+        <mat-icon>file_download</mat-icon>
+        {{ (exporting ? 'COMMON.EXPORTING' : 'COMMON.EXPORT_CSV') | translate }}
+      </button>
     </form>
     @if (report) {
       <p class="meta">{{ 'ADMIN.REPORT_RANGE' | translate: { from: report.from, to: report.to, zone: report.zone } }}</p>
@@ -107,7 +113,11 @@
           <table mat-table [dataSource]="report.topSourceAccounts" class="full">
             <ng-container matColumnDef="fromAccountId">
               <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.REPORT_ACCOUNT' | translate }}</th>
-              <td mat-cell *matCellDef="let r"><code [matTooltip]="r.fromAccountId">{{ shortId(r.fromAccountId) }}</code></td>
+              <td mat-cell *matCellDef="let r">
+                <span class="acc-pill" [matTooltip]="('ADMIN.LABEL_ACCOUNT_ID' | translate) + ': ' + (r.fromAccountId || '')">
+                  <mat-icon class="sub-icon">account_balance_wallet</mat-icon> {{ 'ADMIN.LABEL_SOURCE_ACCOUNT' | translate }}
+                </span>
+              </td>
             </ng-container>
             <ng-container matColumnDef="transferCount">
               <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.REPORT_COUNT' | translate }}</th>

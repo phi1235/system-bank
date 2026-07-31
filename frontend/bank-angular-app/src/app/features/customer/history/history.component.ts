@@ -28,6 +28,7 @@ import { TransferDetailDialogComponent } from '../../../shared/components/transf
 import { FriendlyTransferErrorPipe } from '../../../shared/pipes/friendly-transfer-error.pipe';
 import { TransferStatusPipe } from '../../../shared/pipes/transfer-status.pipe';
 import { MoneyVndPipe } from '../../../shared/pipes/money-vnd.pipe';
+import { exportToCsv } from '../../../core/utils/csv-export.util';
 import { TransfersActions } from '../../../store/transfers/transfers.actions';
 import {
   selectTransferHistory,
@@ -144,6 +145,26 @@ export class HistoryComponent implements OnInit {
 
   canRetry(row: Transfer): boolean {
     return canRetryTransfer(row?.status);
+  }
+
+  exportCsv(): void {
+    this.rows$.subscribe((rows) => {
+      if (!rows || !rows.length) return;
+      exportToCsv(
+        `transfer_history_${new Date().toISOString().slice(0, 10)}`,
+        [
+          { key: 'createdAt', label: 'Time' },
+          { key: 'transactionId', label: 'Transaction ID' },
+          { key: 'fromAccountId', label: 'From Account' },
+          { key: 'toAccountNumber', label: 'To Account' },
+          { key: 'amount', label: 'Amount' },
+          { key: 'status', label: 'Status' },
+          { key: 'description', label: 'Description' },
+        ],
+        rows as unknown as Record<string, unknown>[],
+      );
+      this.toast.success(this.i18n.instant('COMMON.EXPORT_SUCCESS'));
+    }).unsubscribe();
   }
 
   async copyId(row: Transfer): Promise<void> {

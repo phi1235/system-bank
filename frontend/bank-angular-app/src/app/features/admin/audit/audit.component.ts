@@ -18,6 +18,7 @@ import { ToastService } from '../../../core/services/toast.service';
 import { resolveHttpErrorMessage } from '../../../core/utils/http-error.util';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { AuditDetailDialogComponent } from '../../../shared/components/audit-detail-dialog/audit-detail-dialog.component';
+import { exportToCsv } from '../../../core/utils/csv-export.util';
 
 @Component({
   selector: 'app-admin-audit',
@@ -54,7 +55,9 @@ export class AdminAuditComponent implements OnInit {
   totalElements = 0;
   loading = false;
   openingId: string | null = null;
-  cols = ['createdAt', 'action', 'actorUserId', 'resourceType', 'resourceId', 'ip', 'actions'];
+  cols = ['createdAt', 'action', 'accountNo', 'actorUserId', 'resourceType', 'ip', 'actions'];
+  userMap = new Map<string, string>();
+  accountMap = new Map<string, string>();
 
   readonly actionOptions = [
     '',
@@ -88,19 +91,62 @@ export class AdminAuditComponent implements OnInit {
   form = this.fb.nonNullable.group({
     action: [''],
     resourceType: [''],
-    actorUserId: [''],
-    resourceId: [''],
+    accountNo: [''],
+    actorUsername: [''],
     from: [''],
     to: [''],
   });
 
   ngOnInit(): void {
+    this.api.rbacUsers(0, 100).subscribe({
+      next: (p) => {
+        (p.items || []).forEach((u) => {
+          if (u.userId) {
+            this.userMap.set(u.userId, u.username || u.email || u.userId);
+          }
+        });
+      },
+    });
+    this.api.adminListAccounts(0, 200).subscribe({
+      next: (p) => {
+        (p.items || []).forEach((acc) => {
+          if (acc.id && acc.accountNumber) {
+            this.accountMap.set(acc.id, acc.accountNumber);
+          }
+        });
+      },
+    });
     this.load();
+  }
+
+  getActorName(userId: string | null | undefined): string {
+    if (!userId) return 'Hệ thống';
+    return this.userMap.get(userId) || (userId.length > 8 ? userId.slice(0, 8) + '…' : userId);
+  }
+
+  getAccountNo(a: AuditLog): string {
+    if (!a) return '—';
+    if (a.resourceId && this.accountMap.has(a.resourceId)) {
+      return this.accountMap.get(a.resourceId)!;
+    }
+    if (a.metadata) {
+      try {
+        const meta = typeof a.metadata === 'string' ? JSON.parse(a.metadata) : a.metadata;
+        const stk = meta.accountNumber || meta.stk || meta.toAccountNumber || meta.fromAccountNumber || meta.account;
+        if (stk) return String(stk);
+      } catch (e) {
+        // ignore
+      }
+    }
+    if (a.resourceId && (a.resourceId.length <= 14 || /^\d+$/.test(a.resourceId))) {
+      return a.resourceId;
+    }
+    return '—';
   }
 
   get hasActiveFilters(): boolean {
     const v = this.form.getRawValue();
-    return !!(v.action || v.resourceType || v.actorUserId.trim() || v.resourceId.trim() || v.from || v.to);
+    return !!(v.action || v.resourceType || v.accountNo.trim() || v.actorUsername.trim() || v.from || v.to);
   }
 
   applyFilters(): void {
@@ -112,13 +158,31 @@ export class AdminAuditComponent implements OnInit {
     this.form.reset({
       action: '',
       resourceType: '',
-      actorUserId: '',
-      resourceId: '',
+      accountNo: '',
+      actorUsername: '',
       from: '',
       to: '',
     });
     this.pageIndex = 0;
     this.load();
+  }
+
+  exportCsv(): void {
+    if (!this.rows.length) return;
+    exportToCsv(
+      `audit_logs_${new Date().toISOString().slice(0, 10)}`,
+      [
+        { key: 'createdAt', label: 'Time' },
+        { key: 'action', label: 'Action' },
+        { key: 'actorUserId', label: 'Actor User ID' },
+        { key: 'resourceType', label: 'Resource Type' },
+        { key: 'resourceId', label: 'Resource ID' },
+        { key: 'ip', label: 'IP Address' },
+        { key: 'metadata', label: 'Metadata' },
+      ],
+      this.rows as unknown as Record<string, unknown>[],
+    );
+    this.toast.success(this.i18n.instant('COMMON.EXPORT_SUCCESS'));
   }
 
   load(): void {
@@ -127,8 +191,8 @@ export class AdminAuditComponent implements OnInit {
     const filters = {
       action: v.action || undefined,
       resourceType: v.resourceType || undefined,
-      actorUserId: v.actorUserId.trim() || undefined,
-      resourceId: v.resourceId.trim() || undefined,
+      actorUserId: v.actorUsername.trim() || undefined,
+      resourceId: v.accountNo.trim() || undefined,
       from: this.toIsoStart(v.from),
       to: this.toIsoEnd(v.to),
     };

@@ -21,6 +21,7 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
 import { TransferDetailDialogComponent } from '../../../shared/components/transfer-detail-dialog/transfer-detail-dialog.component';
 import { MoneyVndPipe } from '../../../shared/pipes/money-vnd.pipe';
 import { TransferStatusPipe } from '../../../shared/pipes/transfer-status.pipe';
+import { exportToCsv } from '../../../core/utils/csv-export.util';
 
 @Component({
   selector: 'app-admin-transfers',
@@ -115,6 +116,25 @@ export class AdminTransfersComponent implements OnInit {
     this.to = '';
     this.pageIndex = 0;
     this.load();
+  }
+
+  exportCsv(): void {
+    if (!this.rows.length) return;
+    exportToCsv(
+      `transfers_${new Date().toISOString().slice(0, 10)}`,
+      [
+        { key: 'createdAt', label: 'Time' },
+        { key: 'id', label: 'Transaction ID' },
+        { key: 'fromAccountId', label: 'From Account' },
+        { key: 'toAccountNumber', label: 'To Account' },
+        { key: 'amount', label: 'Amount' },
+        { key: 'currency', label: 'Currency' },
+        { key: 'status', label: 'Status' },
+        { key: 'description', label: 'Description' },
+      ],
+      this.rows as unknown as Record<string, unknown>[],
+    );
+    this.toast.success(this.i18n.instant('COMMON.EXPORT_SUCCESS'));
   }
 
   load(): void {

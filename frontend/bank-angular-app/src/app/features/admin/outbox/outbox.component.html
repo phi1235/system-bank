@@ -79,12 +79,14 @@
 
           <mat-form-field appearance="outline" class="date-field" subscriptSizing="dynamic">
             <mat-label>{{ 'ADMIN.OUTBOX_FROM' | translate }}</mat-label>
-            <input matInput type="date" [(ngModel)]="from" name="from" />
+            <mat-icon matPrefix (click)="ofInput.showPicker()">calendar_month</mat-icon>
+            <input matInput type="date" #ofInput [(ngModel)]="from" name="from" placeholder="YYYY-MM-DD" (click)="ofInput.showPicker()" />
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="date-field" subscriptSizing="dynamic">
             <mat-label>{{ 'ADMIN.OUTBOX_TO' | translate }}</mat-label>
-            <input matInput type="date" [(ngModel)]="to" name="to" />
+            <mat-icon matPrefix (click)="otInput.showPicker()">calendar_month</mat-icon>
+            <input matInput type="date" #otInput [(ngModel)]="to" name="to" placeholder="YYYY-MM-DD" (click)="otInput.showPicker()" />
           </mat-form-field>
 
           <button mat-flat-button color="primary" type="submit" [disabled]="loading">
@@ -92,6 +94,10 @@
           </button>
           <button mat-stroked-button type="button" (click)="clearFilters()" [disabled]="loading">
             {{ 'ADMIN.CLEAR' | translate }}
+          </button>
+          <button mat-flat-button color="accent" type="button" (click)="exportCsv()" [disabled]="loading || !rows.length">
+            <mat-icon>file_download</mat-icon>
+            {{ 'COMMON.EXPORT_CSV' | translate }}
           </button>
         </form>
         <p class="hint">{{ 'ADMIN.OUTBOX_FILTER_HINT' | translate }}</p>
@@ -125,7 +131,9 @@
               <ng-container matColumnDef="aggregateId">
                 <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.OUTBOX_AGG' | translate }}</th>
                 <td mat-cell *matCellDef="let e">
-                  <code [matTooltip]="e.aggregateId">{{ shortId(e.aggregateId) }}</code>
+                  <span class="acc-pill">
+                    <mat-icon class="sub-icon">account_tree</mat-icon> {{ e.aggregateType || 'Outbox' }} ({{ shortId(e.aggregateId) }})
+                  </span>
                 </td>
               </ng-container>
               <ng-container matColumnDef="attemptCount">

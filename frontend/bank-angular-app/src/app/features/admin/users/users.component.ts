@@ -33,6 +33,7 @@ import { ToastService } from '../../../core/services/toast.service';
 import { resolveHttpErrorMessage } from '../../../core/utils/http-error.util';
 import { copyText } from '../../../core/utils/transfer-receipt.util';
 import { selectHasPermission, selectUser } from '../../../store/auth/auth.selectors';
+import { exportToCsv } from '../../../core/utils/csv-export.util';
 
 @Component({
   selector: 'app-admin-users',
@@ -138,6 +139,23 @@ export class AdminUsersComponent implements OnInit {
           );
         },
       });
+  }
+
+  exportCsv(): void {
+    if (!this.rows.length) return;
+    exportToCsv(
+      `users_${new Date().toISOString().slice(0, 10)}`,
+      [
+        { key: 'username', label: 'Username' },
+        { key: 'userId', label: 'User ID' },
+        { key: 'fullName', label: 'Full Name' },
+        { key: 'email', label: 'Email' },
+        { key: 'enabled', label: 'Active' },
+        { key: 'createdAt', label: 'Created At' },
+      ],
+      this.rows as unknown as Record<string, unknown>[],
+    );
+    this.toast.success(this.i18n.instant('COMMON.EXPORT_SUCCESS'));
   }
 
   openDetail(u: RbacStaffUser, event?: Event): void {

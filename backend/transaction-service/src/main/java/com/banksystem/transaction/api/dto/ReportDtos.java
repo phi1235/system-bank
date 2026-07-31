@@ -32,6 +32,17 @@ public final class ReportDtos {
       BigDecimal feeAmount,
       BigDecimal avgCompletedAmount) {}
 
+  public record ExportReportRow(
+      String id,
+      String createdAt,
+      String fromAccountId,
+      String toAccountNumber,
+      BigDecimal amount,
+      BigDecimal feeAmount,
+      String currency,
+      String status,
+      String description) {}
+
   public record TransactionReportResponse(
       LocalDate from,
       LocalDate to,

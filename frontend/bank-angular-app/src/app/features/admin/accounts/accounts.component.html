@@ -44,6 +44,11 @@
       <button mat-stroked-button type="button" (click)="clearFilters()" [disabled]="loading" class="clear-btn">
         {{ 'ADMIN.CLEAR' | translate }}
       </button>
+
+      <button mat-flat-button color="accent" type="button" (click)="exportCsv()" [disabled]="loading || !rows.length" class="export-btn">
+        <mat-icon>file_download</mat-icon>
+        {{ 'COMMON.EXPORT_CSV' | translate }}
+      </button>
     </form>
 
     <div class="meta-row">
