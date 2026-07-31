@@ -102,7 +102,7 @@ class TransactionReportMapperIntegrationTest {
 
   @Test
   void summaryFiltersBySourceAccountViaUuidCast() {
-    ReportSummaryRow s = mapper.summary(FROM_TS, TO_TS, ACCOUNT_A.toString());
+    ReportSummaryRow s = mapper.summary(FROM_TS, TO_TS, ACCOUNT_A);
 
     assertEquals(3, s.totalCount());
     assertEquals(2, s.completedCount());

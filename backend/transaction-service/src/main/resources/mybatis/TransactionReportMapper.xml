@@ -14,8 +14,8 @@
 
   <sql id="reportFilter">
     t.created_at &gt;= #{fromTs} AND t.created_at &lt; #{toTs}
-    <if test="fromAccountId != null and fromAccountId != ''">
-      AND t.from_account_id = #{fromAccountId}::uuid
+    <if test="fromAccountId != null">
+      AND t.from_account_id = #{fromAccountId}
     </if>
   </sql>
 

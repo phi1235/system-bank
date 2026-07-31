@@ -60,7 +60,7 @@ public class TransactionReportService {
           "Range must not exceed " + MAX_RANGE_DAYS + " days",
           HttpStatus.BAD_REQUEST);
     }
-    String fromAccountId = normalizeAccountId(accountId);
+    UUID fromAccountId = normalizeAccountId(accountId);
     int limit = top == null ? DEFAULT_TOP : Math.min(Math.max(top, 1), MAX_TOP);
 
     // Half-open instant range covering whole banking days: [from 00:00, to+1 00:00).
@@ -93,12 +93,12 @@ public class TransactionReportService {
         topAccounts);
   }
 
-  private String normalizeAccountId(String accountId) {
+  private UUID normalizeAccountId(String accountId) {
     if (accountId == null || accountId.isBlank()) {
       return null;
     }
     try {
-      return UUID.fromString(accountId.trim()).toString();
+      return UUID.fromString(accountId.trim());
     } catch (IllegalArgumentException e) {
       throw new BusinessException(
           "REPORT_INVALID_ACCOUNT_ID", "accountId must be a UUID", HttpStatus.BAD_REQUEST);

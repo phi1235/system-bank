@@ -3,10 +3,10 @@ package com.banksystem.account.domain;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.banksystem.account.domain.entity.account.AccountEntity;
-import com.banksystem.account.domain.entity.deposit.DepositProductEntity;
-import com.banksystem.account.domain.entity.deposit.TermDepositEntity;
-import com.banksystem.account.domain.enums.deposit.TermDepositStatus;
+import com.banksystem.account.domain.AccountEntity;
+import com.banksystem.account.domain.DepositProductEntity;
+import com.banksystem.account.domain.TermDepositEntity;
+import com.banksystem.account.domain.TermDepositStatus;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
