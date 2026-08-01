@@ -43,7 +43,22 @@
     "COPY": "Copy",
     "EXPORT_CSV": "Export CSV",
     "EXPORTING": "Exporting...",
-    "EXPORT_SUCCESS": "CSV data exported successfully!"
+    "EXPORT_SUCCESS": "CSV data exported successfully!",
+    "EXPORT_CONFIRM_TITLE": "Confirm CSV Data Export",
+    "EXPORT_CONFIRM_MSG": "Are you sure you want to export report data to a CSV file? For large datasets, the export process may be queued for background processing.",
+    "EXPORT_CONFIRM_BTN": "Confirm Export",
+    "EXPORT_CANCEL_TITLE": "Confirm Export Cancellation",
+    "EXPORT_CANCEL_MSG": "Are you sure you want to cancel this CSV export task?",
+    "EXPORT_CANCELLED": "CSV export task cancelled.",
+    "EXPORT_QUEUE_TITLE": "Data Export Queue",
+    "EXPORT_QUEUED": "Waiting in queue...",
+    "EXPORT_CANCEL_BTN": "Cancel Export",
+    "COMPLETED": "Completed",
+    "CANCELLED": "Cancelled",
+    "PAUSED": "Paused",
+    "RESUME": "Resume",
+    "ERROR": "Task Error",
+    "DOWNLOAD": "Download"
   },
   "BILLS": {
     "TITLE": "Bill Payments & Top-up",

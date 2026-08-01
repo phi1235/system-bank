@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.data.domain.PageRequest;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -47,7 +48,7 @@ class ReconPersistenceIntegrationTest {
 
     List<ReconRunEntity> page =
         runRepository
-            .findAllByOrderByStartedAtDesc(org.springframework.data.domain.PageRequest.of(0, 10))
+            .findAllByOrderByStartedAtDesc(PageRequest.of(0, 10))
             .getContent();
     assertEquals(newer.getId(), page.get(0).getId());
     assertEquals(older.getId(), page.get(1).getId());

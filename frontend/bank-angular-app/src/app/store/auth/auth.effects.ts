@@ -12,6 +12,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { TokenService } from '../../core/services/token.service';
 import { AuthActions } from './auth.actions';
 
+import { ExportQueueService } from '../../core/services/export-queue.service';
+
 @Injectable()
 export class AuthEffects {
   private readonly actions$ = inject(Actions);
@@ -20,6 +22,7 @@ export class AuthEffects {
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
   private readonly i18n = inject(TranslateService);
+  private readonly exportQueue = inject(ExportQueueService);
 
   bootstrap$ = createEffect(() =>
     this.actions$.pipe(
@@ -112,6 +115,7 @@ export class AuthEffects {
           const roles = user.roles || [];
           const permissions = user.permissions || [];
           const staff = !!user.staff || isStaffUser(roles, permissions);
+          this.exportQueue.reloadUserTasks();
           if (staff && (this.router.url.includes('/admin') || this.router.url.startsWith('/admin/login'))) {
             this.router.navigateByUrl('/admin');
             return;
@@ -204,6 +208,7 @@ export class AuthEffects {
           map(() => AuthActions.logoutDone()),
           catchError(() => of(AuthActions.logoutDone())),
           tap(() => {
+            this.exportQueue.clearTasksOnLogout();
             this.tokens.clear();
             this.router.navigateByUrl('/auth/login');
           }),

@@ -4,14 +4,14 @@
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button mat-button type="button" [mat-dialog-close]="false">
-    {{ data.cancelLabel || ('COMMON.CANCEL' | translate) }}
+    {{ data.cancelText || data.cancelLabel || ('COMMON.CANCEL' | translate) }}
   </button>
   <button
     mat-flat-button
     type="button"
-    [color]="data.destructive ? 'warn' : 'primary'"
+    [color]="(data.destructive || data.danger) ? 'warn' : 'primary'"
     [mat-dialog-close]="true"
   >
-    {{ data.confirmLabel || ('COMMON.OK' | translate) }}
+    {{ data.confirmText || data.confirmLabel || ('COMMON.OK' | translate) }}
   </button>
 </mat-dialog-actions>

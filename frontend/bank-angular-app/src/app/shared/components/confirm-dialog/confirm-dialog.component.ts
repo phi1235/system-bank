@@ -7,9 +7,12 @@ export interface ConfirmDialogData {
   title: string;
   message: string;
   confirmLabel?: string;
+  confirmText?: string;
   cancelLabel?: string;
+  cancelText?: string;
   /** When true, confirm button uses warn color (destructive). */
   destructive?: boolean;
+  danger?: boolean;
 }
 
 @Component({

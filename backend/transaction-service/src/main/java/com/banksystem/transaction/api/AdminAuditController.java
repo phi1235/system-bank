@@ -31,7 +31,7 @@ public class AdminAuditController {
   }
 
   @GetMapping
-  public ApiResponse<PageResponse<AuditResponse>> list(
+  public ApiResponse<?> list(
       @RequestParam(required = false) String action,
       @RequestParam(required = false) String resourceType,
       @RequestParam(required = false) String actorUserId,
@@ -41,10 +41,13 @@ public class AdminAuditController {
       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
           Instant to,
       @RequestParam(required = false) Integer page,
-      @RequestParam(required = false) Integer size) {
-    return ApiResponse.ok(
-        service.list(
-            AuditListQuery.of(action, resourceType, actorUserId, resourceId, from, to, page, size)));
+      @RequestParam(required = false) Integer size,
+      @RequestParam(required = false, defaultValue = "false") boolean noCount) {
+    AuditListQuery query = AuditListQuery.of(action, resourceType, actorUserId, resourceId, from, to, page, size);
+    if (noCount) {
+      return ApiResponse.ok(service.listSlice(query));
+    }
+    return ApiResponse.ok(service.list(query));
   }
 
   @GetMapping("/{id}")

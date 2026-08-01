@@ -20,6 +20,7 @@ import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import org.apache.ibatis.cursor.Cursor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -74,12 +75,17 @@ public class TransactionReportService {
     Instant fromTs = effectiveFrom.atStartOfDay(reportZone).toInstant();
     Instant toTs = effectiveTo.plusDays(1).atStartOfDay(reportZone).toInstant();
 
-    ReportSummaryRow summary = mapper.summary(fromTs, toTs, fromAccountId);
-    List<DailyVolumePoint> daily = mapper.dailyVolume(fromTs, toTs, reportZone.getId(), fromAccountId);
-    List<StatusBreakdownRow> byStatus = mapper.statusBreakdown(fromTs, toTs, fromAccountId);
-    // Ranking is meaningless when the report is already scoped to one source account.
-    List<TopAccountRow> topAccounts =
-        fromAccountId == null ? mapper.topSourceAccounts(fromTs, toTs, limit) : List.of();
+    var fSummary = CompletableFuture.supplyAsync(() -> mapper.summary(fromTs, toTs, fromAccountId));
+    var fDaily = CompletableFuture.supplyAsync(() -> mapper.dailyVolume(fromTs, toTs, reportZone.getId(), fromAccountId));
+    var fStatus = CompletableFuture.supplyAsync(() -> mapper.statusBreakdown(fromTs, toTs, fromAccountId));
+    var fTop = CompletableFuture.supplyAsync(() -> fromAccountId == null ? mapper.topSourceAccounts(fromTs, toTs, limit) : List.<TopAccountRow>of());
+
+    CompletableFuture.allOf(fSummary, fDaily, fStatus, fTop).join();
+
+    ReportSummaryRow summary = fSummary.join();
+    List<DailyVolumePoint> daily = fDaily.join();
+    List<StatusBreakdownRow> byStatus = fStatus.join();
+    List<TopAccountRow> topAccounts = fTop.join();
 
     double successRate =
         summary.totalCount() == 0 ? 0.0 : (double) summary.completedCount() / summary.totalCount();

@@ -19,7 +19,7 @@ public record AuditListQuery(
     int size) {
 
   public static final int DEFAULT_SIZE = 20;
-  public static final int MAX_SIZE = 100;
+  public static final int MAX_SIZE = 5000;
   public static final Instant EPOCH = Instant.EPOCH;
   public static final Instant FAR_FUTURE = Instant.parse("9999-12-31T23:59:59Z");
 

@@ -65,10 +65,12 @@
           </button>
         </form>
         <p class="hint">{{ 'ADMIN.TX_FILTER_HINT' | translate }}</p>
-        <p class="meta">{{ 'ADMIN.TX_TOTAL' | translate: { total: totalElements } }}</p>
       </mat-card>
 
       <mat-card class="table-card">
+        <div class="table-header-bar">
+          <span class="meta-badge">{{ 'ADMIN.TX_TOTAL' | translate: { total: totalElements } }}</span>
+        </div>
         @if (rows.length) {
           <div class="table-wrap">
             <table mat-table [dataSource]="rows" class="full">

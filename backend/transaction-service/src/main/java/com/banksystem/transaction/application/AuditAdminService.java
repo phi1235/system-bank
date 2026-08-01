@@ -52,6 +52,25 @@ public class AuditAdminService {
   }
 
   @Transactional(readOnly = true)
+  public List<AuditResponse> listSlice(AuditListQuery query) {
+    PageRequest pageable = PageRequest.of(query.page(), query.size());
+    org.springframework.data.domain.Slice<AuditLogEntity> slice =
+        repository.searchAdminSlice(
+            query.hasAction(),
+            query.action() == null ? "" : query.action(),
+            query.hasResourceType(),
+            query.resourceType() == null ? "" : query.resourceType(),
+            query.hasActor(),
+            query.actorUserId() == null ? new UUID(0L, 0L) : query.actorUserId(),
+            query.hasResourceId(),
+            query.resourceId() == null ? "" : query.resourceId(),
+            query.from(),
+            query.to(),
+            pageable);
+    return slice.getContent().stream().map(this::toResponse).toList();
+  }
+
+  @Transactional(readOnly = true)
   public AuditResponse get(UUID id) {
     AuditLogEntity entity =
         repository

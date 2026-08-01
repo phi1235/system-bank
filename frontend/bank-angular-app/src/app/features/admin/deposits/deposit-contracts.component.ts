@@ -17,7 +17,10 @@ import { ToastService } from '../../../core/services/toast.service';
 import { resolveHttpErrorMessage } from '../../../core/utils/http-error.util';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { MoneyVndPipe } from '../../../shared/pipes/money-vnd.pipe';
-import { exportToCsv } from '../../../core/utils/csv-export.util';
+import { exportToCsv, exportToCsvWithQueue } from '../../../core/utils/csv-export.util';
+import { ExportQueueService } from '../../../core/services/export-queue.service';
+import { MatDialog } from '@angular/material/dialog';
+import { ConfirmDialogComponent, ConfirmDialogData } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -91,25 +94,43 @@ export class AdminDepositContractsComponent implements OnInit {
     this.loadList();
   }
 
+  private readonly dialog = inject(MatDialog);
+  private readonly exportQueue = inject(ExportQueueService);
+
   exportCsv(): void {
     if (!this.rows.length) return;
-    exportToCsv(
-      `deposit_contracts_${new Date().toISOString().slice(0, 10)}`,
-      [
-        { key: 'ownerName', label: 'Owner' },
-        { key: 'sourceAccountNumber', label: 'Source Account' },
-        { key: 'productCode', label: 'Product Code' },
-        { key: 'tenorMonths', label: 'Tenor (Months)' },
-        { key: 'amount', label: 'Principal Amount' },
-        { key: 'rateBps', label: 'Rate (bps)' },
-        { key: 'accruedInterest', label: 'Accrued Interest' },
-        { key: 'openedAt', label: 'Opened At' },
-        { key: 'maturityDate', label: 'Maturity Date' },
-        { key: 'status', label: 'Status' },
-      ],
-      this.rows as unknown as Record<string, unknown>[],
-    );
-    this.toast.success(this.i18n.instant('COMMON.EXPORT_SUCCESS'));
+
+    const data: ConfirmDialogData = {
+      title: this.i18n.instant('COMMON.EXPORT_CONFIRM_TITLE'),
+      message: this.i18n.instant('COMMON.EXPORT_CONFIRM_MSG'),
+      confirmText: this.i18n.instant('COMMON.EXPORT_CONFIRM_BTN'),
+      cancelText: this.i18n.instant('COMMON.CANCEL'),
+    };
+
+    this.dialog
+      .open(ConfirmDialogComponent, { data, width: '460px' })
+      .afterClosed()
+      .subscribe((confirmed) => {
+        if (confirmed) {
+          exportToCsvWithQueue(
+            this.exportQueue,
+            'Deposit Contracts',
+            [
+              { key: 'ownerName', label: 'Owner' },
+              { key: 'sourceAccountNumber', label: 'Source Account' },
+              { key: 'productCode', label: 'Product Code' },
+              { key: 'tenorMonths', label: 'Tenor (Months)' },
+              { key: 'amount', label: 'Principal Amount' },
+              { key: 'rateBps', label: 'Rate (bps)' },
+              { key: 'accruedInterest', label: 'Accrued Interest' },
+              { key: 'openedAt', label: 'Opened At' },
+              { key: 'maturityDate', label: 'Maturity Date' },
+              { key: 'status', label: 'Status' },
+            ],
+            this.rows as unknown as Record<string, unknown>[],
+          );
+        }
+      });
   }
 
   loadList(): void {

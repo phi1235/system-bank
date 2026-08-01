@@ -1,0 +1,111 @@
+@if (isLoggedIn && (exportQueue.tasks$ | async)?.length) {
+  <div class="export-widget-container" [class.collapsed]="!isExpanded">
+    <!-- Header bar -->
+    <div class="widget-header" (click)="toggleExpand()">
+      <div class="header-left">
+        <mat-icon class="header-icon">cloud_download</mat-icon>
+        <span class="header-title">{{ 'COMMON.EXPORT_QUEUE_TITLE' | translate }}</span>
+        @if (exportQueue.activeTasksCount > 0) {
+          <span class="active-badge">{{ exportQueue.activeTasksCount }}</span>
+        }
+      </div>
+      <div class="header-right">
+        <button mat-icon-button type="button" class="toggle-btn" (click)="toggleExpand(); $event.stopPropagation()">
+          <mat-icon>{{ isExpanded ? 'keyboard_arrow_down' : 'keyboard_arrow_up' }}</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    <!-- Task list -->
+    @if (isExpanded) {
+      <div class="widget-body">
+        @for (task of (exportQueue.tasks$ | async); track task.id) {
+          <div class="task-card" [class.task-processing]="task.status === 'PROCESSING'" [class.task-done]="task.status === 'COMPLETED'">
+            <div class="task-main">
+              <div class="task-info">
+                <span class="task-name">{{ task.name }}</span>
+                <span class="task-meta">
+                  @if (task.status === 'QUEUED') {
+                    <span class="status-queued">⏳ {{ 'COMMON.EXPORT_QUEUED' | translate }}</span>
+                  } @else if (task.status === 'PROCESSING') {
+                    {{ task.processedRows | number }} / {{ task.totalRows > 0 ? (task.totalRows | number) : '…' }} dòng ({{ task.progress }}%)
+                  } @else if (task.status === 'PAUSED') {
+                    <span class="status-paused">⏸ {{ 'COMMON.PAUSED' | translate }} ({{ task.processedRows | number }} / {{ task.totalRows > 0 ? (task.totalRows | number) : '…' }} dòng)</span>
+                  } @else if (task.status === 'COMPLETED') {
+                    <span class="status-done">✓ {{ 'COMMON.COMPLETED' | translate }} ({{ task.processedRows | number }} dòng)</span>
+                  } @else if (task.status === 'CANCELLED') {
+                    <span class="status-cancelled">✕ {{ 'COMMON.CANCELLED' | translate }}</span>
+                  } @else {
+                    <span class="status-error">{{ 'COMMON.ERROR' | translate }}</span>
+                  }
+                </span>
+              </div>
+
+              <!-- Action buttons -->
+              <div class="task-actions">
+                @if (task.status === 'PAUSED') {
+                  <button
+                    mat-icon-button
+                    color="primary"
+                    type="button"
+                    class="action-btn resume-btn"
+                    (click)="resumeTask(task, $event)"
+                    [matTooltip]="'COMMON.RESUME' | translate"
+                  >
+                    <mat-icon>play_arrow</mat-icon>
+                  </button>
+                } @else if (task.status === 'PROCESSING' || task.status === 'QUEUED') {
+                  <button
+                    mat-icon-button
+                    color="warn"
+                    type="button"
+                    class="action-btn cancel-btn"
+                    (click)="cancelTask(task, $event)"
+                    [matTooltip]="'COMMON.EXPORT_CANCEL_BTN' | translate"
+                  >
+                    <mat-icon>cancel</mat-icon>
+                  </button>
+                } @else if (task.status === 'COMPLETED') {
+                  <button
+                    mat-icon-button
+                    color="primary"
+                    type="button"
+                    class="action-btn download-btn"
+                    (click)="downloadTask(task, $event)"
+                    [matTooltip]="'COMMON.DOWNLOAD' | translate"
+                  >
+                    <mat-icon>file_download</mat-icon>
+                  </button>
+                  <button
+                    mat-icon-button
+                    type="button"
+                    class="action-btn remove-btn"
+                    (click)="removeTask(task, $event)"
+                    [matTooltip]="'COMMON.CLOSE' | translate"
+                  >
+                    <mat-icon>close</mat-icon>
+                  </button>
+                } @else {
+                  <button
+                    mat-icon-button
+                    type="button"
+                    class="action-btn remove-btn"
+                    (click)="removeTask(task, $event)"
+                    [matTooltip]="'COMMON.CLOSE' | translate"
+                  >
+                    <mat-icon>close</mat-icon>
+                  </button>
+                }
+              </div>
+            </div>
+
+            <!-- Progress bar -->
+            @if (task.status === 'PROCESSING') {
+              <mat-progress-bar mode="determinate" [value]="task.progress" class="task-progress-bar"></mat-progress-bar>
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+}

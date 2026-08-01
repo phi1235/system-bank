@@ -122,6 +122,47 @@ public class AdminAccountService {
   }
 
   @Transactional(readOnly = true)
+  public List<AccountResponse> adminListSlice(AdminAccountSearchQuery query) {
+    String status = query.status();
+    String accountType = query.accountType();
+    boolean hasQ = query.q() != null;
+    String q = hasQ ? query.q() : "";
+    UUID userId = null;
+    UUID accountId = null;
+    if (hasQ) {
+      UUID asUuid = tryParseUuid(query.q());
+      if (asUuid != null) {
+        userId = asUuid;
+        accountId = asUuid;
+      }
+    }
+
+    boolean hasStatus = status != null;
+    boolean hasType = accountType != null;
+    boolean hasUserId = userId != null;
+    boolean hasAccountId = accountId != null;
+
+    UUID boundUserId = hasUserId ? userId : new UUID(0L, 0L);
+    UUID boundAccountId = hasAccountId ? accountId : new UUID(0L, 0L);
+    String boundStatus = hasStatus ? status : "";
+    String boundType = hasType ? accountType : "";
+
+    org.springframework.data.domain.Slice<AccountEntity> slice = accountRepository.adminSearchSlice(
+        hasQ,
+        q,
+        hasStatus,
+        boundStatus,
+        hasType,
+        boundType,
+        hasUserId,
+        boundUserId,
+        hasAccountId,
+        boundAccountId,
+        PageRequest.of(query.page(), query.size()));
+    return slice.getContent().stream().map(mapper::toResponse).toList();
+  }
+
+  @Transactional(readOnly = true)
   public AccountResponse get(UUID id) {
     return mapper.toResponse(access.require(id));
   }

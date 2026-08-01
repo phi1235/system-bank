@@ -28,7 +28,9 @@ import { TransferDetailDialogComponent } from '../../../shared/components/transf
 import { FriendlyTransferErrorPipe } from '../../../shared/pipes/friendly-transfer-error.pipe';
 import { TransferStatusPipe } from '../../../shared/pipes/transfer-status.pipe';
 import { MoneyVndPipe } from '../../../shared/pipes/money-vnd.pipe';
-import { exportToCsv } from '../../../core/utils/csv-export.util';
+import { exportToCsv, exportToCsvWithQueue } from '../../../core/utils/csv-export.util';
+import { ExportQueueService } from '../../../core/services/export-queue.service';
+import { ConfirmDialogComponent, ConfirmDialogData } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { TransfersActions } from '../../../store/transfers/transfers.actions';
 import {
   selectTransferHistory,
@@ -147,23 +149,40 @@ export class HistoryComponent implements OnInit {
     return canRetryTransfer(row?.status);
   }
 
+  private readonly exportQueue = inject(ExportQueueService);
+
   exportCsv(): void {
     this.rows$.subscribe((rows) => {
       if (!rows || !rows.length) return;
-      exportToCsv(
-        `transfer_history_${new Date().toISOString().slice(0, 10)}`,
-        [
-          { key: 'createdAt', label: 'Time' },
-          { key: 'transactionId', label: 'Transaction ID' },
-          { key: 'fromAccountId', label: 'From Account' },
-          { key: 'toAccountNumber', label: 'To Account' },
-          { key: 'amount', label: 'Amount' },
-          { key: 'status', label: 'Status' },
-          { key: 'description', label: 'Description' },
-        ],
-        rows as unknown as Record<string, unknown>[],
-      );
-      this.toast.success(this.i18n.instant('COMMON.EXPORT_SUCCESS'));
+
+      const data: ConfirmDialogData = {
+        title: this.i18n.instant('COMMON.EXPORT_CONFIRM_TITLE'),
+        message: this.i18n.instant('COMMON.EXPORT_CONFIRM_MSG'),
+        confirmText: this.i18n.instant('COMMON.EXPORT_CONFIRM_BTN'),
+        cancelText: this.i18n.instant('COMMON.CANCEL'),
+      };
+
+      this.dialog
+        .open(ConfirmDialogComponent, { data, width: '460px' })
+        .afterClosed()
+        .subscribe((confirmed) => {
+          if (confirmed) {
+            exportToCsvWithQueue(
+              this.exportQueue,
+              'Transfer History',
+              [
+                { key: 'createdAt', label: 'Time' },
+                { key: 'transactionId', label: 'Transaction ID' },
+                { key: 'fromAccountId', label: 'From Account' },
+                { key: 'toAccountNumber', label: 'To Account' },
+                { key: 'amount', label: 'Amount' },
+                { key: 'status', label: 'Status' },
+                { key: 'description', label: 'Description' },
+              ],
+              rows as unknown as Record<string, unknown>[],
+            );
+          }
+        });
     }).unsubscribe();
   }
 

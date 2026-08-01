@@ -18,7 +18,9 @@ import { ToastService } from '../../../core/services/toast.service';
 import { resolveHttpErrorMessage } from '../../../core/utils/http-error.util';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { AuditDetailDialogComponent } from '../../../shared/components/audit-detail-dialog/audit-detail-dialog.component';
-import { exportToCsv } from '../../../core/utils/csv-export.util';
+import { exportToCsv, exportToCsvWithQueue } from '../../../core/utils/csv-export.util';
+import { ExportQueueService } from '../../../core/services/export-queue.service';
+import { ConfirmDialogComponent, ConfirmDialogData } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'app-admin-audit',
@@ -167,22 +169,67 @@ export class AdminAuditComponent implements OnInit {
     this.load();
   }
 
+  private readonly exportQueue = inject(ExportQueueService);
+
   exportCsv(): void {
-    if (!this.rows.length) return;
-    exportToCsv(
-      `audit_logs_${new Date().toISOString().slice(0, 10)}`,
-      [
-        { key: 'createdAt', label: 'Time' },
-        { key: 'action', label: 'Action' },
-        { key: 'actorUserId', label: 'Actor User ID' },
-        { key: 'resourceType', label: 'Resource Type' },
-        { key: 'resourceId', label: 'Resource ID' },
-        { key: 'ip', label: 'IP Address' },
-        { key: 'metadata', label: 'Metadata' },
-      ],
-      this.rows as unknown as Record<string, unknown>[],
-    );
-    this.toast.success(this.i18n.instant('COMMON.EXPORT_SUCCESS'));
+    const data: ConfirmDialogData = {
+      title: this.i18n.instant('COMMON.EXPORT_CONFIRM_TITLE'),
+      message: this.i18n.instant('COMMON.EXPORT_CONFIRM_MSG'),
+      confirmText: this.i18n.instant('COMMON.EXPORT_CONFIRM_BTN'),
+      cancelText: this.i18n.instant('COMMON.CANCEL'),
+    };
+
+    this.dialog
+      .open(ConfirmDialogComponent, { data, width: '460px' })
+      .afterClosed()
+      .subscribe((confirmed) => {
+        if (confirmed) {
+          this.startAsyncExportAudit();
+        }
+      });
+  }
+
+  private startAsyncExportAudit(): void {
+    const v = this.form.getRawValue();
+    const filters = {
+      action: v.action || undefined,
+      resourceType: v.resourceType || undefined,
+      actorUserId: v.actorUsername.trim() || undefined,
+      resourceId: v.accountNo.trim() || undefined,
+      from: this.toIsoStart(v.from),
+      to: this.toIsoEnd(v.to),
+    };
+
+    this.api.auditLogs(0, 1, filters).subscribe({
+      next: (initial) => {
+        const totalElements = initial.totalElements ?? 0;
+        if (totalElements === 0) {
+          this.toast.info(this.i18n.instant('COMMON.NO_DATA_TO_EXPORT') || 'Không có dữ liệu để xuất.');
+          return;
+        }
+
+        const headers = [
+          { key: 'createdAt', label: 'Time' },
+          { key: 'action', label: 'Action' },
+          { key: 'actorUserId', label: 'Actor User ID' },
+          { key: 'resourceType', label: 'Resource Type' },
+          { key: 'ip', label: 'IP Address' },
+        ];
+
+        this.exportQueue.enqueueChunkedExport(
+          'Audit Logs',
+          totalElements,
+          (page, size) => this.api.auditLogs(page, size, filters),
+          headers,
+          2000,
+          'audit',
+          filters,
+        );
+      },
+      error: (err) => {
+        this.toast.error(resolveHttpErrorMessage(err, this.i18n));
+      },
+    });
   }
 
   load(): void {

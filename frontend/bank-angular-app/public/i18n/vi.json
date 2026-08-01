@@ -43,7 +43,22 @@
     "COPY": "Sao chép",
     "EXPORT_CSV": "Xuất CSV",
     "EXPORTING": "Đang xuất...",
-    "EXPORT_SUCCESS": "Xuất dữ liệu CSV thành công!"
+    "EXPORT_SUCCESS": "Xuất dữ liệu CSV thành công!",
+    "EXPORT_CONFIRM_TITLE": "Xác nhận xuất dữ liệu CSV",
+    "EXPORT_CONFIRM_MSG": "Bạn có chắc chắn muốn xuất dữ liệu báo cáo ra tệp CSV không? Đối với các tệp dữ liệu lớn, quá trình xuất có thể được đưa vào hàng đợi xử lý ngầm.",
+    "EXPORT_CONFIRM_BTN": "Xác nhận xuất",
+    "EXPORT_CANCEL_TITLE": "Xác nhận hủy xuất file",
+    "EXPORT_CANCEL_MSG": "Bạn có chắc chắn muốn hủy tác vụ xuất file CSV này không?",
+    "EXPORT_CANCELLED": "Đã hủy tác vụ xuất file CSV.",
+    "EXPORT_QUEUE_TITLE": "Hàng đợi Xuất dữ liệu",
+    "EXPORT_QUEUED": "Chờ trong hàng đợi...",
+    "EXPORT_CANCEL_BTN": "Hủy xuất",
+    "COMPLETED": "Hoàn tất",
+    "CANCELLED": "Đã hủy",
+    "PAUSED": "Tạm dừng",
+    "RESUME": "Tải tiếp",
+    "ERROR": "Lỗi tác vụ",
+    "DOWNLOAD": "Tải về"
   },
   "BILLS": {
     "TITLE": "Thanh toán Hóa đơn & Nạp tiền",

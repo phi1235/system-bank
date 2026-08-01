@@ -36,13 +36,17 @@ public class AdminAccountController {
 
   @GetMapping
   @RequirePermission("accounts:lookup:view")
-  public ApiResponse<PageResponse<AccountResponse>> list(
+  public ApiResponse<?> list(
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "20") int size,
       @RequestParam(required = false) String q,
       @RequestParam(required = false) String status,
-      @RequestParam(required = false) String accountType) {
+      @RequestParam(required = false) String accountType,
+      @RequestParam(required = false, defaultValue = "false") boolean noCount) {
     AdminAccountSearchQuery query = AdminAccountSearchQuery.of(q, status, accountType, page, size);
+    if (noCount) {
+      return ApiResponse.ok(service.adminListSlice(query));
+    }
     return ApiResponse.ok(service.adminList(query));
   }
 
