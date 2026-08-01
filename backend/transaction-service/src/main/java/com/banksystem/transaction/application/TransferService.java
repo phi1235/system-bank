@@ -26,6 +26,8 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
+import com.banksystem.transaction.application.query.AdminTransferListQuery;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -263,8 +265,7 @@ public class TransferService {
   }
 
   @Transactional(readOnly = true)
-  public PageResponse<TransferResponse> adminList(
-      com.banksystem.transaction.application.query.AdminTransferListQuery query) {
+  public PageResponse<TransferResponse> adminList(AdminTransferListQuery query) {
     PageRequest pageable = PageRequest.of(query.page(), query.size());
     Page<TransferOrderEntity> p =
         transferOrderRepository.adminSearch(
@@ -278,6 +279,25 @@ public class TransferService {
             query.to(),
             pageable);
     return mapPage(p);
+  }
+
+  @Transactional(readOnly = true)
+  public List<TransferResponse> adminListSlice(AdminTransferListQuery query) {
+    PageRequest pageable = PageRequest.of(query.page(), query.size());
+    Slice<TransferOrderEntity> slice =
+        transferOrderRepository.adminSearchSlice(
+            query.hasStatus(),
+            query.hasStatus() ? query.status() : TransferStatus.PENDING,
+            query.hasTransferId(),
+            query.hasTransferId() ? query.transferId() : new UUID(0L, 0L),
+            query.hasQ(),
+            query.hasQ() ? query.q() : "",
+            query.from(),
+            query.to(),
+            query.hasLastCreatedAt(),
+            query.hasLastCreatedAt() ? query.lastCreatedAt() : Instant.EPOCH,
+            pageable);
+    return slice.getContent().stream().map(this::toResponse).toList();
   }
 
   private PageResponse<TransferResponse> mapPage(Page<TransferOrderEntity> p) {

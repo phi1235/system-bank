@@ -28,7 +28,8 @@ import { resolveHttpErrorMessage } from '../../../core/utils/http-error.util';
 import { copyText } from '../../../core/utils/transfer-receipt.util';
 import { Account } from '../../../core/models/domain.model';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { exportToCsv } from '../../../core/utils/csv-export.util';
+import { exportToCsv, exportToCsvWithQueue } from '../../../core/utils/csv-export.util';
+import { ExportQueueService } from '../../../core/services/export-queue.service';
 import { Store } from '@ngrx/store';
 import { selectHasPermission } from '../../../store/auth/auth.selectors';
 import { filter, switchMap } from 'rxjs';
@@ -158,22 +159,39 @@ export class AdminAccountsComponent implements OnInit {
     this.load();
   }
 
+  private readonly exportQueue = inject(ExportQueueService);
+
   exportCsv(): void {
     if (!this.rows.length) return;
-    exportToCsv(
-      `accounts_${new Date().toISOString().slice(0, 10)}`,
-      [
-        { key: 'accountNumber', label: 'Account Number (STK)' },
-        { key: 'userId', label: 'Owner User ID' },
-        { key: 'accountType', label: 'Account Type' },
-        { key: 'balance', label: 'Balance' },
-        { key: 'currency', label: 'Currency' },
-        { key: 'status', label: 'Status' },
-        { key: 'createdAt', label: 'Created At' },
-      ],
-      this.rows as unknown as Record<string, unknown>[],
-    );
-    this.toast.success(this.i18n.instant('COMMON.EXPORT_SUCCESS'));
+
+    const data: ConfirmDialogData = {
+      title: this.i18n.instant('COMMON.EXPORT_CONFIRM_TITLE'),
+      message: this.i18n.instant('COMMON.EXPORT_CONFIRM_MSG'),
+      confirmText: this.i18n.instant('COMMON.EXPORT_CONFIRM_BTN'),
+      cancelText: this.i18n.instant('COMMON.CANCEL'),
+    };
+
+    this.dialog
+      .open(ConfirmDialogComponent, { data, width: '460px' })
+      .afterClosed()
+      .subscribe((confirmed) => {
+        if (confirmed) {
+          exportToCsvWithQueue(
+            this.exportQueue,
+            'Accounts',
+            [
+              { key: 'accountNumber', label: 'Account Number (STK)' },
+              { key: 'userId', label: 'Owner User ID' },
+              { key: 'accountType', label: 'Account Type' },
+              { key: 'balance', label: 'Balance' },
+              { key: 'currency', label: 'Currency' },
+              { key: 'status', label: 'Status' },
+              { key: 'createdAt', label: 'Created At' },
+            ],
+            this.rows as unknown as Record<string, unknown>[],
+          );
+        }
+      });
   }
 
   select(account: Account): void {

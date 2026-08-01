@@ -21,6 +21,8 @@ import { BankApiService } from '../../../core/services/bank-api.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { resolveHttpErrorMessage } from '../../../core/utils/http-error.util';
 import { Account, LedgerEntry } from '../../../core/models/domain.model';
+import { MatDialog } from '@angular/material/dialog';
+import { ConfirmDialogComponent, ConfirmDialogData } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'app-statement',
@@ -191,6 +193,8 @@ export class StatementComponent implements OnInit {
     }
   }
 
+  private readonly dialog = inject(MatDialog);
+
   exportCsv(): void {
     if (!this.accountId || this.exporting) {
       return;
@@ -198,32 +202,47 @@ export class StatementComponent implements OnInit {
     if (!this.validateRange()) {
       return;
     }
-    this.exporting = true;
-    const f = this.filter.getRawValue();
-    this.api
-      .exportAccountStatementCsv(this.accountId, {
-        entryType: f.entryType || undefined,
-        from: this.toInstantStart(f.from),
-        to: this.toInstantEnd(f.to),
-      })
-      .subscribe({
-        next: (blob) => {
-          this.exporting = false;
-          const name =
-            (this.account?.accountNumber
-              ? `statement-${this.account.accountNumber}`
-              : `statement-${this.accountId}`) + '.csv';
-          this.downloadBlob(blob, name);
-          this.toast.success(this.i18n.instant('CUSTOMER.STATEMENT_EXPORT_OK'));
-        },
-        error: (err) => {
-          this.exporting = false;
-          this.toast.error(
-            err instanceof HttpErrorResponse
-              ? resolveHttpErrorMessage(err, this.i18n)
-              : this.i18n.instant('CUSTOMER.STATEMENT_EXPORT_FAIL'),
-          );
-        },
+
+    const data: ConfirmDialogData = {
+      title: this.i18n.instant('COMMON.EXPORT_CONFIRM_TITLE'),
+      message: this.i18n.instant('COMMON.EXPORT_CONFIRM_MSG'),
+      confirmText: this.i18n.instant('COMMON.EXPORT_CONFIRM_BTN'),
+      cancelText: this.i18n.instant('COMMON.CANCEL'),
+    };
+
+    this.dialog
+      .open(ConfirmDialogComponent, { data, width: '460px' })
+      .afterClosed()
+      .subscribe((confirmed) => {
+        if (confirmed) {
+          this.exporting = true;
+          const f = this.filter.getRawValue();
+          this.api
+            .exportAccountStatementCsv(this.accountId, {
+              entryType: f.entryType || undefined,
+              from: this.toInstantStart(f.from),
+              to: this.toInstantEnd(f.to),
+            })
+            .subscribe({
+              next: (blob) => {
+                this.exporting = false;
+                const name =
+                  (this.account?.accountNumber
+                    ? `statement-${this.account.accountNumber}`
+                    : `statement-${this.accountId}`) + '.csv';
+                this.downloadBlob(blob, name);
+                this.toast.success(this.i18n.instant('CUSTOMER.STATEMENT_EXPORT_OK'));
+              },
+              error: (err) => {
+                this.exporting = false;
+                this.toast.error(
+                  err instanceof HttpErrorResponse
+                    ? resolveHttpErrorMessage(err, this.i18n)
+                    : this.i18n.instant('CUSTOMER.STATEMENT_EXPORT_FAIL'),
+                );
+              },
+            });
+        }
       });
   }
 

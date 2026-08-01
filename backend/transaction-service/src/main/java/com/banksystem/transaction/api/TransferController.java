@@ -9,6 +9,7 @@ import com.banksystem.transaction.api.dto.TransferDtos.TransferQuoteResponse;
 import com.banksystem.transaction.api.dto.TransferDtos.TransferRequest;
 import com.banksystem.transaction.api.dto.TransferDtos.TransferResponse;
 import com.banksystem.transaction.application.TransferService;
+import com.banksystem.transaction.application.query.AdminTransferListQuery;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.math.BigDecimal;
@@ -82,7 +83,7 @@ public class TransferController {
 
   @GetMapping({"/admin/transfers", "/transactions/admin/transfers"})
   @RequirePermission("transactions:list:view")
-  public ApiResponse<PageResponse<TransferResponse>> adminTransfers(
+  public ApiResponse<?> adminTransfers(
       @RequestParam(required = false) String status,
       @RequestParam(required = false) String transferId,
       @RequestParam(required = false) String q,
@@ -91,11 +92,16 @@ public class TransferController {
       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
           Instant to,
       @RequestParam(required = false) Integer page,
-      @RequestParam(required = false) Integer size) {
-    return ApiResponse.ok(
-        transferService.adminList(
-            com.banksystem.transaction.application.query.AdminTransferListQuery.of(
-                status, transferId, q, from, to, page, size)));
+      @RequestParam(required = false) Integer size,
+      @RequestParam(required = false, defaultValue = "false") boolean noCount,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+          Instant lastCreatedAt) {
+    var query = AdminTransferListQuery.of(
+        status, transferId, q, from, to, page, size, lastCreatedAt);
+    if (noCount) {
+      return ApiResponse.ok(transferService.adminListSlice(query));
+    }
+    return ApiResponse.ok(transferService.adminList(query));
   }
 
   private String clientIp(HttpServletRequest request) {

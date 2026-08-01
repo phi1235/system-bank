@@ -16,10 +16,11 @@ public record AdminTransferListQuery(
     Instant from,
     Instant to,
     int page,
-    int size) {
+    int size,
+    Instant lastCreatedAt) {
 
   public static final int DEFAULT_SIZE = 20;
-  public static final int MAX_SIZE = 100;
+  public static final int MAX_SIZE = 5000;
   public static final Instant EPOCH = Instant.EPOCH;
   public static final Instant FAR_FUTURE = Instant.parse("9999-12-31T23:59:59Z");
 
@@ -31,6 +32,18 @@ public record AdminTransferListQuery(
       Instant to,
       Integer page,
       Integer size) {
+    return of(status, transferId, q, from, to, page, size, null);
+  }
+
+  public static AdminTransferListQuery of(
+      String status,
+      String transferId,
+      String q,
+      Instant from,
+      Instant to,
+      Integer page,
+      Integer size,
+      Instant lastCreatedAt) {
     Instant fromTs = from == null ? EPOCH : from;
     Instant toTs = to == null ? FAR_FUTURE : to;
     if (fromTs.isAfter(toTs)) {
@@ -56,7 +69,12 @@ public record AdminTransferListQuery(
         fromTs,
         toTs,
         p,
-        s);
+        s,
+        lastCreatedAt);
+  }
+
+  public boolean hasLastCreatedAt() {
+    return lastCreatedAt != null;
   }
 
   public boolean hasStatus() {

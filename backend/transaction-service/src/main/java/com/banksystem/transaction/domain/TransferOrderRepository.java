@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -64,6 +65,31 @@ public interface TransferOrderRepository extends JpaRepository<TransferOrderEnti
       @Param("q") String q,
       @Param("fromTs") Instant fromTs,
       @Param("toTs") Instant toTs,
+      Pageable pageable);
+
+  @Query("""
+      SELECT t FROM TransferOrderEntity t
+      WHERE (:hasStatus = false OR t.status = :status)
+        AND (:hasTransferId = false OR t.id = :transferId)
+        AND (:hasQ = false
+          OR LOWER(t.toAccountNumber) LIKE LOWER(CONCAT('%', :q, '%'))
+          OR LOWER(COALESCE(t.description, '')) LIKE LOWER(CONCAT('%', :q, '%')))
+        AND t.createdAt >= :fromTs
+        AND t.createdAt <= :toTs
+        AND (:hasLastTs = false OR t.createdAt < :lastTs)
+      ORDER BY t.createdAt DESC
+      """)
+  Slice<TransferOrderEntity> adminSearchSlice(
+      @Param("hasStatus") boolean hasStatus,
+      @Param("status") TransferStatus status,
+      @Param("hasTransferId") boolean hasTransferId,
+      @Param("transferId") UUID transferId,
+      @Param("hasQ") boolean hasQ,
+      @Param("q") String q,
+      @Param("fromTs") Instant fromTs,
+      @Param("toTs") Instant toTs,
+      @Param("hasLastTs") boolean hasLastTs,
+      @Param("lastTs") Instant lastTs,
       Pageable pageable);
 
   @Query("""

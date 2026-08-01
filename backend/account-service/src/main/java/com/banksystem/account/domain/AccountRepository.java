@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -37,6 +38,31 @@ public interface AccountRepository extends JpaRepository<AccountEntity, UUID> {
       ORDER BY a.updatedAt DESC
       """)
   Page<AccountEntity> adminSearch(
+      @Param("hasQ") boolean hasQ,
+      @Param("q") String q,
+      @Param("hasStatus") boolean hasStatus,
+      @Param("status") String status,
+      @Param("hasType") boolean hasType,
+      @Param("accountType") String accountType,
+      @Param("hasUserId") boolean hasUserId,
+      @Param("userId") UUID userId,
+      @Param("hasAccountId") boolean hasAccountId,
+      @Param("accountId") UUID accountId,
+      Pageable pageable);
+
+  @Query("""
+      SELECT a FROM AccountEntity a
+      WHERE (:hasStatus = false OR a.status = :status)
+        AND (:hasType = false OR a.accountType = :accountType)
+        AND (
+          :hasQ = false
+          OR LOWER(a.accountNumber) LIKE LOWER(CONCAT('%', :q, '%'))
+          OR (:hasUserId = true AND a.userId = :userId)
+          OR (:hasAccountId = true AND a.id = :accountId)
+        )
+      ORDER BY a.updatedAt DESC
+      """)
+  Slice<AccountEntity> adminSearchSlice(
       @Param("hasQ") boolean hasQ,
       @Param("q") String q,
       @Param("hasStatus") boolean hasStatus,

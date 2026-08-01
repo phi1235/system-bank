@@ -481,6 +481,31 @@ export class BankApiService {
     });
   }
 
+  adminTransfersExportChunks(
+    page = 0,
+    size = 2000,
+    filters?: {
+      status?: string;
+      transferId?: string;
+      q?: string;
+      from?: string;
+      to?: string;
+      lastCreatedAt?: string;
+    },
+  ): Observable<Transfer[]> {
+    return this.api.get<Transfer[]>('/admin/transfers', {
+      page,
+      size,
+      noCount: true,
+      status: filters?.status,
+      transferId: filters?.transferId,
+      q: filters?.q,
+      from: filters?.from,
+      to: filters?.to,
+      lastCreatedAt: filters?.lastCreatedAt,
+    });
+  }
+
   /** Aggregated transfer report; dates as yyyy-MM-dd banking days (defaults: last 30 days). */
   adminTransactionReport(filters?: {
     from?: string;
@@ -535,11 +560,13 @@ export class BankApiService {
       resourceId?: string;
       from?: string;
       to?: string;
+      noCount?: boolean;
     },
   ): Observable<PageResponse<AuditLog>> {
     return this.api.get('/admin/audit-logs', {
       page,
       size,
+      noCount: filters?.noCount,
       action: filters?.action,
       resourceType: filters?.resourceType,
       actorUserId: filters?.actorUserId,

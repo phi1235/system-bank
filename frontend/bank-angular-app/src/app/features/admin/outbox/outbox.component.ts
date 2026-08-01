@@ -24,7 +24,8 @@ import {
 import { OutboxDetailDialogComponent } from '../../../shared/components/outbox-detail-dialog/outbox-detail-dialog.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { EnumLabelPipe } from '../../../shared/pipes/enum-label.pipe';
-import { exportToCsv } from '../../../core/utils/csv-export.util';
+import { exportToCsv, exportToCsvWithQueue } from '../../../core/utils/csv-export.util';
+import { ExportQueueService } from '../../../core/services/export-queue.service';
 
 @Component({
   selector: 'app-admin-outbox',
@@ -146,22 +147,40 @@ export class AdminOutboxComponent implements OnInit {
       });
   }
 
+  private readonly exportQueue = inject(ExportQueueService);
+
   exportCsv(): void {
     if (!this.rows.length) return;
-    exportToCsv(
-      `outbox_events_${new Date().toISOString().slice(0, 10)}`,
-      [
-        { key: 'createdAt', label: 'Time' },
-        { key: 'id', label: 'Event ID' },
-        { key: 'aggregateType', label: 'Aggregate Type' },
-        { key: 'aggregateId', label: 'Aggregate ID' },
-        { key: 'eventType', label: 'Event Type' },
-        { key: 'status', label: 'Status' },
-        { key: 'retryCount', label: 'Retry Count' },
-      ],
-      this.rows as unknown as Record<string, unknown>[],
-    );
-    this.toast.success(this.i18n.instant('COMMON.EXPORT_SUCCESS'));
+
+    const data: ConfirmDialogData = {
+      title: this.i18n.instant('COMMON.EXPORT_CONFIRM_TITLE'),
+      message: this.i18n.instant('COMMON.EXPORT_CONFIRM_MSG'),
+      confirmText: this.i18n.instant('COMMON.EXPORT_CONFIRM_BTN'),
+      cancelText: this.i18n.instant('COMMON.CANCEL'),
+    };
+
+    this.dialog
+      .open(ConfirmDialogComponent, { data, width: '460px' })
+      .afterClosed()
+      .subscribe((confirmed) => {
+        if (confirmed) {
+          exportToCsvWithQueue(
+            this.exportQueue,
+            'Outbox Events',
+            [
+              { key: 'createdAt', label: 'Time' },
+              { key: 'id', label: 'Event ID' },
+              { key: 'aggregateType', label: 'Aggregate Type' },
+              { key: 'aggregateId', label: 'Aggregate ID' },
+              { key: 'eventType', label: 'Event Type' },
+              { key: 'status', label: 'Status' },
+              { key: 'attemptCount', label: 'Attempt Count' },
+              { key: 'lastError', label: 'Last Error' },
+            ],
+            this.rows as unknown as Record<string, unknown>[],
+          );
+        }
+      });
   }
 
   openDetail(row: OutboxEvent): void {
