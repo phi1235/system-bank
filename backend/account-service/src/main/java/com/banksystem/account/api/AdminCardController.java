@@ -1,5 +1,6 @@
 package com.banksystem.account.api;
 
+import com.banksystem.account.api.dto.CardDtos.AdminCardFilterRequest;
 import com.banksystem.account.api.dto.CardDtos.AdminCardRow;
 import com.banksystem.account.api.dto.CardDtos.BatchApproveRequest;
 import com.banksystem.account.api.dto.CardDtos.BatchApproveResult;
@@ -13,11 +14,11 @@ import com.banksystem.common.security.UserContext;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -37,12 +38,8 @@ public class AdminCardController {
   /** Approval queue (default REQUESTED, oldest first) or browse by status. */
   @GetMapping
   @RequirePermission("accounts:lookup:view")
-  public ApiResponse<PageResponse<AdminCardRow>> list(
-      @RequestParam(required = false) String status,
-      @RequestParam(required = false) Integer page,
-      @RequestParam(required = false) Integer size,
-      @RequestParam(required = false) String q) {
-    return ApiResponse.ok(service.queue(status, page, size, q));
+  public ApiResponse<PageResponse<AdminCardRow>> list(@Valid @ModelAttribute AdminCardFilterRequest req) {
+    return ApiResponse.ok(service.queue(req));
   }
 
   @PostMapping("/{id}/approve")

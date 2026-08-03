@@ -1,5 +1,6 @@
 package com.banksystem.account.application;
 
+import com.banksystem.account.api.dto.CardDtos.AdminCardFilterRequest;
 import com.banksystem.account.api.dto.CardDtos.AdminCardRow;
 import com.banksystem.account.api.dto.CardDtos.BatchApproveResult;
 import com.banksystem.account.api.dto.CardDtos.CardResponse;
@@ -81,6 +82,11 @@ public class CardApprovalService {
     this.zone = ZoneId.of(zone);
     this.aesKey = aesKey;
     this.validityYears = validityYears;
+  }
+
+  @Transactional(readOnly = true)
+  public PageResponse<AdminCardRow> queue(AdminCardFilterRequest req) {
+    return queue(req.status(), req.page(), req.size(), req.q());
   }
 
   @Transactional(readOnly = true)

@@ -2,6 +2,7 @@ package com.banksystem.transaction.application;
 
 import com.banksystem.common.api.PageResponse;
 import com.banksystem.common.exception.BusinessException;
+import com.banksystem.transaction.api.dto.OutboxDtos.AdminOutboxFilterRequest;
 import com.banksystem.transaction.api.dto.OutboxDtos.OutboxCountsResponse;
 import com.banksystem.transaction.api.dto.OutboxDtos.OutboxEventResponse;
 import com.banksystem.transaction.application.query.OutboxListQuery;
@@ -32,6 +33,13 @@ public class OutboxAdminService {
     this.repository = repository;
     this.metrics = metrics;
     this.clock = clock;
+  }
+
+  @Transactional(readOnly = true)
+  public PageResponse<OutboxEventResponse> list(AdminOutboxFilterRequest req) {
+    OutboxListQuery query = OutboxListQuery.of(
+        req.status(), req.eventType(), req.eventId(), req.aggregateId(), req.q(), req.from(), req.to(), req.page(), req.size());
+    return list(query);
   }
 
   @Transactional(readOnly = true)

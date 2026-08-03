@@ -1,6 +1,7 @@
 package com.banksystem.transaction.api.dto;
 
 import java.time.Instant;
+import org.springframework.format.annotation.DateTimeFormat;
 
 public final class OutboxDtos {
   private OutboxDtos() {}
@@ -24,5 +25,17 @@ public final class OutboxDtos {
       long pending,
       long published,
       long dead
+  ) {}
+
+  public record AdminOutboxFilterRequest(
+      String status,
+      String eventType,
+      String eventId,
+      String aggregateId,
+      String q,
+      @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
+      @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
+      Integer page,
+      Integer size
   ) {}
 }

@@ -11,13 +11,9 @@ import com.banksystem.auth.application.RbacService;
 import com.banksystem.auth.config.UserPrincipal;
 import com.banksystem.common.api.ApiResponse;
 import com.banksystem.common.api.PageResponse;
-import com.banksystem.common.exception.BusinessException;
-import com.banksystem.common.security.SecurityHeaders;
 import jakarta.validation.Valid;
-import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -30,10 +26,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1")
 public class PasswordResetController {
-
-  private static final String LEGACY_RBAC = "rbac:manage";
-  private static final String PERM_RESET = "users:password:reset";
-  private static final String PERM_LOCK = "users:lock:execute";
 
   private final PasswordResetService passwordResetService;
 
@@ -62,7 +54,7 @@ public class PasswordResetController {
       @RequestParam(required = false) String status,
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "20") int size) {
-    requireReset(principal);
+    RbacService.requirePasswordReset(principal);
     return ApiResponse.ok(passwordResetService.listTickets(status, page, size));
   }
 
@@ -71,7 +63,7 @@ public class PasswordResetController {
   public ApiResponse<FulfillResponse> fulfill(
       @AuthenticationPrincipal UserPrincipal principal,
       @PathVariable UUID id) {
-    requireReset(principal);
+    RbacService.requirePasswordReset(principal);
     return ApiResponse.ok(passwordResetService.fulfill(id, principal.userId()));
   }
 
@@ -80,7 +72,7 @@ public class PasswordResetController {
       @AuthenticationPrincipal UserPrincipal principal,
       @PathVariable UUID id,
       @RequestBody(required = false) RejectRequest body) {
-    requireReset(principal);
+    RbacService.requirePasswordReset(principal);
     return ApiResponse.ok(passwordResetService.reject(id, principal.userId(), body));
   }
 
@@ -90,7 +82,7 @@ public class PasswordResetController {
       @AuthenticationPrincipal UserPrincipal principal,
       @PathVariable UUID userId,
       @RequestParam(required = false, defaultValue = "EMAIL") String channel) {
-    requireReset(principal);
+    RbacService.requirePasswordReset(principal);
     return ApiResponse.ok(passwordResetService.resetByUserId(userId, principal.userId(), channel));
   }
 
@@ -99,7 +91,7 @@ public class PasswordResetController {
       @AuthenticationPrincipal UserPrincipal principal,
       @PathVariable UUID userId,
       @RequestBody(required = false) LockRequest body) {
-    requireLock(principal);
+    RbacService.requireUserLock(principal);
     passwordResetService.lockUser(userId, principal.userId(), body);
     return ApiResponse.ok(Map.of("status", "LOCKED"));
   }
@@ -108,35 +100,8 @@ public class PasswordResetController {
   public ApiResponse<Map<String, String>> unlock(
       @AuthenticationPrincipal UserPrincipal principal,
       @PathVariable UUID userId) {
-    requireLock(principal);
+    RbacService.requireUserLock(principal);
     passwordResetService.unlockUser(userId, principal.userId());
     return ApiResponse.ok(Map.of("status", "UNLOCKED"));
-  }
-
-  private void requireReset(UserPrincipal p) {
-    if (isFullAdmin(p) || RbacService.hasAny(p.permissions(), PERM_RESET, LEGACY_RBAC)) {
-      return;
-    }
-    throw new BusinessException("FORBIDDEN", "Missing permission: " + PERM_RESET, HttpStatus.FORBIDDEN);
-  }
-
-  private void requireLock(UserPrincipal p) {
-    if (isFullAdmin(p) || RbacService.hasAny(p.permissions(), PERM_LOCK, LEGACY_RBAC)) {
-      return;
-    }
-    throw new BusinessException("FORBIDDEN", "Missing permission: " + PERM_LOCK, HttpStatus.FORBIDDEN);
-  }
-
-  private static boolean isFullAdmin(UserPrincipal p) {
-    if (p == null || p.roles() == null) {
-      return false;
-    }
-    return p.roles().stream().anyMatch(r -> {
-      String n = r == null ? "" : r.trim().toUpperCase(Locale.ROOT);
-      if (n.startsWith("ROLE_")) {
-        n = n.substring(5);
-      }
-      return "ADMIN".equals(n) || "SUPER_ADMIN".equals(n);
-    });
   }
 }

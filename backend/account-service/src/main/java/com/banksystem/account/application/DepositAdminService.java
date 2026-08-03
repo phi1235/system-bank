@@ -1,5 +1,6 @@
 package com.banksystem.account.application;
 
+import com.banksystem.account.api.dto.DepositDtos.AdminDepositFilterRequest;
 import com.banksystem.account.api.dto.DepositDtos.AdminTermDepositRow;
 import com.banksystem.account.api.dto.DepositDtos.DepositAdminSummaryResponse;
 import com.banksystem.account.api.dto.DepositDtos.DepositProductResponse;
@@ -83,6 +84,21 @@ public class DepositAdminService {
   public DepositAdminSummaryResponse summary() {
     LocalDate today = LocalDate.now(clock.withZone(zone));
     return new DepositAdminSummaryResponse(mapper.totals(today), mapper.byProduct());
+  }
+
+  @Transactional(readOnly = true)
+  public PageResponse<AdminTermDepositRow> list(AdminDepositFilterRequest req) {
+    return list(
+        AdminDepositListQuery.of(
+            req.page(),
+            req.size(),
+            req.status(),
+            req.productCode(),
+            req.userId(),
+            req.accountId(),
+            req.accountNumber(),
+            req.maturityFrom(),
+            req.maturityTo()));
   }
 
   @Transactional(readOnly = true)

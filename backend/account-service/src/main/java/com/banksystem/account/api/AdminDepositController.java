@@ -1,5 +1,6 @@
 package com.banksystem.account.api;
 
+import com.banksystem.account.api.dto.DepositDtos.AdminDepositFilterRequest;
 import com.banksystem.account.api.dto.DepositDtos.AdminTermDepositRow;
 import com.banksystem.account.api.dto.DepositDtos.BatchRunResponse;
 import com.banksystem.account.api.dto.DepositDtos.DepositAdminSummaryResponse;
@@ -7,22 +8,19 @@ import com.banksystem.account.api.dto.DepositDtos.DepositProductResponse;
 import com.banksystem.account.api.dto.DepositDtos.UpdateDepositProductRequest;
 import com.banksystem.account.application.DepositAdminService;
 import com.banksystem.account.application.DepositBatchService;
-import com.banksystem.account.application.query.AdminDepositListQuery;
 import com.banksystem.common.api.ApiResponse;
 import com.banksystem.common.api.PageResponse;
 import com.banksystem.common.security.RequirePermission;
 import com.banksystem.common.security.UserContext;
 import jakarta.validation.Valid;
-import java.time.LocalDate;
 import java.util.List;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -51,23 +49,8 @@ public class AdminDepositController {
   /** Per-contract drill-down with optional filters (status, product, user, account, maturity). */
   @GetMapping
   @RequirePermission("deposits:summary:view")
-  public ApiResponse<PageResponse<AdminTermDepositRow>> list(
-      @RequestParam(required = false) Integer page,
-      @RequestParam(required = false) Integer size,
-      @RequestParam(required = false) String status,
-      @RequestParam(required = false) String productCode,
-      @RequestParam(required = false) String userId,
-      @RequestParam(required = false) String accountId,
-      @RequestParam(required = false) String accountNumber,
-      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-          LocalDate maturityFrom,
-      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-          LocalDate maturityTo) {
-    return ApiResponse.ok(
-        adminService.list(
-            AdminDepositListQuery.of(
-                page, size, status, productCode, userId, accountId, accountNumber,
-                maturityFrom, maturityTo)));
+  public ApiResponse<PageResponse<AdminTermDepositRow>> list(@Valid @ModelAttribute AdminDepositFilterRequest req) {
+    return ApiResponse.ok(adminService.list(req));
   }
 
   @GetMapping("/products")

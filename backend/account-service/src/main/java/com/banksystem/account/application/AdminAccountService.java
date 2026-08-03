@@ -1,6 +1,7 @@
 package com.banksystem.account.application;
 
 import com.banksystem.account.api.dto.AccountDtos.AccountResponse;
+import com.banksystem.account.api.dto.AccountDtos.AdminAccountFilterRequest;
 import com.banksystem.account.api.dto.AccountDtos.MoneyCommand;
 import com.banksystem.account.api.dto.AccountDtos.MoneyResult;
 import com.banksystem.account.api.dto.AccountDtos.TopUpRequest;
@@ -10,6 +11,8 @@ import com.banksystem.account.domain.AccountEntity;
 import com.banksystem.account.domain.AccountRepository;
 import com.banksystem.account.domain.AccountStatus;
 import com.banksystem.account.domain.AccountType;
+import com.banksystem.account.infrastructure.feign.AuditClient;
+import com.banksystem.account.infrastructure.feign.AuditClient.CreateAuditLogRequest;
 import com.banksystem.common.api.PageResponse;
 import com.banksystem.common.exception.BusinessException;
 import com.banksystem.common.security.GatewayUser;
@@ -17,10 +20,12 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,7 +39,7 @@ public class AdminAccountService {
   private final AccountMapper mapper;
   private final OpsAlertPublisher opsAlertPublisher;
   private final AccountMoneyService moneyService;
-  private final com.banksystem.account.infrastructure.feign.AuditClient auditClient;
+  private final AuditClient auditClient;
   private final String internalApiKey;
   private final BigDecimal maxTopUpAmount;
 
@@ -55,7 +60,7 @@ public class AdminAccountService {
       AccountMapper mapper,
       OpsAlertPublisher opsAlertPublisher,
       AccountMoneyService moneyService,
-      com.banksystem.account.infrastructure.feign.AuditClient auditClient,
+      AuditClient auditClient,
       @Value("${bank.internal.transaction-api-key}") String internalApiKey,
       @Value("${bank.account.topup.max-amount:50000000}") BigDecimal maxTopUpAmount) {
     this.accountRepository = accountRepository;
@@ -122,6 +127,23 @@ public class AdminAccountService {
   }
 
   @Transactional(readOnly = true)
+  public Object adminList(AdminAccountFilterRequest req) {
+    AdminAccountSearchQuery query = AdminAccountSearchQuery.of(req.q(), req.status(), req.accountType(), req.page(), req.size());
+    if (req.noCount()) {
+      return adminListSlice(query);
+    }
+    return adminList(query);
+  }
+
+  @Transactional(readOnly = true)
+  public Object adminList(AdminAccountSearchQuery query, boolean noCount) {
+    if (noCount) {
+      return adminListSlice(query);
+    }
+    return adminList(query);
+  }
+
+  @Transactional(readOnly = true)
   public List<AccountResponse> adminListSlice(AdminAccountSearchQuery query) {
     String status = query.status();
     String accountType = query.accountType();
@@ -147,7 +169,7 @@ public class AdminAccountService {
     String boundStatus = hasStatus ? status : "";
     String boundType = hasType ? accountType : "";
 
-    org.springframework.data.domain.Slice<AccountEntity> slice = accountRepository.adminSearchSlice(
+    Slice<AccountEntity> slice = accountRepository.adminSearchSlice(
         hasQ,
         q,
         hasStatus,
@@ -247,17 +269,17 @@ public class AdminAccountService {
         referenceId,
         req.amount(),
         result.balanceAfter(),
-        "ADMIN");
+        Instant.now());
   }
 
   private void recordAuditLog(UUID actorId, String action, String resourceType, String resourceId, String metadata) {
     if (auditClient == null) {
       return;
     }
-    java.util.concurrent.CompletableFuture.runAsync(() -> {
+    CompletableFuture.runAsync(() -> {
       try {
         auditClient.createAuditLog(
-            new com.banksystem.account.infrastructure.feign.AuditClient.CreateAuditLogRequest(
+            new CreateAuditLogRequest(
                 actorId, action, resourceType, resourceId, "127.0.0.1", metadata),
             internalApiKey);
       } catch (Exception ex) {

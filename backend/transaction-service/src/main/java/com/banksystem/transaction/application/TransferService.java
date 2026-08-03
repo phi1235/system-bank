@@ -3,6 +3,7 @@ package com.banksystem.transaction.application;
 import com.banksystem.common.api.ApiResponse;
 import com.banksystem.common.api.PageResponse;
 import com.banksystem.common.exception.BusinessException;
+import com.banksystem.transaction.api.dto.TransferDtos.AdminTransferFilterRequest;
 import com.banksystem.transaction.api.dto.TransferDtos.SagaStepResponse;
 import com.banksystem.transaction.api.dto.TransferDtos.TransferDetailResponse;
 import com.banksystem.transaction.api.dto.TransferDtos.TransferQuoteResponse;
@@ -205,13 +206,14 @@ public class TransferService {
       String status,
       Instant from,
       Instant to) {
+    int cappedSize = Math.min(Math.max(size, 1), 100);
     if (from != null && to != null && from.isAfter(to)) {
       throw new BusinessException(
           "INVALID_DATE_RANGE", "from must be before or equal to to", HttpStatus.BAD_REQUEST);
     }
     TransferStatus st = parseStatusOrNull(status);
     if (status != null && !status.isBlank() && st == null) {
-      return new PageResponse<>(List.of(), page, size, 0, 0);
+      return new PageResponse<>(List.of(), page, cappedSize, 0, 0);
     }
     // Postgres cannot infer types for NULL Instant/enum binds in "(:p IS NULL OR ...)".
     // Always pass concrete bounds + a boolean status flag; dummy enum when not filtering.
@@ -220,8 +222,25 @@ public class TransferService {
     boolean hasStatus = st != null;
     TransferStatus statusParam = hasStatus ? st : TransferStatus.PENDING;
     Page<TransferOrderEntity> p = transferOrderRepository.searchMine(
-        userId, hasStatus, statusParam, fromTs, toTs, PageRequest.of(page, size));
+        userId, hasStatus, statusParam, fromTs, toTs, PageRequest.of(page, cappedSize));
     return mapPage(p);
+  }
+
+  @Transactional(readOnly = true)
+  public Object adminTransfers(AdminTransferFilterRequest req) {
+    var query = AdminTransferListQuery.of(
+        req.status(),
+        req.transferId(),
+        req.q(),
+        req.from(),
+        req.to(),
+        req.page(),
+        req.size(),
+        req.lastCreatedAt());
+    if (req.noCount()) {
+      return adminListSlice(query);
+    }
+    return adminList(query);
   }
 
   private static TransferStatus parseStatusOrNull(String status) {

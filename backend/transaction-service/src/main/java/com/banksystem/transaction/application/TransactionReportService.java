@@ -6,6 +6,7 @@ import com.banksystem.transaction.api.dto.ReportDtos.ExportReportRow;
 import com.banksystem.transaction.api.dto.ReportDtos.ReportSummaryRow;
 import com.banksystem.transaction.api.dto.ReportDtos.StatusBreakdownRow;
 import com.banksystem.transaction.api.dto.ReportDtos.TopAccountRow;
+import com.banksystem.transaction.api.dto.ReportDtos.TransactionReportFilterRequest;
 import com.banksystem.transaction.api.dto.ReportDtos.TransactionReportResponse;
 import com.banksystem.transaction.infrastructure.mybatis.TransactionReportMapper;
 import java.io.BufferedWriter;
@@ -50,6 +51,11 @@ public class TransactionReportService {
     this.mapper = mapper;
     this.clock = clock;
     this.reportZone = ZoneId.of(reportZone);
+  }
+
+  @Transactional(readOnly = true)
+  public TransactionReportResponse report(TransactionReportFilterRequest req) {
+    return report(req.from(), req.to(), req.accountId(), req.top());
   }
 
   @Transactional(readOnly = true)
@@ -104,6 +110,11 @@ public class TransactionReportService {
         daily,
         byStatus,
         topAccounts);
+  }
+
+  @Transactional(readOnly = true)
+  public void exportCsvStream(TransactionReportFilterRequest req, OutputStream outputStream) {
+    exportCsvStream(req.from(), req.to(), req.accountId(), outputStream);
   }
 
   @Transactional(readOnly = true)

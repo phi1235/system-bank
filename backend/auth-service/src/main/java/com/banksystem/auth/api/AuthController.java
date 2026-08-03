@@ -15,6 +15,7 @@ import com.banksystem.auth.application.AuthService;
 import com.banksystem.auth.application.SessionService;
 import com.banksystem.auth.config.UserPrincipal;
 import com.banksystem.common.api.ApiResponse;
+import com.banksystem.common.security.UserContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -51,17 +52,17 @@ public class AuthController {
 
   @PostMapping("/login")
   public ApiResponse<LoginResponse> login(@Valid @RequestBody LoginRequest req, HttpServletRequest http) {
-    return ApiResponse.ok(authService.login(req, clientIp(http), userAgent(http)));
+    return ApiResponse.ok(authService.login(req, UserContext.clientIp(http), UserContext.userAgent(http)));
   }
 
   @PostMapping("/mfa/verify")
   public ApiResponse<TokenResponse> verifyMfa(@Valid @RequestBody MfaVerifyRequest req, HttpServletRequest http) {
-    return ApiResponse.ok(authService.verifyMfa(req, clientIp(http), userAgent(http)));
+    return ApiResponse.ok(authService.verifyMfa(req, UserContext.clientIp(http), UserContext.userAgent(http)));
   }
 
   @PostMapping("/refresh")
   public ApiResponse<TokenResponse> refresh(@Valid @RequestBody RefreshRequest req, HttpServletRequest http) {
-    return ApiResponse.ok(authService.refresh(req, clientIp(http), userAgent(http)));
+    return ApiResponse.ok(authService.refresh(req, UserContext.clientIp(http), UserContext.userAgent(http)));
   }
 
   @PostMapping("/logout")
@@ -116,19 +117,6 @@ public class AuthController {
   @GetMapping("/me")
   public ApiResponse<UserMeResponse> me(@AuthenticationPrincipal UserPrincipal principal) {
     return ApiResponse.ok(authService.me(principal.userId()));
-  }
-
-  private String clientIp(HttpServletRequest request) {
-    String xff = request.getHeader("X-Forwarded-For");
-    if (xff != null && !xff.isBlank()) {
-      return xff.split(",")[0].trim();
-    }
-    return request.getRemoteAddr() == null ? "unknown" : request.getRemoteAddr();
-  }
-
-  private String userAgent(HttpServletRequest request) {
-    String ua = request.getHeader(HttpHeaders.USER_AGENT);
-    return ua == null || ua.isBlank() ? null : ua;
   }
 
   /**

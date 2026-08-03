@@ -9,6 +9,7 @@ import com.banksystem.auth.api.dto.RbacDtos.RoleDto;
 import com.banksystem.auth.api.dto.RbacDtos.StaffUserDto;
 import com.banksystem.auth.api.dto.RbacDtos.UpdateRolePermissionsRequest;
 import com.banksystem.auth.api.dto.RbacDtos.UpdateRoleRequest;
+import com.banksystem.auth.config.UserPrincipal;
 import com.banksystem.auth.domain.PasswordResetTicketRepository;
 import com.banksystem.auth.domain.PermissionEntity;
 import com.banksystem.auth.domain.PermissionRepository;
@@ -349,6 +350,73 @@ public class RbacService {
       return;
     }
     throw new BusinessException("FORBIDDEN", "Missing permission: " + required, HttpStatus.FORBIDDEN);
+  }
+
+  public static boolean isFullAdmin(UserPrincipal p) {
+    if (p == null || p.roles() == null) {
+      return false;
+    }
+    return p.roles().stream().anyMatch(r -> {
+      if (r == null) {
+        return false;
+      }
+      String n = r.trim().toUpperCase(Locale.ROOT);
+      if (n.startsWith("ROLE_")) {
+        n = n.substring(5);
+      }
+      return FULL_ADMIN_ROLES.contains(n);
+    });
+  }
+
+  public static void requireRbacAccess(UserPrincipal p) {
+    if (isFullAdmin(p)
+        || hasAny(
+            p.permissions(),
+            SecurityHeaders.PERM_RBAC_ACCESS,
+            SecurityHeaders.PERM_RBAC_USERS_ASSIGN,
+            SecurityHeaders.PERM_RBAC_ROLES_MANAGE,
+            "rbac:manage")) {
+      return;
+    }
+    throw new BusinessException("FORBIDDEN", "Missing permission: rbac:access", HttpStatus.FORBIDDEN);
+  }
+
+  public static void requireUsersAssign(UserPrincipal p) {
+    if (isFullAdmin(p)
+        || hasAny(
+            p.permissions(),
+            SecurityHeaders.PERM_RBAC_USERS_ASSIGN,
+            "rbac:manage")) {
+      return;
+    }
+    throw new BusinessException(
+        "FORBIDDEN", "Missing permission: rbac:users:assign", HttpStatus.FORBIDDEN);
+  }
+
+  public static void requireRolesManage(UserPrincipal p) {
+    if (isFullAdmin(p)
+        || hasAny(
+            p.permissions(),
+            SecurityHeaders.PERM_RBAC_ROLES_MANAGE,
+            "rbac:manage")) {
+      return;
+    }
+    throw new BusinessException(
+        "FORBIDDEN", "Missing permission: rbac:roles:manage", HttpStatus.FORBIDDEN);
+  }
+
+  public static void requirePasswordReset(UserPrincipal p) {
+    if (isFullAdmin(p) || hasAny(p.permissions(), "users:password:reset", "rbac:manage")) {
+      return;
+    }
+    throw new BusinessException("FORBIDDEN", "Missing permission: users:password:reset", HttpStatus.FORBIDDEN);
+  }
+
+  public static void requireUserLock(UserPrincipal p) {
+    if (isFullAdmin(p) || hasAny(p.permissions(), "users:lock:execute", "rbac:manage")) {
+      return;
+    }
+    throw new BusinessException("FORBIDDEN", "Missing permission: users:lock:execute", HttpStatus.FORBIDDEN);
   }
 
   public static List<String> parseCsv(String csv) {

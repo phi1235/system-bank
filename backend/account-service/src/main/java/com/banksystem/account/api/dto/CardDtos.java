@@ -7,6 +7,8 @@ import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
+import java.util.UUID;
 
 /** Virtual debit card API payloads. PAN is returned masked except on explicit reveal. */
 public final class CardDtos {
@@ -47,7 +49,14 @@ public final class CardDtos {
   public record UpdateCardLimitRequest(
       @NotNull @DecimalMin("0") BigDecimal dailyLimit) {}
 
-  public record BatchApproveRequest(@NotNull @Size(min = 1, max = 100) java.util.List<java.util.UUID> ids) {}
+  public record BatchApproveRequest(@NotNull @Size(min = 1, max = 100) List<UUID> ids) {}
 
-  public record BatchApproveResult(int approvedCount, int failedCount, java.util.List<String> errors) {}
+  public record BatchApproveResult(int approvedCount, int failedCount, List<String> errors) {}
+
+  public record AdminCardFilterRequest(
+      String status,
+      Integer page,
+      Integer size,
+      String q
+  ) {}
 }

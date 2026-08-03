@@ -12,11 +12,8 @@ import com.banksystem.auth.application.RbacService;
 import com.banksystem.auth.config.UserPrincipal;
 import com.banksystem.common.api.ApiResponse;
 import com.banksystem.common.api.PageResponse;
-import com.banksystem.common.exception.BusinessException;
-import com.banksystem.common.security.SecurityHeaders;
 import jakarta.validation.Valid;
 import java.util.List;
-import java.util.Locale;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -34,9 +31,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/admin/rbac")
 public class RbacController {
 
-  /** Legacy coarse permission still present in older JWTs before re-login */
-  private static final String LEGACY_RBAC_MANAGE = "rbac:manage";
-
   private final RbacService rbacService;
 
   public RbacController(RbacService rbacService) {
@@ -45,7 +39,7 @@ public class RbacController {
 
   @GetMapping("/matrix")
   public ApiResponse<MatrixResponse> matrix(@AuthenticationPrincipal UserPrincipal principal) {
-    requireRbacAccess(principal);
+    RbacService.requireRbacAccess(principal);
     return ApiResponse.ok(rbacService.matrix());
   }
 
@@ -53,7 +47,7 @@ public class RbacController {
   public ApiResponse<List<RoleDto>> roles(
       @AuthenticationPrincipal UserPrincipal principal,
       @RequestParam(defaultValue = "true") boolean staffOnly) {
-    requireRbacAccess(principal);
+    RbacService.requireRbacAccess(principal);
     return ApiResponse.ok(rbacService.listRoles(staffOnly));
   }
 
@@ -61,7 +55,7 @@ public class RbacController {
   public ApiResponse<RoleDto> role(
       @AuthenticationPrincipal UserPrincipal principal,
       @PathVariable String code) {
-    requireRolesManage(principal);
+    RbacService.requireRolesManage(principal);
     return ApiResponse.ok(rbacService.getRole(code));
   }
 
@@ -70,7 +64,7 @@ public class RbacController {
   public ApiResponse<RoleDto> createRole(
       @AuthenticationPrincipal UserPrincipal principal,
       @Valid @RequestBody CreateRoleRequest body) {
-    requireRolesManage(principal);
+    RbacService.requireRolesManage(principal);
     return ApiResponse.ok(rbacService.createRole(body));
   }
 
@@ -79,7 +73,7 @@ public class RbacController {
       @AuthenticationPrincipal UserPrincipal principal,
       @PathVariable String code,
       @Valid @RequestBody UpdateRoleRequest body) {
-    requireRolesManage(principal);
+    RbacService.requireRolesManage(principal);
     return ApiResponse.ok(rbacService.updateRole(code, body));
   }
 
@@ -88,13 +82,13 @@ public class RbacController {
       @AuthenticationPrincipal UserPrincipal principal,
       @PathVariable String code,
       @Valid @RequestBody UpdateRolePermissionsRequest body) {
-    requireRolesManage(principal);
+    RbacService.requireRolesManage(principal);
     return ApiResponse.ok(rbacService.updateRolePermissions(code, body));
   }
 
   @GetMapping("/permissions")
   public ApiResponse<List<PermissionDto>> permissions(@AuthenticationPrincipal UserPrincipal principal) {
-    requireRbacAccess(principal);
+    RbacService.requireRbacAccess(principal);
     return ApiResponse.ok(rbacService.listPermissions());
   }
 
@@ -106,14 +100,14 @@ public class RbacController {
       @RequestParam(required = false) String q,
       @RequestParam(required = false) Boolean enabled,
       @RequestParam(required = false) String userId) {
-    requireUsersAssign(principal);
+    RbacService.requireUsersAssign(principal);
     return ApiResponse.ok(rbacService.listUsers(page, size, q, enabled, userId));
   }
 
   @GetMapping("/users/{userId}")
   public ApiResponse<StaffUserDto> user(
       @AuthenticationPrincipal UserPrincipal principal, @PathVariable UUID userId) {
-    requireUsersAssign(principal);
+    RbacService.requireUsersAssign(principal);
     return ApiResponse.ok(rbacService.getUser(userId));
   }
 
@@ -122,60 +116,7 @@ public class RbacController {
       @AuthenticationPrincipal UserPrincipal principal,
       @PathVariable UUID userId,
       @Valid @RequestBody AssignRolesRequest body) {
-    requireUsersAssign(principal);
+    RbacService.requireUsersAssign(principal);
     return ApiResponse.ok(rbacService.assignRoles(principal.userId(), userId, body));
-  }
-
-  private void requireRbacAccess(UserPrincipal p) {
-    if (isFullAdmin(p)
-        || RbacService.hasAny(
-            p.permissions(),
-            SecurityHeaders.PERM_RBAC_ACCESS,
-            SecurityHeaders.PERM_RBAC_USERS_ASSIGN,
-            SecurityHeaders.PERM_RBAC_ROLES_MANAGE,
-            LEGACY_RBAC_MANAGE)) {
-      return;
-    }
-    throw new BusinessException("FORBIDDEN", "Missing permission: rbac:access", HttpStatus.FORBIDDEN);
-  }
-
-  private void requireUsersAssign(UserPrincipal p) {
-    if (isFullAdmin(p)
-        || RbacService.hasAny(
-            p.permissions(),
-            SecurityHeaders.PERM_RBAC_USERS_ASSIGN,
-            LEGACY_RBAC_MANAGE)) {
-      return;
-    }
-    throw new BusinessException(
-        "FORBIDDEN", "Missing permission: rbac:users:assign", HttpStatus.FORBIDDEN);
-  }
-
-  private void requireRolesManage(UserPrincipal p) {
-    if (isFullAdmin(p)
-        || RbacService.hasAny(
-            p.permissions(),
-            SecurityHeaders.PERM_RBAC_ROLES_MANAGE,
-            LEGACY_RBAC_MANAGE)) {
-      return;
-    }
-    throw new BusinessException(
-        "FORBIDDEN", "Missing permission: rbac:roles:manage", HttpStatus.FORBIDDEN);
-  }
-
-  private static boolean isFullAdmin(UserPrincipal p) {
-    if (p == null || p.roles() == null) {
-      return false;
-    }
-    return p.roles().stream().anyMatch(r -> {
-      if (r == null) {
-        return false;
-      }
-      String n = r.trim().toUpperCase(Locale.ROOT);
-      if (n.startsWith("ROLE_")) {
-        n = n.substring(5);
-      }
-      return "ADMIN".equals(n) || "SUPER_ADMIN".equals(n);
-    });
   }
 }

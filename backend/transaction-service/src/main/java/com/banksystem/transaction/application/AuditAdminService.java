@@ -2,6 +2,7 @@ package com.banksystem.transaction.application;
 
 import com.banksystem.common.api.PageResponse;
 import com.banksystem.common.exception.BusinessException;
+import com.banksystem.transaction.api.dto.TransferDtos.AdminAuditFilterRequest;
 import com.banksystem.transaction.api.dto.TransferDtos.AuditResponse;
 import com.banksystem.transaction.application.query.AuditListQuery;
 import com.banksystem.transaction.domain.AuditLogEntity;
@@ -10,6 +11,7 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -52,9 +54,27 @@ public class AuditAdminService {
   }
 
   @Transactional(readOnly = true)
+  public Object list(AdminAuditFilterRequest req) {
+    AuditListQuery query = AuditListQuery.of(
+        req.action(), req.resourceType(), req.actorUserId(), req.resourceId(), req.from(), req.to(), req.page(), req.size());
+    if (req.noCount()) {
+      return listSlice(query);
+    }
+    return list(query);
+  }
+
+  @Transactional(readOnly = true)
+  public Object list(AuditListQuery query, boolean noCount) {
+    if (noCount) {
+      return listSlice(query);
+    }
+    return list(query);
+  }
+
+  @Transactional(readOnly = true)
   public List<AuditResponse> listSlice(AuditListQuery query) {
     PageRequest pageable = PageRequest.of(query.page(), query.size());
-    org.springframework.data.domain.Slice<AuditLogEntity> slice =
+    Slice<AuditLogEntity> slice =
         repository.searchAdminSlice(
             query.hasAction(),
             query.action() == null ? "" : query.action(),

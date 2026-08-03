@@ -59,7 +59,16 @@ public final class AccountDtos {
       String referenceId,
       BigDecimal amount,
       BigDecimal balanceAfter,
-      String channel
+      Instant timestamp
+  ) {}
+
+  public record AdminAccountFilterRequest(
+      int page,
+      int size,
+      String q,
+      String status,
+      String accountType,
+      boolean noCount
   ) {}
 
   /** Internal reconciliation lookup: ledger entries for a batch of reference ids. */
