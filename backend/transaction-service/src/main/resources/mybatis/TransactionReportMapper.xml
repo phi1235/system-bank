@@ -35,13 +35,17 @@
   </resultMap>
 
   <select id="dailyStatusAgg" resultMap="dailyStatusRow">
-    SELECT (t.created_at AT TIME ZONE #{zone})::date  AS day,
-           t.status                                   AS status,
-           COUNT(*)                                   AS cnt,
-           COALESCE(SUM(t.amount), 0)                 AS total_amount,
-           COALESCE(SUM(t.fee_amount), 0)             AS total_fee
-    FROM transfer_orders t
-    WHERE <include refid="reportFilter"/>
+    SELECT d.day                                      AS day,
+           d.status                                   AS status,
+           SUM(d.total_count)                         AS cnt,
+           COALESCE(SUM(d.total_amount), 0)           AS total_amount,
+           COALESCE(SUM(d.total_fee), 0)              AS total_fee
+    FROM daily_transaction_stats d
+    WHERE d.day &gt;= (#{fromTs} AT TIME ZONE #{zone})::date
+      AND d.day &lt; (#{toTs} AT TIME ZONE #{zone})::date
+      <if test="fromAccountId != null">
+        AND d.from_account_id = #{fromAccountId}
+      </if>
     GROUP BY 1, 2
     ORDER BY 1, 2
   </select>
@@ -56,13 +60,14 @@
   </resultMap>
 
   <select id="topSourceAccounts" resultMap="topAccountRow">
-    SELECT t.from_account_id::text  AS from_account_id,
-           COUNT(*)                 AS transfer_count,
-           SUM(t.amount)            AS total_amount
-    FROM transfer_orders t
-    WHERE t.status = 'COMPLETED'
-      AND t.created_at &gt;= #{fromTs} AND t.created_at &lt; #{toTs}
-    GROUP BY t.from_account_id
+    SELECT d.from_account_id::text                    AS from_account_id,
+           SUM(d.total_count)                         AS transfer_count,
+           SUM(d.total_amount)                        AS total_amount
+    FROM daily_transaction_stats d
+    WHERE d.status = 'COMPLETED'
+      AND d.day &gt;= (#{fromTs} AT TIME ZONE #{zone})::date
+      AND d.day &lt; (#{toTs} AT TIME ZONE #{zone})::date
+    GROUP BY d.from_account_id
     ORDER BY total_amount DESC, transfer_count DESC
     LIMIT #{limit}
   </select>

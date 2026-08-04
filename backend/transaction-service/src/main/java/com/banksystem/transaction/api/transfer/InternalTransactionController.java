@@ -74,7 +74,12 @@ public class InternalTransactionController {
     Long estimate = jdbcTemplate.queryForObject(
         "SELECT n_live_tup FROM pg_stat_user_tables WHERE relname = ?",
         Long.class, tableName);
-    return (estimate != null && estimate > 0) ? estimate : 0;
+    if (estimate == null || estimate <= 10000) {
+      Long exact = jdbcTemplate.queryForObject(
+          "SELECT COUNT(*) FROM " + tableName, Long.class);
+      return exact != null ? exact : 0;
+    }
+    return estimate;
   }
 
   private void requireKey(String key) {
