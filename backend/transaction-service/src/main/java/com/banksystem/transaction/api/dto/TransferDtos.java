@@ -7,6 +7,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.format.annotation.DateTimeFormat;
 
 public final class TransferDtos {
   private TransferDtos() {}
@@ -96,4 +97,53 @@ public final class TransferDtos {
       String metadata,
       Instant createdAt
   ) {}
+
+  public record AdminTransferFilterRequest(
+      String status,
+      String transferId,
+      String q,
+      @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
+      @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
+      Integer page,
+      Integer size,
+      Boolean noCount,
+      @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant lastCreatedAt
+  ) {
+    public AdminTransferFilterRequest {
+      if (page == null) page = 0;
+      if (size == null) size = 20;
+      if (noCount == null) noCount = false;
+    }
+  }
+
+  public record AdminAuditFilterRequest(
+      String action,
+      String resourceType,
+      String actorUserId,
+      String resourceId,
+      @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
+      @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
+      Integer page,
+      Integer size,
+      Boolean noCount
+  ) {
+    public AdminAuditFilterRequest {
+      if (page == null) page = 0;
+      if (size == null) size = 20;
+      if (noCount == null) noCount = false;
+    }
+  }
+
+  public record MyTransferFilterRequest(
+      Integer page,
+      Integer size,
+      String status,
+      @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
+      @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to
+  ) {
+    public MyTransferFilterRequest {
+      if (page == null || page < 0) page = 0;
+      if (size == null || size < 1) size = 20;
+    }
+  }
 }

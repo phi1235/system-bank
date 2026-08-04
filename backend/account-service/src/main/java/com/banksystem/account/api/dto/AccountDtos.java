@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import org.springframework.format.annotation.DateTimeFormat;
 
 public final class AccountDtos {
   private AccountDtos() {}
@@ -59,8 +60,23 @@ public final class AccountDtos {
       String referenceId,
       BigDecimal amount,
       BigDecimal balanceAfter,
-      String channel
+      Instant timestamp
   ) {}
+
+  public record AdminAccountFilterRequest(
+      Integer page,
+      Integer size,
+      String q,
+      String status,
+      String accountType,
+      Boolean noCount
+  ) {
+    public AdminAccountFilterRequest {
+      if (page == null) page = 0;
+      if (size == null) size = 20;
+      if (noCount == null) noCount = false;
+    }
+  }
 
   /** Internal reconciliation lookup: ledger entries for a batch of reference ids. */
   public record LedgerSearchRequest(@NotNull @Size(min = 1, max = 2000) List<String> referenceIds) {}
@@ -73,4 +89,14 @@ public final class AccountDtos {
       String referenceId,
       Instant createdAt
   ) {}
+
+  public record StatementFilterRequest(
+      Integer page,
+      Integer size,
+      String entryType,
+      @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
+      @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to
+  ) {}
+
+  public record InternalAccountCountsResponse(long total, long frozen) {}
 }

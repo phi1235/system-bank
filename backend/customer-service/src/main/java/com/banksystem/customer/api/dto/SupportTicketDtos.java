@@ -54,4 +54,17 @@ public final class SupportTicketDtos {
       String rejectedBy,
       List<SupportTicketMessageResponse> messages
   ) {}
+
+  public record AdminTicketFilterRequest(
+      Integer page,
+      Integer size,
+      String status,
+      String category,
+      String q
+  ) {}
+
+  public record MyTicketFilterRequest(
+      Integer page,
+      Integer size
+  ) {}
 }

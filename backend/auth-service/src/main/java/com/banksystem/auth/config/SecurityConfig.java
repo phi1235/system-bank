@@ -1,4 +1,12 @@
 package com.banksystem.auth.config;
+import static com.banksystem.auth.api.dto.AuthDtos.*;
+import static com.banksystem.auth.api.dto.PasswordResetDtos.*;
+import static com.banksystem.auth.api.dto.RbacDtos.*;
+import com.banksystem.auth.application.auth.*;
+import com.banksystem.auth.application.rbac.*;
+import com.banksystem.auth.domain.auth.*;
+import com.banksystem.auth.domain.rbac.*;
+import com.banksystem.auth.api.dto.*;
 
 import com.banksystem.common.api.ApiError;
 import com.banksystem.common.api.ApiResponse;
@@ -42,6 +50,7 @@ public class SecurityConfig {
                 "/api/v1/auth/refresh",
                 "/api/v1/auth/mfa/verify",
                 "/api/v1/auth/password-reset/tickets",
+                "/internal/**",
                 "/actuator/**",
                 "/v3/api-docs/**",
                 "/swagger-ui/**",

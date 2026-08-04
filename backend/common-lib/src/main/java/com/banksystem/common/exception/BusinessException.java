@@ -13,7 +13,7 @@ public class BusinessException extends RuntimeException {
   }
 
   public BusinessException(String code, String message) {
-    this(code, message, HttpStatus.UNPROCESSABLE_ENTITY);
+    this(code, message, null);
   }
 
   public String getCode() {

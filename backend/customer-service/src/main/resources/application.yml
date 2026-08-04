@@ -26,6 +26,9 @@ eureka:
 
 bank:
   feign:
+    account-url: ${FEIGN_ACCOUNT_URL:}
+    transaction-url: ${FEIGN_TRANSACTION_URL:}
+    auth-url: ${FEIGN_AUTH_URL:}
     notification-url: ${FEIGN_NOTIFICATION_URL:}
   aes:
     secret-key: ${AES_SECRET_KEY}
@@ -34,6 +37,9 @@ bank:
     max-clock-skew-seconds: ${GATEWAY_MAX_CLOCK_SKEW_SECONDS}
   internal:
     api-key: ${CUSTOMER_INTERNAL_API_KEY}
+    account-api-key: ${ACCOUNT_INTERNAL_API_KEY}
+    transaction-api-key: ${TRANSACTION_INTERNAL_API_KEY}
+    user-api-key: ${AUTH_INTERNAL_API_KEY}
     notification-api-key: ${NOTIFICATION_INTERNAL_API_KEY}
 
 management:

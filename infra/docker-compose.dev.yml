@@ -21,6 +21,7 @@ services:
   postgres:
     image: postgres:16-alpine
     container_name: bank-postgres
+    command: postgres -c max_connections=150
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in infra/.env}
@@ -128,6 +129,14 @@ networks:
 
 volumes:
   pgdata:
+    name: bank-system_pgdata
+    external: true
   redisdata:
+    name: bank-system_redisdata
+    external: true
   prometheusdata:
+    name: bank-system_prometheusdata
+    external: true
   grafanadata:
+    name: bank-system_grafanadata
+    external: true

@@ -3,11 +3,19 @@ package com.banksystem.transaction.api.dto;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import org.springframework.format.annotation.DateTimeFormat;
 
 /** Admin transaction report read model (MyBatis-backed, see mybatis/TransactionReportMapper.xml). */
 public final class ReportDtos {
 
   private ReportDtos() {}
+
+  public record TransactionReportFilterRequest(
+      @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+      @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+      String accountId,
+      Integer top
+  ) {}
 
   /** One banking-day bucket; days are grouped in the report zone, not UTC. */
   public record DailyVolumePoint(

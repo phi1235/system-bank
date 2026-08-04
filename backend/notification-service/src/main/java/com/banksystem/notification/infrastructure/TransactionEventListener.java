@@ -1,6 +1,10 @@
 package com.banksystem.notification.infrastructure;
+import com.banksystem.notification.application.notification.*;
+import com.banksystem.notification.application.notification.impl.NotificationHandler;
+import com.banksystem.notification.domain.notification.*;
+import com.banksystem.notification.domain.event.*;
+import com.banksystem.notification.api.dto.*;
 
-import com.banksystem.notification.application.NotificationHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;

@@ -45,4 +45,31 @@ public final class UserContext {
     }
     return null;
   }
+
+  public static String clientIp(HttpServletRequest request) {
+    if (request == null) {
+      return "unknown";
+    }
+    String xff = request.getHeader("X-Forwarded-For");
+    if (xff != null && !xff.isBlank()) {
+      return xff.split(",")[0].trim();
+    }
+    return request.getRemoteAddr() != null ? request.getRemoteAddr() : "unknown";
+  }
+
+  public static String clientIp() {
+    RequestAttributes attrs = RequestContextHolder.getRequestAttributes();
+    if (attrs instanceof ServletRequestAttributes sra) {
+      return clientIp(sra.getRequest());
+    }
+    return "unknown";
+  }
+
+  public static String userAgent(HttpServletRequest request) {
+    if (request == null) {
+      return null;
+    }
+    String ua = request.getHeader("User-Agent");
+    return ua == null || ua.isBlank() ? null : ua;
+  }
 }

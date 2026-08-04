@@ -39,7 +39,20 @@ public interface TransactionReportMapper {
       @Param("fromAccountId") UUID fromAccountId);
 
   List<TopAccountRow> topSourceAccounts(
-      @Param("fromTs") Instant fromTs, @Param("toTs") Instant toTs, @Param("limit") int limit);
+      @Param("fromTs") Instant fromTs,
+      @Param("toTs") Instant toTs,
+      @Param("zone") String zone,
+      @Param("limit") int limit);
+
+  /**
+   * Combined single-scan aggregate: groups by (day, status) in one pass.
+   * Replaces 3 separate full-table scans (summary + dailyVolume + statusBreakdown).
+   */
+  List<DailyStatusRow> dailyStatusAgg(
+      @Param("fromTs") Instant fromTs,
+      @Param("toTs") Instant toTs,
+      @Param("zone") String zone,
+      @Param("fromAccountId") UUID fromAccountId);
 
   Cursor<ExportReportRow> streamExport(
       @Param("fromTs") Instant fromTs,

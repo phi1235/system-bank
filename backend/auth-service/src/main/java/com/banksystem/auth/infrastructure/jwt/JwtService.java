@@ -1,7 +1,13 @@
 package com.banksystem.auth.infrastructure.jwt;
+import static com.banksystem.auth.api.dto.AuthDtos.*;
+import static com.banksystem.auth.api.dto.PasswordResetDtos.*;
+import static com.banksystem.auth.api.dto.RbacDtos.*;
+import com.banksystem.auth.application.auth.*;
+import com.banksystem.auth.application.rbac.*;
+import com.banksystem.auth.domain.auth.*;
+import com.banksystem.auth.domain.rbac.*;
+import com.banksystem.auth.api.dto.*;
 
-import com.banksystem.auth.application.RbacService;
-import com.banksystem.auth.domain.UserEntity;
 import com.banksystem.common.security.SecurityHeaders;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -23,11 +29,11 @@ public class JwtService {
 
   private final JwtProperties props;
   private final SecretKey key;
-  private final RbacService rbacService;
+  private final PermissionResolver permissionResolver;
 
-  public JwtService(JwtProperties props, RbacService rbacService) {
+  public JwtService(JwtProperties props, PermissionResolver permissionResolver) {
     this.props = props;
-    this.rbacService = rbacService;
+    this.permissionResolver = permissionResolver;
     byte[] bytes = props.getSecret().getBytes(StandardCharsets.UTF_8);
     if (bytes.length < 32) {
       throw new IllegalArgumentException("JWT secret must contain at least 32 bytes");
@@ -77,8 +83,8 @@ public class JwtService {
 
   private String buildToken(UserEntity user, String jti, String type, Instant exp, Instant now) {
     List<String> roles = user.roleList();
-    List<String> permissions = rbacService.resolvePermissions(roles);
-    boolean staff = rbacService.isStaff(roles);
+    List<String> permissions = permissionResolver.resolvePermissions(roles);
+    boolean staff = permissionResolver.isStaff(roles);
     String realm = staff ? "BACK_OFFICE" : "INTERNET_BANKING";
 
     return Jwts.builder()

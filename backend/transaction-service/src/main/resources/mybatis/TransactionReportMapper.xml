@@ -9,7 +9,6 @@
       - fromTs inclusive, toTs exclusive (half-open range; service computes both from banking days).
       - "failed" groups terminal unsuccessful states: FAILED + COMPENSATED.
       - Money aggregates only count COMPLETED rows so in-flight/failed transfers never inflate volume.
-      - Uses idx_transfer_created (created_at) for the range scan.
   -->
 
   <sql id="reportFilter">
@@ -19,73 +18,36 @@
     </if>
   </sql>
 
-  <resultMap id="summaryRow"
-             type="com.banksystem.transaction.api.dto.ReportDtos$ReportSummaryRow">
-    <constructor>
-      <arg column="total_count" javaType="_long"/>
-      <arg column="completed_count" javaType="_long"/>
-      <arg column="failed_count" javaType="_long"/>
-      <arg column="completed_amount" javaType="java.math.BigDecimal"/>
-      <arg column="fee_amount" javaType="java.math.BigDecimal"/>
-      <arg column="avg_completed_amount" javaType="java.math.BigDecimal"/>
-    </constructor>
-  </resultMap>
-
-  <select id="summary" resultMap="summaryRow">
-    SELECT COUNT(*)                                                              AS total_count,
-           COUNT(*) FILTER (WHERE t.status = 'COMPLETED')                        AS completed_count,
-           COUNT(*) FILTER (WHERE t.status IN ('FAILED', 'COMPENSATED'))         AS failed_count,
-           COALESCE(SUM(t.amount)     FILTER (WHERE t.status = 'COMPLETED'), 0)  AS completed_amount,
-           COALESCE(SUM(t.fee_amount) FILTER (WHERE t.status = 'COMPLETED'), 0)  AS fee_amount,
-           COALESCE(ROUND(AVG(t.amount) FILTER (WHERE t.status = 'COMPLETED'), 2), 0)
-                                                                                 AS avg_completed_amount
-    FROM transfer_orders t
-    WHERE <include refid="reportFilter"/>
-  </select>
-
-  <resultMap id="dailyVolumePoint"
-             type="com.banksystem.transaction.api.dto.ReportDtos$DailyVolumePoint">
+  <!--
+    Combined single-scan query: groups by (day, status) in one pass.
+    Java service derives summary, dailyVolume and statusBreakdown from these rows
+    instead of running 3 separate full-table scans on 1M+ rows.
+  -->
+  <resultMap id="dailyStatusRow"
+             type="com.banksystem.transaction.infrastructure.mybatis.DailyStatusRow">
     <constructor>
       <arg column="day" javaType="java.time.LocalDate"/>
-      <arg column="total_count" javaType="_long"/>
-      <arg column="completed_count" javaType="_long"/>
-      <arg column="failed_count" javaType="_long"/>
-      <arg column="completed_amount" javaType="java.math.BigDecimal"/>
-      <arg column="fee_amount" javaType="java.math.BigDecimal"/>
-    </constructor>
-  </resultMap>
-
-  <!-- Bucket by banking day in the report zone (created_at is TIMESTAMPTZ, i.e. UTC instant). -->
-  <select id="dailyVolume" resultMap="dailyVolumePoint">
-    SELECT (t.created_at AT TIME ZONE #{zone})::date                             AS day,
-           COUNT(*)                                                              AS total_count,
-           COUNT(*) FILTER (WHERE t.status = 'COMPLETED')                        AS completed_count,
-           COUNT(*) FILTER (WHERE t.status IN ('FAILED', 'COMPENSATED'))         AS failed_count,
-           COALESCE(SUM(t.amount)     FILTER (WHERE t.status = 'COMPLETED'), 0)  AS completed_amount,
-           COALESCE(SUM(t.fee_amount) FILTER (WHERE t.status = 'COMPLETED'), 0)  AS fee_amount
-    FROM transfer_orders t
-    WHERE <include refid="reportFilter"/>
-    GROUP BY 1
-    ORDER BY 1
-  </select>
-
-  <resultMap id="statusBreakdownRow"
-             type="com.banksystem.transaction.api.dto.ReportDtos$StatusBreakdownRow">
-    <constructor>
       <arg column="status" javaType="java.lang.String"/>
       <arg column="cnt" javaType="_long"/>
       <arg column="total_amount" javaType="java.math.BigDecimal"/>
+      <arg column="total_fee" javaType="java.math.BigDecimal"/>
     </constructor>
   </resultMap>
 
-  <select id="statusBreakdown" resultMap="statusBreakdownRow">
-    SELECT t.status                     AS status,
-           COUNT(*)                     AS cnt,
-           COALESCE(SUM(t.amount), 0)   AS total_amount
-    FROM transfer_orders t
-    WHERE <include refid="reportFilter"/>
-    GROUP BY t.status
-    ORDER BY cnt DESC, t.status
+  <select id="dailyStatusAgg" resultMap="dailyStatusRow">
+    SELECT d.day                                      AS day,
+           d.status                                   AS status,
+           SUM(d.total_count)::bigint                 AS cnt,
+           COALESCE(SUM(d.total_amount), 0)           AS total_amount,
+           COALESCE(SUM(d.total_fee), 0)              AS total_fee
+    FROM daily_transaction_stats d
+    WHERE d.day &gt;= (#{fromTs} AT TIME ZONE #{zone})::date
+      AND d.day &lt; (#{toTs} AT TIME ZONE #{zone})::date
+      <if test="fromAccountId != null">
+        AND d.from_account_id = #{fromAccountId}
+      </if>
+    GROUP BY 1, 2
+    ORDER BY 1, 2
   </select>
 
   <resultMap id="topAccountRow"
@@ -98,13 +60,14 @@
   </resultMap>
 
   <select id="topSourceAccounts" resultMap="topAccountRow">
-    SELECT t.from_account_id::text  AS from_account_id,
-           COUNT(*)                 AS transfer_count,
-           SUM(t.amount)            AS total_amount
-    FROM transfer_orders t
-    WHERE t.status = 'COMPLETED'
-      AND t.created_at &gt;= #{fromTs} AND t.created_at &lt; #{toTs}
-    GROUP BY t.from_account_id
+    SELECT d.from_account_id::text                    AS from_account_id,
+           SUM(d.total_count)::bigint                 AS transfer_count,
+           SUM(d.total_amount)                        AS total_amount
+    FROM daily_transaction_stats d
+    WHERE d.status = 'COMPLETED'
+      AND d.day &gt;= (#{fromTs} AT TIME ZONE #{zone})::date
+      AND d.day &lt; (#{toTs} AT TIME ZONE #{zone})::date
+    GROUP BY d.from_account_id
     ORDER BY total_amount DESC, transfer_count DESC
     LIMIT #{limit}
   </select>

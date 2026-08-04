@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
+import org.springframework.format.annotation.DateTimeFormat;
 
 /** Term-deposit (so tiet kiem) API payloads. */
 public final class DepositDtos {
@@ -100,4 +101,16 @@ public final class DepositDtos {
       /** Interest projected at maturity for OPEN deposits; actual paid interest once closed. */
       BigDecimal interest,
       Instant closedAt) {}
+
+  public record AdminDepositFilterRequest(
+      Integer page,
+      Integer size,
+      String status,
+      String productCode,
+      String userId,
+      String accountId,
+      String accountNumber,
+      @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate maturityFrom,
+      @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate maturityTo
+  ) {}
 }

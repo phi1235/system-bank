@@ -1,4 +1,12 @@
 package com.banksystem.auth.config;
+import static com.banksystem.auth.api.dto.AuthDtos.*;
+import static com.banksystem.auth.api.dto.PasswordResetDtos.*;
+import static com.banksystem.auth.api.dto.RbacDtos.*;
+import com.banksystem.auth.application.auth.*;
+import com.banksystem.auth.application.rbac.*;
+import com.banksystem.auth.domain.auth.*;
+import com.banksystem.auth.domain.rbac.*;
+import com.banksystem.auth.api.dto.*;
 
 import java.util.ArrayList;
 import java.util.Collection;

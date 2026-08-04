@@ -1,8 +1,8 @@
 package com.banksystem.transaction.infrastructure.outbox;
 
-import com.banksystem.transaction.domain.OutboxEventEntity;
-import com.banksystem.transaction.domain.OutboxEventRepository;
-import com.banksystem.transaction.domain.OutboxStatus;
+import com.banksystem.transaction.domain.outbox.OutboxEventEntity;
+import com.banksystem.transaction.domain.outbox.OutboxEventRepository;
+import com.banksystem.transaction.domain.outbox.OutboxStatus;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Clock;
