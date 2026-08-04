@@ -39,7 +39,10 @@ public interface TransactionReportMapper {
       @Param("fromAccountId") UUID fromAccountId);
 
   List<TopAccountRow> topSourceAccounts(
-      @Param("fromTs") Instant fromTs, @Param("toTs") Instant toTs, @Param("limit") int limit);
+      @Param("fromTs") Instant fromTs,
+      @Param("toTs") Instant toTs,
+      @Param("zone") String zone,
+      @Param("limit") int limit);
 
   /**
    * Combined single-scan aggregate: groups by (day, status) in one pass.

@@ -129,6 +129,14 @@ networks:
 
 volumes:
   pgdata:
+    name: bank-system_pgdata
+    external: true
   redisdata:
+    name: bank-system_redisdata
+    external: true
   prometheusdata:
+    name: bank-system_prometheusdata
+    external: true
   grafanadata:
+    name: bank-system_grafanadata
+    external: true

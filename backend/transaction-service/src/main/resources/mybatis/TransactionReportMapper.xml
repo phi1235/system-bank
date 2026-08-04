@@ -37,7 +37,7 @@
   <select id="dailyStatusAgg" resultMap="dailyStatusRow">
     SELECT d.day                                      AS day,
            d.status                                   AS status,
-           SUM(d.total_count)                         AS cnt,
+           SUM(d.total_count)::bigint                 AS cnt,
            COALESCE(SUM(d.total_amount), 0)           AS total_amount,
            COALESCE(SUM(d.total_fee), 0)              AS total_fee
     FROM daily_transaction_stats d
@@ -61,7 +61,7 @@
 
   <select id="topSourceAccounts" resultMap="topAccountRow">
     SELECT d.from_account_id::text                    AS from_account_id,
-           SUM(d.total_count)                         AS transfer_count,
+           SUM(d.total_count)::bigint                 AS transfer_count,
            SUM(d.total_amount)                        AS total_amount
     FROM daily_transaction_stats d
     WHERE d.status = 'COMPLETED'

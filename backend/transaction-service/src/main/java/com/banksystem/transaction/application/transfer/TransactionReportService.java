@@ -84,15 +84,8 @@ public class TransactionReportService {
     Instant toTs = effectiveTo.plusDays(1).atStartOfDay(reportZone).toInstant();
 
     // Single-scan: combined GROUP BY (day, status) replaces 3 separate full-table scans.
-    var fCombined = CompletableFuture.supplyAsync(
-        () -> mapper.dailyStatusAgg(fromTs, toTs, reportZone.getId(), fromAccountId));
-    var fTop = CompletableFuture.supplyAsync(
-        () -> fromAccountId == null ? mapper.topSourceAccounts(fromTs, toTs, limit) : List.<TopAccountRow>of());
-
-    CompletableFuture.allOf(fCombined, fTop).join();
-
-    List<DailyStatusRow> combinedRows = fCombined.join();
-    List<TopAccountRow> topAccounts = fTop.join();
+    List<DailyStatusRow> combinedRows = mapper.dailyStatusAgg(fromTs, toTs, reportZone.getId(), fromAccountId);
+    List<TopAccountRow> topAccounts = fromAccountId == null ? mapper.topSourceAccounts(fromTs, toTs, reportZone.getId(), limit) : List.of();
 
     // Derive summary, dailyVolume, and statusBreakdown from combined rows in Java (O(rows) in memory).
     long totalCount = 0, completedCount = 0, failedCount = 0;
