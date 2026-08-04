@@ -5,14 +5,18 @@ import com.banksystem.notification.domain.notification.*;
 import com.banksystem.notification.domain.event.*;
 import com.banksystem.notification.api.dto.*;
 
+import com.banksystem.common.api.PageResponse;
 import com.banksystem.common.exception.BusinessException;
 import com.banksystem.common.security.SecretVerifier;
 import com.banksystem.notification.api.dto.NotificationDtos.NotificationItem;
+import com.banksystem.notification.api.notification.NotificationSandboxController.NotificationSandboxItem;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,22 +53,21 @@ public class NotificationLogCommandServiceImpl implements NotificationLogCommand
   }
 
   @Transactional(readOnly = true)
-  public com.banksystem.common.api.PageResponse<com.banksystem.notification.api.notification.NotificationSandboxController.NotificationSandboxItem> searchSandbox(
+  public PageResponse<NotificationSandboxItem> searchSandbox(
       String q, String channel, Integer page, Integer size) {
     int pg = page != null ? page : 0;
     int sz = size != null ? Math.min(size, 100) : 20;
     boolean hasQ = q != null && !q.isBlank();
     boolean hasChannel = channel != null && !channel.isBlank();
-    org.springframework.data.domain.PageRequest pageable =
-        org.springframework.data.domain.PageRequest.of(pg, sz);
+    PageRequest pageable = PageRequest.of(pg, sz);
 
-    org.springframework.data.domain.Page<NotificationLogEntity> result = repository.searchSandbox(
+    Page<NotificationLogEntity> result = repository.searchSandbox(
         hasQ, hasQ ? q.trim() : null,
         hasChannel, hasChannel ? channel.trim().toUpperCase() : null,
         pageable);
 
-    org.springframework.data.domain.Page<com.banksystem.notification.api.notification.NotificationSandboxController.NotificationSandboxItem> mapped =
-        result.map(e -> new com.banksystem.notification.api.notification.NotificationSandboxController.NotificationSandboxItem(
+    Page<NotificationSandboxItem> mapped =
+        result.map(e -> new NotificationSandboxItem(
             e.getId().toString(),
             e.getChannel(),
             e.getRecipient(),
@@ -76,7 +79,7 @@ public class NotificationLogCommandServiceImpl implements NotificationLogCommand
             e.getCreatedAt()
         ));
 
-    return new com.banksystem.common.api.PageResponse<>(
+    return new PageResponse<>(
         mapped.getContent(),
         mapped.getNumber(),
         mapped.getSize(),
