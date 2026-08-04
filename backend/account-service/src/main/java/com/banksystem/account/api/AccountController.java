@@ -73,8 +73,8 @@ public class AccountController {
     return ApiResponse.ok(service.statement(query, UserContext.requireUser()));
   }
 
-  @PostMapping("/{id}/statement/search")
-  public ApiResponse<PageResponse<LedgerEntryResponse>> statementSearch(
+  @PostMapping("/{id}/statement/findStatement")
+  public ApiResponse<PageResponse<LedgerEntryResponse>> findStatement(
       @PathVariable UUID id,
       @Valid @RequestBody StatementFilterRequest req) {
     LedgerStatementQuery query = LedgerStatementQuery.of(id, req.page(), req.size(), req.entryType(), req.from(), req.to());

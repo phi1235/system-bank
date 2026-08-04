@@ -37,8 +37,8 @@ public class AdminOutboxController {
     return ApiResponse.ok(service.list(req));
   }
 
-  @PostMapping("/search")
-  public ApiResponse<PageResponse<OutboxEventResponse>> search(@Valid @RequestBody AdminOutboxFilterRequest req) {
+  @PostMapping("/findOutboxByCondition")
+  public ApiResponse<PageResponse<OutboxEventResponse>> findOutboxByCondition(@Valid @RequestBody AdminOutboxFilterRequest req) {
     return ApiResponse.ok(service.list(req));
   }
 

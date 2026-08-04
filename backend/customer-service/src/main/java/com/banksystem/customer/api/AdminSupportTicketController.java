@@ -44,9 +44,9 @@ public class AdminSupportTicketController {
     return ApiResponse.ok(queryService.adminList(TicketSearchQuery.of(req)));
   }
 
-  @PostMapping("/search")
+  @PostMapping("/findSupportTicketByCondition")
   @RequirePermission("support:tickets:list")
-  public ApiResponse<PageResponse<SupportTicketResponse>> search(
+  public ApiResponse<PageResponse<SupportTicketResponse>> findSupportTicketByCondition(
       @Valid @RequestBody AdminTicketFilterRequest req) {
     return ApiResponse.ok(queryService.adminList(TicketSearchQuery.of(req)));
   }

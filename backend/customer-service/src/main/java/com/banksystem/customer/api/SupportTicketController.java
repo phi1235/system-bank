@@ -53,9 +53,9 @@ public class SupportTicketController {
     return ApiResponse.ok(queryService.listMine(UserContext.requireUser().userId(), page, size));
   }
 
-  @PostMapping("/customers/me/support-tickets/search")
+  @PostMapping("/customers/me/support-tickets/findSupportTicketByCondition")
   @RequirePermission("ib:support:view")
-  public ApiResponse<PageResponse<SupportTicketResponse>> searchMine(
+  public ApiResponse<PageResponse<SupportTicketResponse>> findSupportTicketByCondition(
       @Valid @RequestBody MyTicketFilterRequest req) {
     return ApiResponse.ok(queryService.listMine(UserContext.requireUser().userId(), req.page(), req.size()));
   }

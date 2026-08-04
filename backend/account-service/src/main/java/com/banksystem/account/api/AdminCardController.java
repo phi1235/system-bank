@@ -42,9 +42,9 @@ public class AdminCardController {
     return ApiResponse.ok(service.queue(req));
   }
 
-  @PostMapping("/search")
+  @PostMapping("/findCardByCondition")
   @RequirePermission("accounts:lookup:view")
-  public ApiResponse<PageResponse<AdminCardRow>> search(@Valid @RequestBody AdminCardFilterRequest req) {
+  public ApiResponse<PageResponse<AdminCardRow>> findCardByCondition(@Valid @RequestBody AdminCardFilterRequest req) {
     return ApiResponse.ok(service.queue(req));
   }
 

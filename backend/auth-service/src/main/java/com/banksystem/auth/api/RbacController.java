@@ -106,8 +106,8 @@ public class RbacController {
     return ApiResponse.ok(queryService.listUsers(req));
   }
 
-  @PostMapping("/users/search")
-  public ApiResponse<PageResponse<StaffUserDto>> usersSearch(
+  @PostMapping("/users/findUserByCondition")
+  public ApiResponse<PageResponse<StaffUserDto>> findUserByCondition(
       @AuthenticationPrincipal UserPrincipal principal,
       @Valid @RequestBody StaffUserFilterRequest req) {
     PermissionChecker.requireUsersAssign(principal);

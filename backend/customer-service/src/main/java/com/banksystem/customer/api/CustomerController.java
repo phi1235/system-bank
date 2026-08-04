@@ -64,9 +64,9 @@ public class CustomerController {
     return ApiResponse.ok(queryService.list(CustomerSearchQuery.of(req)));
   }
 
-  @PostMapping({"/customers/search", "/admin/customers/search"})
+  @PostMapping({"/customers/findCustomerByCondition", "/admin/customers/findCustomerByCondition"})
   @RequirePermission("customers:list:view")
-  public ApiResponse<PageResponse<CustomerResponse>> search(
+  public ApiResponse<PageResponse<CustomerResponse>> findCustomerByCondition(
       @Valid @RequestBody CustomerSearchFilterRequest req) {
     return ApiResponse.ok(queryService.list(CustomerSearchQuery.of(req)));
   }

@@ -51,7 +51,7 @@ export class BankApiService {
     page?: number;
     size?: number;
   }): Observable<PageResponse<NotificationItem>> {
-    return this.api.post('/admin/notifications/sandbox/search', {
+    return this.api.post('/admin/notifications/sandbox/findSandboxByCondition', {
       q: params?.q,
       channel: params?.channel,
       page: params?.page,
@@ -68,7 +68,7 @@ export class BankApiService {
     size = 20,
     readFilter: 'ALL' | 'UNREAD' | 'READ' = 'ALL',
   ): Observable<PageResponse<NotificationItem>> {
-    return this.api.post('/notifications/search', {
+    return this.api.post('/notifications/findNotificationByCondition', {
       page,
       size,
       ...(readFilter && readFilter !== 'ALL' ? { readFilter } : {}),
@@ -89,7 +89,7 @@ export class BankApiService {
 
   // Notifications (admin ops shared inbox)
   adminOpsNotifications(page = 0, size = 20): Observable<PageResponse<NotificationItem>> {
-    return this.api.post('/admin/notifications/search', { page, size });
+    return this.api.post('/admin/notifications/findNotificationByCondition', { page, size });
   }
 
   adminOpsNotificationUnreadCount(): Observable<{ unread: number }> {
@@ -161,7 +161,7 @@ export class BankApiService {
 
   /** Staff card approval queue (default REQUESTED, oldest first). */
   adminCards(status = 'REQUESTED', page = 0, size = 20, q = ''): Observable<PageResponse<AdminCard>> {
-    return this.api.post('/admin/cards/search', { status, page, size, q });
+    return this.api.post('/admin/cards/findCardByCondition', { status, page, size, q });
   }
 
   adminApproveCard(id: string): Observable<Card> {
@@ -219,7 +219,7 @@ export class BankApiService {
       maturityTo?: string;
     },
   ): Observable<PageResponse<AdminTermDeposit>> {
-    return this.api.post('/admin/deposits/search', {
+    return this.api.post('/admin/deposits/findDepositByCondition', {
       page,
       size,
       status: filters?.status,
@@ -258,7 +258,7 @@ export class BankApiService {
       to?: string;
     },
   ): Observable<PageResponse<LedgerEntry>> {
-    return this.api.post(`/accounts/${accountId}/statement/search`, {
+    return this.api.post(`/accounts/${accountId}/statement/findStatement`, {
       page: params?.page,
       size: params?.size,
       entryType: params?.entryType,
@@ -309,7 +309,7 @@ export class BankApiService {
     status?: string,
     accountType?: string,
   ): Observable<PageResponse<Account>> {
-    return this.api.post('/admin/accounts/search', { page, size, q, status, accountType });
+    return this.api.post('/admin/accounts/findAccountByCondition', { page, size, q, status, accountType });
   }
 
   adminAccountDetail(id: string): Observable<Account> {
@@ -341,7 +341,7 @@ export class BankApiService {
       to?: string;
     },
   ): Observable<PageResponse<Transfer>> {
-    return this.api.post('/transactions/transfers/search', {
+    return this.api.post('/transactions/transfers/findTransferLog', {
       page,
       size,
       status: params?.status,
@@ -394,7 +394,7 @@ export class BankApiService {
   }
 
   mySupportTickets(page = 0, size = 20): Observable<PageResponse<SupportTicket>> {
-    return this.api.post('/customers/me/support-tickets/search', { page, size });
+    return this.api.post('/customers/me/support-tickets/findSupportTicketByCondition', { page, size });
   }
 
   mySupportTicket(id: string): Observable<SupportTicket> {
@@ -407,7 +407,7 @@ export class BankApiService {
     size = 20,
     filters?: { status?: string; category?: string; q?: string },
   ): Observable<PageResponse<SupportTicket>> {
-    return this.api.post('/admin/support-tickets/search', {
+    return this.api.post('/admin/support-tickets/findSupportTicketByCondition', {
       page,
       size,
       status: filters?.status,
@@ -457,7 +457,7 @@ export class BankApiService {
     q?: string,
     kycStatus?: string,
   ): Observable<PageResponse<CustomerProfile>> {
-    return this.api.post('/admin/customers/search', { page, size, q, kycStatus });
+    return this.api.post('/admin/customers/findCustomerByCondition', { page, size, q, kycStatus });
   }
 
   updateKyc(id: string, kycStatus: string): Observable<CustomerProfile> {
@@ -475,7 +475,7 @@ export class BankApiService {
       to?: string;
     },
   ): Observable<PageResponse<Transfer>> {
-    return this.api.post('/admin/transfers/search', {
+    return this.api.post('/admin/transfers/findTransferByCondition', {
       page,
       size,
       status: filters?.status,
@@ -498,7 +498,7 @@ export class BankApiService {
       lastCreatedAt?: string;
     },
   ): Observable<Transfer[]> {
-    return this.api.post<Transfer[]>('/admin/transfers/search', {
+    return this.api.post<Transfer[]>('/admin/transfers/findTransferByCondition', {
       page,
       size,
       noCount: true,
@@ -539,7 +539,7 @@ export class BankApiService {
   }
 
   adminReconRuns(page = 0, size = 20): Observable<PageResponse<ReconRun>> {
-    return this.api.post('/admin/recon/runs/search', { page, size });
+    return this.api.post('/admin/recon/runs/findReconRunsByCondition', { page, size });
   }
 
   adminReconRun(id: string): Observable<ReconRunDetail> {
@@ -568,7 +568,7 @@ export class BankApiService {
       noCount?: boolean;
     },
   ): Observable<PageResponse<AuditLog>> {
-    return this.api.post('/admin/audit-logs/search', {
+    return this.api.post('/admin/audit-logs/findAuditLogByCondition', {
       page,
       size,
       noCount: filters?.noCount,
@@ -599,7 +599,7 @@ export class BankApiService {
       to?: string;
     },
   ): Observable<PageResponse<OutboxEvent>> {
-    return this.api.post('/admin/outbox/search', {
+    return this.api.post('/admin/outbox/findOutboxByCondition', {
       page,
       size,
       status: filters?.status,
@@ -663,7 +663,7 @@ export class BankApiService {
     size = 20,
     filters?: { q?: string; enabled?: boolean; userId?: string },
   ): Observable<PageResponse<RbacStaffUser>> {
-    return this.api.post('/admin/rbac/users/search', {
+    return this.api.post('/admin/rbac/users/findUserByCondition', {
       page,
       size,
       q: filters?.q,
@@ -699,7 +699,7 @@ export class BankApiService {
   }
 
   billHistory(page = 0, size = 20): Observable<PageResponse<BillPaymentHistory>> {
-    return this.api.post('/bills/history/search', { page, size });
+    return this.api.post('/bills/history/findBillPaymentHistory', { page, size });
   }
 }
 

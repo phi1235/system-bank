@@ -34,8 +34,8 @@ public class InternalLedgerController {
     this.apiKey = apiKey;
   }
 
-  @PostMapping("/search")
-  public ApiResponse<List<InternalLedgerEntryResponse>> search(
+  @PostMapping("/findLedgerByCondition")
+  public ApiResponse<List<InternalLedgerEntryResponse>> findLedgerByCondition(
       @Valid @RequestBody LedgerSearchRequest request,
       @RequestHeader(value = SecurityHeaders.INTERNAL_API_KEY, required = false) String key) {
     requireKey(key);

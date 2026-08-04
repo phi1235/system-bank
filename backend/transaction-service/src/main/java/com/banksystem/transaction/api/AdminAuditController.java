@@ -35,8 +35,8 @@ public class AdminAuditController {
     return ApiResponse.ok(service.list(req));
   }
 
-  @PostMapping("/search")
-  public ApiResponse<?> search(@Valid @RequestBody AdminAuditFilterRequest req) {
+  @PostMapping("/findAuditLogByCondition")
+  public ApiResponse<?> findAuditLogByCondition(@Valid @RequestBody AdminAuditFilterRequest req) {
     return ApiResponse.ok(service.list(req));
   }
 

@@ -54,8 +54,8 @@ public class NotificationController {
         inboxService.myInbox(userId, page, Math.min(size, 100), filter));
   }
 
-  @PostMapping("/search")
-  public ApiResponse<PageResponse<NotificationItem>> myInboxSearch(
+  @PostMapping("/findNotificationByCondition")
+  public ApiResponse<PageResponse<NotificationItem>> findNotificationByCondition(
       @Valid @RequestBody NotificationSearchRequest req) {
     UUID userId = UserContext.requireUser().userId();
     return ApiResponse.ok(

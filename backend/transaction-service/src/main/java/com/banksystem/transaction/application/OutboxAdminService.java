@@ -13,8 +13,9 @@ import com.banksystem.transaction.infrastructure.outbox.OutboxMetrics;
 import java.time.Clock;
 import java.util.List;
 import java.util.UUID;
-import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,11 +28,13 @@ public class OutboxAdminService {
   private final OutboxEventRepository repository;
   private final OutboxMetrics metrics;
   private final Clock clock;
+  private final JdbcTemplate jdbcTemplate;
 
-  public OutboxAdminService(OutboxEventRepository repository, OutboxMetrics metrics, Clock clock) {
+  public OutboxAdminService(OutboxEventRepository repository, OutboxMetrics metrics, Clock clock, JdbcTemplate jdbcTemplate) {
     this.repository = repository;
     this.metrics = metrics;
     this.clock = clock;
+    this.jdbcTemplate = jdbcTemplate;
   }
 
   @Transactional(readOnly = true)
@@ -44,8 +47,8 @@ public class OutboxAdminService {
   @Transactional(readOnly = true)
   public PageResponse<OutboxEventResponse> list(OutboxListQuery query) {
     PageRequest pageable = PageRequest.of(query.page(), query.size());
-    Page<OutboxEventEntity> page =
-        repository.searchAdmin(
+    Slice<OutboxEventEntity> slice =
+        repository.searchAdminSlice(
             query.status().name(),
             query.hasEventType(),
             query.hasEventType() ? query.eventType() : "",
@@ -59,13 +62,15 @@ public class OutboxAdminService {
             query.to(),
             pageable);
     List<OutboxEventResponse> items =
-        page.getContent().stream().map(e -> toResponse(e, false)).toList();
+        slice.getContent().stream().map(e -> toResponse(e, false)).toList();
+    long estimatedTotal = estimatedRowCount("outbox_events");
+    int totalPages = (int) Math.ceil((double) estimatedTotal / query.size());
     return new PageResponse<>(
         items,
-        page.getNumber(),
-        page.getSize(),
-        page.getTotalElements(),
-        page.getTotalPages());
+        query.page(),
+        query.size(),
+        estimatedTotal,
+        totalPages);
   }
 
   @Transactional(readOnly = true)
@@ -118,5 +123,12 @@ public class OutboxAdminService {
         e.getPublishedAt(),
         e.getLastError(),
         includePayload ? e.getPayload() : null);
+  }
+
+  private long estimatedRowCount(String tableName) {
+    Long estimate = jdbcTemplate.queryForObject(
+        "SELECT n_live_tup FROM pg_stat_user_tables WHERE relname = ?",
+        Long.class, tableName);
+    return (estimate != null && estimate > 0) ? estimate : 0;
   }
 }

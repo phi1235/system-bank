@@ -69,9 +69,9 @@ public class BillPaymentController {
     return ApiResponse.ok(billService.history(UserContext.requireUser().userId(), page, size));
   }
 
-  @PostMapping("/history/search")
+  @PostMapping("/history/findBillPaymentHistory")
   @RequirePermission("ib:bills:view")
-  public ApiResponse<PageResponse<BillPaymentHistoryResponse>> historySearch(
+  public ApiResponse<PageResponse<BillPaymentHistoryResponse>> findBillPaymentHistory(
       @Valid @RequestBody PageFilterRequest req) {
     return ApiResponse.ok(billService.history(UserContext.requireUser().userId(), req.page(), req.size()));
   }

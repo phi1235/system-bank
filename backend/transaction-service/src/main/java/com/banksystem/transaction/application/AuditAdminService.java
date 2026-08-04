@@ -12,6 +12,7 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,16 +23,18 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuditAdminService {
 
   private final AuditLogRepository repository;
+  private final JdbcTemplate jdbcTemplate;
 
-  public AuditAdminService(AuditLogRepository repository) {
+  public AuditAdminService(AuditLogRepository repository, JdbcTemplate jdbcTemplate) {
     this.repository = repository;
+    this.jdbcTemplate = jdbcTemplate;
   }
 
   @Transactional(readOnly = true)
   public PageResponse<AuditResponse> list(AuditListQuery query) {
     PageRequest pageable = PageRequest.of(query.page(), query.size());
-    Page<AuditLogEntity> page =
-        repository.searchAdmin(
+    Slice<AuditLogEntity> slice =
+        repository.searchAdminSlice(
             query.hasAction(),
             query.action() == null ? "" : query.action(),
             query.hasResourceType(),
@@ -43,13 +46,15 @@ public class AuditAdminService {
             query.from(),
             query.to(),
             pageable);
-    List<AuditResponse> items = page.getContent().stream().map(this::toResponse).toList();
+    List<AuditResponse> items = slice.getContent().stream().map(this::toResponse).toList();
+    long estimatedTotal = estimatedRowCount("audit_logs");
+    int totalPages = (int) Math.ceil((double) estimatedTotal / query.size());
     return new PageResponse<>(
         items,
-        page.getNumber(),
-        page.getSize(),
-        page.getTotalElements(),
-        page.getTotalPages());
+        query.page(),
+        query.size(),
+        estimatedTotal,
+        totalPages);
   }
 
   @Transactional(readOnly = true)
@@ -108,5 +113,12 @@ public class AuditAdminService {
         e.getIp(),
         e.getMetadata(),
         e.getCreatedAt());
+  }
+
+  private long estimatedRowCount(String tableName) {
+    Long estimate = jdbcTemplate.queryForObject(
+        "SELECT n_live_tup FROM pg_stat_user_tables WHERE relname = ?",
+        Long.class, tableName);
+    return (estimate != null && estimate > 0) ? estimate : 0;
   }
 }

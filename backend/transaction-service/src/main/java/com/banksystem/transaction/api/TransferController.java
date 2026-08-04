@@ -62,8 +62,8 @@ public class TransferController {
     return ApiResponse.ok(transferService.myHistory(UserContext.requireUser().userId(), req));
   }
 
-  @PostMapping("/transactions/transfers/search")
-  public ApiResponse<PageResponse<TransferResponse>> myTransfersSearch(
+  @PostMapping("/transactions/transfers/findTransferLog")
+  public ApiResponse<PageResponse<TransferResponse>> findTransferLog(
       @Valid @RequestBody MyTransferFilterRequest req) {
     return ApiResponse.ok(transferService.myHistory(UserContext.requireUser().userId(), req));
   }
@@ -85,9 +85,9 @@ public class TransferController {
     return ApiResponse.ok(transferService.adminTransfers(req));
   }
 
-  @PostMapping({"/admin/transfers/search", "/transactions/admin/transfers/search"})
+  @PostMapping({"/admin/transfers/findTransferByCondition", "/transactions/admin/transfers/findTransferByCondition"})
   @RequirePermission("transactions:list:view")
-  public ApiResponse<?> adminTransfersSearch(@Valid @RequestBody AdminTransferFilterRequest req) {
+  public ApiResponse<?> findTransferByCondition(@Valid @RequestBody AdminTransferFilterRequest req) {
     return ApiResponse.ok(transferService.adminTransfers(req));
   }
 }

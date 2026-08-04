@@ -40,9 +40,9 @@ public class AdminReconciliationController {
     return ApiResponse.ok(service.list(page, size));
   }
 
-  @PostMapping("/runs/search")
+  @PostMapping("/runs/findReconRunsByCondition")
   @RequirePermission("transactions:recon:view")
-  public ApiResponse<PageResponse<ReconRunResponse>> search(
+  public ApiResponse<PageResponse<ReconRunResponse>> findReconRunsByCondition(
       @Valid @RequestBody PageFilterRequest req) {
     return ApiResponse.ok(service.list(req.page(), req.size()));
   }

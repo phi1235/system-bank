@@ -58,8 +58,8 @@ public class PasswordResetController {
     return ApiResponse.ok(passwordResetService.listTickets(status, page, size));
   }
 
-  @PostMapping("/admin/password-reset/tickets/search")
-  public ApiResponse<PageResponse<TicketResponse>> searchTickets(
+  @PostMapping("/admin/password-reset/tickets/findTicketByCondition")
+  public ApiResponse<PageResponse<TicketResponse>> findTicketByCondition(
       @AuthenticationPrincipal UserPrincipal principal,
       @Valid @RequestBody TicketSearchRequest req) {
     PermissionChecker.requirePasswordReset(principal);

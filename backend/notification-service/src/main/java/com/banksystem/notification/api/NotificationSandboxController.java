@@ -47,8 +47,8 @@ public class NotificationSandboxController {
     return ApiResponse.ok(service.searchSandbox(q, channel, page, size));
   }
 
-  @PostMapping({"/admin/notifications/sandbox/search", "/notifications/sandbox/search", "/dev/notifications/sandbox/search"})
-  public ApiResponse<PageResponse<NotificationSandboxItem>> searchSandboxLogs(
+  @PostMapping({"/admin/notifications/sandbox/findSandboxByCondition", "/notifications/sandbox/findSandboxByCondition", "/dev/notifications/sandbox/findSandboxByCondition"})
+  public ApiResponse<PageResponse<NotificationSandboxItem>> findSandboxByCondition(
       @Valid @RequestBody SandboxSearchRequest req) {
     return ApiResponse.ok(service.searchSandbox(req.q(), req.channel(), req.page(), req.size()));
   }

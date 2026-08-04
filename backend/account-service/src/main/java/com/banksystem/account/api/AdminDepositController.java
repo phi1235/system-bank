@@ -53,9 +53,9 @@ public class AdminDepositController {
     return ApiResponse.ok(adminService.list(req));
   }
 
-  @PostMapping("/search")
+  @PostMapping("/findDepositByCondition")
   @RequirePermission("deposits:summary:view")
-  public ApiResponse<PageResponse<AdminTermDepositRow>> search(@Valid @RequestBody AdminDepositFilterRequest req) {
+  public ApiResponse<PageResponse<AdminTermDepositRow>> findDepositByCondition(@Valid @RequestBody AdminDepositFilterRequest req) {
     return ApiResponse.ok(adminService.list(req));
   }
 

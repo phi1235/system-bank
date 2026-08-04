@@ -44,8 +44,8 @@ public class AdminNotificationController {
     return ApiResponse.ok(inboxService.opsInbox(page, Math.min(size, 100)));
   }
 
-  @PostMapping("/search")
-  public ApiResponse<PageResponse<NotificationItem>> search(
+  @PostMapping("/findNotificationByCondition")
+  public ApiResponse<PageResponse<NotificationItem>> findNotificationByCondition(
       @Valid @RequestBody PageFilterRequest req) {
     return ApiResponse.ok(inboxService.opsInbox(req.page(), req.size()));
   }
