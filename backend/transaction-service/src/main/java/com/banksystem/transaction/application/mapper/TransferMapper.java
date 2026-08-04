@@ -2,8 +2,8 @@ package com.banksystem.transaction.application.mapper;
 
 import com.banksystem.transaction.api.dto.TransferDtos.SagaStepResponse;
 import com.banksystem.transaction.api.dto.TransferDtos.TransferResponse;
-import com.banksystem.transaction.domain.SagaStepLogEntity;
-import com.banksystem.transaction.domain.TransferOrderEntity;
+import com.banksystem.transaction.domain.transfer.SagaStepLogEntity;
+import com.banksystem.transaction.domain.transfer.TransferOrderEntity;
 import java.math.BigDecimal;
 import org.springframework.stereotype.Component;
 

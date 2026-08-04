@@ -1,11 +1,16 @@
 package com.banksystem.account.application.mapper;
+import com.banksystem.account.application.account.*;
+import com.banksystem.account.application.card.*;
+import com.banksystem.account.application.deposit.*;
+import com.banksystem.account.application.ledger.*;
+import com.banksystem.account.domain.account.*;
+import com.banksystem.account.domain.card.*;
+import com.banksystem.account.domain.deposit.*;
+import com.banksystem.account.domain.ledger.*;
+import com.banksystem.account.api.dto.*;
 
 import com.banksystem.account.api.dto.DepositDtos.DepositProductResponse;
 import com.banksystem.account.api.dto.DepositDtos.TermDepositResponse;
-import com.banksystem.account.application.DepositInterestCalculator;
-import com.banksystem.account.domain.DepositProductEntity;
-import com.banksystem.account.domain.TermDepositEntity;
-import com.banksystem.account.domain.TermDepositStatus;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.ZoneId;

@@ -1,13 +1,16 @@
 package com.banksystem.auth.application.mapper;
+import static com.banksystem.auth.api.dto.AuthDtos.*;
+import static com.banksystem.auth.api.dto.PasswordResetDtos.*;
+import static com.banksystem.auth.api.dto.RbacDtos.*;
+import com.banksystem.auth.application.auth.*;
+import com.banksystem.auth.application.rbac.*;
+import com.banksystem.auth.domain.auth.*;
+import com.banksystem.auth.domain.rbac.*;
+import com.banksystem.auth.api.dto.*;
 
 import com.banksystem.auth.api.dto.RbacDtos.PermissionDto;
 import com.banksystem.auth.api.dto.RbacDtos.RoleDto;
 import com.banksystem.auth.api.dto.RbacDtos.StaffUserDto;
-import com.banksystem.auth.application.permission.PermissionResolver;
-import com.banksystem.auth.domain.PermissionEntity;
-import com.banksystem.auth.domain.RoleEntity;
-import com.banksystem.auth.domain.RolePermissionRepository;
-import com.banksystem.auth.domain.UserEntity;
 import java.util.List;
 import org.springframework.stereotype.Component;
 

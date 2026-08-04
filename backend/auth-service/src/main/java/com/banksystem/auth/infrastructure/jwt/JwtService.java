@@ -1,7 +1,13 @@
 package com.banksystem.auth.infrastructure.jwt;
+import static com.banksystem.auth.api.dto.AuthDtos.*;
+import static com.banksystem.auth.api.dto.PasswordResetDtos.*;
+import static com.banksystem.auth.api.dto.RbacDtos.*;
+import com.banksystem.auth.application.auth.*;
+import com.banksystem.auth.application.rbac.*;
+import com.banksystem.auth.domain.auth.*;
+import com.banksystem.auth.domain.rbac.*;
+import com.banksystem.auth.api.dto.*;
 
-import com.banksystem.auth.application.permission.PermissionResolver;
-import com.banksystem.auth.domain.UserEntity;
 import com.banksystem.common.security.SecurityHeaders;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;

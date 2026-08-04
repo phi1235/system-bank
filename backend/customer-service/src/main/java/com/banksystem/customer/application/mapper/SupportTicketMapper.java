@@ -1,9 +1,13 @@
 package com.banksystem.customer.application.mapper;
+import com.banksystem.customer.application.customer.*;
+import com.banksystem.customer.application.support.*;
+import com.banksystem.customer.application.dashboard.*;
+import com.banksystem.customer.domain.customer.*;
+import com.banksystem.customer.domain.support.*;
+import com.banksystem.customer.api.dto.*;
 
 import com.banksystem.customer.api.dto.SupportTicketDtos.SupportTicketMessageResponse;
 import com.banksystem.customer.api.dto.SupportTicketDtos.SupportTicketResponse;
-import com.banksystem.customer.domain.SupportTicketEntity;
-import com.banksystem.customer.domain.SupportTicketMessageEntity;
 import java.util.List;
 import org.springframework.stereotype.Component;
 

@@ -1,4 +1,10 @@
 package com.banksystem.customer.infrastructure.feign;
+import com.banksystem.customer.application.customer.*;
+import com.banksystem.customer.application.support.*;
+import com.banksystem.customer.application.dashboard.*;
+import com.banksystem.customer.domain.customer.*;
+import com.banksystem.customer.domain.support.*;
+import com.banksystem.customer.api.dto.*;
 
 import com.banksystem.common.api.ApiResponse;
 import com.banksystem.customer.infrastructure.feign.NotificationClientDtos.CreateNotificationLogRequest;

@@ -1,4 +1,10 @@
 package com.banksystem.customer.application.security;
+import com.banksystem.customer.application.customer.*;
+import com.banksystem.customer.application.support.*;
+import com.banksystem.customer.application.dashboard.*;
+import com.banksystem.customer.domain.customer.*;
+import com.banksystem.customer.domain.support.*;
+import com.banksystem.customer.api.dto.*;
 
 import com.banksystem.common.security.CryptoUtils;
 import org.springframework.beans.factory.annotation.Value;

@@ -1,8 +1,8 @@
 package com.banksystem.transaction.infrastructure.outbox;
 
-import com.banksystem.transaction.application.OpsAlertPublisher;
-import com.banksystem.transaction.domain.OutboxEventEntity;
-import com.banksystem.transaction.domain.OutboxEventRepository;
+import com.banksystem.transaction.application.reconciliation.OpsAlertPublisher;
+import com.banksystem.transaction.domain.outbox.OutboxEventEntity;
+import com.banksystem.transaction.domain.outbox.OutboxEventRepository;
 import java.time.Instant;
 import java.util.List;
 import org.slf4j.Logger;
