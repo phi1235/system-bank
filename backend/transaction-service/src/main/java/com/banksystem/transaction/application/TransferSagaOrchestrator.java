@@ -1,17 +1,15 @@
 package com.banksystem.transaction.application;
 
-import com.banksystem.common.api.ApiResponse;
 import com.banksystem.common.exception.BusinessException;
+import com.banksystem.transaction.application.gateway.AccountGateway;
 import com.banksystem.transaction.domain.SagaStepLogEntity;
 import com.banksystem.transaction.domain.SagaStepLogRepository;
 import com.banksystem.transaction.domain.TransferOrderEntity;
 import com.banksystem.transaction.domain.TransferOrderRepository;
 import com.banksystem.transaction.domain.TransferStatus;
-import com.banksystem.transaction.infrastructure.feign.AccountClient;
 import com.banksystem.transaction.infrastructure.feign.AccountClientDtos.MoneyCommand;
 import com.banksystem.transaction.infrastructure.feign.AccountClientDtos.MoneyResult;
 import com.banksystem.transaction.infrastructure.outbox.OutboxService;
-import feign.FeignException;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -20,7 +18,6 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,26 +28,23 @@ public class TransferSagaOrchestrator {
 
   private final TransferOrderRepository transferOrderRepository;
   private final SagaStepLogRepository sagaStepLogRepository;
-  private final AccountClient accountClient;
+  private final AccountGateway accountGateway;
   private final OutboxService outboxService;
   private final TransferFeeGlService feeGlService;
-  private final String internalApiKey;
   private final boolean failCredit;
 
   public TransferSagaOrchestrator(
       TransferOrderRepository transferOrderRepository,
       SagaStepLogRepository sagaStepLogRepository,
-      AccountClient accountClient,
+      AccountGateway accountGateway,
       OutboxService outboxService,
       TransferFeeGlService feeGlService,
-      @Value("${bank.internal.account-api-key}") String internalApiKey,
       @Value("${bank.saga.fail-credit:false}") boolean failCredit) {
     this.transferOrderRepository = transferOrderRepository;
     this.sagaStepLogRepository = sagaStepLogRepository;
-    this.accountClient = accountClient;
+    this.accountGateway = accountGateway;
     this.outboxService = outboxService;
     this.feeGlService = feeGlService;
-    this.internalApiKey = internalApiKey;
     this.failCredit = failCredit;
   }
 
@@ -78,8 +72,7 @@ public class TransferSagaOrchestrator {
     // STEP 2 — credit destination principal only
     try {
       if (failCredit) {
-        throw new BusinessException("SAGA_INJECTED_FAIL", "Injected credit failure for demo",
-            HttpStatus.SERVICE_UNAVAILABLE);
+        throw new BusinessException("SAGA_INJECTED_FAIL", "Injected credit failure for demo");
       }
       MoneyResult credit = callCredit(order.getToAccountId(), order, order.getId().toString());
       order.setCreditEntryRef(credit.ledgerEntryId());
@@ -201,23 +194,11 @@ public class TransferSagaOrchestrator {
   }
 
   private MoneyResult callDebitAmount(UUID accountId, BigDecimal amount, String referenceId, String description) {
-    try {
-      ApiResponse<MoneyResult> res = accountClient.debit(
-          accountId,
-          new MoneyCommand(amount, referenceId, description, referenceId),
-          internalApiKey);
-      if (res == null || !res.success() || res.data() == null) {
-        String code = res != null && res.error() != null ? res.error().code() : "DEBIT_FAILED";
-        String msg = res != null && res.error() != null ? res.error().message() : "Debit failed";
-        throw new BusinessException(code, msg, HttpStatus.UNPROCESSABLE_ENTITY);
-      }
-      return res.data();
-    } catch (FeignException.UnprocessableEntity e) {
-      throw mapFeignBusiness(e);
-    } catch (FeignException e) {
-      throw new BusinessException("ACCOUNT_SERVICE_ERROR", "Account service error: " + e.status(),
-          HttpStatus.SERVICE_UNAVAILABLE);
+    MoneyResult result = accountGateway.debit(accountId, new MoneyCommand(amount, referenceId, description, referenceId));
+    if (result == null) {
+      throw new BusinessException("DEBIT_FAILED", "Debit failed");
     }
+    return result;
   }
 
   /** Credit principal only (destination receives amount, never fee). */
@@ -237,39 +218,11 @@ public class TransferSagaOrchestrator {
       BigDecimal amount,
       String referenceId,
       String description) {
-    try {
-      ApiResponse<MoneyResult> res = accountClient.credit(
-          accountId,
-          new MoneyCommand(amount, referenceId, description, referenceId),
-          internalApiKey);
-      if (res == null || !res.success() || res.data() == null) {
-        String code = res != null && res.error() != null ? res.error().code() : "CREDIT_FAILED";
-        String msg = res != null && res.error() != null ? res.error().message() : "Credit failed";
-        throw new BusinessException(code, msg, HttpStatus.UNPROCESSABLE_ENTITY);
-      }
-      return res.data();
-    } catch (FeignException.UnprocessableEntity e) {
-      throw mapFeignBusiness(e);
-    } catch (FeignException e) {
-      throw new BusinessException("ACCOUNT_SERVICE_ERROR", "Account service error: " + e.status(),
-          HttpStatus.SERVICE_UNAVAILABLE);
+    MoneyResult result = accountGateway.credit(accountId, new MoneyCommand(amount, referenceId, description, referenceId));
+    if (result == null) {
+      throw new BusinessException("CREDIT_FAILED", "Credit failed");
     }
-  }
-
-  private BusinessException mapFeignBusiness(FeignException e) {
-    String body = e.contentUTF8();
-    if (body != null && body.contains("INSUFFICIENT_BALANCE")) {
-      return new BusinessException("INSUFFICIENT_BALANCE", "Account balance is insufficient",
-          HttpStatus.UNPROCESSABLE_ENTITY);
-    }
-    if (body != null && body.contains("ACCOUNT_FROZEN")) {
-      return new BusinessException("ACCOUNT_FROZEN", "Account is frozen", HttpStatus.UNPROCESSABLE_ENTITY);
-    }
-    if (body != null && body.contains("ACCOUNT_NOT_FOUND")) {
-      return new BusinessException("ACCOUNT_NOT_FOUND", "Account not found", HttpStatus.NOT_FOUND);
-    }
-    return new BusinessException("ACCOUNT_SERVICE_ERROR", body == null ? e.getMessage() : body,
-        HttpStatus.UNPROCESSABLE_ENTITY);
+    return result;
   }
 
   /** Prefer "CODE: message" so clients can map business codes to i18n. */

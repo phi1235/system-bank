@@ -4,7 +4,6 @@ import com.banksystem.account.domain.TermDepositStatus;
 import com.banksystem.common.exception.BusinessException;
 import java.time.LocalDate;
 import java.util.UUID;
-import org.springframework.http.HttpStatus;
 
 /**
  * Admin term-deposit search. Optional filters use boolean flags + non-null sentinels so
@@ -64,8 +63,7 @@ public final class AdminDepositListQuery {
     TermDepositStatus parsedStatus = parseStatus(status);
     if (maturityFrom != null && maturityTo != null && maturityFrom.isAfter(maturityTo)) {
       throw new BusinessException(
-          "INVALID_DATE_RANGE", "maturityFrom must be before or equal to maturityTo",
-          HttpStatus.BAD_REQUEST);
+          "INVALID_DATE_RANGE", "maturityFrom must be before or equal to maturityTo");
     }
     return new AdminDepositListQuery(
         p,
@@ -87,7 +85,7 @@ public final class AdminDepositListQuery {
       return TermDepositStatus.valueOf(raw.trim().toUpperCase());
     } catch (IllegalArgumentException ex) {
       throw new BusinessException(
-          "DEPOSIT_STATUS_INVALID", "Unknown deposit status: " + raw, HttpStatus.BAD_REQUEST);
+          "DEPOSIT_STATUS_INVALID", "Unknown deposit status: " + raw);
     }
   }
 
@@ -99,7 +97,7 @@ public final class AdminDepositListQuery {
       return UUID.fromString(raw.trim());
     } catch (IllegalArgumentException ex) {
       throw new BusinessException(
-          "INVALID_UUID", field + " must be a UUID", HttpStatus.BAD_REQUEST);
+          "INVALID_UUID", field + " must be a UUID");
     }
   }
 

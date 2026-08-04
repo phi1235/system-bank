@@ -3,6 +3,7 @@ package com.banksystem.account.application;
 import com.banksystem.account.api.dto.CardDtos.CardResponse;
 import com.banksystem.account.api.dto.CardDtos.CardRevealResponse;
 import com.banksystem.account.api.dto.CardDtos.UpdateCardLimitRequest;
+import com.banksystem.account.application.mapper.CardMapper;
 import com.banksystem.account.domain.AccountEntity;
 import com.banksystem.account.domain.AccountRepository;
 import com.banksystem.account.domain.AccountStatus;
@@ -37,6 +38,7 @@ public class CardService {
   private final CardRepository cardRepository;
   private final AccountAccessService access;
   private final AccountRepository accountRepository;
+  private final CardMapper cardMapper;
   private final Clock clock;
   private final ZoneId zone;
   private final String aesKey;
@@ -47,6 +49,7 @@ public class CardService {
       CardRepository cardRepository,
       AccountAccessService access,
       AccountRepository accountRepository,
+      CardMapper cardMapper,
       Clock clock,
       @Value("${bank.deposit.zone}") String zone,
       @Value("${bank.aes.secret-key}") String aesKey,
@@ -55,6 +58,7 @@ public class CardService {
     this.cardRepository = cardRepository;
     this.access = access;
     this.accountRepository = accountRepository;
+    this.cardMapper = cardMapper;
     this.clock = clock;
     this.zone = ZoneId.of(zone);
     this.aesKey = aesKey;
@@ -71,14 +75,12 @@ public class CardService {
     AccountEntity account = access.requireOwnedOrStaff(accountId, user);
     if (!AccountStatus.ACTIVE.name().equals(account.getStatus())) {
       throw new BusinessException(
-          "ACCOUNT_NOT_ACTIVE", "Account must be active to request a card",
-          HttpStatus.UNPROCESSABLE_ENTITY);
+          "ACCOUNT_NOT_ACTIVE", "Account must be active to request a card");
     }
     if (cardRepository.existsByAccountIdAndStatusNotIn(
         accountId, List.of(CardStatus.CLOSED, CardStatus.REJECTED))) {
       throw new BusinessException(
-          "CARD_ALREADY_EXISTS", "Account already has a card or a pending request",
-          HttpStatus.CONFLICT);
+          "CARD_ALREADY_EXISTS", "Account already has a card or a pending request");
     }
 
     Instant now = Instant.now(clock);
@@ -127,14 +129,12 @@ public class CardService {
         && card.getStatus() != CardStatus.LOCKED) {
       throw new BusinessException(
           "CARD_NOT_EDITABLE",
-          "Limits can only change on an issued card",
-          HttpStatus.UNPROCESSABLE_ENTITY);
+          "Limits can only change on an issued card");
     }
     if (request.dailyLimit().compareTo(maxDailyLimit) > 0) {
       throw new BusinessException(
           "CARD_LIMIT_TOO_HIGH",
-          "Daily limit must not exceed " + maxDailyLimit.toPlainString(),
-          HttpStatus.BAD_REQUEST);
+          "Daily limit must not exceed " + maxDailyLimit.toPlainString());
     }
     card.setDailyLimit(request.dailyLimit());
     card.setUpdatedAt(Instant.now(clock));
@@ -148,7 +148,7 @@ public class CardService {
     CardEntity card = requireOwnedCard(cardId, user);
     if (card.getStatus() != CardStatus.ACTIVE) {
       throw new BusinessException(
-          "CARD_NOT_ACTIVE", "Card must be active to reveal", HttpStatus.UNPROCESSABLE_ENTITY);
+          "CARD_NOT_ACTIVE", "Card must be active to reveal");
     }
     return new CardRevealResponse(
         card.getId().toString(),
@@ -193,8 +193,7 @@ public class CardService {
   private BusinessException invalidTransition(CardStatus from, CardStatus to) {
     return new BusinessException(
         "CARD_INVALID_TRANSITION",
-        "Cannot move card from " + from + " to " + to,
-        HttpStatus.UNPROCESSABLE_ENTITY);
+        "Cannot move card from " + from + " to " + to);
   }
 
   private CardEntity requireOwnedCard(UUID cardId, GatewayUser user) {
@@ -204,22 +203,12 @@ public class CardService {
             .orElseThrow(
                 () ->
                     new BusinessException(
-                        "CARD_NOT_FOUND", "Card not found", HttpStatus.NOT_FOUND));
+                        "CARD_NOT_FOUND", "Card not found"));
     access.requireOwnedOrStaff(card.getAccountId(), user);
     return card;
   }
 
   private CardResponse toResponse(CardEntity c, String accountNumber) {
-    return new CardResponse(
-        c.getId().toString(),
-        c.getAccountId().toString(),
-        accountNumber,
-        c.getPanLast4() == null ? null : "9704 **** **** " + c.getPanLast4(),
-        c.getBrand(),
-        c.getStatus().name(),
-        c.getDailyLimit(),
-        c.getExpiresOn(),
-        c.getRejectReason(),
-        c.getCreatedAt());
+    return cardMapper.toResponse(c, accountNumber);
   }
 }

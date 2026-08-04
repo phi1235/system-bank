@@ -13,17 +13,21 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.banksystem.common.exception.BusinessException;
+import com.banksystem.transaction.api.dto.ReportDtos.ExportReportRow;
 import com.banksystem.transaction.api.dto.ReportDtos.ReportSummaryRow;
 import com.banksystem.transaction.api.dto.ReportDtos.TransactionReportResponse;
 import com.banksystem.transaction.infrastructure.mybatis.TransactionReportMapper;
+import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import org.apache.ibatis.cursor.Cursor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -135,10 +139,10 @@ class TransactionReportServiceTest {
 
   @Test
   void exportCsvStreamDelegatesToMapperCursor() {
-    java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
-    org.apache.ibatis.cursor.Cursor<com.banksystem.transaction.api.dto.ReportDtos.ExportReportRow> emptyCursor =
-        mock(org.apache.ibatis.cursor.Cursor.class);
-    when(emptyCursor.iterator()).thenReturn(java.util.Collections.emptyIterator());
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    @SuppressWarnings("unchecked")
+    Cursor<ExportReportRow> emptyCursor = mock(Cursor.class);
+    when(emptyCursor.iterator()).thenReturn(Collections.emptyIterator());
     when(mapper.streamExport(any(), any(), any())).thenReturn(emptyCursor);
 
     service.exportCsvStream(null, null, null, out);

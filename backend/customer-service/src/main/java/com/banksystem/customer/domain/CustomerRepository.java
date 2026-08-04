@@ -12,6 +12,8 @@ public interface CustomerRepository extends JpaRepository<CustomerEntity, UUID> 
 
   Optional<CustomerEntity> findByEmailIgnoreCase(String email);
 
+  long countByKycStatus(String kycStatus);
+
   /**
    * Admin customer search. Callers pass boolean flags so optional filters never rely on
    * untyped NULL string binds for equality checks.

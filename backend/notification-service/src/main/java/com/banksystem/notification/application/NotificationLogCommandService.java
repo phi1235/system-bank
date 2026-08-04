@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,7 +47,7 @@ public class NotificationLogCommandService {
 
   public void verifyInternalKey(String key) {
     if (!SecretVerifier.matches(key, apiKey)) {
-      throw new BusinessException("FORBIDDEN", "Invalid internal API key", HttpStatus.FORBIDDEN);
+      throw new BusinessException("FORBIDDEN", "Invalid internal API key");
     }
   }
 
@@ -62,11 +61,13 @@ public class NotificationLogCommandService {
 
   @Transactional(readOnly = true)
   public com.banksystem.common.api.PageResponse<com.banksystem.notification.api.NotificationSandboxController.NotificationSandboxItem> searchSandbox(
-      String q, String channel, int page, int size) {
+      String q, String channel, Integer page, Integer size) {
+    int pg = page != null ? page : 0;
+    int sz = size != null ? Math.min(size, 100) : 20;
     boolean hasQ = q != null && !q.isBlank();
     boolean hasChannel = channel != null && !channel.isBlank();
     org.springframework.data.domain.PageRequest pageable =
-        org.springframework.data.domain.PageRequest.of(page, Math.min(size, 100));
+        org.springframework.data.domain.PageRequest.of(pg, sz);
 
     org.springframework.data.domain.Page<NotificationLogEntity> result = repository.searchSandbox(
         hasQ, hasQ ? q.trim() : null,

@@ -20,18 +20,7 @@ class PasswordValidationTest {
 
   @BeforeEach
   void setUp() {
-    authService = new AuthService(
-        mock(UserRepository.class),
-        mock(AuthAuditLogRepository.class),
-        new BoundPasswordEncoder("test-pepper-for-unit-tests-only"),
-        mock(JwtService.class),
-        mock(TokenStore.class),
-        mock(SessionService.class),
-        mock(MfaService.class),
-        mock(RbacService.class),
-        5,
-        15
-    );
+    authService = createAuthService(mock(UserRepository.class));
   }
 
   @Test
@@ -51,19 +40,23 @@ class PasswordValidationTest {
     org.mockito.Mockito.when(users.existsByEmail(org.mockito.ArgumentMatchers.anyString())).thenReturn(false);
     org.mockito.Mockito.when(users.save(org.mockito.ArgumentMatchers.any())).thenAnswer(i -> i.getArgument(0));
 
-    AuthService svc = new AuthService(
+    AuthService svc = createAuthService(users);
+    assertDoesNotThrow(() ->
+        svc.register(new RegisterRequest("user1", "a@b.com", "Secret123!", "Name")));
+  }
+
+  private static AuthService createAuthService(UserRepository users) {
+    return new AuthService(
         users,
         mock(AuthAuditLogRepository.class),
         new BoundPasswordEncoder("test-pepper-for-unit-tests-only"),
         mock(JwtService.class),
         mock(TokenStore.class),
-        mock(SessionService.class),
         mock(MfaService.class),
-        mock(RbacService.class),
+        mock(SessionService.class),
+        mock(com.banksystem.auth.application.permission.PermissionResolver.class),
         5,
-        15
+        15L
     );
-    assertDoesNotThrow(() ->
-        svc.register(new RegisterRequest("user1", "a@b.com", "Secret123!", "Name")));
   }
 }

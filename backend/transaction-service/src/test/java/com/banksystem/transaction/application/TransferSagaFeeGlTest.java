@@ -11,6 +11,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.banksystem.common.api.ApiResponse;
+import com.banksystem.transaction.application.gateway.AccountGateway;
 import com.banksystem.transaction.domain.SagaStepLogRepository;
 import com.banksystem.transaction.domain.TransferOrderEntity;
 import com.banksystem.transaction.domain.TransferOrderRepository;
@@ -42,23 +43,24 @@ class TransferSagaFeeGlTest {
   private final UUID incomeId = UUID.fromString("00000000-0000-0000-0000-0000000000fe");
   private final UUID userId = UUID.fromString("33333333-3333-3333-3333-333333333333");
 
+  private AccountGateway accountGateway;
+
   @BeforeEach
   void setUp() {
     transferOrderRepository = mock(TransferOrderRepository.class);
     sagaStepLogRepository = mock(SagaStepLogRepository.class);
-    accountClient = mock(AccountClient.class);
+    accountGateway = mock(AccountGateway.class);
     outboxService = mock(OutboxService.class);
     when(transferOrderRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
     when(sagaStepLogRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-    TransferFeeGlService feeGl = new TransferFeeGlService(accountClient, "key", "1099999999");
+    TransferFeeGlService feeGl = new TransferFeeGlService(accountGateway, "1099999999");
     saga = new TransferSagaOrchestrator(
         transferOrderRepository,
         sagaStepLogRepository,
-        accountClient,
+        accountGateway,
         outboxService,
         feeGl,
-        "key",
         false);
   }
 
@@ -67,19 +69,19 @@ class TransferSagaFeeGlTest {
     TransferOrderEntity order = pendingOrder(new BigDecimal("1000.00"), new BigDecimal("50.00"));
     stubDebitCreditOk();
     stubIncomeLookup();
-    when(accountClient.credit(eq(incomeId), any(MoneyCommand.class), eq("key")))
-        .thenReturn(ApiResponse.ok(new MoneyResult("fee-ledger", new BigDecimal("50.00"))));
+    when(accountGateway.credit(eq(incomeId), any(MoneyCommand.class)))
+        .thenReturn(new MoneyResult("fee-ledger", new BigDecimal("50.00")));
 
     TransferOrderEntity result = saga.run(order);
 
     assertEquals(TransferStatus.COMPLETED, result.getStatus());
     assertEquals("fee-ledger", result.getFeeEntryRef());
     // debit source, credit dest, credit income
-    verify(accountClient).debit(eq(fromId), any(MoneyCommand.class), eq("key"));
-    verify(accountClient, times(2)).credit(any(UUID.class), any(MoneyCommand.class), eq("key"));
+    verify(accountGateway).debit(eq(fromId), any(MoneyCommand.class));
+    verify(accountGateway, times(2)).credit(any(UUID.class), any(MoneyCommand.class));
 
     ArgumentCaptor<MoneyCommand> incomeCmd = ArgumentCaptor.forClass(MoneyCommand.class);
-    verify(accountClient).credit(eq(incomeId), incomeCmd.capture(), eq("key"));
+    verify(accountGateway).credit(eq(incomeId), incomeCmd.capture());
     assertEquals(0, new BigDecimal("50.00").compareTo(incomeCmd.getValue().amount()));
     assertEquals(order.getId() + "-fee", incomeCmd.getValue().referenceId());
     verify(outboxService).enqueue(eq("TRANSACTION_COMPLETED"), eq(order.getId()), any());
@@ -94,16 +96,16 @@ class TransferSagaFeeGlTest {
 
     assertEquals(TransferStatus.COMPLETED, result.getStatus());
     assertNull(result.getFeeEntryRef());
-    verify(accountClient, never()).getByNumber(any(), any());
+    verify(accountGateway, never()).getAccountByNumber(any());
     // only dest credit — no income credit
-    verify(accountClient, times(1)).credit(any(UUID.class), any(MoneyCommand.class), eq("key"));
+    verify(accountGateway, times(1)).credit(any(UUID.class), any(MoneyCommand.class));
   }
 
   private void stubDebitCreditOk() {
-    when(accountClient.debit(eq(fromId), any(MoneyCommand.class), eq("key")))
-        .thenReturn(ApiResponse.ok(new MoneyResult("debit-ledger", new BigDecimal("9000"))));
-    when(accountClient.credit(eq(toId), any(MoneyCommand.class), eq("key")))
-        .thenReturn(ApiResponse.ok(new MoneyResult("credit-ledger", new BigDecimal("2000"))));
+    when(accountGateway.debit(eq(fromId), any(MoneyCommand.class)))
+        .thenReturn(new MoneyResult("debit-ledger", new BigDecimal("9000")));
+    when(accountGateway.credit(eq(toId), any(MoneyCommand.class)))
+        .thenReturn(new MoneyResult("credit-ledger", new BigDecimal("2000")));
   }
 
   private void stubIncomeLookup() {
@@ -115,8 +117,8 @@ class TransferSagaFeeGlTest {
         "VND",
         BigDecimal.ZERO,
         "ACTIVE");
-    when(accountClient.getByNumber(eq("1099999999"), eq("key")))
-        .thenReturn(ApiResponse.ok(view));
+    when(accountGateway.getAccountByNumber(eq("1099999999")))
+        .thenReturn(view);
   }
 
   private TransferOrderEntity pendingOrder(BigDecimal amount, BigDecimal fee) {

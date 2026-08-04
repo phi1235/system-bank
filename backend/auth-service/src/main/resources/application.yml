@@ -45,6 +45,8 @@ bank:
     mfa-ttl-seconds: ${JWT_MFA_TTL}
   aes:
     secret-key: ${AES_SECRET_KEY}
+  internal:
+    api-key: ${AUTH_INTERNAL_API_KEY}
   security:
     login-max-failures: ${LOGIN_MAX_FAILURES}
     login-lock-minutes: ${LOGIN_LOCK_MINUTES}

@@ -4,7 +4,6 @@ import com.banksystem.common.exception.BusinessException;
 import com.banksystem.transaction.domain.TransferStatus;
 import java.time.Instant;
 import java.util.UUID;
-import org.springframework.http.HttpStatus;
 
 /**
  * Admin transfer list filters + paging (kept out of controller).
@@ -49,8 +48,7 @@ public record AdminTransferListQuery(
     if (fromTs.isAfter(toTs)) {
       throw new BusinessException(
           "INVALID_DATE_RANGE",
-          "from must be before or equal to to",
-          HttpStatus.BAD_REQUEST);
+          "from must be before or equal to to");
     }
 
     int p = page == null || page < 0 ? 0 : page;
@@ -107,8 +105,7 @@ public record AdminTransferListQuery(
     } catch (IllegalArgumentException ex) {
       throw new BusinessException(
           "INVALID_STATUS",
-          "status must be a valid transfer status",
-          HttpStatus.BAD_REQUEST);
+          "status must be a valid transfer status");
     }
   }
 
@@ -122,8 +119,7 @@ public record AdminTransferListQuery(
     } catch (IllegalArgumentException ex) {
       throw new BusinessException(
           "INVALID_TRANSFER_ID",
-          "transferId must be a valid UUID",
-          HttpStatus.BAD_REQUEST);
+          "transferId must be a valid UUID");
     }
   }
 }

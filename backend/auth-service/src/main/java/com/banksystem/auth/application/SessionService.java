@@ -13,7 +13,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -80,18 +79,17 @@ public class SessionService {
 
   public void revoke(UUID userId, String sessionId, String currentRefreshJti) {
     if (sessionId == null || sessionId.isBlank()) {
-      throw new BusinessException("SESSION_NOT_FOUND", "Session not found", HttpStatus.NOT_FOUND);
+      throw new BusinessException("SESSION_NOT_FOUND", "Session not found");
     }
     if (sessionId.equals(currentRefreshJti)) {
       throw new BusinessException(
           "SESSION_CURRENT",
-          "Cannot revoke the current session; use logout instead",
-          HttpStatus.BAD_REQUEST);
+          "Cannot revoke the current session; use logout instead");
     }
     SessionMeta meta = sessionStore.get(sessionId)
         .filter(s -> userId.equals(s.userId()))
         .orElseThrow(() -> new BusinessException(
-            "SESSION_NOT_FOUND", "Session not found", HttpStatus.NOT_FOUND));
+            "SESSION_NOT_FOUND", "Session not found"));
 
     revokeMeta(meta);
     audit(userId, "SESSION_REVOKE", meta.ip(), "jti=" + sessionId);

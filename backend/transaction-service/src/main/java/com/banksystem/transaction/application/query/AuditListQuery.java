@@ -3,7 +3,6 @@ package com.banksystem.transaction.application.query;
 import com.banksystem.common.exception.BusinessException;
 import java.time.Instant;
 import java.util.UUID;
-import org.springframework.http.HttpStatus;
 
 /**
  * Admin audit list filters + paging policy (kept out of controller).
@@ -37,8 +36,7 @@ public record AuditListQuery(
     if (fromTs.isAfter(toTs)) {
       throw new BusinessException(
           "INVALID_DATE_RANGE",
-          "from must be before or equal to to",
-          HttpStatus.BAD_REQUEST);
+          "from must be before or equal to to");
     }
 
     int p = page == null || page < 0 ? 0 : page;
@@ -95,8 +93,7 @@ public record AuditListQuery(
     } catch (IllegalArgumentException ex) {
       throw new BusinessException(
           "INVALID_ACTOR_ID",
-          "actorUserId must be a valid UUID",
-          HttpStatus.BAD_REQUEST);
+          "actorUserId must be a valid UUID");
     }
   }
 }

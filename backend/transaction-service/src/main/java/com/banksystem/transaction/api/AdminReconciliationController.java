@@ -40,6 +40,15 @@ public class AdminReconciliationController {
     return ApiResponse.ok(service.list(page, size));
   }
 
+  @PostMapping("/runs/search")
+  @RequirePermission("transactions:recon:view")
+  public ApiResponse<PageResponse<ReconRunResponse>> search(
+      @Valid @RequestBody PageFilterRequest req) {
+    return ApiResponse.ok(service.list(req.page(), req.size()));
+  }
+
+  public record PageFilterRequest(Integer page, Integer size) {}
+
   @GetMapping("/runs/{id}")
   @RequirePermission("transactions:recon:view")
   public ApiResponse<ReconRunDetailResponse> get(@PathVariable UUID id) {

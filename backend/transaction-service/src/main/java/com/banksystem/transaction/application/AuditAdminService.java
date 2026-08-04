@@ -12,7 +12,6 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -57,7 +56,7 @@ public class AuditAdminService {
   public Object list(AdminAuditFilterRequest req) {
     AuditListQuery query = AuditListQuery.of(
         req.action(), req.resourceType(), req.actorUserId(), req.resourceId(), req.from(), req.to(), req.page(), req.size());
-    if (req.noCount()) {
+    if (Boolean.TRUE.equals(req.noCount())) {
       return listSlice(query);
     }
     return list(query);
@@ -95,10 +94,7 @@ public class AuditAdminService {
     AuditLogEntity entity =
         repository
             .findById(id)
-            .orElseThrow(
-                () ->
-                    new BusinessException(
-                        "AUDIT_NOT_FOUND", "Audit log not found", HttpStatus.NOT_FOUND));
+            .orElseThrow(() -> new BusinessException("AUDIT_NOT_FOUND", "Audit log not found"));
     return toResponse(entity);
   }
 

@@ -10,6 +10,8 @@ import com.banksystem.auth.api.dto.AuthDtos.RegisterRequest;
 import com.banksystem.auth.api.dto.AuthDtos.RegisterResponse;
 import com.banksystem.auth.api.dto.AuthDtos.TokenResponse;
 import com.banksystem.auth.api.dto.AuthDtos.UserMeResponse;
+import com.banksystem.auth.application.permission.PermissionResolver;
+import com.banksystem.auth.application.MfaService.MfaSetupResult;
 import com.banksystem.auth.domain.AuthAuditLogEntity;
 import com.banksystem.auth.domain.AuthAuditLogRepository;
 import com.banksystem.auth.domain.UserEntity;
@@ -23,24 +25,27 @@ import io.jsonwebtoken.Claims;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AuthService {
 
+  private static final Logger log = LoggerFactory.getLogger(AuthService.class);
+
   private final UserRepository userRepository;
   private final AuthAuditLogRepository auditLogRepository;
   private final BoundPasswordEncoder boundPasswordEncoder;
   private final JwtService jwtService;
   private final TokenStore tokenStore;
-  private final SessionService sessionService;
   private final MfaService mfaService;
-  private final RbacService rbacService;
+  private final SessionService sessionService;
+  private final PermissionResolver permissionResolver;
   private final int maxFailures;
-  private final int lockMinutes;
+  private final long lockMinutes;
 
   public AuthService(
       UserRepository userRepository,
@@ -48,19 +53,19 @@ public class AuthService {
       BoundPasswordEncoder boundPasswordEncoder,
       JwtService jwtService,
       TokenStore tokenStore,
-      SessionService sessionService,
       MfaService mfaService,
-      RbacService rbacService,
-      @Value("${bank.security.login-max-failures:5}") int maxFailures,
-      @Value("${bank.security.login-lock-minutes:15}") int lockMinutes) {
+      SessionService sessionService,
+      PermissionResolver permissionResolver,
+      @Value("${bank.login.max-failures:5}") int maxFailures,
+      @Value("${bank.login.lock-minutes:15}") long lockMinutes) {
     this.userRepository = userRepository;
     this.auditLogRepository = auditLogRepository;
     this.boundPasswordEncoder = boundPasswordEncoder;
     this.jwtService = jwtService;
     this.tokenStore = tokenStore;
-    this.sessionService = sessionService;
     this.mfaService = mfaService;
-    this.rbacService = rbacService;
+    this.sessionService = sessionService;
+    this.permissionResolver = permissionResolver;
     this.maxFailures = maxFailures;
     this.lockMinutes = lockMinutes;
   }
@@ -70,21 +75,19 @@ public class AuthService {
     validatePassword(req.password());
     String username = BoundPasswordEncoder.normalizeUsername(req.username());
     if (username.isBlank() || username.length() < 3) {
-      throw new BusinessException("INVALID_USERNAME", "Username must be at least 3 characters",
-          HttpStatus.BAD_REQUEST);
+      throw new BusinessException("INVALID_USERNAME", "Username must be at least 3 characters");
     }
     if (userRepository.existsByUsername(username)) {
-      throw new BusinessException("USERNAME_TAKEN", "Username already taken", HttpStatus.CONFLICT);
+      throw new BusinessException("USERNAME_TAKEN", "Username already taken");
     }
     if (userRepository.existsByEmail(req.email())) {
-      throw new BusinessException("EMAIL_TAKEN", "Email already taken", HttpStatus.CONFLICT);
+      throw new BusinessException("EMAIL_TAKEN", "Email already taken");
     }
 
     UserEntity user = new UserEntity();
     user.setId(UUID.randomUUID());
     user.setUsername(username);
     user.setEmail(req.email().trim().toLowerCase());
-    // BCrypt(HMAC(password, pepper) bound to username) — not reversible; not raw password
     user.setPasswordHash(boundPasswordEncoder.encode(req.password(), username));
     user.setRoles("CUSTOMER");
     user.setEnabled(true);
@@ -100,7 +103,7 @@ public class AuthService {
   public LoginResponse login(LoginRequest req, String ip, String userAgent) {
     if (tokenStore.getLoginFail(ip) >= maxFailures) {
       throw new BusinessException("LOGIN_LOCKED",
-          "Too many failed attempts. Try again later.", HttpStatus.TOO_MANY_REQUESTS);
+          "Too many failed attempts. Try again later.");
     }
 
     String username = BoundPasswordEncoder.normalizeUsername(req.username());
@@ -111,13 +114,12 @@ public class AuthService {
       audit(null, "LOGIN_FAILED", ip, "username=" + username + ",fails=" + fails);
       if (fails >= maxFailures) {
         throw new BusinessException("LOGIN_LOCKED",
-            "Too many failed attempts. Try again later.", HttpStatus.TOO_MANY_REQUESTS);
+            "Too many failed attempts. Try again later.");
       }
-      throw new BusinessException("INVALID_CREDENTIALS", "Invalid username or password",
-          HttpStatus.UNAUTHORIZED);
+      throw new BusinessException("INVALID_CREDENTIALS", "Invalid username or password");
     }
     if (!user.isEnabled()) {
-      throw new BusinessException("USER_DISABLED", "Account is disabled", HttpStatus.FORBIDDEN);
+      throw new BusinessException("USER_DISABLED", "Account is disabled");
     }
 
     tokenStore.clearLoginFail(ip);
@@ -139,20 +141,17 @@ public class AuthService {
     try {
       claims = jwtService.parse(req.mfaToken());
     } catch (Exception e) {
-      throw new BusinessException("INVALID_MFA_TOKEN", "Invalid or expired MFA token",
-          HttpStatus.UNAUTHORIZED);
+      throw new BusinessException("INVALID_MFA_TOKEN", "Invalid or expired MFA token");
     }
     if (!jwtService.isType(claims, JwtService.TYPE_MFA)) {
-      throw new BusinessException("INVALID_MFA_TOKEN", "Token is not MFA pending",
-          HttpStatus.UNAUTHORIZED);
+      throw new BusinessException("INVALID_MFA_TOKEN", "Token is not MFA pending");
     }
     UUID userId = UUID.fromString(claims.getSubject());
     UserEntity user = userRepository.findById(userId)
-        .orElseThrow(() -> new BusinessException("USER_NOT_FOUND", "User not found",
-            HttpStatus.NOT_FOUND));
+        .orElseThrow(() -> new BusinessException("USER_NOT_FOUND", "User not found"));
     if (!mfaService.verifyUserCode(userId, req.code())) {
       audit(userId, "MFA_VERIFY_FAILED", ip, null);
-      throw new BusinessException("INVALID_MFA_CODE", "Invalid MFA code", HttpStatus.UNAUTHORIZED);
+      throw new BusinessException("INVALID_MFA_CODE", "Invalid MFA code");
     }
     TokenPair pair = issueAndStore(user, ip, userAgent);
     audit(userId, "MFA_VERIFY_SUCCESS", ip, null);
@@ -165,27 +164,24 @@ public class AuthService {
     try {
       claims = jwtService.parse(req.refreshToken());
     } catch (Exception e) {
-      throw new BusinessException("INVALID_REFRESH", "Invalid refresh token", HttpStatus.UNAUTHORIZED);
+      throw new BusinessException("INVALID_REFRESH", "Invalid refresh token");
     }
     if (!jwtService.isType(claims, JwtService.TYPE_REFRESH)) {
-      throw new BusinessException("INVALID_REFRESH", "Not a refresh token", HttpStatus.UNAUTHORIZED);
+      throw new BusinessException("INVALID_REFRESH", "Not a refresh token");
     }
     String jti = claims.getId();
     if (tokenStore.isBlacklisted(jti)) {
-      throw new BusinessException("TOKEN_REVOKED", "Refresh token revoked", HttpStatus.UNAUTHORIZED);
+      throw new BusinessException("TOKEN_REVOKED", "Refresh token revoked");
     }
     UUID userId = tokenStore.getRefreshUser(jti)
-        .orElseThrow(() -> new BusinessException("INVALID_REFRESH", "Refresh session not found",
-            HttpStatus.UNAUTHORIZED));
+        .orElseThrow(() -> new BusinessException("INVALID_REFRESH", "Refresh session not found"));
 
-    // rotate: drop old refresh session metadata + store new one
     tokenStore.deleteRefresh(jti);
     tokenStore.blacklist(jti, jwtService.remainingTtlSeconds(claims));
     sessionService.forget(userId, jti);
 
     UserEntity user = userRepository.findById(userId)
-        .orElseThrow(() -> new BusinessException("USER_NOT_FOUND", "User not found",
-            HttpStatus.NOT_FOUND));
+        .orElseThrow(() -> new BusinessException("USER_NOT_FOUND", "User not found"));
     TokenPair pair = issueAndStore(user, ip, userAgent);
     audit(userId, "TOKEN_REFRESH", ip, null);
     return toTokenResponse(pair, user.isMustChangePassword());
@@ -201,7 +197,6 @@ public class AuthService {
         userId = UUID.fromString(claims.getSubject());
         audit(userId, "LOGOUT", null, "jti=" + jti);
       } catch (Exception ignored) {
-        // already invalid
       }
     }
     if (refreshToken != null && !refreshToken.isBlank()) {
@@ -218,7 +213,6 @@ public class AuthService {
           }
         }
       } catch (Exception ignored) {
-        // already invalid
       }
     }
   }
@@ -241,7 +235,7 @@ public class AuthService {
   public UserMeResponse me(UUID userId) {
     UserEntity user = requireUser(userId);
     List<String> roles = user.roleList();
-    List<String> permissions = rbacService.resolvePermissions(roles);
+    List<String> permissions = permissionResolver.resolvePermissions(roles);
     return new UserMeResponse(
         user.getId().toString(),
         user.getUsername(),
@@ -249,7 +243,7 @@ public class AuthService {
         roles,
         permissions,
         user.isMfaEnabled(),
-        rbacService.isStaff(roles),
+        permissionResolver.isStaff(roles),
         user.isMustChangePassword(),
         user.isEnabled()
     );
@@ -257,8 +251,7 @@ public class AuthService {
 
   public UserEntity requireUser(UUID userId) {
     return userRepository.findById(userId)
-        .orElseThrow(() -> new BusinessException("USER_NOT_FOUND", "User not found",
-            HttpStatus.NOT_FOUND));
+        .orElseThrow(() -> new BusinessException("USER_NOT_FOUND", "User not found"));
   }
 
   private TokenPair issueAndStore(UserEntity user, String ip, String userAgent) {
@@ -285,8 +278,7 @@ public class AuthService {
         || !password.matches(".*[A-Za-z].*")
         || !password.matches(".*\\d.*")) {
       throw new BusinessException("WEAK_PASSWORD",
-          "Password must be at least 8 characters with letters and numbers",
-          HttpStatus.BAD_REQUEST);
+          "Password must be at least 8 characters with letters and numbers");
     }
   }
 

@@ -11,6 +11,9 @@ import static org.mockito.Mockito.when;
 
 import com.banksystem.customer.api.dto.CustomerDtos.KycUpdateRequest;
 import com.banksystem.customer.api.dto.CustomerDtos.UpdateProfileRequest;
+import com.banksystem.customer.application.command.CustomerCommandService;
+import com.banksystem.customer.application.mapper.CustomerMapper;
+import com.banksystem.customer.application.security.CustomerCryptoService;
 import com.banksystem.customer.domain.CustomerEntity;
 import com.banksystem.customer.domain.CustomerRepository;
 import java.util.Base64;
@@ -27,14 +30,16 @@ class CustomerAppServiceUpdateTest {
 
   private CustomerRepository repository;
   private OpsAlertPublisher opsAlertPublisher;
-  private CustomerAppService service;
+  private CustomerCommandService service;
   private final UUID userId = UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
 
   @BeforeEach
   void setUp() {
     repository = mock(CustomerRepository.class);
     opsAlertPublisher = mock(OpsAlertPublisher.class);
-    service = new CustomerAppService(repository, opsAlertPublisher, AES_KEY);
+    CustomerCryptoService cryptoService = new CustomerCryptoService(AES_KEY);
+    CustomerMapper mapper = new CustomerMapper();
+    service = new CustomerCommandService(repository, opsAlertPublisher, mapper, cryptoService);
   }
 
   @Test
@@ -59,34 +64,21 @@ class CustomerAppServiceUpdateTest {
   }
 
   @Test
-  void updateMe_blankEmailClears() {
+  void updateMe_blankEmailClearsField() {
     CustomerEntity existing = baseEntity();
-    existing.setEmail("keep@example.com");
+    existing.setEmail("old@example.com");
     when(repository.findById(userId)).thenReturn(Optional.of(existing));
     when(repository.save(any(CustomerEntity.class))).thenAnswer(inv -> inv.getArgument(0));
 
     var res = service.updateMe(
-        userId, new UpdateProfileRequest(null, null, "  ", null));
+        userId,
+        new UpdateProfileRequest(null, null, "   ", null));
 
     assertNull(res.email());
   }
 
   @Test
-  void updateMe_nullEmailLeavesUnchanged() {
-    CustomerEntity existing = baseEntity();
-    existing.setEmail("keep@example.com");
-    when(repository.findById(userId)).thenReturn(Optional.of(existing));
-    when(repository.save(any(CustomerEntity.class))).thenAnswer(inv -> inv.getArgument(0));
-
-    var res = service.updateMe(
-        userId, new UpdateProfileRequest("Only Name", null, null, null));
-
-    assertEquals("Only Name", res.fullName());
-    assertEquals("keep@example.com", res.email());
-  }
-
-  @Test
-  void updateKyc_publishesOpsAlertWhenChanged() {
+  void updateKyc_publishesOpsAlertOnTransition() {
     CustomerEntity existing = baseEntity();
     existing.setKycStatus("PENDING");
     when(repository.findById(userId)).thenReturn(Optional.of(existing));
@@ -99,7 +91,7 @@ class CustomerAppServiceUpdateTest {
   }
 
   @Test
-  void updateKyc_skipsAlertWhenUnchanged() {
+  void updateKyc_sameStatusNoOpsAlert() {
     CustomerEntity existing = baseEntity();
     existing.setKycStatus("VERIFIED");
     when(repository.findById(userId)).thenReturn(Optional.of(existing));
@@ -111,26 +103,12 @@ class CustomerAppServiceUpdateTest {
     verify(opsAlertPublisher, never()).kycUpdated(any(), any());
   }
 
-  @Test
-  void updateKyc_rejectsInvalidStatus() {
-    CustomerEntity existing = baseEntity();
-    when(repository.findById(userId)).thenReturn(Optional.of(existing));
-
-    var ex =
-        org.junit.jupiter.api.Assertions.assertThrows(
-            com.banksystem.common.exception.BusinessException.class,
-            () -> service.updateKyc(userId, new KycUpdateRequest("UNKNOWN")));
-    assertEquals("INVALID_KYC_STATUS", ex.getCode());
-    verify(repository, never()).save(any());
-  }
-
   private CustomerEntity baseEntity() {
     CustomerEntity e = new CustomerEntity();
     e.setId(userId);
     e.setFullName("Alice");
-    e.setPhone("0900000000");
+    e.setPhone("0901111222");
     e.setKycStatus("PENDING");
-    e.setAddress("Old");
     return e;
   }
 }

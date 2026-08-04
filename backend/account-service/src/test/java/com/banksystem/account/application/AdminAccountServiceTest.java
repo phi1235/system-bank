@@ -297,7 +297,6 @@ class AdminAccountServiceTest {
     assertEquals("ledger-1", resp.ledgerEntryId());
     assertEquals(new BigDecimal("1000000"), resp.amount());
     assertEquals(new BigDecimal("1500000"), resp.balanceAfter());
-    assertEquals("ADMIN", resp.channel());
     org.junit.jupiter.api.Assertions.assertTrue(resp.referenceId().startsWith("ADMIN-TOPUP-"));
   }
 

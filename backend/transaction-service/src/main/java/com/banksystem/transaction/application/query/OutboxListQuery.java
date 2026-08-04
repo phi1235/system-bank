@@ -4,7 +4,6 @@ import com.banksystem.common.exception.BusinessException;
 import com.banksystem.transaction.domain.OutboxStatus;
 import java.time.Instant;
 import java.util.UUID;
-import org.springframework.http.HttpStatus;
 
 /**
  * Admin outbox list filters + paging policy (kept out of controller).
@@ -40,8 +39,7 @@ public record OutboxListQuery(
     if (fromTs.isAfter(toTs)) {
       throw new BusinessException(
           "INVALID_DATE_RANGE",
-          "from must be before or equal to to",
-          HttpStatus.BAD_REQUEST);
+          "from must be before or equal to to");
     }
 
     int p = page == null || page < 0 ? 0 : page;
@@ -98,8 +96,7 @@ public record OutboxListQuery(
     } catch (IllegalArgumentException ex) {
       throw new BusinessException(
           "INVALID_STATUS",
-          "status must be PENDING, PUBLISHED, or DEAD",
-          HttpStatus.BAD_REQUEST);
+          "status must be PENDING, PUBLISHED, or DEAD");
     }
   }
 
@@ -111,7 +108,7 @@ public record OutboxListQuery(
     try {
       return UUID.fromString(t);
     } catch (IllegalArgumentException ex) {
-      throw new BusinessException(code, message, HttpStatus.BAD_REQUEST);
+      throw new BusinessException(code, message);
     }
   }
 }

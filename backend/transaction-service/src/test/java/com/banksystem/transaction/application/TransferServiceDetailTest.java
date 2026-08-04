@@ -14,7 +14,7 @@ import com.banksystem.transaction.domain.SagaStepLogRepository;
 import com.banksystem.transaction.domain.TransferOrderEntity;
 import com.banksystem.transaction.domain.TransferOrderRepository;
 import com.banksystem.transaction.domain.TransferStatus;
-import com.banksystem.transaction.infrastructure.feign.AccountClient;
+import com.banksystem.transaction.application.gateway.AccountGateway;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -37,15 +37,18 @@ class TransferServiceDetailTest {
   void setUp() {
     transferOrderRepository = mock(TransferOrderRepository.class);
     sagaStepLogRepository = mock(SagaStepLogRepository.class);
+    com.banksystem.transaction.application.mapper.TransferMapper mapper = new com.banksystem.transaction.application.mapper.TransferMapper();
+    TransferQueryService queryService = new TransferQueryService(
+        transferOrderRepository, sagaStepLogRepository, mock(TransferLimitPolicy.class), mock(TransferFeePolicy.class), mapper);
     service = new TransferService(
         transferOrderRepository,
         mock(AuditLogRepository.class),
-        sagaStepLogRepository,
-        mock(AccountClient.class),
+        mock(AccountGateway.class),
         mock(TransferSagaOrchestrator.class),
         mock(TransferLimitPolicy.class),
         mock(TransferFeePolicy.class),
-        "test-key");
+        queryService,
+        mapper);
   }
 
   @Test

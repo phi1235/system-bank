@@ -25,7 +25,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -72,17 +71,16 @@ public class PasswordResetService {
   public TicketResponse createTicket(CreateTicketRequest req) {
     String key = req.usernameOrEmail() == null ? "" : req.usernameOrEmail().trim();
     if (key.isBlank()) {
-      throw new BusinessException("INVALID_REQUEST", "Username or email required", HttpStatus.BAD_REQUEST);
+      throw new BusinessException("INVALID_REQUEST", "Username or email required");
     }
     UserEntity user = userRepository.findByUsername(BoundPasswordEncoder.normalizeUsername(key))
         .or(() -> userRepository.findByEmailIgnoreCase(key))
         .orElseThrow(() -> new BusinessException("USER_NOT_FOUND",
-            "If the account exists, a ticket will be processed by support.", HttpStatus.NOT_FOUND));
+            "If the account exists, a ticket will be processed by support."));
 
     // Avoid user enumeration in real prod — here explicit for MVP ops clarity
     if (ticketRepository.existsByUserIdAndStatus(user.getId(), "OPEN")) {
-      throw new BusinessException("TICKET_EXISTS", "An open reset ticket already exists",
-          HttpStatus.CONFLICT);
+      throw new BusinessException("TICKET_EXISTS", "An open reset ticket already exists");
     }
 
     String channel = req.channel() == null || req.channel().isBlank()
@@ -107,8 +105,10 @@ public class PasswordResetService {
   }
 
   @Transactional(readOnly = true)
-  public PageResponse<TicketResponse> listTickets(String status, int page, int size) {
-    PageRequest pr = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 100));
+  public PageResponse<TicketResponse> listTickets(String status, Integer page, Integer size) {
+    int pg = page != null ? page : 0;
+    int sz = size != null ? Math.min(Math.max(size, 1), 100) : 20;
+    PageRequest pr = PageRequest.of(Math.max(pg, 0), sz);
     Page<PasswordResetTicketEntity> p;
     if (status != null && !status.isBlank()) {
       p = ticketRepository.findByStatusOrderByCreatedAtDesc(status.trim().toUpperCase(Locale.ROOT), pr);
@@ -126,12 +126,12 @@ public class PasswordResetService {
   @Transactional
   public FulfillResponse fulfill(UUID ticketId, UUID adminId) {
     PasswordResetTicketEntity t = ticketRepository.findById(ticketId)
-        .orElseThrow(() -> new BusinessException("TICKET_NOT_FOUND", "Ticket not found", HttpStatus.NOT_FOUND));
+        .orElseThrow(() -> new BusinessException("TICKET_NOT_FOUND", "Ticket not found"));
     if (!"OPEN".equals(t.getStatus())) {
-      throw new BusinessException("TICKET_NOT_OPEN", "Ticket is not OPEN", HttpStatus.CONFLICT);
+      throw new BusinessException("TICKET_NOT_OPEN", "Ticket is not OPEN");
     }
     UserEntity user = userRepository.findById(t.getUserId())
-        .orElseThrow(() -> new BusinessException("USER_NOT_FOUND", "User not found", HttpStatus.NOT_FOUND));
+        .orElseThrow(() -> new BusinessException("USER_NOT_FOUND", "User not found"));
     return issueTempPassword(user, adminId, t.getChannel(), t);
   }
 
@@ -143,10 +143,10 @@ public class PasswordResetService {
   public FulfillResponse resetByUserId(UUID userId, UUID adminId, String channel) {
     if (userId.equals(adminId)) {
       throw new BusinessException("CANNOT_RESET_SELF",
-          "You cannot reset your own password this way", HttpStatus.BAD_REQUEST);
+          "You cannot reset your own password this way");
     }
     UserEntity user = userRepository.findById(userId)
-        .orElseThrow(() -> new BusinessException("USER_NOT_FOUND", "User not found", HttpStatus.NOT_FOUND));
+        .orElseThrow(() -> new BusinessException("USER_NOT_FOUND", "User not found"));
     String ch = channel == null || channel.isBlank() ? "EMAIL" : channel.trim().toUpperCase(Locale.ROOT);
     if (!ch.equals("EMAIL") && !ch.equals("SMS")) {
       ch = "EMAIL";
@@ -213,9 +213,9 @@ public class PasswordResetService {
   @Transactional
   public TicketResponse reject(UUID ticketId, UUID adminId, RejectRequest req) {
     PasswordResetTicketEntity t = ticketRepository.findById(ticketId)
-        .orElseThrow(() -> new BusinessException("TICKET_NOT_FOUND", "Ticket not found", HttpStatus.NOT_FOUND));
+        .orElseThrow(() -> new BusinessException("TICKET_NOT_FOUND", "Ticket not found"));
     if (!"OPEN".equals(t.getStatus())) {
-      throw new BusinessException("TICKET_NOT_OPEN", "Ticket is not OPEN", HttpStatus.CONFLICT);
+      throw new BusinessException("TICKET_NOT_OPEN", "Ticket is not OPEN");
     }
     t.setStatus("REJECTED");
     t.setRejectedAt(Instant.now());
@@ -229,11 +229,11 @@ public class PasswordResetService {
   @Transactional
   public void lockUser(UUID targetUserId, UUID adminId, LockRequest req) {
     UserEntity user = userRepository.findById(targetUserId)
-        .orElseThrow(() -> new BusinessException("USER_NOT_FOUND", "User not found", HttpStatus.NOT_FOUND));
+        .orElseThrow(() -> new BusinessException("USER_NOT_FOUND", "User not found"));
     // Admin / sub-admin cannot lock their own account
     if (targetUserId.equals(adminId)) {
       throw new BusinessException("CANNOT_LOCK_SELF",
-          "You cannot lock your own account", HttpStatus.BAD_REQUEST);
+          "You cannot lock your own account");
     }
     user.setEnabled(false);
     user.setLockedReason(req == null || req.reason() == null || req.reason().isBlank()
@@ -248,7 +248,7 @@ public class PasswordResetService {
   @Transactional
   public void unlockUser(UUID targetUserId, UUID adminId) {
     UserEntity user = userRepository.findById(targetUserId)
-        .orElseThrow(() -> new BusinessException("USER_NOT_FOUND", "User not found", HttpStatus.NOT_FOUND));
+        .orElseThrow(() -> new BusinessException("USER_NOT_FOUND", "User not found"));
     user.setEnabled(true);
     user.setLockedReason(null);
     user.setUpdatedAt(Instant.now());
@@ -259,15 +259,13 @@ public class PasswordResetService {
   @Transactional
   public void changePassword(UUID userId, ChangePasswordRequest req) {
     UserEntity user = userRepository.findById(userId)
-        .orElseThrow(() -> new BusinessException("USER_NOT_FOUND", "User not found", HttpStatus.NOT_FOUND));
+        .orElseThrow(() -> new BusinessException("USER_NOT_FOUND", "User not found"));
     if (!passwordEncoder.matches(req.currentPassword(), user.getUsername(), user.getPasswordHash())) {
-      throw new BusinessException("INVALID_CREDENTIALS", "Current password is incorrect",
-          HttpStatus.UNAUTHORIZED);
+      throw new BusinessException("INVALID_CREDENTIALS", "Current password is incorrect");
     }
     validatePassword(req.newPassword());
     if (req.newPassword().equals(req.currentPassword())) {
-      throw new BusinessException("WEAK_PASSWORD", "New password must differ from current",
-          HttpStatus.BAD_REQUEST);
+      throw new BusinessException("WEAK_PASSWORD", "New password must differ from current");
     }
     user.setPasswordHash(passwordEncoder.encode(req.newPassword(), user.getUsername()));
     user.setMustChangePassword(false);
@@ -283,8 +281,7 @@ public class PasswordResetService {
         || !password.matches(".*[A-Za-z].*")
         || !password.matches(".*\\d.*")) {
       throw new BusinessException("WEAK_PASSWORD",
-          "Password must be at least 8 characters with letters and numbers",
-          HttpStatus.BAD_REQUEST);
+          "Password must be at least 8 characters with letters and numbers");
     }
   }
 

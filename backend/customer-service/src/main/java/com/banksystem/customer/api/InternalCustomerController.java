@@ -2,12 +2,12 @@ package com.banksystem.customer.api;
 
 import com.banksystem.common.api.ApiResponse;
 import com.banksystem.common.exception.BusinessException;
-import com.banksystem.common.security.SecurityHeaders;
 import com.banksystem.common.security.SecretVerifier;
+import com.banksystem.common.security.SecurityHeaders;
 import com.banksystem.customer.api.dto.CustomerDtos.CustomerNameResponse;
 import com.banksystem.customer.api.dto.CustomerDtos.CustomerNamesRequest;
 import com.banksystem.customer.api.dto.CustomerDtos.ExistsResponse;
-import com.banksystem.customer.application.CustomerAppService;
+import com.banksystem.customer.application.query.CustomerQueryService;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
@@ -25,13 +25,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/internal/customers")
 public class InternalCustomerController {
 
-  private final CustomerAppService service;
+  private final CustomerQueryService queryService;
   private final String apiKey;
 
   public InternalCustomerController(
-      CustomerAppService service,
+      CustomerQueryService queryService,
       @Value("${bank.internal.api-key}") String apiKey) {
-    this.service = service;
+    this.queryService = queryService;
     this.apiKey = apiKey;
   }
 
@@ -40,7 +40,7 @@ public class InternalCustomerController {
       @PathVariable UUID id,
       @RequestHeader(value = SecurityHeaders.INTERNAL_API_KEY, required = false) String key) {
     requireKey(key);
-    return ApiResponse.ok(new ExistsResponse(service.exists(id)));
+    return ApiResponse.ok(new ExistsResponse(queryService.exists(id)));
   }
 
   /** Batch display names for back-office enrichment (e.g. deposit owner columns). */
@@ -49,7 +49,7 @@ public class InternalCustomerController {
       @Valid @RequestBody CustomerNamesRequest request,
       @RequestHeader(value = SecurityHeaders.INTERNAL_API_KEY, required = false) String key) {
     requireKey(key);
-    return ApiResponse.ok(service.namesByIds(request.userIds()));
+    return ApiResponse.ok(queryService.namesByIds(request.userIds()));
   }
 
   private void requireKey(String key) {

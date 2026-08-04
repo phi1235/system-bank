@@ -132,16 +132,18 @@ public class BillPaymentService {
   }
 
   /** Bill payment history for current customer. */
-  public PageResponse<BillPaymentHistoryResponse> history(UUID customerId, int page, int size) {
-    var pg = paymentRepo.findAllByCustomerIdOrderByCreatedAtDesc(
-        customerId, PageRequest.of(page, Math.min(size, 50)));
-    var items = pg.getContent().stream()
+  public PageResponse<BillPaymentHistoryResponse> history(UUID customerId, Integer page, Integer size) {
+    int pg = page != null ? page : 0;
+    int sz = size != null ? Math.min(size, 50) : 20;
+    var result = paymentRepo.findAllByCustomerIdOrderByCreatedAtDesc(
+        customerId, PageRequest.of(pg, sz));
+    var items = result.getContent().stream()
         .map(e -> new BillPaymentHistoryResponse(
             e.getId(), e.getCategoryId(), e.getProviderId(),
             e.getCustomerCode(), e.getCustomerName(),
             e.getAmount(), e.getFee(), e.getStatus(),
             e.getTransactionRef(), e.getCreatedAt()))
         .toList();
-    return new PageResponse<>(items, page, size, pg.getTotalElements(), pg.getTotalPages());
+    return new PageResponse<>(items, pg, sz, result.getTotalElements(), result.getTotalPages());
   }
 }

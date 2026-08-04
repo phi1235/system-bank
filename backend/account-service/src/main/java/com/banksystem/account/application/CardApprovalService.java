@@ -4,6 +4,7 @@ import com.banksystem.account.api.dto.CardDtos.AdminCardFilterRequest;
 import com.banksystem.account.api.dto.CardDtos.AdminCardRow;
 import com.banksystem.account.api.dto.CardDtos.BatchApproveResult;
 import com.banksystem.account.api.dto.CardDtos.CardResponse;
+import com.banksystem.account.application.mapper.CardMapper;
 import com.banksystem.account.domain.AccountEntity;
 import com.banksystem.account.domain.AccountRepository;
 import com.banksystem.account.domain.CardEntity;
@@ -49,6 +50,7 @@ public class CardApprovalService {
   private final CustomerClient customerClient;
   private final AuditClient auditClient;
   private final NotificationClient notificationClient;
+  private final CardMapper cardMapper;
   private final String customerApiKey;
   private final String transactionApiKey;
   private final String notificationApiKey;
@@ -63,6 +65,7 @@ public class CardApprovalService {
       CustomerClient customerClient,
       AuditClient auditClient,
       NotificationClient notificationClient,
+      CardMapper cardMapper,
       @Value("${bank.internal.customer-api-key}") String customerApiKey,
       @Value("${bank.internal.transaction-api-key}") String transactionApiKey,
       @Value("${bank.internal.notification-api-key}") String notificationApiKey,
@@ -75,6 +78,7 @@ public class CardApprovalService {
     this.customerClient = customerClient;
     this.auditClient = auditClient;
     this.notificationClient = notificationClient;
+    this.cardMapper = cardMapper;
     this.customerApiKey = customerApiKey;
     this.transactionApiKey = transactionApiKey;
     this.notificationApiKey = notificationApiKey;
@@ -208,12 +212,11 @@ public class CardApprovalService {
             .orElseThrow(
                 () ->
                     new BusinessException(
-                        "CARD_NOT_FOUND", "Card not found", HttpStatus.NOT_FOUND));
+                        "CARD_NOT_FOUND", "Card not found"));
     if (card.getStatus() != CardStatus.REQUESTED) {
       throw new BusinessException(
           "CARD_NOT_REQUESTED",
-          "Only REQUESTED cards can be decided (current: " + card.getStatus() + ")",
-          HttpStatus.UNPROCESSABLE_ENTITY);
+          "Only REQUESTED cards can be decided (current: " + card.getStatus() + ")");
     }
     return card;
   }
@@ -279,24 +282,15 @@ public class CardApprovalService {
       return CardStatus.valueOf(raw.trim().toUpperCase());
     } catch (IllegalArgumentException ex) {
       throw new BusinessException(
-          "CARD_STATUS_INVALID", "Unknown card status: " + raw, HttpStatus.BAD_REQUEST);
+          "CARD_STATUS_INVALID", "Unknown card status: " + raw);
     }
   }
 
   private CardResponse toResponse(CardEntity c) {
-    return new CardResponse(
-        c.getId().toString(),
-        c.getAccountId().toString(),
-        accountRepository
-            .findById(c.getAccountId())
-            .map(AccountEntity::getAccountNumber)
-            .orElse(null),
-        c.getPanLast4() == null ? null : "9704 **** **** " + c.getPanLast4(),
-        c.getBrand(),
-        c.getStatus().name(),
-        c.getDailyLimit(),
-        c.getExpiresOn(),
-        c.getRejectReason(),
-        c.getCreatedAt());
+    String accountNumber = accountRepository
+        .findById(c.getAccountId())
+        .map(AccountEntity::getAccountNumber)
+        .orElse(null);
+    return cardMapper.toResponse(c, accountNumber);
   }
 }

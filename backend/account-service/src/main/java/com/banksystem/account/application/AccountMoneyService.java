@@ -12,7 +12,6 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,8 +46,7 @@ public class AccountMoneyService {
   @Transactional(readOnly = true)
   public AccountResponse getByNumber(String accountNumber) {
     return mapper.toResponse(accountRepository.findByAccountNumber(accountNumber)
-        .orElseThrow(() -> new BusinessException("ACCOUNT_NOT_FOUND", "Account not found",
-            HttpStatus.NOT_FOUND)));
+        .orElseThrow(() -> new BusinessException("ACCOUNT_NOT_FOUND", "Account not found")));
   }
 
   @Transactional
@@ -56,7 +54,7 @@ public class AccountMoneyService {
     validateAmount(cmd.amount());
     AccountEntity account = access.require(id);
     if (!access.currentStatus(account).isActive()) {
-      throw new BusinessException("ACCOUNT_FROZEN", "Account is not active", HttpStatus.UNPROCESSABLE_ENTITY);
+      throw new BusinessException("ACCOUNT_FROZEN", "Account is not active");
     }
 
     var existing = ledgerEntryRepository.findByAccountIdAndReferenceIdAndEntryType(
@@ -70,10 +68,9 @@ public class AccountMoneyService {
     if (updated == 0) {
       AccountEntity current = access.require(id);
       if (!access.currentStatus(current).isActive()) {
-        throw new BusinessException("ACCOUNT_FROZEN", "Account is not active", HttpStatus.UNPROCESSABLE_ENTITY);
+        throw new BusinessException("ACCOUNT_FROZEN", "Account is not active");
       }
-      throw new BusinessException("INSUFFICIENT_BALANCE", "Account balance is insufficient",
-          HttpStatus.UNPROCESSABLE_ENTITY);
+      throw new BusinessException("INSUFFICIENT_BALANCE", "Account balance is insufficient");
     }
 
     LedgerEntryEntity entry = newLedger(id, "DEBIT", cmd);
@@ -105,10 +102,9 @@ public class AccountMoneyService {
       if (!access.currentStatus(current).isActive()) {
         // Compensation after debit usually targets ACTIVE accounts.
         // Frozen/closed credit remains blocked for now.
-        throw new BusinessException("ACCOUNT_FROZEN", "Account is not active for credit",
-            HttpStatus.UNPROCESSABLE_ENTITY);
+        throw new BusinessException("ACCOUNT_FROZEN", "Account is not active for credit");
       }
-      throw new BusinessException("ACCOUNT_NOT_FOUND", "Account not found", HttpStatus.NOT_FOUND);
+      throw new BusinessException("ACCOUNT_NOT_FOUND", "Account not found");
     }
 
     LedgerEntryEntity entry = newLedger(id, "CREDIT", cmd);
@@ -137,7 +133,7 @@ public class AccountMoneyService {
 
   private void validateAmount(BigDecimal amount) {
     if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
-      throw new BusinessException("INVALID_AMOUNT", "Amount must be positive", HttpStatus.BAD_REQUEST);
+      throw new BusinessException("INVALID_AMOUNT", "Amount must be positive");
     }
   }
 }

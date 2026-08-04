@@ -9,7 +9,6 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -58,7 +57,7 @@ public class OpsAlertService {
       return repository.findByEventId(eventId)
           .map(this::toItem)
           .orElseThrow(() -> new BusinessException(
-              "OPS_ALERT_CONFLICT", "Ops alert conflict", HttpStatus.CONFLICT));
+              "OPS_ALERT_CONFLICT", "Ops alert conflict"));
     }
 
     NotificationItem item = toItem(ops);
@@ -74,7 +73,7 @@ public class OpsAlertService {
       return UUID.fromString(raw.trim());
     } catch (IllegalArgumentException ex) {
       throw new BusinessException(
-          "INVALID_EVENT_ID", "eventId must be a UUID", HttpStatus.BAD_REQUEST);
+          "INVALID_EVENT_ID", "eventId must be a UUID");
     }
   }
 

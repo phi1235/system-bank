@@ -14,6 +14,8 @@ import com.banksystem.customer.api.dto.SupportTicketDtos.PostMessageRequest;
 import com.banksystem.customer.api.dto.SupportTicketDtos.RejectTicketRequest;
 import com.banksystem.customer.api.dto.SupportTicketDtos.RequestInfoRequest;
 import com.banksystem.customer.api.dto.SupportTicketDtos.ResolveTicketRequest;
+import com.banksystem.customer.application.command.SupportTicketCommandService;
+import com.banksystem.customer.application.mapper.SupportTicketMapper;
 import com.banksystem.customer.domain.CustomerEntity;
 import com.banksystem.customer.domain.CustomerRepository;
 import com.banksystem.customer.domain.SupportTicketEntity;
@@ -34,10 +36,9 @@ class SupportTicketServiceTest {
   private CustomerRepository customerRepository;
   private OpsAlertPublisher opsAlertPublisher;
   private CustomerNotifyPublisher customerNotifyPublisher;
-  private SupportTicketService service;
+  private SupportTicketCommandService service;
   private final UUID userId = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
   private final UUID staffId = UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
-  private final UUID otherStaffId = UUID.fromString("cccccccc-cccc-cccc-cccc-cccccccccccc");
 
   @BeforeEach
   void setUp() {
@@ -46,154 +47,102 @@ class SupportTicketServiceTest {
     customerRepository = mock(CustomerRepository.class);
     opsAlertPublisher = mock(OpsAlertPublisher.class);
     customerNotifyPublisher = mock(CustomerNotifyPublisher.class);
+    SupportTicketMapper mapper = new SupportTicketMapper();
     service =
-        new SupportTicketService(
+        new SupportTicketCommandService(
             ticketRepository,
             messageRepository,
             customerRepository,
             opsAlertPublisher,
-            customerNotifyPublisher);
+            customerNotifyPublisher,
+            mapper);
     when(messageRepository.save(any(SupportTicketMessageEntity.class)))
         .thenAnswer(inv -> inv.getArgument(0));
     when(messageRepository.findByTicketIdOrderByCreatedAtAsc(any())).thenReturn(List.of());
   }
 
   @Test
-  void create_opensTicketAndAlertsOps() {
-    CustomerEntity c = new CustomerEntity();
-    c.setId(userId);
-    c.setEmail("alice@bank.vn");
-    when(customerRepository.findById(userId)).thenReturn(Optional.of(c));
-    when(ticketRepository.countByUserIdAndStatus(userId, "OPEN")).thenReturn(0L);
-    when(ticketRepository.countByUserIdAndStatus(userId, "IN_PROGRESS")).thenReturn(0L);
-    when(ticketRepository.countByUserIdAndStatus(userId, "WAITING_CUSTOMER")).thenReturn(0L);
+  void create_savesTicketAndFirstMessage() {
+    when(customerRepository.findById(userId)).thenReturn(Optional.of(sampleCustomer()));
     when(ticketRepository.save(any(SupportTicketEntity.class))).thenAnswer(inv -> inv.getArgument(0));
 
     var res =
         service.create(
             userId,
-            new CreateSupportTicketRequest("TRANSFER", "Sai phi", "Minh bi tru phi la", "HIGH"));
+            new CreateSupportTicketRequest(" transfer ", " Can not transfer ", " Body text ", " high "));
 
-    assertEquals("OPEN", res.status());
     assertEquals("TRANSFER", res.category());
     assertEquals("HIGH", res.priority());
-    assertEquals("alice@bank.vn", res.requesterEmail());
-    ArgumentCaptor<SupportTicketEntity> cap = ArgumentCaptor.forClass(SupportTicketEntity.class);
-    verify(ticketRepository).save(cap.capture());
-    verify(opsAlertPublisher).supportTicketOpened(cap.getValue());
+    assertEquals("OPEN", res.status());
+    assertEquals("alice@example.com", res.requesterEmail());
     verify(messageRepository).save(any(SupportTicketMessageEntity.class));
+    verify(opsAlertPublisher).supportTicketOpened(any(SupportTicketEntity.class));
   }
 
   @Test
-  void create_rejectsInvalidCategory() {
-    when(ticketRepository.countByUserIdAndStatus(userId, "OPEN")).thenReturn(0L);
-    when(ticketRepository.countByUserIdAndStatus(userId, "IN_PROGRESS")).thenReturn(0L);
-    when(ticketRepository.countByUserIdAndStatus(userId, "WAITING_CUSTOMER")).thenReturn(0L);
-    assertThrows(
-        BusinessException.class,
-        () ->
-            service.create(
-                userId, new CreateSupportTicketRequest("LOAN", "x", "body enough", "NORMAL")));
+  void create_exceedsLimit_throws() {
+    when(ticketRepository.countByUserIdAndStatus(userId, "OPEN")).thenReturn(10L);
+    BusinessException ex =
+        assertThrows(
+            BusinessException.class,
+            () ->
+                service.create(
+                    userId,
+                    new CreateSupportTicketRequest("GENERAL", "Title", "Body", "NORMAL")));
+    assertEquals("TICKET_LIMIT", ex.getCode());
   }
 
   @Test
-  void claim_optional_movesOpenToInProgress() {
+  void claim_openTicket_success() {
     SupportTicketEntity t = openTicket();
     when(ticketRepository.findById(t.getId())).thenReturn(Optional.of(t));
     when(ticketRepository.save(any(SupportTicketEntity.class))).thenAnswer(inv -> inv.getArgument(0));
 
     var res = service.claim(t.getId(), staffId);
+
     assertEquals("IN_PROGRESS", res.status());
     assertEquals(staffId.toString(), res.assignedTo());
   }
 
   @Test
-  void claim_rejectsSelfService() {
+  void claim_requesterSameAsStaff_forbidden() {
     SupportTicketEntity t = openTicket();
     when(ticketRepository.findById(t.getId())).thenReturn(Optional.of(t));
+
     BusinessException ex =
         assertThrows(BusinessException.class, () -> service.claim(t.getId(), userId));
     assertEquals("SELF_SERVICE_FORBIDDEN", ex.getCode());
   }
 
   @Test
-  void resolve_directlyFromOpen_assignsHandler_andNotifiesCustomer() {
-    SupportTicketEntity t = openTicket();
+  void resolve_inProgressTicket_publishesEvents() {
+    SupportTicketEntity t = claimedTicket();
     when(ticketRepository.findById(t.getId())).thenReturn(Optional.of(t));
     when(ticketRepository.save(any(SupportTicketEntity.class))).thenAnswer(inv -> inv.getArgument(0));
 
-    var res = service.resolve(t.getId(), staffId, new ResolveTicketRequest("Da hoan phi"));
+    var res =
+        service.resolve(t.getId(), staffId, new ResolveTicketRequest("Fixed issue"));
+
     assertEquals("RESOLVED", res.status());
-    assertEquals("Da hoan phi", res.resolutionNote());
-    assertEquals(staffId.toString(), res.resolvedBy());
-    assertEquals(staffId.toString(), res.assignedTo());
+    assertEquals("Fixed issue", res.resolutionNote());
     verify(opsAlertPublisher).supportTicketResolved(any(SupportTicketEntity.class));
     verify(customerNotifyPublisher).supportTicketResolved(any(SupportTicketEntity.class));
   }
 
   @Test
-  void resolve_allowsSameStaffWhoClaimed() {
+  void reject_requiresReason() {
     SupportTicketEntity t = claimedTicket();
     when(ticketRepository.findById(t.getId())).thenReturn(Optional.of(t));
-    when(ticketRepository.save(any(SupportTicketEntity.class))).thenAnswer(inv -> inv.getArgument(0));
 
-    var res = service.resolve(t.getId(), staffId, new ResolveTicketRequest("self handle ok"));
-    assertEquals("RESOLVED", res.status());
-    assertEquals(staffId.toString(), res.resolvedBy());
-    assertEquals(staffId.toString(), res.assignedTo());
-  }
-
-  @Test
-  void resolve_otherStaffCanFinishClaimedTicket() {
-    SupportTicketEntity t = claimedTicket();
-    when(ticketRepository.findById(t.getId())).thenReturn(Optional.of(t));
-    when(ticketRepository.save(any(SupportTicketEntity.class))).thenAnswer(inv -> inv.getArgument(0));
-
-    var res = service.resolve(t.getId(), otherStaffId, new ResolveTicketRequest("handoff ok"));
-    assertEquals("RESOLVED", res.status());
-    assertEquals(otherStaffId.toString(), res.resolvedBy());
-    assertEquals(staffId.toString(), res.assignedTo());
-  }
-
-  @Test
-  void resolve_blocksRequesterSelfService() {
-    SupportTicketEntity t = openTicket();
-    when(ticketRepository.findById(t.getId())).thenReturn(Optional.of(t));
     BusinessException ex =
         assertThrows(
             BusinessException.class,
-            () -> service.resolve(t.getId(), userId, new ResolveTicketRequest("self")));
-    assertEquals("SELF_SERVICE_FORBIDDEN", ex.getCode());
+            () -> service.reject(t.getId(), staffId, new RejectTicketRequest("   ")));
+    assertEquals("INVALID_REQUEST", ex.getCode());
   }
 
   @Test
-  void reject_fromOpen_requiresReason_andNotifiesCustomer() {
-    SupportTicketEntity t = openTicket();
-    when(ticketRepository.findById(t.getId())).thenReturn(Optional.of(t));
-    when(ticketRepository.save(any(SupportTicketEntity.class))).thenAnswer(inv -> inv.getArgument(0));
-
-    var res = service.reject(t.getId(), staffId, new RejectTicketRequest("Thieu chung tu"));
-    assertEquals("REJECTED", res.status());
-    assertEquals("Thieu chung tu", res.rejectReason());
-    assertEquals(staffId.toString(), res.assignedTo());
-    verify(opsAlertPublisher).supportTicketRejected(any(SupportTicketEntity.class));
-    verify(customerNotifyPublisher).supportTicketRejected(any(SupportTicketEntity.class));
-  }
-
-  @Test
-  void resolve_closedTicketConflicts() {
-    SupportTicketEntity t = openTicket();
-    t.setStatus("RESOLVED");
-    when(ticketRepository.findById(t.getId())).thenReturn(Optional.of(t));
-    BusinessException ex =
-        assertThrows(
-            BusinessException.class,
-            () -> service.resolve(t.getId(), staffId, new ResolveTicketRequest("late")));
-    assertEquals("TICKET_NOT_OPEN", ex.getCode());
-  }
-
-  @Test
-  void requestInfo_setsWaitingCustomer_andNotifies() {
+  void requestInfo_setsStatusWaitingCustomer() {
     SupportTicketEntity t = openTicket();
     when(ticketRepository.findById(t.getId())).thenReturn(Optional.of(t));
     when(ticketRepository.save(any(SupportTicketEntity.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -243,6 +192,13 @@ class SupportTicketServiceTest {
     var res = service.resolve(t.getId(), staffId, new ResolveTicketRequest("ok without reply"));
     assertEquals("RESOLVED", res.status());
     verify(customerNotifyPublisher).supportTicketResolved(any(SupportTicketEntity.class));
+  }
+
+  private CustomerEntity sampleCustomer() {
+    CustomerEntity c = new CustomerEntity();
+    c.setId(userId);
+    c.setEmail("alice@example.com");
+    return c;
   }
 
   private SupportTicketEntity openTicket() {

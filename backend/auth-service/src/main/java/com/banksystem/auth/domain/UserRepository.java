@@ -15,6 +15,8 @@ public interface UserRepository extends JpaRepository<UserEntity, UUID> {
 
   boolean existsByEmail(String email);
 
+  long countByEnabled(boolean enabled);
+
   java.util.Optional<UserEntity> findByEmailIgnoreCase(String email);
 
   @Query("""

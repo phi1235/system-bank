@@ -4,7 +4,6 @@ import com.banksystem.common.exception.BusinessException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 /**
@@ -49,7 +48,7 @@ public class TransferFeePolicy {
    */
   public BigDecimal calculate(BigDecimal principal) {
     if (principal == null || principal.compareTo(BigDecimal.ZERO) <= 0) {
-      throw new BusinessException("INVALID_AMOUNT", "Amount must be positive", HttpStatus.BAD_REQUEST);
+      throw new BusinessException("INVALID_AMOUNT", "Amount must be positive");
     }
     if (!enabled) {
       return BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
@@ -98,7 +97,7 @@ public class TransferFeePolicy {
    */
   public FeeBreakdown breakdown(BigDecimal principal) {
     if (principal == null || principal.compareTo(BigDecimal.ZERO) <= 0) {
-      throw new BusinessException("INVALID_AMOUNT", "Amount must be positive", HttpStatus.BAD_REQUEST);
+      throw new BusinessException("INVALID_AMOUNT", "Amount must be positive");
     }
     if (!enabled) {
       BigDecimal zero = BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);

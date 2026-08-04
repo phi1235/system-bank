@@ -42,4 +42,11 @@ public final class CustomerDtos {
   ) {}
 
   public record ExistsResponse(boolean exists) {}
+
+  public record CustomerSearchFilterRequest(
+      Integer page,
+      Integer size,
+      String q,
+      String kycStatus
+  ) {}
 }

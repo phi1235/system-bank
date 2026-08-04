@@ -3,7 +3,6 @@ package com.banksystem.account.application;
 import com.banksystem.account.domain.AccountRepository;
 import com.banksystem.common.exception.BusinessException;
 import java.security.SecureRandom;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 /** Generates unique internal account numbers (10 + 8 digits). */
@@ -25,7 +24,6 @@ public class AccountNumberGenerator {
         return num;
       }
     }
-    throw new BusinessException("ACCOUNT_NUMBER_GEN_FAILED", "Could not generate unique account number",
-        HttpStatus.INTERNAL_SERVER_ERROR);
+    throw new BusinessException("ACCOUNT_NUMBER_GEN_FAILED", "Could not generate unique account number");
   }
 }

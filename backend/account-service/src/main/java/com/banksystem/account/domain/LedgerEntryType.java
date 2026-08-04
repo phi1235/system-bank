@@ -1,7 +1,6 @@
 package com.banksystem.account.domain;
 
 import com.banksystem.common.exception.BusinessException;
-import org.springframework.http.HttpStatus;
 
 /**
  * Money movement direction on an account ledger.
@@ -20,8 +19,7 @@ public enum LedgerEntryType {
     } catch (IllegalArgumentException ex) {
       throw new BusinessException(
           "INVALID_ENTRY_TYPE",
-          "entryType must be DEBIT or CREDIT",
-          HttpStatus.BAD_REQUEST);
+          "entryType must be DEBIT or CREDIT");
     }
   }
 }

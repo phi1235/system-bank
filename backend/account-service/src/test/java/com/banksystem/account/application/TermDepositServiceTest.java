@@ -34,6 +34,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
+import com.banksystem.account.application.mapper.TermDepositMapper;
+
 class TermDepositServiceTest {
 
   // 2026-07-26 10:00 Asia/Bangkok
@@ -62,6 +64,7 @@ class TermDepositServiceTest {
             productRepository,
             access,
             moneyService,
+            new TermDepositMapper(),
             Clock.fixed(NOW, ZoneOffset.UTC),
             "Asia/Bangkok");
     when(productRepository.findById("TD6M")).thenReturn(Optional.of(product("TD6M", 6, 460)));

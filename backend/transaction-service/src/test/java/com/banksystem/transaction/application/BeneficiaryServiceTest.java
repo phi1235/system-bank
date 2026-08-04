@@ -9,13 +9,12 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.banksystem.common.api.ApiResponse;
 import com.banksystem.common.exception.BusinessException;
 import com.banksystem.transaction.api.dto.BeneficiaryDtos.CreateBeneficiaryRequest;
 import com.banksystem.transaction.api.dto.BeneficiaryDtos.UpdateBeneficiaryRequest;
+import com.banksystem.transaction.application.gateway.AccountGateway;
 import com.banksystem.transaction.domain.BeneficiaryEntity;
 import com.banksystem.transaction.domain.BeneficiaryRepository;
-import com.banksystem.transaction.infrastructure.feign.AccountClient;
 import com.banksystem.transaction.infrastructure.feign.AccountClientDtos.AccountView;
 import com.banksystem.transaction.infrastructure.redis.BeneficiaryListCache;
 import java.math.BigDecimal;
@@ -29,7 +28,7 @@ import org.junit.jupiter.api.Test;
 class BeneficiaryServiceTest {
 
   private BeneficiaryRepository repository;
-  private AccountClient accountClient;
+  private AccountGateway accountGateway;
   private BeneficiaryListCache listCache;
   private BeneficiaryService service;
   private final UUID userId = UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
@@ -37,10 +36,10 @@ class BeneficiaryServiceTest {
   @BeforeEach
   void setUp() {
     repository = mock(BeneficiaryRepository.class);
-    accountClient = mock(AccountClient.class);
+    accountGateway = mock(AccountGateway.class);
     listCache = mock(BeneficiaryListCache.class);
     when(listCache.get(any())).thenReturn(Optional.empty());
-    service = new BeneficiaryService(repository, accountClient, listCache, "test-key");
+    service = new BeneficiaryService(repository, accountGateway, listCache);
   }
 
   @Test
@@ -50,7 +49,7 @@ class BeneficiaryServiceTest {
     BusinessException ex = assertThrows(BusinessException.class,
         () -> service.create(userId, new CreateBeneficiaryRequest("Mom", "1012345678")));
     assertEquals("BENEFICIARY_EXISTS", ex.getCode());
-    verify(accountClient, never()).getByNumber(any(), any());
+    verify(accountGateway, never()).getAccountByNumber(any());
   }
 
   @Test
@@ -64,7 +63,7 @@ class BeneficiaryServiceTest {
         new BigDecimal("1000"),
         "ACTIVE");
     when(repository.existsByUserIdAndAccountNumber(userId, "1012345678")).thenReturn(false);
-    when(accountClient.getByNumber("1012345678", "test-key")).thenReturn(ApiResponse.ok(account));
+    when(accountGateway.getAccountByNumber("1012345678")).thenReturn(account);
     when(repository.save(any(BeneficiaryEntity.class))).thenAnswer(inv -> inv.getArgument(0));
 
     var response = service.create(userId, new CreateBeneficiaryRequest("  Mom  ", "1012345678"));

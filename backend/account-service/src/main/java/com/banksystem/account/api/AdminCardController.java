@@ -42,6 +42,12 @@ public class AdminCardController {
     return ApiResponse.ok(service.queue(req));
   }
 
+  @PostMapping("/search")
+  @RequirePermission("accounts:lookup:view")
+  public ApiResponse<PageResponse<AdminCardRow>> search(@Valid @RequestBody AdminCardFilterRequest req) {
+    return ApiResponse.ok(service.queue(req));
+  }
+
   @PostMapping("/{id}/approve")
   @RequirePermission("cards:approve:execute")
   public ApiResponse<CardResponse> approve(@PathVariable UUID id) {

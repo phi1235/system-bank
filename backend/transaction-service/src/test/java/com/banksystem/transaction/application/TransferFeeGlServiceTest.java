@@ -11,11 +11,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.banksystem.common.api.ApiError;
-import com.banksystem.common.api.ApiResponse;
 import com.banksystem.common.exception.BusinessException;
+import com.banksystem.transaction.application.gateway.AccountGateway;
 import com.banksystem.transaction.domain.TransferOrderEntity;
-import com.banksystem.transaction.infrastructure.feign.AccountClient;
 import com.banksystem.transaction.infrastructure.feign.AccountClientDtos.AccountView;
 import com.banksystem.transaction.infrastructure.feign.AccountClientDtos.MoneyCommand;
 import com.banksystem.transaction.infrastructure.feign.AccountClientDtos.MoneyResult;
@@ -27,15 +25,15 @@ import org.mockito.ArgumentCaptor;
 
 class TransferFeeGlServiceTest {
 
-  private AccountClient accountClient;
+  private AccountGateway accountGateway;
   private TransferFeeGlService service;
 
   private final UUID incomeId = UUID.fromString("00000000-0000-0000-0000-0000000000fe");
 
   @BeforeEach
   void setUp() {
-    accountClient = mock(AccountClient.class);
-    service = new TransferFeeGlService(accountClient, "secret", "1099999999");
+    accountGateway = mock(AccountGateway.class);
+    service = new TransferFeeGlService(accountGateway, "1099999999");
   }
 
   @Test
@@ -58,14 +56,14 @@ class TransferFeeGlServiceTest {
   void postFee_creditsIncomeAccountWithIdempotentRef() {
     TransferOrderEntity order = order(new BigDecimal("2500.00"));
     stubIncomeLookup();
-    when(accountClient.credit(eq(incomeId), any(MoneyCommand.class), eq("secret")))
-        .thenReturn(ApiResponse.ok(new MoneyResult("ledger-fee-1", new BigDecimal("2500.00"))));
+    when(accountGateway.credit(eq(incomeId), any(MoneyCommand.class)))
+        .thenReturn(new MoneyResult("ledger-fee-1", new BigDecimal("2500.00")));
 
     String ledgerId = service.postFee(order);
 
     assertEquals("ledger-fee-1", ledgerId);
     ArgumentCaptor<MoneyCommand> cmd = ArgumentCaptor.forClass(MoneyCommand.class);
-    verify(accountClient).credit(eq(incomeId), cmd.capture(), eq("secret"));
+    verify(accountGateway).credit(eq(incomeId), cmd.capture());
     assertEquals(0, new BigDecimal("2500.00").compareTo(cmd.getValue().amount()));
     assertEquals(order.getId() + "-fee", cmd.getValue().referenceId());
   }
@@ -73,8 +71,8 @@ class TransferFeeGlServiceTest {
   @Test
   void postFee_failsWhenIncomeAccountMissing() {
     TransferOrderEntity order = order(new BigDecimal("100.00"));
-    when(accountClient.getByNumber(eq("1099999999"), eq("secret")))
-        .thenReturn(ApiResponse.fail(new ApiError("NOT_FOUND", "missing")));
+    when(accountGateway.getAccountByNumber(eq("1099999999")))
+        .thenReturn(null);
 
     BusinessException ex = assertThrows(BusinessException.class, () -> service.postFee(order));
     assertEquals("FEE_INCOME_ACCOUNT_MISSING", ex.getCode());
@@ -89,8 +87,8 @@ class TransferFeeGlServiceTest {
         "VND",
         BigDecimal.ZERO,
         "ACTIVE");
-    when(accountClient.getByNumber(eq("1099999999"), eq("secret")))
-        .thenReturn(ApiResponse.ok(view));
+    when(accountGateway.getAccountByNumber(eq("1099999999")))
+        .thenReturn(view);
   }
 
   private TransferOrderEntity order(BigDecimal fee) {

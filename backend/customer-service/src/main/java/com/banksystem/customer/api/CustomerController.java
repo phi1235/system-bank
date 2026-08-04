@@ -6,64 +6,75 @@ import com.banksystem.common.security.RequirePermission;
 import com.banksystem.common.security.UserContext;
 import com.banksystem.customer.api.dto.CustomerDtos.CreateProfileRequest;
 import com.banksystem.customer.api.dto.CustomerDtos.CustomerResponse;
+import com.banksystem.customer.api.dto.CustomerDtos.CustomerSearchFilterRequest;
 import com.banksystem.customer.api.dto.CustomerDtos.KycUpdateRequest;
 import com.banksystem.customer.api.dto.CustomerDtos.UpdateProfileRequest;
-import com.banksystem.customer.application.CustomerAppService;
+import com.banksystem.customer.application.command.CustomerCommandService;
+import com.banksystem.customer.application.query.CustomerQueryService;
+import com.banksystem.customer.application.query.CustomerSearchQuery;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/v1")
 public class CustomerController {
 
-  private final CustomerAppService service;
+  private final CustomerQueryService queryService;
+  private final CustomerCommandService commandService;
 
-  public CustomerController(CustomerAppService service) {
-    this.service = service;
+  public CustomerController(
+      CustomerQueryService queryService,
+      CustomerCommandService commandService) {
+    this.queryService = queryService;
+    this.commandService = commandService;
   }
 
   @PostMapping("/customers/me")
   public ResponseEntity<ApiResponse<CustomerResponse>> create(@Valid @RequestBody CreateProfileRequest req) {
     var user = UserContext.requireUser();
     return ResponseEntity.status(HttpStatus.CREATED)
-        .body(ApiResponse.ok(service.create(user.userId(), req)));
+        .body(ApiResponse.ok(commandService.create(user.userId(), req)));
   }
 
   @GetMapping("/customers/me")
   public ApiResponse<CustomerResponse> me() {
-    return ApiResponse.ok(service.getMe(UserContext.requireUser().userId()));
+    return ApiResponse.ok(queryService.getMe(UserContext.requireUser().userId()));
   }
 
   @PutMapping("/customers/me")
   public ApiResponse<CustomerResponse> update(@Valid @RequestBody UpdateProfileRequest req) {
-    return ApiResponse.ok(service.updateMe(UserContext.requireUser().userId(), req));
+    return ApiResponse.ok(commandService.updateMe(UserContext.requireUser().userId(), req));
   }
 
   @GetMapping({"/customers", "/admin/customers"})
   @RequirePermission("customers:list:view")
   public ApiResponse<PageResponse<CustomerResponse>> list(
-      @RequestParam(defaultValue = "0") int page,
-      @RequestParam(defaultValue = "20") int size,
-      @RequestParam(required = false) String q,
-      @RequestParam(required = false) String kycStatus) {
-    return ApiResponse.ok(service.list(q, kycStatus, page, size));
+      @Valid @ModelAttribute CustomerSearchFilterRequest req) {
+    return ApiResponse.ok(queryService.list(CustomerSearchQuery.of(req)));
+  }
+
+  @PostMapping({"/customers/search", "/admin/customers/search"})
+  @RequirePermission("customers:list:view")
+  public ApiResponse<PageResponse<CustomerResponse>> search(
+      @Valid @RequestBody CustomerSearchFilterRequest req) {
+    return ApiResponse.ok(queryService.list(CustomerSearchQuery.of(req)));
   }
 
   @PatchMapping({"/customers/{id}/kyc", "/admin/customers/{id}/kyc"})
   @RequirePermission("customers:kyc:decide")
   public ApiResponse<CustomerResponse> kyc(
       @PathVariable UUID id, @Valid @RequestBody KycUpdateRequest req) {
-    return ApiResponse.ok(service.updateKyc(id, req));
+    return ApiResponse.ok(commandService.updateKyc(id, req));
   }
 }

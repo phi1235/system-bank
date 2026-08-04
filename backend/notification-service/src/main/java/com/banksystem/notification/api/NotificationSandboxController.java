@@ -3,8 +3,11 @@ package com.banksystem.notification.api;
 import com.banksystem.common.api.ApiResponse;
 import com.banksystem.common.api.PageResponse;
 import com.banksystem.notification.application.NotificationLogCommandService;
+import jakarta.validation.Valid;
 import java.time.Instant;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -43,4 +46,12 @@ public class NotificationSandboxController {
       @RequestParam(defaultValue = "20") int size) {
     return ApiResponse.ok(service.searchSandbox(q, channel, page, size));
   }
+
+  @PostMapping({"/admin/notifications/sandbox/search", "/notifications/sandbox/search", "/dev/notifications/sandbox/search"})
+  public ApiResponse<PageResponse<NotificationSandboxItem>> searchSandboxLogs(
+      @Valid @RequestBody SandboxSearchRequest req) {
+    return ApiResponse.ok(service.searchSandbox(req.q(), req.channel(), req.page(), req.size()));
+  }
+
+  public record SandboxSearchRequest(String q, String channel, Integer page, Integer size) {}
 }

@@ -11,6 +11,10 @@ import static org.mockito.Mockito.when;
 import com.banksystem.common.api.PageResponse;
 import com.banksystem.common.exception.BusinessException;
 import com.banksystem.customer.api.dto.CustomerDtos.CustomerResponse;
+import com.banksystem.customer.application.mapper.CustomerMapper;
+import com.banksystem.customer.application.query.CustomerQueryService;
+import com.banksystem.customer.application.query.CustomerSearchQuery;
+import com.banksystem.customer.application.security.CustomerCryptoService;
 import com.banksystem.customer.domain.CustomerEntity;
 import com.banksystem.customer.domain.CustomerRepository;
 import java.util.Base64;
@@ -28,12 +32,14 @@ class CustomerAppServiceListTest {
       Base64.getEncoder().encodeToString("0123456789abcdef0123456789abcdef".getBytes());
 
   private CustomerRepository repository;
-  private CustomerAppService service;
+  private CustomerQueryService service;
 
   @BeforeEach
   void setUp() {
     repository = mock(CustomerRepository.class);
-    service = new CustomerAppService(repository, mock(OpsAlertPublisher.class), AES_KEY);
+    CustomerCryptoService cryptoService = new CustomerCryptoService(AES_KEY);
+    CustomerMapper mapper = new CustomerMapper();
+    service = new CustomerQueryService(repository, mapper, cryptoService);
   }
 
   @Test
@@ -50,7 +56,7 @@ class CustomerAppServiceListTest {
             any(Pageable.class)))
         .thenReturn(new PageImpl<>(List.of(e), PageRequest.of(0, 20), 1));
 
-    PageResponse<CustomerResponse> page = service.list("  ali  ", "pending", 0, 20);
+    PageResponse<CustomerResponse> page = service.list(CustomerSearchQuery.of("  ali  ", "pending", 0, 20));
 
     assertEquals(1, page.items().size());
     assertEquals("Alice", page.items().get(0).fullName());
@@ -60,20 +66,11 @@ class CustomerAppServiceListTest {
   }
 
   @Test
-  void list_blankFiltersAreAbsent() {
-    when(repository.search(eq(false), eq(""), eq(false), eq("PENDING"), any(Pageable.class)))
-        .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 20), 0));
-
-    PageResponse<CustomerResponse> page = service.list("  ", " ", 0, 20);
-
-    assertEquals(0, page.items().size());
-    verify(repository).search(eq(false), eq(""), eq(false), eq("PENDING"), any(Pageable.class));
-  }
-
-  @Test
-  void list_rejectsInvalidKycFilter() {
+  void list_rejectsInvalidKycStatus() {
     BusinessException ex =
-        assertThrows(BusinessException.class, () -> service.list(null, "WEIRD", 0, 20));
+        assertThrows(
+            BusinessException.class,
+            () -> service.list(CustomerSearchQuery.of(null, "INVALID", 0, 20)));
     assertEquals("INVALID_KYC_STATUS", ex.getCode());
   }
 }

@@ -7,7 +7,7 @@ import com.banksystem.auth.api.dto.PasswordResetDtos.LockRequest;
 import com.banksystem.auth.api.dto.PasswordResetDtos.RejectRequest;
 import com.banksystem.auth.api.dto.PasswordResetDtos.TicketResponse;
 import com.banksystem.auth.application.PasswordResetService;
-import com.banksystem.auth.application.RbacService;
+import com.banksystem.auth.application.permission.PermissionChecker;
 import com.banksystem.auth.config.UserPrincipal;
 import com.banksystem.common.api.ApiResponse;
 import com.banksystem.common.api.PageResponse;
@@ -54,16 +54,26 @@ public class PasswordResetController {
       @RequestParam(required = false) String status,
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "20") int size) {
-    RbacService.requirePasswordReset(principal);
+    PermissionChecker.requirePasswordReset(principal);
     return ApiResponse.ok(passwordResetService.listTickets(status, page, size));
   }
+
+  @PostMapping("/admin/password-reset/tickets/search")
+  public ApiResponse<PageResponse<TicketResponse>> searchTickets(
+      @AuthenticationPrincipal UserPrincipal principal,
+      @Valid @RequestBody TicketSearchRequest req) {
+    PermissionChecker.requirePasswordReset(principal);
+    return ApiResponse.ok(passwordResetService.listTickets(req.status(), req.page(), req.size()));
+  }
+
+  public record TicketSearchRequest(String status, Integer page, Integer size) {}
 
   /** Direct fulfill — no second checker; password never in response */
   @PostMapping("/admin/password-reset/tickets/{id}/fulfill")
   public ApiResponse<FulfillResponse> fulfill(
       @AuthenticationPrincipal UserPrincipal principal,
       @PathVariable UUID id) {
-    RbacService.requirePasswordReset(principal);
+    PermissionChecker.requirePasswordReset(principal);
     return ApiResponse.ok(passwordResetService.fulfill(id, principal.userId()));
   }
 
@@ -72,7 +82,7 @@ public class PasswordResetController {
       @AuthenticationPrincipal UserPrincipal principal,
       @PathVariable UUID id,
       @RequestBody(required = false) RejectRequest body) {
-    RbacService.requirePasswordReset(principal);
+    PermissionChecker.requirePasswordReset(principal);
     return ApiResponse.ok(passwordResetService.reject(id, principal.userId(), body));
   }
 
@@ -82,7 +92,7 @@ public class PasswordResetController {
       @AuthenticationPrincipal UserPrincipal principal,
       @PathVariable UUID userId,
       @RequestParam(required = false, defaultValue = "EMAIL") String channel) {
-    RbacService.requirePasswordReset(principal);
+    PermissionChecker.requirePasswordReset(principal);
     return ApiResponse.ok(passwordResetService.resetByUserId(userId, principal.userId(), channel));
   }
 
@@ -91,7 +101,7 @@ public class PasswordResetController {
       @AuthenticationPrincipal UserPrincipal principal,
       @PathVariable UUID userId,
       @RequestBody(required = false) LockRequest body) {
-    RbacService.requireUserLock(principal);
+    PermissionChecker.requireUserLock(principal);
     passwordResetService.lockUser(userId, principal.userId(), body);
     return ApiResponse.ok(Map.of("status", "LOCKED"));
   }
@@ -100,7 +110,7 @@ public class PasswordResetController {
   public ApiResponse<Map<String, String>> unlock(
       @AuthenticationPrincipal UserPrincipal principal,
       @PathVariable UUID userId) {
-    RbacService.requireUserLock(principal);
+    PermissionChecker.requireUserLock(principal);
     passwordResetService.unlockUser(userId, principal.userId());
     return ApiResponse.ok(Map.of("status", "UNLOCKED"));
   }

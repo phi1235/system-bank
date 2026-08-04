@@ -20,18 +20,33 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.banksystem.account.api.dto.AccountDtos.InternalAccountCountsResponse;
+import com.banksystem.account.domain.AccountRepository;
+
 @RestController
 @RequestMapping("/internal/accounts")
 public class InternalAccountController {
 
   private final AccountMoneyService service;
+  private final AccountRepository accountRepository;
   private final String apiKey;
 
   public InternalAccountController(
       AccountMoneyService service,
-      @Value("${bank.internal.api-key}") String apiKey) {
+      AccountRepository accountRepository,
+      @Value("${bank.internal.api-key:internal-dev-key}") String apiKey) {
     this.service = service;
+    this.accountRepository = accountRepository;
     this.apiKey = apiKey;
+  }
+
+  @GetMapping("/counts")
+  public ApiResponse<InternalAccountCountsResponse> counts(
+      @RequestHeader(value = SecurityHeaders.INTERNAL_API_KEY, required = false) String key) {
+    requireKey(key);
+    long total = accountRepository.count();
+    long frozen = accountRepository.countByStatus("FROZEN");
+    return ApiResponse.ok(new InternalAccountCountsResponse(total, frozen));
   }
 
   @GetMapping("/{id}")

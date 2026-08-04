@@ -68,4 +68,13 @@ public class BillPaymentController {
       @RequestParam(defaultValue = "20") int size) {
     return ApiResponse.ok(billService.history(UserContext.requireUser().userId(), page, size));
   }
+
+  @PostMapping("/history/search")
+  @RequirePermission("ib:bills:view")
+  public ApiResponse<PageResponse<BillPaymentHistoryResponse>> historySearch(
+      @Valid @RequestBody PageFilterRequest req) {
+    return ApiResponse.ok(billService.history(UserContext.requireUser().userId(), req.page(), req.size()));
+  }
+
+  public record PageFilterRequest(Integer page, Integer size) {}
 }

@@ -4,7 +4,6 @@ import com.banksystem.common.exception.BusinessException;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
-import org.springframework.http.HttpStatus;
 
 /** Supported account product types for open + admin filters. */
 public enum AccountType {
@@ -27,7 +26,6 @@ public enum AccountType {
   public static AccountType parseRequired(String raw) {
     return tryParse(raw).orElseThrow(() -> new BusinessException(
         "INVALID_ACCOUNT_TYPE",
-        "accountType must be PAYMENT|SAVINGS",
-        HttpStatus.BAD_REQUEST));
+        "accountType must be PAYMENT|SAVINGS"));
   }
 }

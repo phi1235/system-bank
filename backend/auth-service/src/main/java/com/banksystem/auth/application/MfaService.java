@@ -22,7 +22,6 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -54,7 +53,7 @@ public class MfaService {
 
   public MfaSetupResult setup(UserEntity user) {
     if (user.isMfaEnabled()) {
-      throw new BusinessException("MFA_ALREADY_ENABLED", "MFA is already enabled", HttpStatus.CONFLICT);
+      throw new BusinessException("MFA_ALREADY_ENABLED", "MFA is already enabled");
     }
     String secret = new DefaultSecretGenerator().generate();
     tokenStore.storeMfaSetupSecret(user.getId(), secret, 10);
@@ -74,9 +73,9 @@ public class MfaService {
   public void enable(UserEntity user, String code) {
     String secret = tokenStore.getMfaSetupSecret(user.getId())
         .orElseThrow(() -> new BusinessException("MFA_SETUP_EXPIRED",
-            "MFA setup expired; call setup again", HttpStatus.BAD_REQUEST));
+            "MFA setup expired; call setup again"));
     if (!verifyCode(secret, code)) {
-      throw new BusinessException("INVALID_MFA_CODE", "Invalid MFA code", HttpStatus.UNAUTHORIZED);
+      throw new BusinessException("INVALID_MFA_CODE", "Invalid MFA code");
     }
     MfaSettingsEntity settings = mfaSettingsRepository.findById(user.getId()).orElseGet(MfaSettingsEntity::new);
     settings.setUserId(user.getId());
@@ -92,7 +91,7 @@ public class MfaService {
 
   public boolean verifyUserCode(UUID userId, String code) {
     MfaSettingsEntity settings = mfaSettingsRepository.findById(userId)
-        .orElseThrow(() -> new BusinessException("MFA_NOT_CONFIGURED", "MFA not configured", HttpStatus.BAD_REQUEST));
+        .orElseThrow(() -> new BusinessException("MFA_NOT_CONFIGURED", "MFA not configured"));
     String secret = CryptoUtils.decrypt(settings.getSecretEncrypted(), aesKey);
     return verifyCode(secret, code);
   }

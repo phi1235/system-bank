@@ -39,6 +39,12 @@ public class AdminAccountController {
     return ApiResponse.ok(service.adminList(req));
   }
 
+  @PostMapping("/search")
+  @RequirePermission("accounts:lookup:view")
+  public ApiResponse<?> search(@Valid @RequestBody AdminAccountFilterRequest req) {
+    return ApiResponse.ok(service.adminList(req));
+  }
+
   @GetMapping("/{id}")
   @RequirePermission("accounts:lookup:view")
   public ApiResponse<AccountResponse> get(@PathVariable UUID id) {

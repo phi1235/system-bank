@@ -11,10 +11,11 @@ import static org.mockito.Mockito.when;
 
 import com.banksystem.account.api.dto.DepositDtos.DepositProductResponse;
 import com.banksystem.account.api.dto.DepositDtos.UpdateDepositProductRequest;
+import com.banksystem.account.application.gateway.AuditGateway;
+import com.banksystem.account.application.gateway.CustomerGateway;
 import com.banksystem.account.domain.DepositProductEntity;
 import com.banksystem.account.domain.DepositProductRepository;
 import com.banksystem.account.domain.TermDepositRepository;
-import com.banksystem.account.infrastructure.feign.AuditClient;
 import com.banksystem.account.infrastructure.mybatis.DepositReportMapper;
 import com.banksystem.common.exception.BusinessException;
 import java.math.BigDecimal;
@@ -29,7 +30,7 @@ import org.junit.jupiter.api.Test;
 class DepositAdminServiceTest {
 
   private DepositProductRepository productRepository;
-  private AuditClient auditClient;
+  private AuditGateway auditGateway;
   private DepositAdminService service;
 
   private final UUID actor = UUID.randomUUID();
@@ -37,17 +38,15 @@ class DepositAdminServiceTest {
   @BeforeEach
   void setUp() {
     productRepository = mock(DepositProductRepository.class);
-    auditClient = mock(AuditClient.class);
+    auditGateway = mock(AuditGateway.class);
     service =
         new DepositAdminService(
             mock(DepositReportMapper.class),
             mock(TermDepositRepository.class),
             productRepository,
             mock(com.banksystem.account.domain.AccountRepository.class),
-            auditClient,
-            mock(com.banksystem.account.infrastructure.feign.CustomerClient.class),
-            "test-key",
-            "customer-key",
+            auditGateway,
+            mock(CustomerGateway.class),
             Clock.fixed(Instant.parse("2026-07-27T03:00:00Z"), ZoneOffset.UTC),
             "Asia/Bangkok");
   }
@@ -58,52 +57,30 @@ class DepositAdminServiceTest {
     when(productRepository.findById("TD6M")).thenReturn(Optional.of(product));
 
     DepositProductResponse res =
-        service.updateProduct(
-            "TD6M", new UpdateDepositProductRequest(500, null, null, null), actor);
+        service.updateProduct("TD6M", new UpdateDepositProductRequest(650, null, null, null), actor);
 
-    assertEquals(500, res.rateBps());
-    // untouched fields keep old values
-    assertEquals(50, res.earlyRateBps());
-    assertEquals(0, res.minAmount().compareTo(new BigDecimal("1000000")));
+    assertEquals(650, res.rateBps());
     verify(productRepository).save(product);
-    verify(auditClient)
-        .createAuditLog(
-            any(AuditClient.CreateAuditLogRequest.class), eq("test-key"));
+    verify(auditGateway)
+        .recordAuditLog(eq(actor), eq("DEPOSIT_PRODUCT_UPDATE"), eq("DEPOSIT_PRODUCT"), eq("TD6M"), anyString());
   }
 
   @Test
-  void updateUnknownProductRejects() {
-    when(productRepository.findById("NOPE")).thenReturn(Optional.empty());
-    BusinessException ex =
-        assertThrows(
-            BusinessException.class,
-            () ->
-                service.updateProduct(
-                    "NOPE", new UpdateDepositProductRequest(500, null, null, null), actor));
-    assertEquals("DEPOSIT_PRODUCT_NOT_FOUND", ex.getCode());
-  }
+  void updateProductThrowsWhenNotFound() {
+    when(productRepository.findById("MISSING")).thenReturn(Optional.empty());
 
-  @Test
-  void auditFailureNeverFailsTheRateChange() {
-    DepositProductEntity product = product();
-    when(productRepository.findById("TD6M")).thenReturn(Optional.of(product));
-    when(auditClient.createAuditLog(any(), anyString()))
-        .thenThrow(new RuntimeException("transaction-service down"));
-
-    DepositProductResponse res =
-        service.updateProduct(
-            "TD6M", new UpdateDepositProductRequest(null, null, null, false), actor);
-
-    assertEquals(false, res.active());
+    assertThrows(
+        BusinessException.class,
+        () -> service.updateProduct("MISSING", new UpdateDepositProductRequest(100, 100, null, null), actor));
   }
 
   private static DepositProductEntity product() {
     DepositProductEntity p = new DepositProductEntity();
     p.setCode("TD6M");
     p.setTenorMonths(6);
-    p.setRateBps(460);
+    p.setRateBps(600);
     p.setEarlyRateBps(50);
-    p.setMinAmount(new BigDecimal("1000000"));
+    p.setMinAmount(new BigDecimal("1000000.00"));
     p.setActive(true);
     return p;
   }

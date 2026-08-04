@@ -1,18 +1,15 @@
 package com.banksystem.transaction.application;
 
-import com.banksystem.common.api.ApiResponse;
 import com.banksystem.common.exception.BusinessException;
+import com.banksystem.transaction.application.gateway.AccountGateway;
 import com.banksystem.transaction.domain.TransferOrderEntity;
-import com.banksystem.transaction.infrastructure.feign.AccountClient;
 import com.banksystem.transaction.infrastructure.feign.AccountClientDtos.AccountView;
 import com.banksystem.transaction.infrastructure.feign.AccountClientDtos.MoneyCommand;
 import com.banksystem.transaction.infrastructure.feign.AccountClientDtos.MoneyResult;
-import feign.FeignException;
 import java.math.BigDecimal;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 /**
@@ -22,20 +19,17 @@ import org.springframework.stereotype.Service;
 @Service
 public class TransferFeeGlService {
 
-  private final AccountClient accountClient;
-  private final String internalApiKey;
+  private final AccountGateway accountGateway;
   private final String incomeAccountNumber;
   private final AtomicReference<UUID> incomeAccountId = new AtomicReference<>();
 
   public TransferFeeGlService(
-      AccountClient accountClient,
-      @Value("${bank.internal.account-api-key}") String internalApiKey,
-      @Value("${bank.transfer.fee.income-account-number}") String incomeAccountNumber) {
-    this.accountClient = accountClient;
-    this.internalApiKey = internalApiKey;
+      AccountGateway accountGateway,
+      @Value("${bank.transfer.fee.income-account-number:1099999999}") String incomeAccountNumber) {
+    this.accountGateway = accountGateway;
     if (incomeAccountNumber == null || incomeAccountNumber.isBlank()) {
       throw new IllegalStateException(
-          "bank.transfer.fee.income-account-number must be set (env TRANSFER_FEE_INCOME_ACCOUNT / FEE_INCOME_ACCOUNT_NUMBER)");
+          "bank.transfer.fee.income-account-number must be set");
     }
     this.incomeAccountNumber = incomeAccountNumber.trim();
   }
@@ -58,22 +52,17 @@ public class TransferFeeGlService {
     String referenceId = feeReference(order.getId());
     String description = "Transfer fee " + order.getId();
     try {
-      ApiResponse<MoneyResult> res = accountClient.credit(
+      MoneyResult res = accountGateway.credit(
           incomeId,
-          new MoneyCommand(order.getFeeAmount(), referenceId, description, referenceId),
-          internalApiKey);
-      if (res == null || !res.success() || res.data() == null) {
-        String code = res != null && res.error() != null ? res.error().code() : "FEE_GL_FAILED";
-        String msg = res != null && res.error() != null ? res.error().message() : "Fee GL credit failed";
-        throw new BusinessException(code, msg, HttpStatus.UNPROCESSABLE_ENTITY);
+          new MoneyCommand(order.getFeeAmount(), referenceId, description, referenceId));
+      if (res == null) {
+        throw new BusinessException("FEE_GL_FAILED", "Fee GL credit failed");
       }
-      return res.data().ledgerEntryId();
-    } catch (FeignException.UnprocessableEntity e) {
-      throw new BusinessException("FEE_GL_FAILED", e.contentUTF8() == null ? e.getMessage() : e.contentUTF8(),
-          HttpStatus.UNPROCESSABLE_ENTITY);
-    } catch (FeignException e) {
-      throw new BusinessException("ACCOUNT_SERVICE_ERROR", "Account service error: " + e.status(),
-          HttpStatus.SERVICE_UNAVAILABLE);
+      return res.ledgerEntryId();
+    } catch (BusinessException be) {
+      throw be;
+    } catch (Exception e) {
+      throw new BusinessException("ACCOUNT_SERVICE_ERROR", "Account service error: " + e.getMessage());
     }
   }
 
@@ -87,21 +76,21 @@ public class TransferFeeGlService {
       return cached;
     }
     try {
-      ApiResponse<AccountView> res = accountClient.getByNumber(incomeAccountNumber, internalApiKey);
-      if (res == null || !res.success() || res.data() == null) {
+      AccountView res = accountGateway.getAccountByNumber(incomeAccountNumber);
+      if (res == null) {
         throw new BusinessException(
             "FEE_INCOME_ACCOUNT_MISSING",
-            "Fee income account not found: " + incomeAccountNumber,
-            HttpStatus.SERVICE_UNAVAILABLE);
+            "Fee income account not found: " + incomeAccountNumber);
       }
-      UUID id = res.data().idUuid();
+      UUID id = res.idUuid();
       incomeAccountId.compareAndSet(null, id);
       return id;
-    } catch (FeignException e) {
+    } catch (BusinessException be) {
+      throw be;
+    } catch (Exception e) {
       throw new BusinessException(
           "FEE_INCOME_ACCOUNT_MISSING",
-          "Cannot resolve fee income account " + incomeAccountNumber + ": " + e.status(),
-          HttpStatus.SERVICE_UNAVAILABLE);
+          "Cannot resolve fee income account " + incomeAccountNumber + ": " + e.getMessage());
     }
   }
 

@@ -17,7 +17,7 @@ class AdminTransferListQueryTest {
   @Test
   void defaultsPageSizeAndDateBounds() {
     AdminTransferListQuery q =
-        AdminTransferListQuery.of(null, null, null, null, null, -1, 500);
+        AdminTransferListQuery.of(null, null, null, null, null, -1, 5000);
     assertEquals(0, q.page());
     assertEquals(AdminTransferListQuery.MAX_SIZE, q.size());
     assertEquals(AdminTransferListQuery.EPOCH, q.from());

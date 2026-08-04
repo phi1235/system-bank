@@ -7,12 +7,14 @@ import com.banksystem.notification.api.dto.NotificationDtos.NotificationItem;
 import com.banksystem.notification.api.dto.NotificationDtos.UnreadCountResponse;
 import com.banksystem.notification.application.NotificationInboxService;
 import com.banksystem.notification.application.NotificationRealtimeHub;
+import jakarta.validation.Valid;
 import java.util.Map;
 import java.util.UUID;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -41,6 +43,14 @@ public class AdminNotificationController {
       @RequestParam(defaultValue = "20") int size) {
     return ApiResponse.ok(inboxService.opsInbox(page, Math.min(size, 100)));
   }
+
+  @PostMapping("/search")
+  public ApiResponse<PageResponse<NotificationItem>> search(
+      @Valid @RequestBody PageFilterRequest req) {
+    return ApiResponse.ok(inboxService.opsInbox(req.page(), req.size()));
+  }
+
+  public record PageFilterRequest(Integer page, Integer size) {}
 
   @GetMapping("/unread-count")
   public ApiResponse<UnreadCountResponse> unreadCount() {

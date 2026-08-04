@@ -3,6 +3,7 @@ package com.banksystem.account.api;
 import com.banksystem.account.api.dto.AccountDtos.AccountResponse;
 import com.banksystem.account.api.dto.AccountDtos.LedgerEntryResponse;
 import com.banksystem.account.api.dto.AccountDtos.OpenAccountRequest;
+import com.banksystem.account.api.dto.AccountDtos.StatementFilterRequest;
 import com.banksystem.account.api.dto.AccountDtos.TopUpRequest;
 import com.banksystem.account.api.dto.AccountDtos.TopUpResponse;
 import com.banksystem.account.application.CustomerAccountService;
@@ -20,6 +21,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -66,12 +68,16 @@ public class AccountController {
   @GetMapping("/{id}/statement")
   public ApiResponse<PageResponse<LedgerEntryResponse>> statement(
       @PathVariable UUID id,
-      @RequestParam(required = false) Integer page,
-      @RequestParam(required = false) Integer size,
-      @RequestParam(required = false) String entryType,
-      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
-      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to) {
-    LedgerStatementQuery query = LedgerStatementQuery.of(id, page, size, entryType, from, to);
+      @Valid @ModelAttribute StatementFilterRequest req) {
+    LedgerStatementQuery query = LedgerStatementQuery.of(id, req.page(), req.size(), req.entryType(), req.from(), req.to());
+    return ApiResponse.ok(service.statement(query, UserContext.requireUser()));
+  }
+
+  @PostMapping("/{id}/statement/search")
+  public ApiResponse<PageResponse<LedgerEntryResponse>> statementSearch(
+      @PathVariable UUID id,
+      @Valid @RequestBody StatementFilterRequest req) {
+    LedgerStatementQuery query = LedgerStatementQuery.of(id, req.page(), req.size(), req.entryType(), req.from(), req.to());
     return ApiResponse.ok(service.statement(query, UserContext.requireUser()));
   }
 
@@ -82,11 +88,9 @@ public class AccountController {
   @GetMapping(value = "/{id}/statement/export.csv", produces = "text/csv")
   public ResponseEntity<byte[]> exportStatementCsv(
       @PathVariable UUID id,
-      @RequestParam(required = false) String entryType,
-      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
-      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to) {
+      @Valid @ModelAttribute StatementFilterRequest req) {
     LedgerStatementQuery query =
-        LedgerStatementQuery.of(id, 0, LedgerStatementQuery.MAX_EXPORT_ROWS, entryType, from, to);
+        LedgerStatementQuery.of(id, 0, LedgerStatementQuery.MAX_EXPORT_ROWS, req.entryType(), req.from(), req.to());
     byte[] csv = service.exportStatementCsv(query, UserContext.requireUser());
     String filename = "statement-" + id + ".csv";
     return ResponseEntity.ok()

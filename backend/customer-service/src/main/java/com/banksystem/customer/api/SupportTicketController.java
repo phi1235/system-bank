@@ -5,9 +5,11 @@ import com.banksystem.common.api.PageResponse;
 import com.banksystem.common.security.RequirePermission;
 import com.banksystem.common.security.UserContext;
 import com.banksystem.customer.api.dto.SupportTicketDtos.CreateSupportTicketRequest;
+import com.banksystem.customer.api.dto.SupportTicketDtos.MyTicketFilterRequest;
 import com.banksystem.customer.api.dto.SupportTicketDtos.PostMessageRequest;
 import com.banksystem.customer.api.dto.SupportTicketDtos.SupportTicketResponse;
-import com.banksystem.customer.application.SupportTicketService;
+import com.banksystem.customer.application.command.SupportTicketCommandService;
+import com.banksystem.customer.application.query.SupportTicketQueryService;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -24,10 +26,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1")
 public class SupportTicketController {
 
-  private final SupportTicketService service;
+  private final SupportTicketQueryService queryService;
+  private final SupportTicketCommandService commandService;
 
-  public SupportTicketController(SupportTicketService service) {
-    this.service = service;
+  public SupportTicketController(
+      SupportTicketQueryService queryService,
+      SupportTicketCommandService commandService) {
+    this.queryService = queryService;
+    this.commandService = commandService;
   }
 
   @PostMapping("/customers/me/support-tickets")
@@ -36,7 +42,7 @@ public class SupportTicketController {
       @Valid @RequestBody CreateSupportTicketRequest req) {
     var user = UserContext.requireUser();
     return ResponseEntity.status(HttpStatus.CREATED)
-        .body(ApiResponse.ok(service.create(user.userId(), req)));
+        .body(ApiResponse.ok(commandService.create(user.userId(), req)));
   }
 
   @GetMapping("/customers/me/support-tickets")
@@ -44,13 +50,20 @@ public class SupportTicketController {
   public ApiResponse<PageResponse<SupportTicketResponse>> listMine(
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "20") int size) {
-    return ApiResponse.ok(service.listMine(UserContext.requireUser().userId(), page, size));
+    return ApiResponse.ok(queryService.listMine(UserContext.requireUser().userId(), page, size));
+  }
+
+  @PostMapping("/customers/me/support-tickets/search")
+  @RequirePermission("ib:support:view")
+  public ApiResponse<PageResponse<SupportTicketResponse>> searchMine(
+      @Valid @RequestBody MyTicketFilterRequest req) {
+    return ApiResponse.ok(queryService.listMine(UserContext.requireUser().userId(), req.page(), req.size()));
   }
 
   @GetMapping("/customers/me/support-tickets/{id}")
   @RequirePermission("ib:support:view")
   public ApiResponse<SupportTicketResponse> getMine(@PathVariable UUID id) {
-    return ApiResponse.ok(service.getMine(UserContext.requireUser().userId(), id));
+    return ApiResponse.ok(queryService.getMine(UserContext.requireUser().userId(), id));
   }
 
   /** Customer reply / extra context on open ticket (WAITING_CUSTOMER → reopens for staff). */
@@ -58,6 +71,6 @@ public class SupportTicketController {
   @RequirePermission("ib:support:view")
   public ApiResponse<SupportTicketResponse> postMessage(
       @PathVariable UUID id, @Valid @RequestBody PostMessageRequest req) {
-    return ApiResponse.ok(service.customerReply(id, UserContext.requireUser().userId(), req));
+    return ApiResponse.ok(commandService.customerReply(id, UserContext.requireUser().userId(), req));
   }
 }

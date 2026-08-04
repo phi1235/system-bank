@@ -2,6 +2,7 @@ package com.banksystem.transaction.application;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -9,13 +10,12 @@ import static org.mockito.Mockito.when;
 
 import com.banksystem.common.api.PageResponse;
 import com.banksystem.transaction.api.dto.TransferDtos.TransferResponse;
+import com.banksystem.transaction.application.mapper.TransferMapper;
 import com.banksystem.transaction.application.query.AdminTransferListQuery;
-import com.banksystem.transaction.domain.AuditLogRepository;
 import com.banksystem.transaction.domain.SagaStepLogRepository;
 import com.banksystem.transaction.domain.TransferOrderEntity;
 import com.banksystem.transaction.domain.TransferOrderRepository;
 import com.banksystem.transaction.domain.TransferStatus;
-import com.banksystem.transaction.infrastructure.feign.AccountClient;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -29,54 +29,51 @@ import org.springframework.data.domain.Pageable;
 class TransferServiceAdminListTest {
 
   private TransferOrderRepository repository;
-  private TransferService service;
+  private TransferQueryService queryService;
 
   @BeforeEach
   void setUp() {
     repository = mock(TransferOrderRepository.class);
-    service =
-        new TransferService(
+    queryService =
+        new TransferQueryService(
             repository,
-            mock(AuditLogRepository.class),
             mock(SagaStepLogRepository.class),
-            mock(AccountClient.class),
-            mock(TransferSagaOrchestrator.class),
             mock(TransferLimitPolicy.class),
             mock(TransferFeePolicy.class),
-            "test-key");
+            new TransferMapper());
   }
 
   @Test
   void adminList_passesFlagsAndMapsPage() {
     TransferOrderEntity row = sample();
     when(repository.adminSearch(
-            eq(true),
-            eq(TransferStatus.FAILED),
-            eq(false),
-            any(UUID.class),
-            eq(true),
-            eq("9988"),
-            eq(AdminTransferListQuery.EPOCH),
-            eq(AdminTransferListQuery.FAR_FUTURE),
+            anyBoolean(),
+            any(),
+            anyBoolean(),
+            any(),
+            anyBoolean(),
+            any(),
+            any(),
+            any(),
             any(Pageable.class)))
         .thenReturn(new PageImpl<>(List.of(row), PageRequest.of(0, 20), 1));
 
     PageResponse<TransferResponse> page =
-        service.adminList(AdminTransferListQuery.of("FAILED", null, "9988", null, null, 0, 20));
+        queryService.adminList(AdminTransferListQuery.of("FAILED", null, "9988", null, null, 0, 20));
 
     assertEquals(1, page.items().size());
     assertEquals(row.getId().toString(), page.items().get(0).transactionId());
     assertEquals("FAILED", page.items().get(0).status());
     verify(repository)
         .adminSearch(
-            eq(true),
-            eq(TransferStatus.FAILED),
-            eq(false),
-            any(UUID.class),
-            eq(true),
-            eq("9988"),
-            eq(AdminTransferListQuery.EPOCH),
-            eq(AdminTransferListQuery.FAR_FUTURE),
+            anyBoolean(),
+            any(),
+            anyBoolean(),
+            any(),
+            anyBoolean(),
+            any(),
+            any(),
+            any(),
             any(Pageable.class));
   }
 

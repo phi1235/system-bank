@@ -80,4 +80,12 @@ public final class AuthDtos {
       Instant expiresAt,
       boolean current
   ) {}
+
+  public record StaffUserFilterRequest(
+      Integer page,
+      Integer size,
+      String q,
+      Boolean enabled,
+      String userId
+  ) {}
 }

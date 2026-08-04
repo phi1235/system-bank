@@ -10,7 +10,6 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 /**
@@ -42,13 +41,12 @@ public class TransferLimitPolicy {
 
   public void validate(UUID userId, BigDecimal amount) {
     if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
-      throw new BusinessException("INVALID_AMOUNT", "Amount must be positive", HttpStatus.BAD_REQUEST);
+      throw new BusinessException("INVALID_AMOUNT", "Amount must be positive");
     }
     if (amount.compareTo(maxPerTransaction) > 0) {
       throw new BusinessException(
           "TRANSFER_LIMIT_EXCEEDED",
-          "Amount exceeds per-transaction limit of " + maxPerTransaction.toPlainString(),
-          HttpStatus.UNPROCESSABLE_ENTITY);
+          "Amount exceeds per-transaction limit of " + maxPerTransaction.toPlainString());
     }
 
     BigDecimal spentToday = spentToday(userId);
@@ -57,8 +55,7 @@ public class TransferLimitPolicy {
       throw new BusinessException(
           "DAILY_LIMIT_EXCEEDED",
           "Transfer would exceed daily limit of " + dailyLimit.toPlainString()
-              + " (spent today: " + spentToday.toPlainString() + ")",
-          HttpStatus.UNPROCESSABLE_ENTITY);
+              + " (spent today: " + spentToday.toPlainString() + ")");
     }
   }
 

@@ -27,8 +27,21 @@ public class GlobalExceptionHandler {
     String correlationId = correlationId(request);
     log.warn("business error code={} message={} path={}", ex.getCode(), ex.getMessage(), request.getRequestURI());
     ApiError error = new ApiError(ex.getCode(), ex.getMessage());
-    return ResponseEntity.status(ex.getStatus())
+    HttpStatus status = ex.getStatus() != null ? ex.getStatus() : resolveStatus(ex.getCode());
+    return ResponseEntity.status(status)
         .body(ApiResponse.fail(error, correlationId));
+  }
+
+  private static HttpStatus resolveStatus(String code) {
+    if (code == null) return HttpStatus.BAD_REQUEST;
+    if (code.endsWith("_NOT_FOUND") || code.contains("NOT_FOUND")) return HttpStatus.NOT_FOUND;
+    if (code.equals("FORBIDDEN") || code.equals("ACCESS_DENIED")) return HttpStatus.FORBIDDEN;
+    if (code.equals("UNAUTHORIZED")) return HttpStatus.UNAUTHORIZED;
+    if (code.equals("CONFLICT") || code.endsWith("_CONFLICT")) return HttpStatus.CONFLICT;
+    if (code.contains("INSUFFICIENT") || code.contains("LIMIT") || code.contains("FROZEN") || code.contains("LOCKED")) {
+      return HttpStatus.UNPROCESSABLE_ENTITY;
+    }
+    return HttpStatus.BAD_REQUEST;
   }
 
   @ExceptionHandler(MethodArgumentNotValidException.class)

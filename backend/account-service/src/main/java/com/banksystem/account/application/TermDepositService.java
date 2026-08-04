@@ -5,6 +5,7 @@ import com.banksystem.account.api.dto.DepositDtos.DepositProductResponse;
 import com.banksystem.account.api.dto.DepositDtos.DepositQuoteResponse;
 import com.banksystem.account.api.dto.DepositDtos.OpenDepositRequest;
 import com.banksystem.account.api.dto.DepositDtos.TermDepositResponse;
+import com.banksystem.account.application.mapper.TermDepositMapper;
 import com.banksystem.account.domain.AccountEntity;
 import com.banksystem.account.domain.DepositProductEntity;
 import com.banksystem.account.domain.DepositProductRepository;
@@ -19,7 +20,9 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.cache.annotation.Cacheable;
@@ -38,6 +41,7 @@ public class TermDepositService {
   private final DepositProductRepository productRepository;
   private final AccountAccessService access;
   private final AccountMoneyService moneyService;
+  private final TermDepositMapper mapper;
   private final Clock clock;
   private final ZoneId zone;
 
@@ -46,12 +50,14 @@ public class TermDepositService {
       DepositProductRepository productRepository,
       AccountAccessService access,
       AccountMoneyService moneyService,
+      TermDepositMapper mapper,
       Clock clock,
       @Value("${bank.deposit.zone}") String zone) {
     this.depositRepository = depositRepository;
     this.productRepository = productRepository;
     this.access = access;
     this.moneyService = moneyService;
+    this.mapper = mapper;
     this.clock = clock;
     this.zone = ZoneId.of(zone);
   }
@@ -127,7 +133,7 @@ public class TermDepositService {
     access.requireOwnedOrStaff(deposit.getSourceAccountId(), user);
     if (deposit.getStatus() != TermDepositStatus.OPEN) {
       throw new BusinessException(
-          "DEPOSIT_NOT_OPEN", "Deposit is not open", HttpStatus.UNPROCESSABLE_ENTITY);
+          "DEPOSIT_NOT_OPEN", "Deposit is not open");
     }
 
     LocalDate openDate = LocalDate.ofInstant(deposit.getOpenedAt(), zone);
@@ -187,8 +193,11 @@ public class TermDepositService {
 
   @Transactional(readOnly = true)
   public List<TermDepositResponse> listMine(UUID userId) {
-    return depositRepository.findByUserIdOrderByOpenedAtDesc(userId).stream()
-        .map(d -> toResponse(d, tenorOf(d)))
+    List<TermDepositEntity> list = depositRepository.findByUserIdOrderByOpenedAtDesc(userId);
+    Map<String, Integer> tenorMap = productRepository.findAll().stream()
+        .collect(Collectors.toMap(DepositProductEntity::getCode, DepositProductEntity::getTenorMonths, (a, b) -> a));
+    return list.stream()
+        .map(d -> toResponse(d, tenorMap.getOrDefault(d.getProductCode(), 0)))
         .toList();
   }
 
@@ -205,7 +214,7 @@ public class TermDepositService {
         .orElseThrow(
             () ->
                 new BusinessException(
-                    "DEPOSIT_NOT_FOUND", "Term deposit not found", HttpStatus.NOT_FOUND));
+                    "DEPOSIT_NOT_FOUND", "Term deposit not found"));
   }
 
   private DepositProductEntity requireActiveProduct(String code) {
@@ -216,16 +225,14 @@ public class TermDepositService {
             () ->
                 new BusinessException(
                     "DEPOSIT_PRODUCT_NOT_FOUND",
-                    "Deposit product not found or inactive",
-                    HttpStatus.NOT_FOUND));
+                    "Deposit product not found or inactive"));
   }
 
   private void requireAtLeastMin(DepositProductEntity product, BigDecimal amount) {
     if (amount.compareTo(product.getMinAmount()) < 0) {
       throw new BusinessException(
           "DEPOSIT_BELOW_MINIMUM",
-          "Minimum amount is " + product.getMinAmount().toPlainString(),
-          HttpStatus.BAD_REQUEST);
+          "Minimum amount is " + product.getMinAmount().toPlainString());
     }
   }
 
@@ -237,36 +244,10 @@ public class TermDepositService {
   }
 
   private TermDepositResponse toResponse(TermDepositEntity d, int tenorMonths) {
-    BigDecimal interest;
-    if (d.getStatus() == TermDepositStatus.OPEN) {
-      LocalDate openDate = LocalDate.ofInstant(d.getOpenedAt(), zone);
-      long days = DepositInterestCalculator.daysBetween(openDate, d.getMaturityDate());
-      interest = DepositInterestCalculator.interest(d.getAmount(), d.getRateBps(), days);
-    } else {
-      interest = d.getAccruedInterest();
-    }
-    return new TermDepositResponse(
-        d.getId().toString(),
-        d.getSourceAccountId().toString(),
-        d.getProductCode(),
-        tenorMonths,
-        d.getAmount(),
-        d.getRateBps(),
-        d.getEarlyRateBps(),
-        d.getOpenedAt(),
-        d.getMaturityDate(),
-        d.getStatus().name(),
-        interest,
-        d.getClosedAt());
+    return mapper.toResponse(d, tenorMonths, zone);
   }
 
   private DepositProductResponse toProductResponse(DepositProductEntity p) {
-    return new DepositProductResponse(
-        p.getCode(),
-        p.getTenorMonths(),
-        p.getRateBps(),
-        p.getEarlyRateBps(),
-        p.getMinAmount(),
-        p.isActive());
+    return mapper.toProductResponse(p);
   }
 }

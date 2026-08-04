@@ -24,12 +24,14 @@ public record AdminAccountSearchQuery(
   }
 
   public static AdminAccountSearchQuery of(
-      String q, String status, String accountType, int page, int size) {
-    return new AdminAccountSearchQuery(q, status, accountType, page, size);
+      String q, String status, String accountType, Integer page, Integer size) {
+    int p = page == null || page < 0 ? DEFAULT_PAGE : page;
+    int s = size == null || size <= 0 ? DEFAULT_SIZE : Math.min(size, MAX_SIZE);
+    return new AdminAccountSearchQuery(q, status, accountType, p, s);
   }
 
   /** Backward-compatible factory used by older call sites/tests. */
-  public static AdminAccountSearchQuery of(String q, String status, int page, int size) {
+  public static AdminAccountSearchQuery of(String q, String status, Integer page, Integer size) {
     return of(q, status, null, page, size);
   }
 

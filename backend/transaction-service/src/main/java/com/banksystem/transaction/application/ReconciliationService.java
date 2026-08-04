@@ -1,19 +1,18 @@
 package com.banksystem.transaction.application;
 
-import com.banksystem.common.api.ApiResponse;
 import com.banksystem.common.api.PageResponse;
 import com.banksystem.common.exception.BusinessException;
 import com.banksystem.transaction.api.dto.ReconDtos.ReconItemResponse;
 import com.banksystem.transaction.api.dto.ReconDtos.ReconRunDetailResponse;
 import com.banksystem.transaction.api.dto.ReconDtos.ReconRunResponse;
 import com.banksystem.transaction.application.ReconciliationMatcher.Discrepancy;
+import com.banksystem.transaction.application.gateway.LedgerGateway;
 import com.banksystem.transaction.domain.ReconItemEntity;
 import com.banksystem.transaction.domain.ReconItemRepository;
 import com.banksystem.transaction.domain.ReconRunEntity;
 import com.banksystem.transaction.domain.ReconRunRepository;
 import com.banksystem.transaction.domain.TransferOrderEntity;
 import com.banksystem.transaction.domain.TransferOrderRepository;
-import com.banksystem.transaction.infrastructure.feign.LedgerClient;
 import com.banksystem.transaction.infrastructure.feign.LedgerClientDtos.LedgerEntryView;
 import com.banksystem.transaction.infrastructure.feign.LedgerClientDtos.LedgerSearchRequest;
 import java.time.Clock;
@@ -28,12 +27,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 /**
  * End-of-day reconciliation orchestration: load the banking day's transfer orders, pull the
- * matching ledger entries from account-service (internal API — DBs are isolated per service),
+ * matching ledger entries from account-service via LedgerGateway,
  * run {@link ReconciliationMatcher}, persist the run and its discrepancies.
  */
 @Service
@@ -46,38 +44,35 @@ public class ReconciliationService {
   private final TransferOrderRepository transferOrderRepository;
   private final ReconRunRepository runRepository;
   private final ReconItemRepository itemRepository;
-  private final LedgerClient ledgerClient;
+  private final LedgerGateway ledgerGateway;
   private final ReconciliationMatcher matcher;
   private final Clock clock;
   private final ZoneId zone;
-  private final String accountApiKey;
 
   public ReconciliationService(
       TransferOrderRepository transferOrderRepository,
       ReconRunRepository runRepository,
       ReconItemRepository itemRepository,
-      LedgerClient ledgerClient,
+      LedgerGateway ledgerGateway,
       ReconciliationMatcher matcher,
       Clock clock,
-      @Value("${bank.transfer.daily-limit-zone}") String zone,
-      @Value("${bank.internal.account-api-key}") String accountApiKey) {
+      @Value("${bank.transfer.daily-limit-zone:UTC}") String zone) {
     this.transferOrderRepository = transferOrderRepository;
     this.runRepository = runRepository;
     this.itemRepository = itemRepository;
-    this.ledgerClient = ledgerClient;
+    this.ledgerGateway = ledgerGateway;
     this.matcher = matcher;
     this.clock = clock;
     this.zone = ZoneId.of(zone);
-    this.accountApiKey = accountApiKey;
   }
 
   public ReconRunResponse runForDate(LocalDate date, String triggerType) {
     if (date == null) {
-      throw new BusinessException("RECON_DATE_REQUIRED", "date is required", HttpStatus.BAD_REQUEST);
+      throw new BusinessException("RECON_DATE_REQUIRED", "date is required");
     }
     if (date.isAfter(LocalDate.now(clock.withZone(zone)))) {
       throw new BusinessException(
-          "RECON_DATE_IN_FUTURE", "Cannot reconcile a future date", HttpStatus.BAD_REQUEST);
+          "RECON_DATE_IN_FUTURE", "Cannot reconcile a future date");
     }
 
     ReconRunEntity run = new ReconRunEntity();
@@ -140,7 +135,7 @@ public class ReconciliationService {
             .orElseThrow(
                 () ->
                     new BusinessException(
-                        "RECON_RUN_NOT_FOUND", "Recon run not found", HttpStatus.NOT_FOUND));
+                        "RECON_RUN_NOT_FOUND", "Recon run not found"));
     List<ReconItemResponse> items =
         itemRepository.findByRunIdOrderByKindAscTransferIdAsc(id).stream()
             .map(this::toItemResponse)
@@ -163,15 +158,13 @@ public class ReconciliationService {
     List<LedgerEntryView> out = new ArrayList<>();
     for (int i = 0; i < refs.size(); i += REF_CHUNK_SIZE) {
       List<String> chunk = refs.subList(i, Math.min(i + REF_CHUNK_SIZE, refs.size()));
-      ApiResponse<List<LedgerEntryView>> res =
-          ledgerClient.search(new LedgerSearchRequest(chunk), accountApiKey);
-      if (res == null || !res.success() || res.data() == null) {
+      List<LedgerEntryView> res = ledgerGateway.searchLedger(new LedgerSearchRequest(chunk));
+      if (res == null) {
         throw new BusinessException(
             "RECON_LEDGER_FETCH_FAILED",
-            "Ledger lookup failed for chunk starting at " + i,
-            HttpStatus.BAD_GATEWAY);
+            "Ledger lookup failed for chunk starting at " + i);
       }
-      out.addAll(res.data());
+      out.addAll(res);
     }
     return out;
   }
@@ -185,23 +178,23 @@ public class ReconciliationService {
     e.setEntryRef(d.entryRef());
     e.setExpectedAmount(d.expectedAmount());
     e.setActualAmount(d.actualAmount());
-    e.setDetail(truncate(d.detail(), 255));
+    e.setDetail(d.detail());
     return e;
   }
 
-  private ReconRunResponse toResponse(ReconRunEntity r) {
+  private ReconRunResponse toResponse(ReconRunEntity e) {
     return new ReconRunResponse(
-        r.getId().toString(),
-        r.getBusinessDate(),
-        r.getZone(),
-        r.getTriggerType(),
-        r.getStatus(),
-        r.getStartedAt(),
-        r.getFinishedAt(),
-        r.getOrdersChecked(),
-        r.getLedgerEntriesSeen(),
-        r.getDiscrepancyCount(),
-        r.getErrorDetail());
+        e.getId().toString(),
+        e.getBusinessDate(),
+        e.getZone(),
+        e.getTriggerType(),
+        e.getStatus(),
+        e.getStartedAt(),
+        e.getFinishedAt(),
+        e.getOrdersChecked(),
+        e.getLedgerEntriesSeen(),
+        e.getDiscrepancyCount(),
+        e.getErrorDetail());
   }
 
   private ReconItemResponse toItemResponse(ReconItemEntity e) {
@@ -215,10 +208,10 @@ public class ReconciliationService {
         e.getDetail());
   }
 
-  private static String truncate(String s, int max) {
-    if (s == null) {
+  private static String truncate(String text, int max) {
+    if (text == null) {
       return null;
     }
-    return s.length() <= max ? s : s.substring(0, max);
+    return text.length() <= max ? text : text.substring(0, max);
   }
 }

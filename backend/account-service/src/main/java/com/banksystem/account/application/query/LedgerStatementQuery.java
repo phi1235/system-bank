@@ -1,6 +1,7 @@
 package com.banksystem.account.application.query;
 
 import com.banksystem.account.domain.LedgerEntryType;
+import com.banksystem.common.exception.BusinessException;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -52,10 +53,9 @@ public final class LedgerStatementQuery {
     int s = size == null || size < 1 ? DEFAULT_SIZE : Math.min(size, MAX_SIZE);
     LedgerEntryType type = LedgerEntryType.parseOptional(entryType);
     if (from != null && to != null && from.isAfter(to)) {
-      throw new com.banksystem.common.exception.BusinessException(
+      throw new BusinessException(
           "INVALID_DATE_RANGE",
-          "from must be before or equal to to",
-          org.springframework.http.HttpStatus.BAD_REQUEST);
+          "from must be before or equal to to");
     }
     return new LedgerStatementQuery(
         accountId, p, s, type, from == null ? EPOCH : from, to == null ? FAR_FUTURE : to);

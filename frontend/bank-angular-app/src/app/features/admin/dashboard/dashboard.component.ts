@@ -129,71 +129,21 @@ export class AdminDashboardComponent implements OnInit {
   refresh(): void {
     this.loading = true;
     this.partialError = false;
-    let softFail = false;
 
-    const soft = <T>(source: Observable<T>): Observable<T | null> =>
-      source.pipe(
-        catchError(() => {
-          softFail = true;
-          return of(null);
-        }),
-      );
-
-    forkJoin({
-      customers: soft(this.api.listCustomers(0, 1)),
-      kycPending: soft(this.api.listCustomers(0, 1, undefined, 'PENDING')),
-      accounts: soft(this.api.adminListAccounts(0, 1)),
-      accountsFrozen: soft(this.api.adminListAccounts(0, 1, undefined, 'FROZEN')),
-      transfers: soft(this.api.adminTransfers(0, 1)),
-      transfersFailed: soft(this.api.adminTransfers(0, 1, { status: 'FAILED' })),
-      transfersCompensated: soft(this.api.adminTransfers(0, 1, { status: 'COMPENSATED' })),
-      outbox: soft(this.api.adminOutboxCounts()),
-      users: soft(this.api.rbacUsers(0, 1)),
-      usersLocked: soft(this.api.rbacUsers(0, 1, { enabled: false })),
-      audits: soft(this.api.auditLogs(0, 1)),
-    })
-      .pipe(
-        map((r) => {
-          const outbox = r.outbox as OutboxCounts | null;
-          const page = (p: PageResponse<unknown> | null): number | null =>
-            p ? totalOf(p) : null;
-          return {
-            customers: page(r.customers as PageResponse<unknown> | null),
-            kycPending: page(r.kycPending as PageResponse<unknown> | null),
-            accounts: page(r.accounts as PageResponse<unknown> | null),
-            accountsFrozen: page(r.accountsFrozen as PageResponse<unknown> | null),
-            transfers: page(r.transfers as PageResponse<unknown> | null),
-            transfersFailed: page(r.transfersFailed as PageResponse<unknown> | null),
-            transfersCompensated: page(r.transfersCompensated as PageResponse<unknown> | null),
-            outboxDead: outbox ? (outbox.dead ?? 0) : null,
-            outboxPending: outbox ? (outbox.pending ?? 0) : null,
-            outboxPublished: outbox ? (outbox.published ?? 0) : null,
-            users: page(r.users as PageResponse<unknown> | null),
-            usersLocked: page(r.usersLocked as PageResponse<unknown> | null),
-            audits: page(r.audits as PageResponse<unknown> | null),
-          } satisfies DashboardKpis;
-        }),
-      )
-      .subscribe({
-        next: (kpis) => {
-          this.kpis = kpis;
-          this.loading = false;
-          this.partialError = softFail;
-          this.lastUpdated = new Date();
-          if (softFail && !this.hasAnyLiveKpi) {
-            this.toast.error(this.i18n.instant('ADMIN.DASH_LOAD_FAIL'));
-          } else if (softFail) {
-            this.toast.error(this.i18n.instant('ADMIN.DASH_PARTIAL_FAIL'));
-          }
-        },
-        error: (err) => {
-          this.loading = false;
-          this.kpis = emptyKpis();
-          this.partialError = true;
-          this.toast.error(
-            resolveHttpErrorMessage(err, this.i18n) || this.i18n.instant('ADMIN.DASH_LOAD_FAIL'),
-          );
-        },
-      });
+    this.api.getDashboardSummary().subscribe({
+      next: (kpis) => {
+        this.kpis = kpis;
+        this.loading = false;
+        this.lastUpdated = new Date();
+      },
+      error: (err) => {
+        this.loading = false;
+        this.kpis = emptyKpis();
+        this.partialError = true;
+        this.toast.error(
+          resolveHttpErrorMessage(err, this.i18n) || this.i18n.instant('ADMIN.DASH_LOAD_FAIL'),
+        );
+      },
+    });
   }
 }

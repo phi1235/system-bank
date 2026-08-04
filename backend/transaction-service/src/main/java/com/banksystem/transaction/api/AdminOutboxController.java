@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -33,6 +34,11 @@ public class AdminOutboxController {
 
   @GetMapping
   public ApiResponse<PageResponse<OutboxEventResponse>> list(@Valid @ModelAttribute AdminOutboxFilterRequest req) {
+    return ApiResponse.ok(service.list(req));
+  }
+
+  @PostMapping("/search")
+  public ApiResponse<PageResponse<OutboxEventResponse>> search(@Valid @RequestBody AdminOutboxFilterRequest req) {
     return ApiResponse.ok(service.list(req));
   }
 

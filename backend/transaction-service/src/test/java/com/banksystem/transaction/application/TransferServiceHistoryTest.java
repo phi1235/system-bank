@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
@@ -25,6 +26,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
+import com.banksystem.transaction.application.gateway.AccountGateway;
+
 class TransferServiceHistoryTest {
 
   private TransferOrderRepository transferOrderRepository;
@@ -34,15 +37,18 @@ class TransferServiceHistoryTest {
   @BeforeEach
   void setUp() {
     transferOrderRepository = mock(TransferOrderRepository.class);
+    com.banksystem.transaction.application.mapper.TransferMapper mapper = new com.banksystem.transaction.application.mapper.TransferMapper();
+    TransferQueryService queryService = new TransferQueryService(
+        transferOrderRepository, mock(com.banksystem.transaction.domain.SagaStepLogRepository.class), mock(TransferLimitPolicy.class), mock(TransferFeePolicy.class), mapper);
     service = new TransferService(
         transferOrderRepository,
         mock(AuditLogRepository.class),
-        mock(SagaStepLogRepository.class),
-        mock(AccountClient.class),
+        mock(AccountGateway.class),
         mock(TransferSagaOrchestrator.class),
         mock(TransferLimitPolicy.class),
         mock(TransferFeePolicy.class),
-        "test-internal-key");
+        queryService,
+        mapper);
   }
 
   @Test
@@ -67,6 +73,9 @@ class TransferServiceHistoryTest {
 
   @Test
   void myHistory_unknownStatusReturnsEmpty() {
+    when(transferOrderRepository.searchMine(
+            any(), anyBoolean(), any(), any(), any(), any()))
+        .thenReturn(new PageImpl<>(List.of()));
     var page = service.myHistory(userId, 0, 20, "NOT_A_STATUS", null, null);
     assertTrue(page.items().isEmpty());
     assertEquals(0, page.totalElements());

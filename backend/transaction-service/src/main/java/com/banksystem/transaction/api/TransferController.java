@@ -5,6 +5,7 @@ import com.banksystem.common.api.PageResponse;
 import com.banksystem.common.security.RequirePermission;
 import com.banksystem.common.security.UserContext;
 import com.banksystem.transaction.api.dto.TransferDtos.AdminTransferFilterRequest;
+import com.banksystem.transaction.api.dto.TransferDtos.MyTransferFilterRequest;
 import com.banksystem.transaction.api.dto.TransferDtos.TransferDetailResponse;
 import com.banksystem.transaction.api.dto.TransferDtos.TransferQuoteResponse;
 import com.banksystem.transaction.api.dto.TransferDtos.TransferRequest;
@@ -57,18 +58,14 @@ public class TransferController {
 
   @GetMapping("/transactions/transfers")
   public ApiResponse<PageResponse<TransferResponse>> myTransfers(
-      @RequestParam(defaultValue = "0") int page,
-      @RequestParam(defaultValue = "20") int size,
-      @RequestParam(required = false) String status,
-      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
-      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to) {
-    return ApiResponse.ok(transferService.myHistory(
-        UserContext.requireUser().userId(),
-        page,
-        size,
-        status,
-        from,
-        to));
+      @Valid @ModelAttribute MyTransferFilterRequest req) {
+    return ApiResponse.ok(transferService.myHistory(UserContext.requireUser().userId(), req));
+  }
+
+  @PostMapping("/transactions/transfers/search")
+  public ApiResponse<PageResponse<TransferResponse>> myTransfersSearch(
+      @Valid @RequestBody MyTransferFilterRequest req) {
+    return ApiResponse.ok(transferService.myHistory(UserContext.requireUser().userId(), req));
   }
 
   @GetMapping("/transactions/transfers/{id}")
@@ -85,6 +82,12 @@ public class TransferController {
   @GetMapping({"/admin/transfers", "/transactions/admin/transfers"})
   @RequirePermission("transactions:list:view")
   public ApiResponse<?> adminTransfers(@ModelAttribute AdminTransferFilterRequest req) {
+    return ApiResponse.ok(transferService.adminTransfers(req));
+  }
+
+  @PostMapping({"/admin/transfers/search", "/transactions/admin/transfers/search"})
+  @RequirePermission("transactions:list:view")
+  public ApiResponse<?> adminTransfersSearch(@Valid @RequestBody AdminTransferFilterRequest req) {
     return ApiResponse.ok(transferService.adminTransfers(req));
   }
 }

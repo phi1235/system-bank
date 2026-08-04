@@ -5,6 +5,8 @@ import com.banksystem.account.api.dto.DepositDtos.AdminTermDepositRow;
 import com.banksystem.account.api.dto.DepositDtos.DepositAdminSummaryResponse;
 import com.banksystem.account.api.dto.DepositDtos.DepositProductResponse;
 import com.banksystem.account.api.dto.DepositDtos.UpdateDepositProductRequest;
+import com.banksystem.account.application.gateway.AuditGateway;
+import com.banksystem.account.application.gateway.CustomerGateway;
 import com.banksystem.account.application.query.AdminDepositListQuery;
 import com.banksystem.account.domain.AccountEntity;
 import com.banksystem.account.domain.AccountRepository;
@@ -12,10 +14,7 @@ import com.banksystem.account.domain.DepositProductEntity;
 import com.banksystem.account.domain.DepositProductRepository;
 import com.banksystem.account.domain.TermDepositEntity;
 import com.banksystem.account.domain.TermDepositRepository;
-import com.banksystem.account.infrastructure.feign.AuditClient;
-import com.banksystem.account.infrastructure.feign.CustomerClient;
 import com.banksystem.account.infrastructure.mybatis.DepositReportMapper;
-import com.banksystem.common.api.ApiResponse;
 import com.banksystem.common.api.PageResponse;
 import com.banksystem.common.exception.BusinessException;
 import java.time.Clock;
@@ -29,10 +28,9 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.http.HttpStatus;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,10 +48,8 @@ public class DepositAdminService {
   private final TermDepositRepository depositRepository;
   private final DepositProductRepository productRepository;
   private final AccountRepository accountRepository;
-  private final AuditClient auditClient;
-  private final CustomerClient customerClient;
-  private final String transactionApiKey;
-  private final String customerApiKey;
+  private final AuditGateway auditGateway;
+  private final CustomerGateway customerGateway;
   private final Clock clock;
   private final ZoneId zone;
 
@@ -62,20 +58,16 @@ public class DepositAdminService {
       TermDepositRepository depositRepository,
       DepositProductRepository productRepository,
       AccountRepository accountRepository,
-      AuditClient auditClient,
-      CustomerClient customerClient,
-      @Value("${bank.internal.transaction-api-key}") String transactionApiKey,
-      @Value("${bank.internal.customer-api-key}") String customerApiKey,
+      AuditGateway auditGateway,
+      CustomerGateway customerGateway,
       Clock clock,
       @Value("${bank.deposit.zone}") String zone) {
     this.mapper = mapper;
     this.depositRepository = depositRepository;
     this.productRepository = productRepository;
     this.accountRepository = accountRepository;
-    this.auditClient = auditClient;
-    this.customerClient = customerClient;
-    this.transactionApiKey = transactionApiKey;
-    this.customerApiKey = customerApiKey;
+    this.auditGateway = auditGateway;
+    this.customerGateway = customerGateway;
     this.clock = clock;
     this.zone = ZoneId.of(zone);
   }
@@ -156,25 +148,10 @@ public class DepositAdminService {
   /** Best-effort: a customer-service outage degrades owner names to null, never fails the page. */
   private Map<String, String> ownerNamesFor(List<TermDepositEntity> deposits) {
     List<UUID> userIds = deposits.stream().map(TermDepositEntity::getUserId).distinct().toList();
-    if (userIds.isEmpty()) {
+    if (userIds.isEmpty() || customerGateway == null) {
       return Map.of();
     }
-    try {
-      ApiResponse<List<CustomerClient.CustomerNameView>> res =
-          customerClient.names(new CustomerClient.CustomerNamesRequest(userIds), customerApiKey);
-      if (res == null || !res.success() || res.data() == null) {
-        return Map.of();
-      }
-      return res.data().stream()
-          .collect(
-              Collectors.toMap(
-                  CustomerClient.CustomerNameView::userId,
-                  CustomerClient.CustomerNameView::fullName,
-                  (a, b) -> a));
-    } catch (Exception ex) {
-      log.warn("Owner-name enrichment failed: {}", ex.getMessage());
-      return Map.of();
-    }
+    return customerGateway.getCustomerNames(userIds);
   }
 
   @Transactional(readOnly = true)
@@ -194,8 +171,7 @@ public class DepositAdminService {
             .orElseThrow(
                 () ->
                     new BusinessException(
-                        "DEPOSIT_PRODUCT_NOT_FOUND", "Deposit product not found",
-                        HttpStatus.NOT_FOUND));
+                        "DEPOSIT_PRODUCT_NOT_FOUND", "Deposit product not found"));
 
     String before = snapshot(product);
     if (request.rateBps() != null) {
@@ -217,14 +193,8 @@ public class DepositAdminService {
 
   /** Best-effort audit to transaction-service; a failed audit never fails the rate change. */
   private void recordAudit(UUID actorUserId, String code, String metadata) {
-    try {
-      auditClient.createAuditLog(
-          new AuditClient.CreateAuditLogRequest(
-              actorUserId, "DEPOSIT_PRODUCT_UPDATE", "DEPOSIT_PRODUCT", code, "127.0.0.1",
-              metadata),
-          transactionApiKey);
-    } catch (Exception ex) {
-      log.warn("Audit push failed for product {}: {}", code, ex.getMessage());
+    if (auditGateway != null) {
+      auditGateway.recordAuditLog(actorUserId, "DEPOSIT_PRODUCT_UPDATE", "DEPOSIT_PRODUCT", code, metadata);
     }
   }
 

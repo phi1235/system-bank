@@ -106,9 +106,15 @@ public final class TransferDtos {
       @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
       Integer page,
       Integer size,
-      boolean noCount,
+      Boolean noCount,
       @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant lastCreatedAt
-  ) {}
+  ) {
+    public AdminTransferFilterRequest {
+      if (page == null) page = 0;
+      if (size == null) size = 20;
+      if (noCount == null) noCount = false;
+    }
+  }
 
   public record AdminAuditFilterRequest(
       String action,
@@ -119,6 +125,25 @@ public final class TransferDtos {
       @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
       Integer page,
       Integer size,
-      boolean noCount
-  ) {}
+      Boolean noCount
+  ) {
+    public AdminAuditFilterRequest {
+      if (page == null) page = 0;
+      if (size == null) size = 20;
+      if (noCount == null) noCount = false;
+    }
+  }
+
+  public record MyTransferFilterRequest(
+      Integer page,
+      Integer size,
+      String status,
+      @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
+      @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to
+  ) {
+    public MyTransferFilterRequest {
+      if (page == null || page < 0) page = 0;
+      if (size == null || size < 1) size = 20;
+    }
+  }
 }

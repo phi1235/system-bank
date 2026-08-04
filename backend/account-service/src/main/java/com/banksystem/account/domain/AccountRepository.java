@@ -17,6 +17,8 @@ public interface AccountRepository extends JpaRepository<AccountEntity, UUID> {
 
   long countByUserId(UUID userId);
 
+  long countByStatus(String status);
+
   Optional<AccountEntity> findByAccountNumber(String accountNumber);
 
   boolean existsByAccountNumber(String accountNumber);

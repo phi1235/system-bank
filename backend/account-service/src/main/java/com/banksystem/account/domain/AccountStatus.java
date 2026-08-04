@@ -4,7 +4,6 @@ import com.banksystem.common.exception.BusinessException;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
-import org.springframework.http.HttpStatus;
 
 /**
  * Account lifecycle statuses used by both query filters and state transitions.
@@ -30,8 +29,7 @@ public enum AccountStatus {
   public static AccountStatus parseRequired(String raw) {
     return tryParse(raw).orElseThrow(() -> new BusinessException(
         "INVALID_STATUS",
-        "status must be ACTIVE|FROZEN|CLOSED",
-        HttpStatus.BAD_REQUEST));
+        "status must be ACTIVE|FROZEN|CLOSED"));
   }
 
   public boolean isActive() {

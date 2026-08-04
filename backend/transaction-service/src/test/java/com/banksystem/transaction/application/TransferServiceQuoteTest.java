@@ -13,7 +13,7 @@ import com.banksystem.transaction.domain.AuditLogRepository;
 import com.banksystem.transaction.domain.SagaStepLogRepository;
 import com.banksystem.transaction.domain.TransferOrderRepository;
 import com.banksystem.transaction.domain.TransferStatus;
-import com.banksystem.transaction.infrastructure.feign.AccountClient;
+import com.banksystem.transaction.application.gateway.AccountGateway;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
@@ -41,15 +41,17 @@ class TransferServiceQuoteTest {
         midDayClock);
     TransferFeePolicy feePolicy = new TransferFeePolicy(
         true, new BigDecimal("1000"), new BigDecimal("0.1"), BigDecimal.ZERO, new BigDecimal("50000"));
+    TransferQueryService queryService = new TransferQueryService(
+        transferOrderRepository, mock(SagaStepLogRepository.class), limitPolicy, feePolicy, mock(com.banksystem.transaction.application.mapper.TransferMapper.class));
     service = new TransferService(
         transferOrderRepository,
         mock(AuditLogRepository.class),
-        mock(SagaStepLogRepository.class),
-        mock(AccountClient.class),
+        mock(AccountGateway.class),
         mock(TransferSagaOrchestrator.class),
         limitPolicy,
         feePolicy,
-        "test-key");
+        queryService,
+        mock(com.banksystem.transaction.application.mapper.TransferMapper.class));
   }
 
   @Test

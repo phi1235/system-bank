@@ -33,6 +33,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
+import com.banksystem.account.application.mapper.CardMapper;
+
 class CardApprovalServiceTest {
 
   private static final Instant NOW = Instant.parse("2026-07-27T03:00:00Z");
@@ -57,6 +59,7 @@ class CardApprovalServiceTest {
             mock(CustomerClient.class),
             auditClient,
             notificationClient,
+            new CardMapper(),
             "customer-key",
             "tx-key",
             "notif-key",

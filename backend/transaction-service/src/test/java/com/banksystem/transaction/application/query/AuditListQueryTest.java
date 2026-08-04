@@ -15,7 +15,7 @@ class AuditListQueryTest {
 
   @Test
   void defaultsPageSizeAndDateBounds() {
-    AuditListQuery q = AuditListQuery.of(null, null, null, null, null, null, -1, 500);
+    AuditListQuery q = AuditListQuery.of(null, null, null, null, null, null, -1, 5000);
     assertEquals(0, q.page());
     assertEquals(AuditListQuery.MAX_SIZE, q.size());
     assertEquals(AuditListQuery.EPOCH, q.from());

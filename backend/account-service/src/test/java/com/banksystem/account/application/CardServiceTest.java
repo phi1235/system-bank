@@ -34,6 +34,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
+import com.banksystem.account.application.mapper.CardMapper;
+
 class CardServiceTest {
 
   private static final Instant NOW = Instant.parse("2026-07-27T03:00:00Z");
@@ -58,6 +60,7 @@ class CardServiceTest {
             cardRepository,
             access,
             accountRepository,
+            new CardMapper(),
             Clock.fixed(NOW, ZoneOffset.UTC),
             "Asia/Bangkok",
             AES_KEY,

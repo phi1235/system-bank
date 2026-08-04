@@ -9,6 +9,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.banksystem.auth.api.dto.RbacDtos.StaffUserDto;
+import com.banksystem.auth.application.mapper.RbacMapper;
+import com.banksystem.auth.application.permission.PermissionResolver;
+import com.banksystem.auth.application.query.RbacQueryService;
 import com.banksystem.auth.domain.PasswordResetTicketRepository;
 import com.banksystem.auth.domain.PermissionRepository;
 import com.banksystem.auth.domain.RolePermissionRepository;
@@ -32,20 +35,23 @@ class RbacServiceListUsersTest {
   private UserRepository userRepository;
   private PasswordResetTicketRepository ticketRepository;
   private RolePermissionRepository rolePermissionRepository;
-  private RbacService service;
+  private RbacQueryService service;
 
   @BeforeEach
   void setUp() {
     userRepository = mock(UserRepository.class);
     ticketRepository = mock(PasswordResetTicketRepository.class);
     rolePermissionRepository = mock(RolePermissionRepository.class);
+    PermissionResolver permissionResolver = new PermissionResolver(rolePermissionRepository);
+    RbacMapper mapper = new RbacMapper(rolePermissionRepository, permissionResolver);
     service =
-        new RbacService(
+        new RbacQueryService(
             mock(RoleRepository.class),
             mock(PermissionRepository.class),
             rolePermissionRepository,
             userRepository,
-            ticketRepository);
+            ticketRepository,
+            mapper);
   }
 
   @Test
@@ -60,43 +66,48 @@ class RbacServiceListUsersTest {
             eq("alice"),
             any(Pageable.class)))
         .thenReturn(new PageImpl<>(List.of(u), PageRequest.of(0, 20), 1));
-    when(rolePermissionRepository.findPermissionCodesByRoleCodes(any())).thenReturn(List.of());
-    when(ticketRepository.existsByUserIdAndStatus(u.getId(), "OPEN")).thenReturn(false);
+    when(ticketRepository.existsByUserIdAndStatus(u.getId(), "OPEN")).thenReturn(true);
+    when(rolePermissionRepository.findPermissionCodesByRoleCodes(List.of("ADMIN")))
+        .thenReturn(List.of("rbac:access"));
 
-    PageResponse<StaffUserDto> page = service.listUsers(0, 20, " alice ", false, null);
+    PageResponse<StaffUserDto> res = service.listUsers(0, 20, " alice ", false, null);
 
-    assertEquals(1, page.items().size());
-    assertEquals("alice", page.items().get(0).username());
-    assertEquals(u.getCreatedAt(), page.items().get(0).createdAt());
-    assertTrue(page.items().get(0).enabled());
+    assertEquals(1, res.items().size());
+    StaffUserDto dto = res.items().get(0);
+    assertEquals(u.getId().toString(), dto.userId());
+    assertTrue(dto.openResetTicket());
+    assertTrue(dto.staff());
+    assertEquals(List.of("rbac:access"), dto.permissions());
   }
 
   @Test
   void listUsers_rejectsInvalidUserId() {
     BusinessException ex =
         assertThrows(
-            BusinessException.class, () -> service.listUsers(0, 20, null, null, "not-uuid"));
+            BusinessException.class,
+            () -> service.listUsers(0, 20, null, null, "not-a-uuid"));
     assertEquals("INVALID_USER_ID", ex.getCode());
   }
 
   @Test
   void getUser_notFound() {
-    UUID id = UUID.randomUUID();
-    when(userRepository.findById(id)).thenReturn(Optional.empty());
-    BusinessException ex = assertThrows(BusinessException.class, () -> service.getUser(id));
+    UUID uid = UUID.randomUUID();
+    when(userRepository.findById(uid)).thenReturn(Optional.empty());
+
+    BusinessException ex = assertThrows(BusinessException.class, () -> service.getUser(uid));
     assertEquals("USER_NOT_FOUND", ex.getCode());
   }
 
-  private UserEntity sampleUser(boolean enabled) {
+  private static UserEntity sampleUser(boolean enabled) {
     UserEntity u = new UserEntity();
-    u.setId(UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
+    u.setId(UUID.randomUUID());
     u.setUsername("alice");
     u.setEmail("alice@example.com");
-    u.setPasswordHash("x");
+    u.setPasswordHash("hash");
     u.setRoles("ADMIN");
     u.setEnabled(enabled);
-    u.setCreatedAt(Instant.parse("2026-07-01T00:00:00Z"));
-    u.setUpdatedAt(Instant.parse("2026-07-01T00:00:00Z"));
+    u.setMustChangePassword(false);
+    u.setCreatedAt(Instant.now());
     return u;
   }
 }

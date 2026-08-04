@@ -6,13 +6,12 @@ import com.banksystem.account.api.dto.AccountDtos.MoneyCommand;
 import com.banksystem.account.api.dto.AccountDtos.MoneyResult;
 import com.banksystem.account.api.dto.AccountDtos.TopUpRequest;
 import com.banksystem.account.api.dto.AccountDtos.TopUpResponse;
+import com.banksystem.account.application.gateway.AuditGateway;
 import com.banksystem.account.application.query.AdminAccountSearchQuery;
 import com.banksystem.account.domain.AccountEntity;
 import com.banksystem.account.domain.AccountRepository;
 import com.banksystem.account.domain.AccountStatus;
 import com.banksystem.account.domain.AccountType;
-import com.banksystem.account.infrastructure.feign.AuditClient;
-import com.banksystem.account.infrastructure.feign.AuditClient.CreateAuditLogRequest;
 import com.banksystem.common.api.PageResponse;
 import com.banksystem.common.exception.BusinessException;
 import com.banksystem.common.security.GatewayUser;
@@ -20,13 +19,11 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,8 +36,7 @@ public class AdminAccountService {
   private final AccountMapper mapper;
   private final OpsAlertPublisher opsAlertPublisher;
   private final AccountMoneyService moneyService;
-  private final AuditClient auditClient;
-  private final String internalApiKey;
+  private final AuditGateway auditGateway;
   private final BigDecimal maxTopUpAmount;
 
   public AdminAccountService(
@@ -50,7 +46,7 @@ public class AdminAccountService {
       OpsAlertPublisher opsAlertPublisher,
       AccountMoneyService moneyService,
       BigDecimal maxTopUpAmount) {
-    this(accountRepository, access, mapper, opsAlertPublisher, moneyService, null, "", maxTopUpAmount);
+    this(accountRepository, access, mapper, opsAlertPublisher, moneyService, null, maxTopUpAmount);
   }
 
   @Autowired
@@ -60,16 +56,14 @@ public class AdminAccountService {
       AccountMapper mapper,
       OpsAlertPublisher opsAlertPublisher,
       AccountMoneyService moneyService,
-      AuditClient auditClient,
-      @Value("${bank.internal.transaction-api-key}") String internalApiKey,
+      AuditGateway auditGateway,
       @Value("${bank.account.topup.max-amount:50000000}") BigDecimal maxTopUpAmount) {
     this.accountRepository = accountRepository;
     this.access = access;
     this.mapper = mapper;
     this.opsAlertPublisher = opsAlertPublisher;
     this.moneyService = moneyService;
-    this.auditClient = auditClient;
-    this.internalApiKey = internalApiKey;
+    this.auditGateway = auditGateway;
     this.maxTopUpAmount = maxTopUpAmount;
   }
 
@@ -129,7 +123,7 @@ public class AdminAccountService {
   @Transactional(readOnly = true)
   public Object adminList(AdminAccountFilterRequest req) {
     AdminAccountSearchQuery query = AdminAccountSearchQuery.of(req.q(), req.status(), req.accountType(), req.page(), req.size());
-    if (req.noCount()) {
+    if (Boolean.TRUE.equals(req.noCount())) {
       return adminListSlice(query);
     }
     return adminList(query);
@@ -199,8 +193,7 @@ public class AdminAccountService {
     AccountEntity a = access.require(id);
     AccountStatus current = access.currentStatus(a);
     if (current.isClosed()) {
-      throw new BusinessException("ACCOUNT_CLOSED", "Closed account cannot be frozen",
-          HttpStatus.UNPROCESSABLE_ENTITY);
+      throw new BusinessException("ACCOUNT_CLOSED", "Closed account cannot be frozen");
     }
     if (current.isFrozen()) {
       return mapper.toResponse(a);
@@ -224,8 +217,7 @@ public class AdminAccountService {
     AccountEntity a = access.require(id);
     AccountStatus current = access.currentStatus(a);
     if (current.isClosed()) {
-      throw new BusinessException("ACCOUNT_CLOSED", "Closed account cannot be unfrozen",
-          HttpStatus.UNPROCESSABLE_ENTITY);
+      throw new BusinessException("ACCOUNT_CLOSED", "Closed account cannot be unfrozen");
     }
     if (current.isActive()) {
       return mapper.toResponse(a);
@@ -242,15 +234,15 @@ public class AdminAccountService {
   @Transactional
   public TopUpResponse topUp(UUID id, TopUpRequest req, GatewayUser actor) {
     if (req == null || req.amount() == null || req.amount().compareTo(new BigDecimal("0.01")) < 0) {
-      throw new BusinessException("INVALID_AMOUNT", "Amount must be at least 0.01", HttpStatus.BAD_REQUEST);
+      throw new BusinessException("INVALID_AMOUNT", "Amount must be at least 0.01");
     }
     if (req.amount().compareTo(maxTopUpAmount) > 0) {
-      throw new BusinessException("TOPUP_MAX_EXCEEDED", "Top-up amount exceeds maximum allowed limit", HttpStatus.BAD_REQUEST);
+      throw new BusinessException("TOPUP_MAX_EXCEEDED", "Top-up amount exceeds maximum allowed limit");
     }
 
     AccountEntity account = access.require(id);
     if (actor != null && actor.userId() != null && account.getUserId() != null && account.getUserId().equals(actor.userId())) {
-      throw new BusinessException("SELF_TOPUP_FORBIDDEN", "Staff cannot credit their own account", HttpStatus.FORBIDDEN);
+      throw new BusinessException("SELF_TOPUP_FORBIDDEN", "Staff cannot credit their own account");
     }
     String referenceId = "ADMIN-TOPUP-" + UUID.randomUUID();
     String note = req.description() != null ? req.description().trim() : "";
@@ -273,19 +265,9 @@ public class AdminAccountService {
   }
 
   private void recordAuditLog(UUID actorId, String action, String resourceType, String resourceId, String metadata) {
-    if (auditClient == null) {
-      return;
+    if (auditGateway != null) {
+      auditGateway.recordAuditLog(actorId, action, resourceType, resourceId, metadata);
     }
-    CompletableFuture.runAsync(() -> {
-      try {
-        auditClient.createAuditLog(
-            new CreateAuditLogRequest(
-                actorId, action, resourceType, resourceId, "127.0.0.1", metadata),
-            internalApiKey);
-      } catch (Exception ex) {
-        // Non-blocking best-effort audit logging
-      }
-    });
   }
 
   private UUID tryParseUuid(String raw) {

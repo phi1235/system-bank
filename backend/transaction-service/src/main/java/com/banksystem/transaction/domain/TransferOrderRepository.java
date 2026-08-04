@@ -16,6 +16,8 @@ public interface TransferOrderRepository extends JpaRepository<TransferOrderEnti
 
   Page<TransferOrderEntity> findByUserIdOrderByCreatedAtDesc(UUID userId, Pageable pageable);
 
+  long countByStatus(TransferStatus status);
+
   /** Reconciliation: all orders of one banking day, [from, to) in UTC instants. */
   java.util.List<TransferOrderEntity> findByCreatedAtGreaterThanEqualAndCreatedAtLessThan(
       Instant from, Instant to);

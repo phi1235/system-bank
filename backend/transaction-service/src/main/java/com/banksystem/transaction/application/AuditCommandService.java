@@ -7,7 +7,6 @@ import com.banksystem.transaction.domain.AuditLogEntity;
 import com.banksystem.transaction.domain.AuditLogRepository;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -54,7 +53,7 @@ public class AuditCommandService {
 
   private void verifyInternalKey(String key) {
     if (!SecretVerifier.matches(key, apiKey)) {
-      throw new BusinessException("FORBIDDEN", "Invalid internal API key", HttpStatus.FORBIDDEN);
+      throw new BusinessException("FORBIDDEN", "Invalid internal API key");
     }
   }
 

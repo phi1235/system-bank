@@ -11,7 +11,6 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,8 +38,10 @@ public class NotificationInboxService {
    */
   @Transactional(readOnly = true)
   public PageResponse<NotificationItem> myInbox(
-      UUID userId, int page, int size, String readFilter) {
-    Pageable pageable = PageRequest.of(page, size);
+      UUID userId, Integer page, Integer size, String readFilter) {
+    int pg = page != null ? page : 0;
+    int sz = size != null ? Math.min(size, 100) : 20;
+    Pageable pageable = PageRequest.of(pg, sz);
     String filter = readFilter == null ? "" : readFilter.trim().toUpperCase();
     Page<NotificationLogEntity> p;
     if ("UNREAD".equals(filter)) {
@@ -63,7 +64,7 @@ public class NotificationInboxService {
     NotificationLogEntity e = repository
         .findByIdAndUserId(id, userId)
         .orElseThrow(() -> new BusinessException(
-            "NOTIFICATION_NOT_FOUND", "Notification not found", HttpStatus.NOT_FOUND));
+            "NOTIFICATION_NOT_FOUND", "Notification not found"));
     return markReadEntity(e);
   }
 
@@ -73,10 +74,12 @@ public class NotificationInboxService {
   }
 
   @Transactional(readOnly = true)
-  public PageResponse<NotificationItem> opsInbox(int page, int size) {
-    Page<NotificationLogEntity> p =
-        repository.findByAudienceOrderByCreatedAtDesc(AUDIENCE_OPS, PageRequest.of(page, size));
-    return toPage(p);
+  public PageResponse<NotificationItem> opsInbox(Integer page, Integer size) {
+    int p = page != null ? page : 0;
+    int s = size != null ? Math.min(size, 100) : 20;
+    Page<NotificationLogEntity> pp =
+        repository.findByAudienceOrderByCreatedAtDesc(AUDIENCE_OPS, PageRequest.of(p, s));
+    return toPage(pp);
   }
 
   @Transactional(readOnly = true)
@@ -89,7 +92,7 @@ public class NotificationInboxService {
     NotificationLogEntity e = repository
         .findByIdAndAudience(id, AUDIENCE_OPS)
         .orElseThrow(() -> new BusinessException(
-            "NOTIFICATION_NOT_FOUND", "Ops notification not found", HttpStatus.NOT_FOUND));
+            "NOTIFICATION_NOT_FOUND", "Ops notification not found"));
     return markReadEntity(e);
   }
 
