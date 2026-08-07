@@ -2,6 +2,7 @@ package com.banksystem.transaction.domain.transfer;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
@@ -19,7 +20,7 @@ public interface TransferOrderRepository extends JpaRepository<TransferOrderEnti
   long countByStatus(TransferStatus status);
 
   /** Reconciliation: all orders of one banking day, [from, to) in UTC instants. */
-  java.util.List<TransferOrderEntity> findByCreatedAtGreaterThanEqualAndCreatedAtLessThan(
+  List<TransferOrderEntity> findByCreatedAtGreaterThanEqualAndCreatedAtLessThan(
       Instant from, Instant to);
 
   /**

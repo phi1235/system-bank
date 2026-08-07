@@ -10,6 +10,7 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -67,14 +68,14 @@ class RequirePermissionAspectTest {
   }
 
   private static ProceedingJoinPoint joinPoint(Object target, String methodName) throws Exception {
-    MethodSignature signature = org.mockito.Mockito.mock(MethodSignature.class);
+    MethodSignature signature = Mockito.mock(MethodSignature.class);
     var method = target.getClass().getMethod(methodName);
     Object invoked = method.invoke(target);
-    org.mockito.Mockito.when(signature.getMethod()).thenReturn(method);
-    ProceedingJoinPoint pjp = org.mockito.Mockito.mock(ProceedingJoinPoint.class);
-    org.mockito.Mockito.when(pjp.getSignature()).thenReturn(signature);
+    Mockito.when(signature.getMethod()).thenReturn(method);
+    ProceedingJoinPoint pjp = Mockito.mock(ProceedingJoinPoint.class);
+    Mockito.when(pjp.getSignature()).thenReturn(signature);
     try {
-      org.mockito.Mockito.when(pjp.proceed()).thenReturn(invoked);
+      Mockito.when(pjp.proceed()).thenReturn(invoked);
     } catch (Throwable t) {
       throw new IllegalStateException(t);
     }

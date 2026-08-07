@@ -8,6 +8,7 @@ import com.banksystem.auth.domain.auth.*;
 import com.banksystem.auth.domain.rbac.*;
 import com.banksystem.auth.api.dto.*;
 
+import java.util.Collection;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
@@ -25,7 +26,7 @@ public interface UserRepository extends JpaRepository<UserEntity, UUID> {
 
   long countByEnabled(boolean enabled);
 
-  java.util.Optional<UserEntity> findByEmailIgnoreCase(String email);
+  Optional<UserEntity> findByEmailIgnoreCase(String email);
 
   @Query("""
       SELECT u FROM UserEntity u
@@ -68,5 +69,5 @@ public interface UserRepository extends JpaRepository<UserEntity, UUID> {
         WHERE UPPER(TRIM(t.role)) IN (:roles)
       )
       """, nativeQuery = true)
-  long countByAnyRole(@Param("roles") java.util.Collection<String> roles);
+  long countByAnyRole(@Param("roles") Collection<String> roles);
 }

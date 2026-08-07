@@ -8,6 +8,7 @@ import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.format.annotation.DateTimeFormat;
 
@@ -83,7 +84,7 @@ public final class DepositDtos {
       BigDecimal openAccrued) {}
 
   public record DepositAdminSummaryResponse(
-      DepositTotalsRow totals, java.util.List<DepositTenorRow> byProduct) {}
+      DepositTotalsRow totals, List<DepositTenorRow> byProduct) {}
 
   public record BatchRunResponse(int accruedUpdated, int matured, int failed) {}
 

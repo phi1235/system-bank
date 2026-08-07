@@ -17,7 +17,12 @@ import com.banksystem.auth.api.dto.PasswordResetDtos.TicketResponse;
 import com.banksystem.auth.infrastructure.security.BoundPasswordEncoder;
 import com.banksystem.common.api.PageResponse;
 import com.banksystem.common.exception.BusinessException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.security.SecureRandom;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
@@ -355,15 +360,15 @@ public class PasswordResetServiceImpl implements PasswordResetService {
       };
       for (String url : targets) {
         try {
-          java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
-          java.net.http.HttpRequest req = java.net.http.HttpRequest.newBuilder()
-              .uri(java.net.URI.create(url))
+          HttpClient client = HttpClient.newHttpClient();
+          HttpRequest req = HttpRequest.newBuilder()
+              .uri(URI.create(url))
               .header("Content-Type", "application/json")
               .header("X-Internal-Api-Key", apiKeyValue)
-              .POST(java.net.http.HttpRequest.BodyPublishers.ofString(json))
-              .timeout(java.time.Duration.ofSeconds(5))
+              .POST(HttpRequest.BodyPublishers.ofString(json))
+              .timeout(Duration.ofSeconds(5))
               .build();
-          java.net.http.HttpResponse<String> resp = client.send(req, java.net.http.HttpResponse.BodyHandlers.ofString());
+          HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString());
           if (resp.statusCode() == 200) {
             log.info("Password reset notification log posted to {}", url);
             break;

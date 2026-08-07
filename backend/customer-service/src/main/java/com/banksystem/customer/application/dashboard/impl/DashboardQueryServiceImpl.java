@@ -14,6 +14,8 @@ import com.banksystem.customer.api.dto.DashboardDtos.InternalUserCountsResponse;
 import com.banksystem.customer.infrastructure.feign.DashboardClients.AccountCountsClient;
 import com.banksystem.customer.infrastructure.feign.DashboardClients.TransactionCountsClient;
 import com.banksystem.customer.infrastructure.feign.DashboardClients.UserCountsClient;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -56,7 +58,7 @@ public class DashboardQueryServiceImpl implements DashboardQueryService {
     long kycPending = customerRepository.countByKycStatus("PENDING");
 
     // Parallel Feign calls to avoid sequential blocking (fixes pending issue)
-    var accountFuture = java.util.concurrent.CompletableFuture.supplyAsync(() -> {
+    var accountFuture = CompletableFuture.supplyAsync(() -> {
       try {
         ApiResponse<InternalAccountCountsResponse> res = accountClient.counts(accountApiKey);
         if (res != null && res.success() && res.data() != null) {
@@ -70,7 +72,7 @@ public class DashboardQueryServiceImpl implements DashboardQueryService {
       return new InternalAccountCountsResponse(0, 0);
     });
 
-    var transactionFuture = java.util.concurrent.CompletableFuture.supplyAsync(() -> {
+    var transactionFuture = CompletableFuture.supplyAsync(() -> {
       try {
         ApiResponse<InternalTransactionCountsResponse> res = transactionClient.counts(transactionApiKey);
         if (res != null && res.success() && res.data() != null) {
@@ -84,7 +86,7 @@ public class DashboardQueryServiceImpl implements DashboardQueryService {
       return new InternalTransactionCountsResponse(0, 0, 0, 0, 0, 0, 0);
     });
 
-    var userFuture = java.util.concurrent.CompletableFuture.supplyAsync(() -> {
+    var userFuture = CompletableFuture.supplyAsync(() -> {
       try {
         ApiResponse<InternalUserCountsResponse> res = userClient.counts(userApiKey);
         if (res != null && res.success() && res.data() != null) {
@@ -103,9 +105,9 @@ public class DashboardQueryServiceImpl implements DashboardQueryService {
     InternalTransactionCountsResponse txn;
     InternalUserCountsResponse usr;
     try {
-      acct = accountFuture.get(90, java.util.concurrent.TimeUnit.SECONDS);
-      txn = transactionFuture.get(90, java.util.concurrent.TimeUnit.SECONDS);
-      usr = userFuture.get(90, java.util.concurrent.TimeUnit.SECONDS);
+      acct = accountFuture.get(90, TimeUnit.SECONDS);
+      txn = transactionFuture.get(90, TimeUnit.SECONDS);
+      usr = userFuture.get(90, TimeUnit.SECONDS);
     } catch (Exception ex) {
       log.error("Dashboard parallel fetch timed out or failed: {}", ex.getMessage());
       acct = accountFuture.getNow(new InternalAccountCountsResponse(0, 0));
