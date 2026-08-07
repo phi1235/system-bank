@@ -12,6 +12,7 @@ import com.banksystem.common.api.ApiError;
 import com.banksystem.common.api.ApiResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -72,7 +73,7 @@ public class SecurityConfig {
     return new BCryptPasswordEncoder(10);
   }
 
-  private void writeError(HttpServletResponse res, int status, String code, String message) throws java.io.IOException {
+  private void writeError(HttpServletResponse res, int status, String code, String message) throws IOException {
     res.setStatus(status);
     res.setContentType(MediaType.APPLICATION_JSON_VALUE);
     objectMapper.writeValue(res.getOutputStream(), ApiResponse.fail(new ApiError(code, message)));

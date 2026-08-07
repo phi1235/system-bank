@@ -26,6 +26,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -155,7 +156,7 @@ public class CardApprovalServiceImpl implements CardApprovalService {
     }
     int approved = 0;
     int failed = 0;
-    List<String> errors = new java.util.ArrayList<>();
+    List<String> errors = new ArrayList<>();
     for (UUID id : cardIds) {
       try {
         approve(id, staffId);

@@ -19,6 +19,7 @@ import com.banksystem.common.security.UserContext;
 import com.banksystem.common.api.ApiResponse;
 import com.banksystem.common.api.PageResponse;
 import jakarta.validation.Valid;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -102,7 +103,7 @@ public class AccountController {
     String filename = "statement-" + id + ".csv";
     return ResponseEntity.ok()
         .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
-        .contentType(new MediaType("text", "csv", java.nio.charset.StandardCharsets.UTF_8))
+        .contentType(new MediaType("text", "csv", StandardCharsets.UTF_8))
         .body(csv);
   }
 }

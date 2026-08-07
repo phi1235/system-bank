@@ -2,6 +2,7 @@ package com.banksystem.transaction.application.transfer;
 
 import com.banksystem.transaction.domain.transfer.BankEntity;
 import com.banksystem.transaction.domain.transfer.BankRepository;
+import java.io.Serializable;
 import java.util.List;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -18,7 +19,7 @@ public class BankCatalogService {
       String logoUrl,
       boolean napasSupported,
       boolean isInternal
-  ) implements java.io.Serializable {}
+  ) implements Serializable {}
 
   private final BankRepository bankRepository;
 

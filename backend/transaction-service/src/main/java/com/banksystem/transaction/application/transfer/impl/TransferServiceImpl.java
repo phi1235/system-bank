@@ -10,6 +10,7 @@ import com.banksystem.common.api.PageResponse;
 import com.banksystem.common.exception.BusinessException;
 import com.banksystem.common.security.GatewayUser;
 import com.banksystem.transaction.api.dto.TransferDtos.AdminTransferFilterRequest;
+import com.banksystem.transaction.api.dto.TransferDtos.MyTransferFilterRequest;
 import com.banksystem.transaction.api.dto.TransferDtos.TransferDetailResponse;
 import com.banksystem.transaction.api.dto.TransferDtos.TransferQuoteResponse;
 import com.banksystem.transaction.api.dto.TransferDtos.TransferRequest;
@@ -129,7 +130,7 @@ public class TransferServiceImpl implements TransferService {
     return queryService.quote(userId, amount);
   }
 
-  public PageResponse<TransferResponse> myHistory(UUID userId, com.banksystem.transaction.api.dto.TransferDtos.MyTransferFilterRequest req) {
+  public PageResponse<TransferResponse> myHistory(UUID userId, MyTransferFilterRequest req) {
     return queryService.myHistory(userId, req.page(), req.size(), req.status(), req.from(), req.to());
   }
 

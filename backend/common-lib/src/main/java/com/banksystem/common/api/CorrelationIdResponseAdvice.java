@@ -9,6 +9,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
+import org.springframework.http.server.ServletServerHttpResponse;
 import org.springframework.http.server.ServletServerHttpRequest;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
@@ -46,7 +47,7 @@ public class CorrelationIdResponseAdvice implements ResponseBodyAdvice<Object> {
       return body;
     }
     response.getHeaders().set(SecurityHeaders.CORRELATION_ID, correlationId);
-    if (response instanceof org.springframework.http.server.ServletServerHttpResponse servletRes) {
+    if (response instanceof ServletServerHttpResponse servletRes) {
       servletRes.getServletResponse().setHeader(SecurityHeaders.CORRELATION_ID, correlationId);
     }
     return new ApiResponse<>(api.success(), api.data(), api.error(), Meta.now(correlationId));

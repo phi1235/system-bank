@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
@@ -123,7 +124,7 @@ public class TransactionReportService {
 
     double successRate = totalCount == 0 ? 0.0 : (double) completedCount / totalCount;
     BigDecimal avgCompletedAmount = completedCount == 0 ? BigDecimal.ZERO
-        : completedAmount.divide(BigDecimal.valueOf(completedCount), 2, java.math.RoundingMode.HALF_UP);
+        : completedAmount.divide(BigDecimal.valueOf(completedCount), 2, RoundingMode.HALF_UP);
 
     List<DailyVolumePoint> daily = dailyAgg.entrySet().stream()
         .map(e -> {

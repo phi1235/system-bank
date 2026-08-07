@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import java.time.Instant;
 import java.util.List;
 
 public final class RbacDtos {
@@ -39,7 +40,7 @@ public final class RbacDtos {
       boolean mustChangePassword,
       String lockedReason,
       boolean openResetTicket,
-      java.time.Instant createdAt
+      Instant createdAt
   ) {}
 
   public record AssignRolesRequest(@NotEmpty List<String> roles) {}

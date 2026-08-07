@@ -8,8 +8,10 @@ import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
+import org.springframework.web.cors.reactive.CorsUtils;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Mono;
@@ -35,8 +37,8 @@ public class GatewaySignatureFilter implements GlobalFilter, Ordered {
 
   @Override
   public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-    if (org.springframework.web.cors.reactive.CorsUtils.isPreFlightRequest(exchange.getRequest())
-        || org.springframework.http.HttpMethod.OPTIONS.equals(exchange.getRequest().getMethod())) {
+    if (CorsUtils.isPreFlightRequest(exchange.getRequest())
+        || HttpMethod.OPTIONS.equals(exchange.getRequest().getMethod())) {
       return chain.filter(exchange);
     }
     ServerHttpRequest current = exchange.getRequest();

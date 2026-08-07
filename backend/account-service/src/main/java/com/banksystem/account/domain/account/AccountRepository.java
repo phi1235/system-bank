@@ -9,6 +9,7 @@ import com.banksystem.account.domain.deposit.*;
 import com.banksystem.account.domain.ledger.*;
 import com.banksystem.account.api.dto.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -92,7 +93,7 @@ public interface AccountRepository extends JpaRepository<AccountEntity, UUID> {
       SET balance = balance - :amount, updated_at = NOW()
       WHERE id = :id AND status = 'ACTIVE' AND balance >= :amount
       """, nativeQuery = true)
-  int debitIfSufficient(@Param("id") UUID id, @Param("amount") java.math.BigDecimal amount);
+  int debitIfSufficient(@Param("id") UUID id, @Param("amount") BigDecimal amount);
 
   @Modifying(clearAutomatically = true, flushAutomatically = true)
   @Query(value = """
@@ -100,5 +101,5 @@ public interface AccountRepository extends JpaRepository<AccountEntity, UUID> {
       SET balance = balance + :amount, updated_at = NOW()
       WHERE id = :id AND status = 'ACTIVE'
       """, nativeQuery = true)
-  int creditIfActive(@Param("id") UUID id, @Param("amount") java.math.BigDecimal amount);
+  int creditIfActive(@Param("id") UUID id, @Param("amount") BigDecimal amount);
 }

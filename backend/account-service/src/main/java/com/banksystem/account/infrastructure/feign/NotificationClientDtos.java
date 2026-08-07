@@ -8,6 +8,7 @@ import com.banksystem.account.domain.card.*;
 import com.banksystem.account.domain.deposit.*;
 import com.banksystem.account.domain.ledger.*;
 import com.banksystem.account.api.dto.*;
+import java.util.UUID;
 
 public final class NotificationClientDtos {
   private NotificationClientDtos() {}
@@ -21,7 +22,7 @@ public final class NotificationClientDtos {
       String template,
       String status,
       String body,
-      java.util.UUID userId,
+      UUID userId,
       String audience,
       String actionType,
       String actionId,
