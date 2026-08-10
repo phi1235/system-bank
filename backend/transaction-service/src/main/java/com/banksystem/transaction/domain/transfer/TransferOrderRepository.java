@@ -13,7 +13,17 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface TransferOrderRepository extends JpaRepository<TransferOrderEntity, UUID> {
+  @Query(
+      value = "SELECT pg_advisory_xact_lock(hashtextextended(CAST(:userId AS text), 0))",
+      nativeQuery = true)
+  Object lockRiskVelocity(@Param("userId") UUID userId);
+
   Optional<TransferOrderEntity> findByIdempotencyKey(String idempotencyKey);
+
+  Optional<TransferOrderEntity> findByProviderReferenceId(String providerReferenceId);
+
+  List<TransferOrderEntity> findTop50ByStatusAndUpdatedAtBeforeOrderByUpdatedAtAsc(
+      TransferStatus status, Instant updatedBefore);
 
   Page<TransferOrderEntity> findByUserIdOrderByCreatedAtDesc(UUID userId, Pageable pageable);
 
@@ -106,4 +116,26 @@ public interface TransferOrderRepository extends JpaRepository<TransferOrderEnti
       @Param("userId") UUID userId,
       @Param("status") TransferStatus status,
       @Param("fromInclusive") Instant fromInclusive);
+
+  @Query("""
+      SELECT COUNT(t) FROM TransferOrderEntity t
+      WHERE t.userId = :userId
+        AND t.createdAt >= :fromInclusive
+        AND t.status NOT IN :excludedStatuses
+      """)
+  long countRiskVelocity(
+      @Param("userId") UUID userId,
+      @Param("fromInclusive") Instant fromInclusive,
+      @Param("excludedStatuses") List<TransferStatus> excludedStatuses);
+
+  @Query("""
+      SELECT COALESCE(SUM(t.amount), 0) FROM TransferOrderEntity t
+      WHERE t.userId = :userId
+        AND t.createdAt >= :fromInclusive
+        AND t.status NOT IN :excludedStatuses
+      """)
+  BigDecimal sumRiskVelocity(
+      @Param("userId") UUID userId,
+      @Param("fromInclusive") Instant fromInclusive,
+      @Param("excludedStatuses") List<TransferStatus> excludedStatuses);
 }

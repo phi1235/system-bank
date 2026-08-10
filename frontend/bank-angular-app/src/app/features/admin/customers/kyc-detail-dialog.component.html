@@ -1,0 +1,70 @@
+<h2 mat-dialog-title>{{ 'ADMIN.KYC_DETAIL_TITLE' | translate }}</h2>
+<mat-dialog-content>
+  <section class="customer-card">
+    <div><span>{{ 'ADMIN.FULL_NAME' | translate }}</span><strong>{{ data.customer.fullName }}</strong></div>
+    <div><span>{{ 'ADMIN.EMAIL' | translate }}</span><strong>{{ data.customer.email || ('COMMON.NOT_AVAILABLE' | translate) }}</strong></div>
+    <div><span>{{ 'ADMIN.PHONE' | translate }}</span><strong>{{ data.customer.phone || ('COMMON.NOT_AVAILABLE' | translate) }}</strong></div>
+    <div><span>{{ 'CUSTOMER.NATIONAL_ID' | translate }}</span><strong>{{ data.customer.nationalIdMasked || ('COMMON.NOT_AVAILABLE' | translate) }}</strong></div>
+    <div class="wide"><span>{{ 'CUSTOMER.ADDRESS' | translate }}</span><strong>{{ data.customer.address || ('COMMON.NOT_AVAILABLE' | translate) }}</strong></div>
+  </section>
+
+  @if (loading) {
+    <div class="state"><mat-icon class="spin">sync</mat-icon>{{ 'COMMON.LOADING' | translate }}</div>
+  } @else if (loadError) {
+    <div class="state error"><mat-icon>error_outline</mat-icon>{{ loadError }}</div>
+  } @else if (kycCase) {
+    <div class="case-head">
+      <div><span>{{ 'ADMIN.KYC_CASE_ID' | translate }}</span><strong class="mono">{{ kycCase.id }}</strong></div>
+      <span class="status" [attr.data-status]="kycCase.status">{{ ('CUSTOMER.KYC_STATUS_' + kycCase.status) | translate }}</span>
+    </div>
+
+    <h3>{{ 'ADMIN.KYC_DOCUMENTS' | translate }}</h3>
+    <div class="documents">
+      @for (document of kycCase.documents; track document.id) {
+        <article class="document">
+          <mat-icon>{{ document.documentType === 'PORTRAIT' ? 'face' : 'badge' }}</mat-icon>
+          <div class="document-main">
+            <strong>{{ ('CUSTOMER.KYC_DOC_' + document.documentType) | translate }}</strong>
+            <span>{{ document.originalName }}</span>
+            <small>{{ document.contentType }} · {{ document.sizeBytes / 1024 | number: '1.0-0' }} {{ 'COMMON.KILOBYTE_SHORT' | translate }} · {{ ('CUSTOMER.KYC_SCAN_' + document.scanStatus) | translate }}</small>
+            <small>{{ document.uploadedAt | date: 'short' }}</small>
+          </div>
+          <button mat-stroked-button type="button" (click)="openDocument(document)" [disabled]="openingId === document.id">
+            <mat-icon>visibility</mat-icon>{{ 'ADMIN.KYC_VIEW_DOCUMENT' | translate }}
+          </button>
+        </article>
+      } @empty {
+        <p class="state error">{{ 'ADMIN.KYC_NO_DOCUMENTS' | translate }}</p>
+      }
+    </div>
+
+    @if ((kycCase.status === 'SUBMITTED' || kycCase.status === 'PENDING_APPROVAL') && data.canApprove) {
+      <section class="decision-box checker">
+        <h3>{{ 'ADMIN.KYC_CHECKER_ACTION_DIRECT' | translate }}</h3>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'ADMIN.KYC_DECISION_REASON' | translate }}</mat-label>
+          <textarea matInput [(ngModel)]="reason" rows="3" maxlength="500"></textarea>
+        </mat-form-field>
+        <div class="decision-actions">
+          <button mat-flat-button color="primary" type="button" (click)="checkerDecision('APPROVE')" [disabled]="saving"><mat-icon>verified</mat-icon>{{ 'ADMIN.VERIFY' | translate }}</button>
+          <button mat-stroked-button color="warn" type="button" (click)="checkerDecision('REJECT')" [disabled]="saving || !reason.trim()"><mat-icon>cancel</mat-icon>{{ 'ADMIN.REJECT' | translate }}</button>
+        </div>
+      </section>
+    }
+
+    <section class="history">
+      <h3>{{ 'CUSTOMER.KYC_HISTORY' | translate }}</h3>
+      @for (item of kycCase.history; track item.id) {
+        <div class="history-item">
+          <mat-icon>history</mat-icon>
+          <div>
+            <strong>{{ ('CUSTOMER.KYC_ACTION_' + item.action) | translate }}</strong>
+            <span>{{ item.fromStatus || ('COMMON.NOT_AVAILABLE' | translate) }} → {{ item.toStatus }} · {{ item.createdAt | date: 'short' }}</span>
+            @if (item.note) { <small>{{ item.note }}</small> }
+          </div>
+        </div>
+      }
+    </section>
+  }
+</mat-dialog-content>
+<mat-dialog-actions align="end"><button mat-button type="button" (click)="close()">{{ 'COMMON.CLOSE' | translate }}</button></mat-dialog-actions>

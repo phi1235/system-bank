@@ -22,7 +22,7 @@ import { resolveHttpErrorMessage } from '../../../core/utils/http-error.util';
 import { HttpErrorResponse } from '@angular/common/http';
 import { selectHasPermission, selectUser } from '../../../store/auth/auth.selectors';
 import { AuthActions } from '../../../store/auth/auth.actions';
-import { CustomerProfile } from '../../../core/models/domain.model';
+import { CustomerProfile, KycCase, KycDocument } from '../../../core/models/domain.model';
 import { AuthSession, MfaSetupResponse } from '../../../core/models/auth.model';
 import { PERMISSIONS } from '../../../core/services/rbac.util';
 
@@ -62,6 +62,23 @@ export class ProfileComponent implements OnInit {
   mfaSetup: MfaSetupResponse | null = null;
   loading = false;
   changingPassword = false;
+  kycCase: KycCase | null = null;
+  kycLoading = false;
+  kycUploadingType: string | null = null;
+  kycSubmitting = false;
+  readonly kycDocumentTypes = [
+    'NATIONAL_ID_FRONT',
+    'NATIONAL_ID_BACK',
+    'PORTRAIT',
+  ] as const;
+
+  get kycEditable(): boolean {
+    return !this.kycCase || this.kycCase.status === 'DRAFT' || this.kycCase.status === 'REJECTED';
+  }
+
+  get kycDocumentsComplete(): boolean {
+    return this.kycDocumentTypes.every((type) => !!this.documentFor(type));
+  }
 
   sessions: AuthSession[] = [];
   sessionsLoading = false;
@@ -104,11 +121,83 @@ export class ProfileComponent implements OnInit {
           email: p.email || '',
         });
         this.loading = false;
+        this.loadKyc();
       },
       error: () => {
         this.needsCreate = true;
         this.loading = false;
       },
+    });
+  }
+
+  loadKyc(): void {
+    if (this.needsCreate) return;
+    this.kycLoading = true;
+    this.bank.getMyKyc().subscribe({
+      next: (kycCase) => {
+        this.kycCase = kycCase;
+        this.kycLoading = false;
+      },
+      error: (err) => {
+        this.kycLoading = false;
+        if (err instanceof HttpErrorResponse && err.status === 404) {
+          this.kycCase = null;
+          return;
+        }
+        this.toast.error(resolveHttpErrorMessage(err, this.i18n));
+      },
+    });
+  }
+
+  documentFor(type: string): KycDocument | undefined {
+    return this.kycCase?.documents.find((document) => document.documentType === type);
+  }
+
+  selectKycFile(type: string, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file || this.kycUploadingType) return;
+
+    this.kycUploadingType = type;
+    this.bank.uploadMyKycDocument(type, file).subscribe({
+      next: (kycCase) => {
+        this.kycCase = kycCase;
+        this.kycUploadingType = null;
+        this.toast.success(this.i18n.instant('CUSTOMER.KYC_UPLOAD_OK'));
+      },
+      error: (err) => {
+        this.kycUploadingType = null;
+        this.toast.error(resolveHttpErrorMessage(err, this.i18n));
+      },
+    });
+  }
+
+  submitKyc(): void {
+    if (!this.kycCase || this.kycCase.status !== 'DRAFT' || this.kycSubmitting) return;
+    this.kycSubmitting = true;
+    this.bank.submitMyKyc().subscribe({
+      next: (kycCase) => {
+        this.kycCase = kycCase;
+        this.kycSubmitting = false;
+        this.toast.success(this.i18n.instant('CUSTOMER.KYC_SUBMIT_OK'));
+        this.load();
+      },
+      error: (err) => {
+        this.kycSubmitting = false;
+        this.toast.error(resolveHttpErrorMessage(err, this.i18n));
+      },
+    });
+  }
+
+  openKycDocument(document: KycDocument): void {
+    this.bank.downloadMyKycDocument(document.id).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank', 'noopener,noreferrer');
+        window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      },
+      error: (err) => this.toast.error(resolveHttpErrorMessage(err, this.i18n)),
     });
   }
 
@@ -143,6 +232,7 @@ export class ProfileComponent implements OnInit {
             this.profile = p;
             this.needsCreate = false;
             this.toast.success(this.i18n.instant('CUSTOMER.PROFILE_CREATE_OK'));
+            this.loadKyc();
           },
         });
     } else {

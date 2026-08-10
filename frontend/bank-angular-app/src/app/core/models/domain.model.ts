@@ -43,6 +43,49 @@ export interface Transfer {
   description: string | null;
   failureReason: string | null;
   createdAt: string;
+  transferType?: 'INTERNAL' | 'INTERBANK' | string;
+  targetBankCode?: string | null;
+  targetAccountName?: string | null;
+}
+
+export interface KycDocument {
+  id: string;
+  documentType: string;
+  originalName: string;
+  contentType: string;
+  sizeBytes: number;
+  sha256: string;
+  scanStatus: string;
+  uploadedAt: string;
+}
+
+export interface KycHistory {
+  id: string;
+  actorId: string;
+  action: string;
+  fromStatus: string | null;
+  toStatus: string;
+  note: string | null;
+  createdAt: string;
+}
+
+export interface KycCase {
+  id: string;
+  customerId: string;
+  status: string;
+  makerId: string | null;
+  makerRecommendation: string | null;
+  makerNote: string | null;
+  makerAt: string | null;
+  checkerId: string | null;
+  decision: string | null;
+  decisionReason: string | null;
+  submittedAt: string | null;
+  decidedAt: string | null;
+  documents: KycDocument[];
+  history: KycHistory[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface SagaStep {

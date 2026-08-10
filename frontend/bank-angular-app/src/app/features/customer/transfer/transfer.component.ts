@@ -100,8 +100,10 @@ export class TransferComponent implements OnInit, OnDestroy {
   canExecute$ = this.store.select(selectHasPermission(PERMISSIONS.IB_TRANSFER_EXECUTE));
 
   banks: BankItem[] = [];
-  selectedBankCode = 'SYSTEM_BANK';
+  selectedBankCode = '';
   activeTab: 'INTERNAL' | 'INTERBANK' = 'INTERNAL';
+  banksLoading = false;
+  banksError: string | null = null;
 
   inquiryLoading = false;
   inquiryResult: AccountInquiryResponse | null = null;
@@ -179,15 +181,21 @@ export class TransferComponent implements OnInit, OnDestroy {
   }
 
   loadBanks(): void {
+    this.banksLoading = true;
+    this.banksError = null;
     this.api.listBanks().subscribe({
       next: (res) => {
         this.banks = res || [];
+        this.banksLoading = false;
+        if (this.activeTab === 'INTERNAL' && !this.selectedBankCode) {
+          this.selectedBankCode = this.banks.find((bank) => bank.isInternal)?.bankCode ?? '';
+          this.performInquiry();
+        }
       },
       error: () => {
-        this.banks = [
-          { bankCode: 'SYSTEM_BANK', shortName: 'SystemBank', fullName: 'Ngân hàng Nội bộ SystemBank', bin: '970499', logoUrl: '', napasSupported: true, isInternal: true },
-          { bankCode: '970415', shortName: 'VietinBank', fullName: 'Ngân hàng TMCP Công thương VN', bin: '970415', logoUrl: '', napasSupported: true, isInternal: false }
-        ];
+        this.banks = [];
+        this.banksLoading = false;
+        this.banksError = this.i18n.instant('TRANSFER.BANK_LOAD_FAIL');
       }
     });
   }
@@ -195,7 +203,7 @@ export class TransferComponent implements OnInit, OnDestroy {
   switchTab(tab: 'INTERNAL' | 'INTERBANK'): void {
     this.activeTab = tab;
     if (tab === 'INTERNAL') {
-      this.selectedBankCode = 'SYSTEM_BANK';
+      this.selectedBankCode = this.banks.find((bank) => bank.isInternal)?.bankCode ?? '';
     } else {
       this.selectedBankCode = '';
     }
@@ -278,6 +286,10 @@ export class TransferComponent implements OnInit, OnDestroy {
     return canRetryTransfer(status);
   }
 
+  isPendingOutcome(status: string | null | undefined): boolean {
+    return status === 'UNKNOWN' || status === 'REVIEW_REQUIRED' || status === 'RISK_REVIEW' || status === 'PENDING';
+  }
+
   async copyLastId(t: Transfer): Promise<void> {
     if (!t?.transactionId) {
       return;
@@ -347,13 +359,15 @@ export class TransferComponent implements OnInit, OnDestroy {
       this.form.markAllAsTouched();
       return;
     }
+    if (this.activeTab === 'INTERBANK' && (!this.selectedBankCode || !this.inquiryResult)) {
+      this.toast.error(this.i18n.instant('TRANSFER.INTERBANK_INQUIRY_REQUIRED'));
+      return;
+    }
     const v = this.form.getRawValue();
     const amount = Number(v.amount);
     const fee = this.quote?.feeAmount ?? 0;
     const total = this.quote?.totalDebit ?? amount;
 
-    const bankObj = this.banks.find((b) => b.bankCode === this.selectedBankCode);
-    const bankName = bankObj ? bankObj.shortName : 'SystemBank';
     const recipientName = this.inquiryResult ? this.inquiryResult.accountName : '';
 
     const otpData: SoftOtpDialogData = {
@@ -457,6 +471,9 @@ export class TransferComponent implements OnInit, OnDestroy {
   }
 
   private applyTransferPrefill(t: Transfer): void {
+    this.activeTab = t.transferType === 'INTERBANK' ? 'INTERBANK' : 'INTERNAL';
+    this.selectedBankCode = t.targetBankCode
+      || (this.activeTab === 'INTERNAL' ? this.banks.find((bank) => bank.isInternal)?.bankCode ?? '' : '');
     const numAmt = Number(t.amount) || 0;
     this.form.patchValue({
       fromAccountId: t.fromAccountId || '',

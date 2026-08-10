@@ -23,6 +23,9 @@ public class OutboxEventEntity {
   @Column(name = "event_type", nullable = false, length = 80)
   private String eventType;
 
+  @Column(name = "dedupe_key", unique = true, length = 180)
+  private String dedupeKey;
+
   @Column(nullable = false, columnDefinition = "TEXT")
   private String payload;
 
@@ -75,6 +78,10 @@ public class OutboxEventEntity {
   public void setEventType(String eventType) {
     this.eventType = eventType;
   }
+
+  public String getDedupeKey() { return dedupeKey; }
+
+  public void setDedupeKey(String dedupeKey) { this.dedupeKey = dedupeKey; }
 
   public String getPayload() {
     return payload;

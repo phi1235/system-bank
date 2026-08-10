@@ -13,7 +13,6 @@ import com.banksystem.common.security.UserContext;
 import com.banksystem.customer.api.dto.CustomerDtos.CreateProfileRequest;
 import com.banksystem.customer.api.dto.CustomerDtos.CustomerResponse;
 import com.banksystem.customer.api.dto.CustomerDtos.CustomerSearchFilterRequest;
-import com.banksystem.customer.api.dto.CustomerDtos.KycUpdateRequest;
 import com.banksystem.customer.api.dto.CustomerDtos.UpdateProfileRequest;
 import jakarta.validation.Valid;
 import java.util.UUID;
@@ -21,7 +20,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -74,10 +72,4 @@ public class CustomerController {
     return ApiResponse.ok(queryService.list(CustomerSearchQuery.of(req)));
   }
 
-  @PatchMapping({"/customers/{id}/kyc", "/admin/customers/{id}/kyc"})
-  @RequirePermission("customers:kyc:decide")
-  public ApiResponse<CustomerResponse> kyc(
-      @PathVariable UUID id, @Valid @RequestBody KycUpdateRequest req) {
-    return ApiResponse.ok(commandService.updateKyc(id, req));
-  }
 }

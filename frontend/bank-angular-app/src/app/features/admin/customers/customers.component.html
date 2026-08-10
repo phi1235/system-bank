@@ -71,58 +71,18 @@
               <ng-container matColumnDef="actions">
                 <th mat-header-cell *matHeaderCellDef class="text-center">{{ 'COMMON.ACTIONS' | translate }}</th>
                 <td mat-cell *matCellDef="let c" class="text-center acts">
-                  @if (canKyc$ | async) {
-                    @if (c.kycStatus === 'VERIFIED') {
-                      <button
-                        mat-stroked-button
-                        type="button"
-                        class="btn-ok"
-                        disabled
-                      >
-                        <mat-icon>check</mat-icon> {{ 'ADMIN.VERIFY' | translate }}
-                      </button>
-                    } @else if (c.kycStatus === 'PENDING') {
-                      <button
-                        mat-stroked-button
-                        type="button"
-                        class="btn-ok"
-                        (click)="setKyc(c, 'VERIFIED')"
-                        [disabled]="loading || busyId === c.id"
-                        [matTooltip]="'ADMIN.KYC_VERIFY_HINT' | translate"
-                      >
-                        {{ 'ADMIN.VERIFY' | translate }}
-                      </button>
-                      <button
-                        mat-stroked-button
-                        type="button"
-                        class="btn-bad"
-                        (click)="setKyc(c, 'REJECTED')"
-                        [disabled]="loading || busyId === c.id"
-                        [matTooltip]="'ADMIN.KYC_REJECT_HINT' | translate"
-                      >
-                        {{ 'ADMIN.REJECT' | translate }}
-                      </button>
-                    } @else if (c.kycStatus === 'REJECTED') {
-                      <button
-                        mat-stroked-button
-                        type="button"
-                        class="btn-ok"
-                        (click)="setKyc(c, 'VERIFIED')"
-                        [disabled]="loading || busyId === c.id"
-                        [matTooltip]="'ADMIN.KYC_VERIFY_HINT' | translate"
-                      >
-                        {{ 'ADMIN.VERIFY' | translate }}
-                      </button>
-                      <button
-                        mat-button
-                        type="button"
-                        (click)="setKyc(c, 'PENDING')"
-                        [disabled]="loading || busyId === c.id"
-                        [matTooltip]="'ADMIN.KYC_PENDING_HINT' | translate"
-                      >
-                        {{ 'ADMIN.PENDING' | translate }}
-                      </button>
-                    }
+                  @if (canKycView$ | async) {
+                    <button
+                      mat-stroked-button
+                      type="button"
+                      class="btn-detail"
+                      (click)="openKycDetail(c)"
+                      [disabled]="loading"
+                      [matTooltip]="'ADMIN.KYC_DETAIL_HINT' | translate"
+                    >
+                      <mat-icon>folder_shared</mat-icon>
+                      {{ 'ADMIN.KYC_VIEW_CASE' | translate }}
+                    </button>
                   } @else {
                     <span class="no-perm">{{ 'ADMIN.NO_PERM_KYC' | translate }}</span>
                   }

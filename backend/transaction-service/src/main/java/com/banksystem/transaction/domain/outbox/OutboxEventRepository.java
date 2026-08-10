@@ -3,14 +3,37 @@ package com.banksystem.transaction.domain.outbox;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface OutboxEventRepository extends JpaRepository<OutboxEventEntity, UUID> {
+
+  Optional<OutboxEventEntity> findByDedupeKey(String dedupeKey);
+
+  /** Atomic idempotent insert; avoids check-then-insert races between concurrent saga callbacks. */
+  @Modifying
+  @Query(value = """
+      INSERT INTO outbox_events (
+        id, aggregate_type, aggregate_id, event_type, dedupe_key, payload,
+        created_at, status, attempt_count, next_attempt_at)
+      VALUES (
+        :id, 'TRANSFER', :aggregateId, :eventType, :dedupeKey, :payload,
+        :createdAt, 'PENDING', 0, :createdAt)
+      ON CONFLICT DO NOTHING
+      """, nativeQuery = true)
+  int insertIfAbsent(
+      @Param("id") UUID id,
+      @Param("aggregateId") UUID aggregateId,
+      @Param("eventType") String eventType,
+      @Param("dedupeKey") String dedupeKey,
+      @Param("payload") String payload,
+      @Param("createdAt") Instant createdAt);
 
   /**
    * Claim a batch of ready outbox rows for this poller instance.

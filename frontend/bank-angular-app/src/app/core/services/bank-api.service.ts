@@ -24,6 +24,7 @@ import {
   DepositProduct,
   DepositQuote,
   LedgerEntry,
+  KycCase,
   NotificationItem,
   OutboxCounts,
   OutboxEvent,
@@ -126,6 +127,25 @@ export class BankApiService {
     address?: string;
   }): Observable<CustomerProfile> {
     return this.api.put('/customers/me', body);
+  }
+
+  getMyKyc(): Observable<KycCase> {
+    return this.api.get('/customers/me/kyc');
+  }
+
+  uploadMyKycDocument(documentType: string, file: File): Observable<KycCase> {
+    const body = new FormData();
+    body.append('documentType', documentType);
+    body.append('file', file, file.name);
+    return this.api.post('/customers/me/kyc/documents', body);
+  }
+
+  submitMyKyc(): Observable<KycCase> {
+    return this.api.post('/customers/me/kyc/submit', {});
+  }
+
+  downloadMyKycDocument(id: string): Observable<Blob> {
+    return this.api.getBlob(`/customers/me/kyc/documents/${encodeURIComponent(id)}/content`);
   }
 
   // Accounts
@@ -460,8 +480,19 @@ export class BankApiService {
     return this.api.post('/admin/customers/findCustomerByCondition', { page, size, q, kycStatus });
   }
 
-  updateKyc(id: string, kycStatus: string): Observable<CustomerProfile> {
-    return this.api.patch(`/admin/customers/${id}/kyc`, { kycStatus });
+  getAdminKyc(customerId: string): Observable<KycCase> {
+    return this.api.get(`/admin/kyc/customers/${encodeURIComponent(customerId)}`);
+  }
+
+  decideAdminKyc(caseId: string, decision: 'APPROVE' | 'REJECT', reason?: string): Observable<KycCase> {
+    return this.api.post(`/admin/kyc/cases/${encodeURIComponent(caseId)}/decision`, {
+      decision,
+      reason: reason || undefined,
+    });
+  }
+
+  downloadAdminKycDocument(id: string): Observable<Blob> {
+    return this.api.getBlob(`/admin/kyc/documents/${encodeURIComponent(id)}/content`);
   }
 
   adminTransfers(

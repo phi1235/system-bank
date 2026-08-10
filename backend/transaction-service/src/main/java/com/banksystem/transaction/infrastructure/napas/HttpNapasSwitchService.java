@@ -11,6 +11,8 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,10 +34,13 @@ public class HttpNapasSwitchService implements NapasSwitchClient {
   private final String apiKey;
   private final ObjectMapper objectMapper;
   private final HttpClient httpClient;
+  private final Duration requestTimeout;
 
   public HttpNapasSwitchService(
       @Value("${bank.napas.base-url}") String baseUrl,
-      @Value("${bank.napas.api-key:}") String apiKey,
+      @Value("${bank.napas.api-key}") String apiKey,
+      @Value("${bank.napas.connect-timeout-ms}") long connectTimeoutMs,
+      @Value("${bank.napas.request-timeout-ms}") long requestTimeoutMs,
       ObjectMapper objectMapper) {
     if (baseUrl == null || baseUrl.isBlank()) {
       throw new IllegalStateException("bank.napas.base-url (NAPAS_BASE_URL) must be set when provider=http");
@@ -43,10 +48,15 @@ public class HttpNapasSwitchService implements NapasSwitchClient {
     this.baseUrl = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
     this.apiKey = apiKey == null ? "" : apiKey;
     this.objectMapper = objectMapper;
-    this.httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
+    this.requestTimeout = Duration.ofMillis(Math.max(500, requestTimeoutMs));
+    this.httpClient = HttpClient.newBuilder()
+        .connectTimeout(Duration.ofMillis(Math.max(100, connectTimeoutMs)))
+        .build();
   }
 
   @Override
+  @Retry(name = "NAPAS_READ")
+  @CircuitBreaker(name = "NAPAS")
   public NapasInquiryResponse inquireAccount(String bankCode, String accountNumber) {
     Map<String, Object> payload = new LinkedHashMap<>();
     payload.put("bankCode", bankCode);
@@ -64,33 +74,68 @@ public class HttpNapasSwitchService implements NapasSwitchClient {
   }
 
   @Override
+  @CircuitBreaker(name = "NAPAS")
   public NapasPaymentResponse executePayment(
       String sourceAccountNumber,
       String targetBankCode,
       String targetAccountNumber,
       BigDecimal amount,
-      String description) {
+      String description,
+      String clientRequestId) {
     Map<String, Object> payload = new LinkedHashMap<>();
     payload.put("sourceAccountNumber", sourceAccountNumber);
     payload.put("targetBankCode", targetBankCode);
     payload.put("targetAccountNumber", targetAccountNumber);
     payload.put("amount", amount);
     payload.put("description", description);
+    payload.put("clientRequestId", clientRequestId);
     JsonNode root = postJson("/v1/payment", payload);
-    boolean success = root.path("success").asBoolean("00".equals(text(root, "responseCode")));
+    return paymentResponse(root);
+  }
+
+  @Override
+  @Retry(name = "NAPAS_READ")
+  @CircuitBreaker(name = "NAPAS")
+  public NapasPaymentResponse inquirePayment(String clientRequestId, String napasRefId) {
+    Map<String, Object> payload = new LinkedHashMap<>();
+    payload.put("clientRequestId", clientRequestId);
+    payload.put("napasRefId", napasRefId);
+    return paymentResponse(postJson("/v1/payment/status", payload));
+  }
+
+  private NapasPaymentResponse paymentResponse(JsonNode root) {
+    String rawStatus = text(root, "status");
+    String code = text(root, "responseCode");
+    boolean success = root.path("success").asBoolean("00".equals(code));
     String ref = text(root, "napasRefId");
     if (ref == null) {
       ref = text(root, "referenceId");
     }
-    String code = text(root, "responseCode");
     if (code == null) {
-      code = success ? "00" : "99";
+      code = success ? "00" : "UNKNOWN";
     }
     String msg = text(root, "responseMessage");
     if (msg == null) {
       msg = success ? "SUCCESS" : "FAILED";
     }
-    return new NapasPaymentResponse(ref, success, code, msg);
+    ProviderOutcome outcome = mapOutcome(rawStatus, code, success);
+    return new NapasPaymentResponse(ref, outcome, code, msg);
+  }
+
+  private static ProviderOutcome mapOutcome(String status, String code, boolean success) {
+    if (success || "00".equals(code) || "SUCCESS".equalsIgnoreCase(status)
+        || "COMPLETED".equalsIgnoreCase(status)) {
+      return ProviderOutcome.SUCCESS;
+    }
+    if ("PENDING".equalsIgnoreCase(status) || "PROCESSING".equalsIgnoreCase(status)
+        || "ACCEPTED".equalsIgnoreCase(status)) {
+      return ProviderOutcome.PENDING;
+    }
+    if ("FAILED".equalsIgnoreCase(status) || "REJECTED".equalsIgnoreCase(status)
+        || (code != null && !code.isBlank() && !"UNKNOWN".equalsIgnoreCase(code))) {
+      return ProviderOutcome.FAILED;
+    }
+    return ProviderOutcome.UNKNOWN;
   }
 
   private JsonNode postJson(String path, Map<String, Object> payload) {
@@ -99,7 +144,7 @@ public class HttpNapasSwitchService implements NapasSwitchClient {
       HttpRequest.Builder b =
           HttpRequest.newBuilder()
               .uri(URI.create(baseUrl + path))
-              .timeout(Duration.ofSeconds(30))
+              .timeout(requestTimeout)
               .header("Content-Type", "application/json")
               .header("Accept", "application/json")
               .POST(HttpRequest.BodyPublishers.ofString(json));

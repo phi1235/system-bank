@@ -32,4 +32,21 @@ public class RequirePermissionAspect {
     }
     return pjp.proceed();
   }
+
+  @Around(
+      "@within(com.banksystem.common.security.RequireAnyPermission) || "
+          + "@annotation(com.banksystem.common.security.RequireAnyPermission)")
+  public Object enforceAny(ProceedingJoinPoint pjp) throws Throwable {
+    MethodSignature signature = (MethodSignature) pjp.getSignature();
+    Method method = signature.getMethod();
+    RequireAnyPermission methodAnn =
+        AnnotationUtils.findAnnotation(method, RequireAnyPermission.class);
+    RequireAnyPermission classAnn =
+        AnnotationUtils.findAnnotation(method.getDeclaringClass(), RequireAnyPermission.class);
+    RequireAnyPermission required = methodAnn != null ? methodAnn : classAnn;
+    if (required != null) {
+      UserContext.requireAnyPermission(required.value());
+    }
+    return pjp.proceed();
+  }
 }

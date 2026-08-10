@@ -42,6 +42,10 @@ spring:
           uri: lb://TRANSACTION-SERVICE
           predicates:
             - Path=/api/v1/transactions/**,/api/v1/banks,/api/v1/bills/**
+        - id: napas-callback
+          uri: lb://TRANSACTION-SERVICE
+          predicates:
+            - Path=/api/v1/callbacks/napas/**
         # SSE first (more specific) so /** does not swallow the stream path.
         # response-timeout: 0 aborts JSON bodies as empty 200 — use a long positive ms for SSE only.
         - id: notification-service-stream
@@ -84,6 +88,10 @@ spring:
           uri: lb://CUSTOMER-SERVICE
           predicates:
             - Path=/api/v1/admin/customers,/api/v1/admin/customers/**
+        - id: admin-routes-kyc
+          uri: lb://CUSTOMER-SERVICE
+          predicates:
+            - Path=/api/v1/admin/kyc/**
         - id: admin-routes-support-tickets
           uri: lb://CUSTOMER-SERVICE
           predicates:

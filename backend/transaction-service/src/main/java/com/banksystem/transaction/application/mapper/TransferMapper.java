@@ -25,9 +25,9 @@ public class TransferMapper {
         e.getDescription(),
         e.getFailureReason(),
         e.getCreatedAt(),
-        "INTERNAL",
-        "SYSTEM_BANK",
-        null
+        e.getTransferType(),
+        e.getTargetBankCode(),
+        e.getTargetAccountName()
     );
   }
 

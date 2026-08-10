@@ -3,6 +3,10 @@ package com.banksystem.transaction.application.transfer.impl;
 import com.banksystem.transaction.application.transfer.TransferService;
 import com.banksystem.transaction.application.transfer.TransferQueryService;
 import com.banksystem.transaction.application.transfer.TransferFeeGlService;
+import com.banksystem.transaction.application.transfer.AccountInquiryService;
+import com.banksystem.transaction.application.transfer.AccountInquiryService.InquiryRequest;
+import com.banksystem.transaction.application.risk.RiskEngine;
+import com.banksystem.transaction.application.risk.RiskEngine.RiskResult;
 import com.banksystem.transaction.application.transfer.policy.TransferLimitPolicy;
 import com.banksystem.transaction.application.transfer.policy.TransferFeePolicy;
 
@@ -44,6 +48,8 @@ public class TransferServiceImpl implements TransferService {
   private final TransferFeePolicy transferFeePolicy;
   private final TransferQueryService queryService;
   private final TransferMapper mapper;
+  private final AccountInquiryService inquiryService;
+  private final RiskEngine riskEngine;
 
   public TransferServiceImpl(
       TransferOrderRepository transferOrderRepository,
@@ -53,7 +59,9 @@ public class TransferServiceImpl implements TransferService {
       TransferLimitPolicy transferLimitPolicy,
       TransferFeePolicy transferFeePolicy,
       TransferQueryService queryService,
-      TransferMapper mapper) {
+      TransferMapper mapper,
+      AccountInquiryService inquiryService,
+      RiskEngine riskEngine) {
     this.transferOrderRepository = transferOrderRepository;
     this.auditLogRepository = auditLogRepository;
     this.accountGateway = accountGateway;
@@ -62,6 +70,8 @@ public class TransferServiceImpl implements TransferService {
     this.transferFeePolicy = transferFeePolicy;
     this.queryService = queryService;
     this.mapper = mapper;
+    this.inquiryService = inquiryService;
+    this.riskEngine = riskEngine;
   }
 
   public TransferResponse transfer(GatewayUser user, String idempotencyKey, TransferRequest req, String ip) {
@@ -93,12 +103,24 @@ public class TransferServiceImpl implements TransferService {
       throw new BusinessException("ACCOUNT_FROZEN", "Source account is not active");
     }
 
-    AccountView to = loadByNumber(req.toAccountNumber());
-    if (from.idUuid().equals(to.idUuid())) {
-      throw new BusinessException("SAME_ACCOUNT", "Cannot transfer to the same account");
-    }
-    if (!"ACTIVE".equals(to.status())) {
-      throw new BusinessException("ACCOUNT_FROZEN", "Destination account is not active");
+    boolean interbank = "INTERBANK".equalsIgnoreCase(req.transferType());
+    AccountView to = null;
+    String targetBankCode = interbank ? normalizeBankCode(req.targetBankCode()) : "SYSTEM_BANK";
+    String targetAccountName = req.targetAccountName();
+    if (interbank) {
+      var inquiry = inquiryService.inquire(new InquiryRequest(targetBankCode, req.toAccountNumber()));
+      if (inquiry.isInternal()) {
+        throw new BusinessException("INVALID_TRANSFER_TYPE", "Use INTERNAL transfer for System Bank accounts");
+      }
+      targetAccountName = inquiry.accountName();
+    } else {
+      to = loadByNumber(req.toAccountNumber());
+      if (from.idUuid().equals(to.idUuid())) {
+        throw new BusinessException("SAME_ACCOUNT", "Cannot transfer to the same account");
+      }
+      if (!"ACTIVE".equals(to.status())) {
+        throw new BusinessException("ACCOUNT_FROZEN", "Destination account is not active");
+      }
     }
 
     TransferOrderEntity order = new TransferOrderEntity();
@@ -106,8 +128,11 @@ public class TransferServiceImpl implements TransferService {
     order.setIdempotencyKey(idempotencyKey);
     order.setUserId(user.userId());
     order.setFromAccountId(from.idUuid());
-    order.setToAccountId(to.idUuid());
-    order.setToAccountNumber(to.accountNumber());
+    order.setToAccountId(to == null ? null : to.idUuid());
+    order.setToAccountNumber(req.toAccountNumber().trim());
+    order.setTransferType(interbank ? "INTERBANK" : "INTERNAL");
+    order.setTargetBankCode(targetBankCode);
+    order.setTargetAccountName(targetAccountName);
     order.setAmount(req.amount());
     order.setFeeAmount(feeAmount);
     order.setCurrency(req.currency() == null || req.currency().isBlank() ? "VND" : req.currency());
@@ -116,11 +141,29 @@ public class TransferServiceImpl implements TransferService {
     order.setStatus(TransferStatus.PENDING);
     order.setCreatedAt(Instant.now());
     order.setUpdatedAt(Instant.now());
-    transferOrderRepository.save(order);
+    order = transferOrderRepository.saveAndFlush(order);
 
     auditLogRepository.save(AuditLogEntity.of(
         user.userId(), "TRANSFER_CREATE", "TRANSFER", order.getId().toString(), ip,
         "amount=" + req.amount() + ",fee=" + feeAmount.toPlainString() + ",to=" + req.toAccountNumber()));
+
+    RiskResult risk = riskEngine.assess(order);
+    order = transferOrderRepository.findById(order.getId())
+        .orElseThrow(() -> new BusinessException("TRANSFER_NOT_FOUND", "Transfer not found"));
+    if ("BLOCK".equals(risk.decision())) {
+      order.setStatus(TransferStatus.FAILED);
+      order.setFailureReason("RISK_BLOCKED: " + risk.reason());
+      order.setUpdatedAt(Instant.now());
+      order = transferOrderRepository.saveAndFlush(order);
+      return mapper.toResponse(order);
+    }
+    if ("REVIEW".equals(risk.decision())) {
+      order.setStatus(TransferStatus.RISK_REVIEW);
+      order.setFailureReason("RISK_REVIEW_REQUIRED: " + risk.reason());
+      order.setUpdatedAt(Instant.now());
+      order = transferOrderRepository.saveAndFlush(order);
+      return mapper.toResponse(order);
+    }
 
     TransferOrderEntity result = sagaOrchestrator.run(order);
     return mapper.toResponse(result);
@@ -167,6 +210,19 @@ public class TransferServiceImpl implements TransferService {
   }
 
   private String fingerprint(TransferRequest req) {
-    return req.fromAccountId() + "|" + req.toAccountNumber() + "|" + req.amount().toPlainString();
+    return req.fromAccountId() + "|" + req.toAccountNumber().trim() + "|"
+        + req.amount().toPlainString() + "|" + String.valueOf(req.transferType()) + "|"
+        + String.valueOf(req.targetBankCode());
+  }
+
+  private String normalizeBankCode(String bankCode) {
+    if (bankCode == null || bankCode.isBlank()) {
+      throw new BusinessException("TARGET_BANK_REQUIRED", "targetBankCode is required for interbank transfer");
+    }
+    String code = bankCode.trim().toUpperCase();
+    if ("SYSTEM_BANK".equals(code) || "970499".equals(code)) {
+      throw new BusinessException("INVALID_TARGET_BANK", "External bank must be selected");
+    }
+    return code;
   }
 }

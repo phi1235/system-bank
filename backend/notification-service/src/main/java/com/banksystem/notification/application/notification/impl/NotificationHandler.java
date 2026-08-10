@@ -173,7 +173,7 @@ public class NotificationHandler {
       String finalStatus,
       String failureReason) {
     String cur = currency == null || currency.isBlank() ? "VND" : currency;
-    String amt = amount == null || amount.isBlank() ? "" : amount;
+    String amt = NotificationMoneyFormatter.format(amount);
     if (success) {
       String head =
           amt.isEmpty()
