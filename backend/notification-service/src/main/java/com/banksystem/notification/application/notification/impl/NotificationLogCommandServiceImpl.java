@@ -1,20 +1,16 @@
 package com.banksystem.notification.application.notification.impl;
-import com.banksystem.notification.application.notification.*;
+import com.banksystem.notification.application.notification.NotificationInboxService;
+import com.banksystem.notification.application.notification.NotificationLogCommandService;
 import com.banksystem.notification.application.notification.NotificationLogCommandService.CreateNotificationLogCommand;
-import com.banksystem.notification.domain.notification.*;
-import com.banksystem.notification.domain.event.*;
-import com.banksystem.notification.api.dto.*;
-
 import com.banksystem.common.api.PageResponse;
-import com.banksystem.common.exception.BusinessException;
-import com.banksystem.common.security.SecretVerifier;
 import com.banksystem.notification.api.dto.NotificationDtos.NotificationItem;
 import com.banksystem.notification.api.notification.NotificationSandboxController.NotificationSandboxItem;
+import com.banksystem.notification.domain.notification.NotificationLogEntity;
+import com.banksystem.notification.domain.notification.NotificationLogRepository;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -27,21 +23,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class NotificationLogCommandServiceImpl implements NotificationLogCommandService {
   private final NotificationLogRepository repository;
   private final NotificationRealtimeHub realtimeHub;
-  private final String apiKey;
 
   public NotificationLogCommandServiceImpl(
       NotificationLogRepository repository,
-      NotificationRealtimeHub realtimeHub,
-      @Value("${bank.internal.api-key}") String apiKey) {
+      NotificationRealtimeHub realtimeHub) {
     this.repository = repository;
     this.realtimeHub = realtimeHub;
-    this.apiKey = apiKey;
-  }
-
-  public void verifyInternalKey(String key) {
-    if (!SecretVerifier.matches(key, apiKey)) {
-      throw new BusinessException("FORBIDDEN", "Invalid internal API key");
-    }
   }
 
   @Transactional(readOnly = true)

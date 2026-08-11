@@ -43,6 +43,16 @@ public final class TransferDtos {
       String riskReason
   ) {}
 
+  public record InternalTransactionCountsResponse(
+      long transfers,
+      long transfersFailed,
+      long transfersCompensated,
+      long audits,
+      long outboxDead,
+      long outboxPending,
+      long outboxPublished
+  ) {}
+
   /**
    * Pre-transfer quote for customer UX: fee preview + remaining daily limit.
    * Does not create an order; read-only.
@@ -99,6 +109,15 @@ public final class TransferDtos {
       String ip,
       String metadata,
       Instant createdAt
+  ) {}
+
+  public record CreateAuditLogRequest(
+      UUID actorUserId,
+      @NotBlank String action,
+      String resourceType,
+      String resourceId,
+      String ip,
+      String metadata
   ) {}
 
   public record AdminTransferFilterRequest(

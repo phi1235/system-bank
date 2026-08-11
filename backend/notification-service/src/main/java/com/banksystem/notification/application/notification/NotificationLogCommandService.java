@@ -21,7 +21,6 @@ public interface NotificationLogCommandService {
       String actionPath
   ) {}
 
-  void verifyInternalKey(String key);
   List<Map<String, Object>> listLogs(UUID eventId);
   PageResponse<NotificationSandboxItem> searchSandbox(
       String q, String channel, Integer page, Integer size
