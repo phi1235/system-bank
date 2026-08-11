@@ -1,5 +1,6 @@
 package com.banksystem.common.security;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -9,44 +10,47 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplicat
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.stereotype.Component;
 
-/**
- * AOP gate for {@link RequirePermission}. Method annotation wins over class-level.
- */
+/** Declarative authorization for user-facing controller methods and classes. */
 @Aspect
 @Component
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 public class RequirePermissionAspect {
 
-  @Around(
-      "@within(com.banksystem.common.security.RequirePermission) || "
-          + "@annotation(com.banksystem.common.security.RequirePermission)")
-  public Object enforce(ProceedingJoinPoint pjp) throws Throwable {
-    MethodSignature signature = (MethodSignature) pjp.getSignature();
-    Method method = signature.getMethod();
-    RequirePermission methodAnn = AnnotationUtils.findAnnotation(method, RequirePermission.class);
-    RequirePermission classAnn =
-        AnnotationUtils.findAnnotation(method.getDeclaringClass(), RequirePermission.class);
-    RequirePermission required = methodAnn != null ? methodAnn : classAnn;
-    if (required != null) {
-      UserContext.requirePermission(required.value());
-    }
-    return pjp.proceed();
+  @Around("@annotation(required)")
+  public Object enforceMethod(
+      ProceedingJoinPoint joinPoint, RequirePermission required) throws Throwable {
+    UserContext.requirePermission(required.value());
+    return joinPoint.proceed();
   }
 
-  @Around(
-      "@within(com.banksystem.common.security.RequireAnyPermission) || "
-          + "@annotation(com.banksystem.common.security.RequireAnyPermission)")
-  public Object enforceAny(ProceedingJoinPoint pjp) throws Throwable {
-    MethodSignature signature = (MethodSignature) pjp.getSignature();
-    Method method = signature.getMethod();
-    RequireAnyPermission methodAnn =
-        AnnotationUtils.findAnnotation(method, RequireAnyPermission.class);
-    RequireAnyPermission classAnn =
-        AnnotationUtils.findAnnotation(method.getDeclaringClass(), RequireAnyPermission.class);
-    RequireAnyPermission required = methodAnn != null ? methodAnn : classAnn;
-    if (required != null) {
+  @Around("@within(required)")
+  public Object enforceClass(
+      ProceedingJoinPoint joinPoint, RequirePermission required) throws Throwable {
+    if (!hasMethodAnnotation(joinPoint, RequirePermission.class)) {
+      UserContext.requirePermission(required.value());
+    }
+    return joinPoint.proceed();
+  }
+
+  @Around("@annotation(required)")
+  public Object enforceAnyMethod(
+      ProceedingJoinPoint joinPoint, RequireAnyPermission required) throws Throwable {
+    UserContext.requireAnyPermission(required.value());
+    return joinPoint.proceed();
+  }
+
+  @Around("@within(required)")
+  public Object enforceAnyClass(
+      ProceedingJoinPoint joinPoint, RequireAnyPermission required) throws Throwable {
+    if (!hasMethodAnnotation(joinPoint, RequireAnyPermission.class)) {
       UserContext.requireAnyPermission(required.value());
     }
-    return pjp.proceed();
+    return joinPoint.proceed();
+  }
+
+  private static boolean hasMethodAnnotation(
+      ProceedingJoinPoint joinPoint, Class<? extends Annotation> type) {
+    Method method = ((MethodSignature) joinPoint.getSignature()).getMethod();
+    return AnnotationUtils.findAnnotation(method, type) != null;
   }
 }

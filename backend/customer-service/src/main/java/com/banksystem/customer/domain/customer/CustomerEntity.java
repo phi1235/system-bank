@@ -1,10 +1,4 @@
 package com.banksystem.customer.domain.customer;
-import com.banksystem.customer.application.customer.*;
-import com.banksystem.customer.application.support.*;
-import com.banksystem.customer.application.dashboard.*;
-import com.banksystem.customer.domain.customer.*;
-import com.banksystem.customer.domain.support.*;
-import com.banksystem.customer.api.dto.*;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -33,7 +27,7 @@ public class CustomerEntity {
   private String nationalIdEncrypted;
 
   @Column(name = "kyc_status", nullable = false, length = 20)
-  private String kycStatus = "PENDING";
+  private String kycStatus = "NOT_STARTED";
 
   @Column(length = 500)
   private String address;

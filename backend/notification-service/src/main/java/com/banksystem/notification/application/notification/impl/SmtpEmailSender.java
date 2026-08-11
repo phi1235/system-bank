@@ -11,6 +11,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Component;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 
 /**
  * Real SMTP provider. Activated when {@code bank.email.provider=smtp}.
@@ -33,6 +35,8 @@ public class SmtpEmailSender implements EmailSender {
   }
 
   @Override
+  @Retry(name = "SMTP")
+  @CircuitBreaker(name = "SMTP")
   public void send(String to, String subject, String body) {
     SimpleMailMessage message = new SimpleMailMessage();
     message.setFrom(from);

@@ -3,11 +3,17 @@ package com.banksystem.transaction.api.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import java.math.BigDecimal;
 import java.time.Instant;
 
 public final class RiskDtos {
   private RiskDtos() {}
+
+  public record RiskListRequest(
+      @Min(0) Integer page,
+      @Min(1) @Max(100) Integer size) {}
 
   public record RiskRuleRequest(
       @NotBlank String code,

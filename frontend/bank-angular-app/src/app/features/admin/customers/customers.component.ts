@@ -25,7 +25,7 @@ import { EnumLabelPipe } from '../../../shared/pipes/enum-label.pipe';
 import { selectHasAnyPermission, selectHasPermission } from '../../../store/auth/auth.selectors';
 import { KycDetailDialogComponent } from './kyc-detail-dialog.component';
 
-type KycStatus = 'PENDING' | 'VERIFIED' | 'REJECTED';
+type KycStatus = 'NOT_STARTED' | 'PENDING' | 'VERIFIED' | 'REJECTED';
 
 @Component({
   selector: 'app-admin-customers',
@@ -72,11 +72,14 @@ export class AdminCustomersComponent implements OnInit {
   ]));
   canKycApprove$ = this.store.select(selectHasPermission(PERMISSIONS.CUSTOMERS_KYC_APPROVE));
 
-  readonly kycOptions: Array<'' | KycStatus> = ['', 'PENDING', 'VERIFIED', 'REJECTED'];
+  readonly kycOptions: Array<'' | KycStatus> = [
+    '', 'NOT_STARTED', 'PENDING', 'VERIFIED', 'REJECTED',
+  ];
 
   ngOnInit(): void {
     const kyc = (this.route.snapshot.queryParamMap.get('kycStatus') || '').toUpperCase();
-    if (kyc === 'PENDING' || kyc === 'VERIFIED' || kyc === 'REJECTED') {
+    if (kyc === 'NOT_STARTED' || kyc === 'PENDING'
+        || kyc === 'VERIFIED' || kyc === 'REJECTED') {
       this.kycStatus = kyc;
     }
     this.load();

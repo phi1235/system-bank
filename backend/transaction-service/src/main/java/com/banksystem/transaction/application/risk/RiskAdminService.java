@@ -1,6 +1,7 @@
 package com.banksystem.transaction.application.risk;
 
 import com.banksystem.common.exception.BusinessException;
+import com.banksystem.common.api.PageResponse;
 import com.banksystem.transaction.api.dto.RiskDtos.BlacklistRequest;
 import com.banksystem.transaction.api.dto.RiskDtos.BlacklistResponse;
 import com.banksystem.transaction.api.dto.RiskDtos.RiskRuleRequest;
@@ -21,6 +22,8 @@ import java.util.Set;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 
 @Service
 public class RiskAdminService {
@@ -50,8 +53,11 @@ public class RiskAdminService {
   }
 
   @Transactional(readOnly = true)
-  public List<RiskRuleResponse> rules() {
-    return ruleRepository.findAll().stream().map(this::ruleResponse).toList();
+  public PageResponse<RiskRuleResponse> rules(RiskListQuery query) {
+    Page<RiskRuleEntity> page = ruleRepository.findAllByOrderByPriorityAsc(
+        PageRequest.of(query.page(), query.size()));
+    return new PageResponse<>(page.getContent().stream().map(this::ruleResponse).toList(),
+        page.getNumber(), page.getSize(), page.getTotalElements(), page.getTotalPages());
   }
 
   @Transactional
@@ -84,9 +90,11 @@ public class RiskAdminService {
   }
 
   @Transactional(readOnly = true)
-  public List<BlacklistResponse> blacklist() {
-    return blacklistRepository.findAllByOrderByCreatedAtDesc().stream()
-        .map(this::blacklistResponse).toList();
+  public PageResponse<BlacklistResponse> blacklist(RiskListQuery query) {
+    Page<RiskBlacklistEntity> page = blacklistRepository.findAllByOrderByCreatedAtDesc(
+        PageRequest.of(query.page(), query.size()));
+    return new PageResponse<>(page.getContent().stream().map(this::blacklistResponse).toList(),
+        page.getNumber(), page.getSize(), page.getTotalElements(), page.getTotalPages());
   }
 
   @Transactional

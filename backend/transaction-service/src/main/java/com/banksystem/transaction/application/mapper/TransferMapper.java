@@ -27,7 +27,10 @@ public class TransferMapper {
         e.getCreatedAt(),
         e.getTransferType(),
         e.getTargetBankCode(),
-        e.getTargetAccountName()
+        e.getTargetAccountName(),
+        e.getRiskDecision(),
+        e.getRiskScore(),
+        e.getRiskReason()
     );
   }
 

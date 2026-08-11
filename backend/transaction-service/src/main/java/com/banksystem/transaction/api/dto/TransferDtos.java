@@ -37,7 +37,10 @@ public final class TransferDtos {
       Instant createdAt,
       String transferType,
       String targetBankCode,
-      String targetAccountName
+      String targetAccountName,
+      String riskDecision,
+      Integer riskScore,
+      String riskReason
   ) {}
 
   /**

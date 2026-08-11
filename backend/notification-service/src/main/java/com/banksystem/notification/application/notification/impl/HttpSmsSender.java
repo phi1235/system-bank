@@ -17,6 +17,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 
 /**
  * HTTP SMS gateway adapter. Point {@code SMS_BASE_URL} at a real provider or sandbox proxy.
@@ -50,6 +52,8 @@ public class HttpSmsSender implements SmsSender {
   }
 
   @Override
+  @Retry(name = "SMS")
+  @CircuitBreaker(name = "SMS")
   public void send(String to, String body) {
     try {
       Map<String, Object> payload = new LinkedHashMap<>();

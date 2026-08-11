@@ -1,21 +1,24 @@
 package com.banksystem.transaction.api.risk;
 
 import com.banksystem.common.api.ApiResponse;
+import com.banksystem.common.api.PageResponse;
 import com.banksystem.common.security.RequirePermission;
 import com.banksystem.common.security.UserContext;
 import com.banksystem.transaction.api.dto.RiskDtos.BlacklistRequest;
 import com.banksystem.transaction.api.dto.RiskDtos.BlacklistResponse;
 import com.banksystem.transaction.api.dto.RiskDtos.RiskDecisionRequest;
+import com.banksystem.transaction.api.dto.RiskDtos.RiskListRequest;
 import com.banksystem.transaction.api.dto.RiskDtos.RiskRuleRequest;
 import com.banksystem.transaction.api.dto.RiskDtos.RiskRuleResponse;
 import com.banksystem.transaction.api.dto.TransferDtos.TransferResponse;
 import com.banksystem.transaction.application.mapper.TransferMapper;
 import com.banksystem.transaction.application.risk.RiskAdminService;
+import com.banksystem.transaction.application.risk.RiskListQuery;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import java.util.List;
 import java.util.UUID;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -37,8 +40,9 @@ public class AdminRiskController {
 
   @GetMapping("/rules")
   @RequirePermission("risk:view")
-  public ApiResponse<List<RiskRuleResponse>> rules() {
-    return ApiResponse.ok(service.rules());
+  public ApiResponse<PageResponse<RiskRuleResponse>> rules(
+      @Valid @ModelAttribute RiskListRequest request) {
+    return ApiResponse.ok(service.rules(RiskListQuery.of(request.page(), request.size())));
   }
 
   @PostMapping("/rules")
@@ -56,8 +60,9 @@ public class AdminRiskController {
 
   @GetMapping("/blacklist")
   @RequirePermission("risk:view")
-  public ApiResponse<List<BlacklistResponse>> blacklist() {
-    return ApiResponse.ok(service.blacklist());
+  public ApiResponse<PageResponse<BlacklistResponse>> blacklist(
+      @Valid @ModelAttribute RiskListRequest request) {
+    return ApiResponse.ok(service.blacklist(RiskListQuery.of(request.page(), request.size())));
   }
 
   @PostMapping("/blacklist")

@@ -46,6 +46,37 @@ export interface Transfer {
   transferType?: 'INTERNAL' | 'INTERBANK' | string;
   targetBankCode?: string | null;
   targetAccountName?: string | null;
+  riskDecision?: string | null;
+  riskScore?: number | null;
+  riskReason?: string | null;
+}
+
+export interface RiskRule {
+  id: string;
+  code: string;
+  ruleType: 'AMOUNT' | 'VELOCITY_COUNT' | 'VELOCITY_TOTAL' | string;
+  action: 'ALLOW' | 'ALERT' | 'REVIEW' | 'BLOCK' | string;
+  enabled: boolean;
+  priority: number;
+  thresholdAmount: number | null;
+  windowSeconds: number | null;
+  maxCount: number | null;
+  maxTotalAmount: number | null;
+  description: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RiskBlacklistEntry {
+  id: string;
+  subjectType: 'USER' | 'ACCOUNT' | 'BANK' | string;
+  subjectValue: string;
+  reason: string;
+  active: boolean;
+  expiresAt: string | null;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface KycDocument {

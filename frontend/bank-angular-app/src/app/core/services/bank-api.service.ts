@@ -30,6 +30,8 @@ import {
   OutboxEvent,
   ReconRun,
   ReconRunDetail,
+  RiskBlacklistEntry,
+  RiskRule,
   SupportTicket,
   TermDeposit,
   TopUpResponse,
@@ -482,6 +484,42 @@ export class BankApiService {
 
   getAdminKyc(customerId: string): Observable<KycCase> {
     return this.api.get(`/admin/kyc/customers/${encodeURIComponent(customerId)}`);
+  }
+
+  riskRules(page = 0, size = 20): Observable<PageResponse<RiskRule>> {
+    return this.api.get('/admin/risk/rules', { page, size });
+  }
+
+  createRiskRule(body: Omit<RiskRule, 'id' | 'createdAt' | 'updatedAt'>): Observable<RiskRule> {
+    return this.api.post('/admin/risk/rules', body);
+  }
+
+  updateRiskRule(
+    id: string,
+    body: Omit<RiskRule, 'id' | 'createdAt' | 'updatedAt'>,
+  ): Observable<RiskRule> {
+    return this.api.put(`/admin/risk/rules/${encodeURIComponent(id)}`, body);
+  }
+
+  riskBlacklist(page = 0, size = 20): Observable<PageResponse<RiskBlacklistEntry>> {
+    return this.api.get('/admin/risk/blacklist', { page, size });
+  }
+
+  addRiskBlacklist(body: {
+    subjectType: string;
+    subjectValue: string;
+    reason: string;
+    expiresAt?: string | null;
+  }): Observable<RiskBlacklistEntry> {
+    return this.api.post('/admin/risk/blacklist', body);
+  }
+
+  deactivateRiskBlacklist(id: string): Observable<RiskBlacklistEntry> {
+    return this.api.post(`/admin/risk/blacklist/${encodeURIComponent(id)}/deactivate`, {});
+  }
+
+  decideRiskTransfer(id: string, decision: 'approve' | 'reject', note: string): Observable<Transfer> {
+    return this.api.post(`/admin/risk/transfers/${encodeURIComponent(id)}/${decision}`, { note });
   }
 
   decideAdminKyc(caseId: string, decision: 'APPROVE' | 'REJECT', reason?: string): Observable<KycCase> {

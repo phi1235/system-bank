@@ -1,18 +1,17 @@
 package com.banksystem.customer.application.customer.impl;
-import com.banksystem.customer.application.customer.*;
-import com.banksystem.customer.application.support.*;
-import com.banksystem.customer.application.dashboard.*;
-import com.banksystem.customer.domain.customer.*;
-import com.banksystem.customer.domain.support.*;
-import com.banksystem.customer.api.dto.*;
 
 import com.banksystem.common.api.PageResponse;
 import com.banksystem.common.exception.BusinessException;
 import com.banksystem.customer.api.dto.CustomerDtos.CustomerNameResponse;
 import com.banksystem.customer.api.dto.CustomerDtos.CustomerResponse;
 import com.banksystem.customer.api.dto.CustomerDtos.CustomerSearchFilterRequest;
+import com.banksystem.customer.application.customer.CustomerContactResult;
+import com.banksystem.customer.application.customer.CustomerQueryService;
+import com.banksystem.customer.application.customer.CustomerSearchQuery;
 import com.banksystem.customer.application.mapper.CustomerMapper;
 import com.banksystem.customer.application.security.CustomerCryptoService;
+import com.banksystem.customer.domain.customer.CustomerEntity;
+import com.banksystem.customer.domain.customer.CustomerRepository;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
@@ -77,6 +76,14 @@ public class CustomerQueryServiceImpl implements CustomerQueryService {
   @Transactional(readOnly = true)
   public boolean exists(UUID id) {
     return repository.existsById(id);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public CustomerContactResult contact(UUID id) {
+    CustomerEntity customer = require(id);
+    return new CustomerContactResult(
+        customer.getId().toString(), customer.getEmail(), customer.getPhone());
   }
 
   public CustomerEntity require(UUID id) {

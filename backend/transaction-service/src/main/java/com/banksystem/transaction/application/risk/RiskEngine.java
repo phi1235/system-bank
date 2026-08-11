@@ -46,6 +46,7 @@ public class RiskEngine {
 
   @Transactional
   public RiskResult assess(TransferOrderEntity order) {
+    transferRepository.lockRiskVelocity(order.getUserId());
     List<String> matched = new ArrayList<>();
     String decision = "ALLOW";
     int score = 0;

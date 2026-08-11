@@ -14,6 +14,8 @@ public final class CustomerDtos {
 
   public record CustomerNameResponse(String userId, String fullName) {}
 
+  public record CustomerContactResponse(String userId, String email, String phone) {}
+
   public record CreateProfileRequest(
       @NotBlank String fullName,
       String phone,
