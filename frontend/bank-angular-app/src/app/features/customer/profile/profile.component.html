@@ -51,6 +51,95 @@
     </form>
   </mat-card>
 
+  <mat-card class="kyc-card">
+    <div class="kyc-head">
+      <div>
+        <h3>{{ 'CUSTOMER.KYC_TITLE' | translate }}</h3>
+        <p class="hint">{{ 'CUSTOMER.KYC_HINT' | translate }}</p>
+      </div>
+      <span class="kyc-status" [attr.data-status]="kycCase?.status || 'NOT_STARTED'">
+        {{ ('CUSTOMER.KYC_STATUS_' + (kycCase?.status || 'NOT_STARTED')) | translate }}
+      </span>
+    </div>
+
+    @if (kycLoading) {
+      <p class="hint">{{ 'COMMON.LOADING' | translate }}</p>
+    } @else {
+      <div class="kyc-documents">
+        @for (type of kycDocumentTypes; track type) {
+          <div class="kyc-document" [class.complete]="documentFor(type)">
+            <div class="kyc-document-main">
+              <mat-icon>{{ type === 'PORTRAIT' ? 'face' : 'badge' }}</mat-icon>
+              <div>
+                <strong>{{ ('CUSTOMER.KYC_DOC_' + type) | translate }}</strong>
+                @if (documentFor(type); as document) {
+                  <button class="document-link" type="button" (click)="openKycDocument(document)">
+                    {{ document.originalName }} · {{ document.scanStatus }}
+                  </button>
+                } @else {
+                  <span>{{ 'CUSTOMER.KYC_DOC_MISSING' | translate }}</span>
+                }
+              </div>
+            </div>
+
+            @if ((canEdit$ | async) && kycEditable) {
+              <label class="upload-button" [class.disabled]="!!kycUploadingType">
+                <mat-icon>{{ kycUploadingType === type ? 'sync' : 'upload_file' }}</mat-icon>
+                {{ (documentFor(type) ? 'CUSTOMER.KYC_REPLACE' : 'CUSTOMER.KYC_UPLOAD') | translate }}
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,application/pdf"
+                  [disabled]="!!kycUploadingType"
+                  (change)="selectKycFile(type, $event)"
+                />
+              </label>
+            }
+          </div>
+        }
+      </div>
+
+      @if (kycCase?.decisionReason) {
+        <div class="kyc-decision">
+          <strong>{{ 'CUSTOMER.KYC_DECISION_REASON' | translate }}</strong>
+          <span>{{ kycCase?.decisionReason }}</span>
+        </div>
+      }
+
+      @if ((canEdit$ | async) && kycCase?.status === 'DRAFT') {
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          [disabled]="!kycDocumentsComplete || kycSubmitting || !!kycUploadingType"
+          (click)="submitKyc()"
+        >
+          <mat-icon>verified_user</mat-icon>
+          {{ (kycSubmitting ? 'CUSTOMER.KYC_SUBMITTING' : 'CUSTOMER.KYC_SUBMIT') | translate }}
+        </button>
+      }
+
+      @if (kycCase?.history?.length) {
+        <div class="kyc-history">
+          <h4>{{ 'CUSTOMER.KYC_HISTORY' | translate }}</h4>
+          @for (item of kycCase!.history; track item.id) {
+            <div class="kyc-history-item">
+              <mat-icon>history</mat-icon>
+              <div>
+                <strong>{{ ('CUSTOMER.KYC_ACTION_' + item.action) | translate }}</strong>
+                <span>
+                  {{ item.createdAt | date: 'short' }}
+                  @if (item.note) {
+                    · {{ item.note }}
+                  }
+                </span>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    }
+  </mat-card>
+
   <mat-card>
     <h3>{{ 'CUSTOMER.SECURITY_MFA' | translate }}</h3>
     @if (user$ | async; as u) {

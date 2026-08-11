@@ -137,7 +137,8 @@ public class OutboxPoller {
   }
 
   private String resolveTopic(String eventType) {
-    if (eventType != null && eventType.contains("FAILED")) {
+    if (eventType != null && (eventType.contains("FAILED")
+        || eventType.contains("REVIEW") || eventType.contains("UNKNOWN"))) {
       return topicFailed;
     }
     return topicCompleted;

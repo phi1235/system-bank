@@ -26,6 +26,7 @@ public class NotificationHandler {
   private final SmsSender smsSender;
   private final ObjectMapper objectMapper;
   private final NotificationRealtimeHub realtimeHub;
+  private final CustomerContactResolver contactResolver;
 
   public NotificationHandler(
       ProcessedEventRepository processedEventRepository,
@@ -33,13 +34,15 @@ public class NotificationHandler {
       EmailSender emailSender,
       SmsSender smsSender,
       ObjectMapper objectMapper,
-      NotificationRealtimeHub realtimeHub) {
+      NotificationRealtimeHub realtimeHub,
+      CustomerContactResolver contactResolver) {
     this.processedEventRepository = processedEventRepository;
     this.notificationLogRepository = notificationLogRepository;
     this.emailSender = emailSender;
     this.smsSender = smsSender;
     this.objectMapper = objectMapper;
     this.realtimeHub = realtimeHub;
+    this.contactResolver = contactResolver;
   }
 
   @Transactional
@@ -78,8 +81,15 @@ public class NotificationHandler {
       String failureReason = text(root, "failureReason");
 
       String recipient = text(root, "recipientEmail");
-      if (recipient == null || recipient.isBlank()) {
-        recipient = "user-" + (userIdStr == null ? "unknown" : userIdStr) + "@bank.local";
+      String recipientPhone = text(root, "recipientPhone");
+      if (ownerUserId != null && (isBlank(recipient) || isBlank(recipientPhone))) {
+        CustomerContactResolver.CustomerContact contact = contactResolver.find(ownerUserId);
+        if (isBlank(recipient)) {
+          recipient = contact.email();
+        }
+        if (isBlank(recipientPhone)) {
+          recipientPhone = contact.phone();
+        }
       }
 
       boolean success = eventType != null && eventType.contains("COMPLETED");
@@ -88,14 +98,19 @@ public class NotificationHandler {
       String body =
           buildBody(success, transactionId, amount, currency, description, finalStatus, failureReason);
 
-      emailSender.send(recipient, subject, body);
-      smsSender.send("+840****0000", subject);
+      boolean emailSent = !isBlank(recipient);
+      if (emailSent) {
+        emailSender.send(recipient, subject, body);
+      }
+      if (!isBlank(recipientPhone)) {
+        smsSender.send(recipientPhone, subject);
+      }
 
       NotificationLogEntity logEntity = new NotificationLogEntity();
       logEntity.setId(UUID.randomUUID());
       logEntity.setEventId(eventId);
-      logEntity.setChannel("EMAIL");
-      logEntity.setRecipient(recipient);
+      logEntity.setChannel(emailSent ? "EMAIL" : "IN_APP");
+      logEntity.setRecipient(emailSent ? recipient : "user:" + ownerUserId);
       logEntity.setTemplate(template);
       logEntity.setStatus("SENT");
       logEntity.setBody(body);
@@ -173,7 +188,7 @@ public class NotificationHandler {
       String finalStatus,
       String failureReason) {
     String cur = currency == null || currency.isBlank() ? "VND" : currency;
-    String amt = amount == null || amount.isBlank() ? "" : amount;
+    String amt = NotificationMoneyFormatter.format(amount);
     if (success) {
       String head =
           amt.isEmpty()
@@ -219,6 +234,10 @@ public class NotificationHandler {
       return null;
     }
     return v.asText();
+  }
+
+  private static boolean isBlank(String value) {
+    return value == null || value.isBlank();
   }
 
   private static UUID parseUuidOrNull(String raw) {

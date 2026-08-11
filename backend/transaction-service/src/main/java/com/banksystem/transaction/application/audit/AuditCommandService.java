@@ -1,12 +1,9 @@
 package com.banksystem.transaction.application.audit;
 
-import com.banksystem.common.exception.BusinessException;
-import com.banksystem.common.security.SecretVerifier;
 import com.banksystem.transaction.api.dto.TransferDtos.AuditResponse;
 import com.banksystem.transaction.domain.audit.AuditLogEntity;
 import com.banksystem.transaction.domain.audit.AuditLogRepository;
 import java.util.UUID;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,21 +22,16 @@ public class AuditCommandService {
       String metadata) {}
 
   private final AuditLogRepository repository;
-  private final String apiKey;
 
-  public AuditCommandService(
-      AuditLogRepository repository,
-      @Value("${bank.internal.api-key}") String apiKey) {
+  public AuditCommandService(AuditLogRepository repository) {
     this.repository = repository;
-    this.apiKey = apiKey;
   }
 
   /**
-   * Validates internal key and persists audit record in transactional boundary.
+   * Persists an audit record in a transactional boundary.
    */
   @Transactional
-  public AuditResponse recordInternalAudit(String key, CreateAuditLogCommand command) {
-    verifyInternalKey(key);
+  public AuditResponse recordInternalAudit(CreateAuditLogCommand command) {
     AuditLogEntity entity = AuditLogEntity.of(
         command.actorUserId(),
         command.action(),
@@ -49,12 +41,6 @@ public class AuditCommandService {
         command.metadata());
     AuditLogEntity saved = repository.save(entity);
     return mapToResponse(saved);
-  }
-
-  private void verifyInternalKey(String key) {
-    if (!SecretVerifier.matches(key, apiKey)) {
-      throw new BusinessException("FORBIDDEN", "Invalid internal API key");
-    }
   }
 
   private AuditResponse mapToResponse(AuditLogEntity e) {

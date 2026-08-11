@@ -1,10 +1,9 @@
 package com.banksystem.transaction.infrastructure.outbox;
 
-import com.banksystem.transaction.domain.outbox.OutboxEventEntity;
 import com.banksystem.transaction.domain.outbox.OutboxEventRepository;
-import com.banksystem.transaction.domain.outbox.OutboxStatus;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Map;
@@ -27,21 +26,15 @@ public class OutboxService {
 
   @Transactional
   public void enqueue(String eventType, UUID aggregateId, Map<String, Object> payload) {
+    String dedupeKey = "TRANSFER:" + aggregateId + ":" + eventType;
     Instant now = clock.instant();
-    OutboxEventEntity e = new OutboxEventEntity();
-    e.setId(UUID.randomUUID());
-    e.setAggregateType("TRANSFER");
-    e.setAggregateId(aggregateId);
-    e.setEventType(eventType);
-    e.setCreatedAt(now);
-    e.setStatus(OutboxStatus.PENDING.name());
-    e.setAttemptCount(0);
-    e.setNextAttemptAt(now);
+    String serialized;
     try {
-      e.setPayload(objectMapper.writeValueAsString(payload));
+      serialized = objectMapper.writeValueAsString(payload);
     } catch (JsonProcessingException ex) {
       throw new IllegalStateException("Cannot serialize outbox payload", ex);
     }
-    repository.save(e);
+    UUID eventId = UUID.nameUUIDFromBytes(dedupeKey.getBytes(StandardCharsets.UTF_8));
+    repository.insertIfAbsent(eventId, aggregateId, eventType, dedupeKey, serialized, now);
   }
 }

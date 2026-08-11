@@ -33,8 +33,15 @@ public class MockNapasSwitchService implements NapasSwitchClient {
       String targetBankCode,
       String targetAccountNumber,
       BigDecimal amount,
-      String description) {
-    String napasRefId = "NAPAS247-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-    return new NapasPaymentResponse(napasRefId, true, "00", "SUCCESS");
+      String description,
+      String clientRequestId) {
+    String seed = clientRequestId == null ? UUID.randomUUID().toString() : clientRequestId;
+    String napasRefId = "NAPAS247-" + UUID.nameUUIDFromBytes(seed.getBytes()).toString().substring(0, 8).toUpperCase();
+    return new NapasPaymentResponse(napasRefId, ProviderOutcome.SUCCESS, "00", "SUCCESS");
+  }
+
+  @Override
+  public NapasPaymentResponse inquirePayment(String clientRequestId, String napasRefId) {
+    return new NapasPaymentResponse(napasRefId, ProviderOutcome.SUCCESS, "00", "SUCCESS");
   }
 }

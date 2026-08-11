@@ -19,6 +19,8 @@ public final class SecurityHeaders {
   public static final String PERM_DASHBOARD_VIEW = "dashboard:view";
   public static final String PERM_CUSTOMERS_LIST_VIEW = "customers:list:view";
   public static final String PERM_CUSTOMERS_KYC_DECIDE = "customers:kyc:decide";
+  public static final String PERM_CUSTOMERS_KYC_REVIEW = "customers:kyc:review";
+  public static final String PERM_CUSTOMERS_KYC_APPROVE = "customers:kyc:approve";
   public static final String PERM_ACCOUNTS_LOOKUP_VIEW = "accounts:lookup:view";
   public static final String PERM_ACCOUNTS_FREEZE_EXECUTE = "accounts:freeze:execute";
   public static final String PERM_ACCOUNTS_TOPUP_EXECUTE = "accounts:topup:execute";
@@ -28,6 +30,8 @@ public final class SecurityHeaders {
   public static final String PERM_RBAC_USERS_ASSIGN = "rbac:users:assign";
   public static final String PERM_RBAC_ROLES_MANAGE = "rbac:roles:manage";
   public static final String PERM_RISK_VIEW = "risk:view";
+  public static final String PERM_RISK_MANAGE = "risk:manage";
+  public static final String PERM_RISK_DECIDE = "risk:decide";
   public static final String PERM_NOTIFICATIONS_OPS_VIEW = "notifications:ops:view";
 
   /* ── Internet Banking (customer portal) ── */

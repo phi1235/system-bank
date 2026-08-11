@@ -120,7 +120,7 @@ public class NotificationInboxServiceImpl implements NotificationInboxService {
         e.getChannel(),
         e.getTemplate(),
         e.getStatus(),
-        e.getBody() == null ? "" : e.getBody(),
+        NotificationMoneyFormatter.normalizeBody(e.getBody()),
         e.getReadAt() != null,
         e.getReadAt(),
         e.getCreatedAt(),

@@ -43,6 +43,80 @@ export interface Transfer {
   description: string | null;
   failureReason: string | null;
   createdAt: string;
+  transferType?: 'INTERNAL' | 'INTERBANK' | string;
+  targetBankCode?: string | null;
+  targetAccountName?: string | null;
+  riskDecision?: string | null;
+  riskScore?: number | null;
+  riskReason?: string | null;
+}
+
+export interface RiskRule {
+  id: string;
+  code: string;
+  ruleType: 'AMOUNT' | 'VELOCITY_COUNT' | 'VELOCITY_TOTAL' | string;
+  action: 'ALLOW' | 'ALERT' | 'REVIEW' | 'BLOCK' | string;
+  enabled: boolean;
+  priority: number;
+  thresholdAmount: number | null;
+  windowSeconds: number | null;
+  maxCount: number | null;
+  maxTotalAmount: number | null;
+  description: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RiskBlacklistEntry {
+  id: string;
+  subjectType: 'USER' | 'ACCOUNT' | 'BANK' | string;
+  subjectValue: string;
+  reason: string;
+  active: boolean;
+  expiresAt: string | null;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface KycDocument {
+  id: string;
+  documentType: string;
+  originalName: string;
+  contentType: string;
+  sizeBytes: number;
+  sha256: string;
+  scanStatus: string;
+  uploadedAt: string;
+}
+
+export interface KycHistory {
+  id: string;
+  actorId: string;
+  action: string;
+  fromStatus: string | null;
+  toStatus: string;
+  note: string | null;
+  createdAt: string;
+}
+
+export interface KycCase {
+  id: string;
+  customerId: string;
+  status: string;
+  makerId: string | null;
+  makerRecommendation: string | null;
+  makerNote: string | null;
+  makerAt: string | null;
+  checkerId: string | null;
+  decision: string | null;
+  decisionReason: string | null;
+  submittedAt: string | null;
+  decidedAt: string | null;
+  documents: KycDocument[];
+  history: KycHistory[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface SagaStep {

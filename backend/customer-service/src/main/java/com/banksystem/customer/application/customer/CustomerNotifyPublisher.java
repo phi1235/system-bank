@@ -28,8 +28,11 @@ public class CustomerNotifyPublisher {
   public static final String TEMPLATE_SUPPORT_NEED_INFO = "SUPPORT_TICKET_NEED_INFO";
   public static final String TEMPLATE_SUPPORT_STAFF_REPLY = "SUPPORT_TICKET_STAFF_REPLY";
   public static final String TEMPLATE_SUPPORT_MENTION = "SUPPORT_TICKET_MENTION";
+  public static final String TEMPLATE_KYC_APPROVED = "KYC_APPROVED";
+  public static final String TEMPLATE_KYC_REJECTED = "KYC_REJECTED";
 
   public static final String ACTION_SUPPORT_TICKET = "SUPPORT_TICKET";
+  public static final String ACTION_KYC = "KYC";
 
   private final NotificationClient notificationClient;
   private final String apiKey;
@@ -83,6 +86,29 @@ public class CustomerNotifyPublisher {
             + "\"."
             + (msg.isEmpty() ? "" : " Nội dung: " + msg);
     publishToCustomer(ticket, TEMPLATE_SUPPORT_STAFF_REPLY, body);
+  }
+
+  public void kycDecision(
+      CustomerEntity customer, UUID caseId, boolean approved, String decisionReason) {
+    if (customer == null || customer.getId() == null) {
+      return;
+    }
+    String reason = preview(decisionReason);
+    String body = approved
+        ? "Hồ sơ xác minh danh tính (KYC) của bạn đã được phê duyệt."
+        : "Hồ sơ xác minh danh tính (KYC) của bạn cần bổ sung hoặc đã bị từ chối."
+            + (reason.isEmpty() ? " Vui lòng kiểm tra lại hồ sơ." : " Lý do: " + reason);
+    String recipient = customer.getEmail() != null && !customer.getEmail().isBlank()
+        ? customer.getEmail().trim()
+        : "user-" + customer.getId() + "@bank.local";
+    publishQuietly(
+        customer.getId(),
+        recipient,
+        approved ? TEMPLATE_KYC_APPROVED : TEMPLATE_KYC_REJECTED,
+        body,
+        ACTION_KYC,
+        caseId == null ? customer.getId().toString() : caseId.toString(),
+        "/customer/profile");
   }
 
   /** Notify a mentioned user (any resolved customer user id). */

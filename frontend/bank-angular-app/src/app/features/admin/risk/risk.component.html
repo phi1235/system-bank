@@ -1,0 +1,156 @@
+<app-page-header [title]="'ADMIN.RISK_TITLE' | translate" [subtitle]="'ADMIN.RISK_SUB' | translate" />
+
+<mat-tab-group animationDuration="150ms">
+  <mat-tab [label]="'ADMIN.RISK_RULES' | translate">
+    <section class="panel">
+      @if (canManage$ | async) {
+      <form class="editor" (ngSubmit)="saveRule()">
+        <mat-form-field appearance="outline"><mat-label>{{ 'ADMIN.RISK_CODE' | translate }}</mat-label><input matInput
+            [(ngModel)]="rule.code" name="code" required /></mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>{{ 'ADMIN.RISK_RULE_TYPE' | translate }}</mat-label><mat-select
+            [(ngModel)]="rule.ruleType" name="ruleType">@for (type of ruleTypes; track type) { <mat-option
+              [value]="type">{{ ('ADMIN.RISK_TYPE_' + type) | translate }}</mat-option> }</mat-select></mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>{{ 'ADMIN.RISK_ACTION' | translate }}</mat-label><mat-select
+            [(ngModel)]="rule.action" name="action">@for (action of actions; track action) { <mat-option
+              [value]="action">{{ ('ADMIN.RISK_ACTION_' + action) | translate }}</mat-option>
+            }</mat-select></mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>{{ 'ADMIN.RISK_PRIORITY' | translate }}</mat-label><input
+            matInput type="number" [(ngModel)]="rule.priority" name="priority" required /></mat-form-field>
+        @if (rule.ruleType === 'AMOUNT') { <mat-form-field appearance="outline"><mat-label>{{ 'ADMIN.RISK_THRESHOLD' |
+            translate }}</mat-label><input matInput type="number" min="0" [(ngModel)]="rule.thresholdAmount"
+            name="thresholdAmount" /></mat-form-field> }
+        @if (rule.ruleType.startsWith('VELOCITY')) { <mat-form-field appearance="outline"><mat-label>{{
+            'ADMIN.RISK_WINDOW_SECONDS' | translate }}</mat-label><input matInput type="number" min="1"
+            [(ngModel)]="rule.windowSeconds" name="windowSeconds" /></mat-form-field> }
+        @if (rule.ruleType === 'VELOCITY_COUNT') { <mat-form-field appearance="outline"><mat-label>{{
+            'ADMIN.RISK_MAX_COUNT' | translate }}</mat-label><input matInput type="number" min="1"
+            [(ngModel)]="rule.maxCount" name="maxCount" /></mat-form-field> }
+        @if (rule.ruleType === 'VELOCITY_TOTAL') { <mat-form-field appearance="outline"><mat-label>{{
+            'ADMIN.RISK_MAX_TOTAL' | translate }}</mat-label><input matInput type="number" min="0"
+            [(ngModel)]="rule.maxTotalAmount" name="maxTotalAmount" /></mat-form-field> }
+        <mat-form-field appearance="outline" class="wide"><mat-label>{{ 'ADMIN.RISK_DESCRIPTION' | translate
+            }}</mat-label><input matInput [(ngModel)]="rule.description" name="description"
+            maxlength="255" /></mat-form-field>
+        <mat-checkbox [(ngModel)]="rule.enabled" name="enabled">{{ 'ADMIN.RISK_ENABLED' | translate }}</mat-checkbox>
+        <div class="actions"><button mat-flat-button color="primary" type="submit"
+            [disabled]="saving || !rule.code.trim()"><mat-icon>save</mat-icon>{{ 'COMMON.SAVE' | translate
+            }}</button>@if (editingRuleId) { <button mat-button type="button" (click)="cancelRule()">{{ 'COMMON.CANCEL'
+            | translate }}</button> }</div>
+      </form>
+      }
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>{{ 'ADMIN.RISK_CODE' | translate }}</th>
+              <th>{{ 'ADMIN.RISK_RULE_TYPE' | translate }}</th>
+              <th>{{ 'ADMIN.RISK_ACTION' | translate }}</th>
+              <th>{{ 'ADMIN.RISK_VALUE' | translate }}</th>
+              <th>{{ 'COMMON.STATUS' | translate }}</th>
+              <th>{{ 'COMMON.ACTIONS' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of rules; track item.id) { <tr>
+              <td><strong>{{ item.code }}</strong><small>{{ item.description }}</small></td>
+              <td>{{ ('ADMIN.RISK_TYPE_' + item.ruleType) | translate }}</td>
+              <td><span class="badge" [attr.data-action]="item.action">{{ ('ADMIN.RISK_ACTION_' + item.action) |
+                  translate }}</span></td>
+              <td>{{ item.thresholdAmount ?? item.maxCount ?? item.maxTotalAmount ?? ('COMMON.NOT_AVAILABLE' |
+                translate) }}</td>
+              <td>{{ (item.enabled ? 'ADMIN.RISK_ACTIVE' : 'ADMIN.RISK_INACTIVE') | translate }}</td>
+              <td>@if (canManage$ | async) { <button mat-icon-button type="button" (click)="editRule(item)"
+                  [attr.aria-label]="'COMMON.EDIT' | translate"><mat-icon>edit</mat-icon></button> }</td>
+            </tr> }
+          </tbody>
+        </table>
+      </div>
+      <div class="pager"><button mat-button (click)="changeRulePage(-1)" [disabled]="rulePage === 0">{{
+          'COMMON.PREVIOUS' | translate }}</button><span>{{ rulePage + 1 }} / {{ ruleTotalPages || 1 }}</span><button
+          mat-button (click)="changeRulePage(1)" [disabled]="rulePage + 1 >= ruleTotalPages">{{ 'COMMON.NEXT' |
+          translate }}</button></div>
+    </section>
+  </mat-tab>
+
+  <mat-tab [label]="'ADMIN.RISK_BLACKLIST' | translate">
+    <section class="panel">
+      @if (canManage$ | async) {
+      <form class="editor blacklist-editor" (ngSubmit)="addBlacklist()">
+        <mat-form-field appearance="outline"><mat-label>{{ 'ADMIN.RISK_SUBJECT_TYPE' | translate
+            }}</mat-label><mat-select [(ngModel)]="blacklistDraft.subjectType" name="subjectType">@for (type of
+            subjectTypes; track type) { <mat-option [value]="type">{{ ('ADMIN.RISK_SUBJECT_' + type) | translate
+              }}</mat-option> }</mat-select></mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>{{ 'ADMIN.RISK_SUBJECT_VALUE' | translate }}</mat-label><input
+            matInput [(ngModel)]="blacklistDraft.subjectValue" name="subjectValue" required /></mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>{{ 'COMMON.REASON' | translate }}</mat-label><input matInput
+            [(ngModel)]="blacklistDraft.reason" name="reason" required maxlength="500" /></mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>{{ 'ADMIN.RISK_EXPIRES_AT' | translate }}</mat-label><input
+            matInput type="datetime-local" [(ngModel)]="blacklistDraft.expiresAt" name="expiresAt" /></mat-form-field>
+        <button mat-flat-button color="warn" type="submit"
+          [disabled]="saving || !blacklistDraft.subjectValue.trim() || !blacklistDraft.reason.trim()"><mat-icon>block</mat-icon>{{
+          'ADMIN.RISK_ADD_BLACKLIST' | translate }}</button>
+      </form>
+      }
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>{{ 'ADMIN.RISK_SUBJECT_TYPE' | translate }}</th>
+              <th>{{ 'ADMIN.RISK_SUBJECT_VALUE' | translate }}</th>
+              <th>{{ 'COMMON.REASON' | translate }}</th>
+              <th>{{ 'ADMIN.RISK_EXPIRES_AT' | translate }}</th>
+              <th>{{ 'COMMON.STATUS' | translate }}</th>
+              <th>{{ 'COMMON.ACTIONS' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of blacklist; track item.id) { <tr>
+              <td>{{ ('ADMIN.RISK_SUBJECT_' + item.subjectType) | translate }}</td>
+              <td class="mono">{{ item.subjectValue }}</td>
+              <td>{{ item.reason }}</td>
+              <td>{{ item.expiresAt ? (item.expiresAt | date:'short') : ('ADMIN.RISK_NEVER' | translate) }}</td>
+              <td>{{ (item.active ? 'ADMIN.RISK_ACTIVE' : 'ADMIN.RISK_INACTIVE') | translate }}</td>
+              <td>@if (item.active && (canManage$ | async)) { <button mat-stroked-button color="warn"
+                  (click)="deactivate(item)" [disabled]="saving">{{ 'ADMIN.RISK_DEACTIVATE' | translate }}</button> }
+              </td>
+            </tr> }
+          </tbody>
+        </table>
+      </div>
+      <div class="pager"><button mat-button (click)="changeBlacklistPage(-1)" [disabled]="blacklistPage === 0">{{
+          'COMMON.PREVIOUS' | translate }}</button><span>{{ blacklistPage + 1 }} / {{ blacklistTotalPages || 1
+          }}</span><button mat-button (click)="changeBlacklistPage(1)"
+          [disabled]="blacklistPage + 1 >= blacklistTotalPages">{{ 'COMMON.NEXT' | translate }}</button></div>
+    </section>
+  </mat-tab>
+
+  <mat-tab [label]="'ADMIN.RISK_REVIEW_QUEUE' | translate">
+    <section class="panel">
+      <div class="queue">
+        @for (item of transfers; track item.transactionId) {
+        <article class="transfer-card">
+          <div class="transfer-head"><strong>{{ item.amount | number:'1.0-2' }} {{ item.currency }}</strong><span
+              class="score">{{ 'ADMIN.RISK_SCORE' | translate }}: {{ item.riskScore ?? 0 }}</span></div>
+          <div class="transfer-grid"><span>{{ 'ADMIN.TRANSFER_ID' | translate }}<b class="mono">{{ item.transactionId
+                }}</b></span><span>{{ 'ADMIN.RISK_RECIPIENT' | translate }}<b>{{ item.toAccountNumber
+                }}</b></span><span>{{ 'ADMIN.RISK_DECISION' | translate }}<b>{{ item.riskDecision }}</b></span><span>{{
+              'COMMON.REASON' | translate }}<b>{{ item.riskReason || ('COMMON.NOT_AVAILABLE' | translate) }}</b></span>
+          </div>
+          @if (canDecide$ | async) { <div class="decision"><mat-form-field appearance="outline"><mat-label>{{
+                'ADMIN.RISK_DECISION_NOTE' | translate }}</mat-label><input matInput
+                [(ngModel)]="decisionNotes[item.transactionId]" /></mat-form-field><button mat-flat-button
+              color="primary" (click)="decide(item, 'approve')" [disabled]="saving"><mat-icon>check</mat-icon>{{
+              'ADMIN.APPROVE' | translate }}</button><button mat-stroked-button color="warn"
+              (click)="decide(item, 'reject')" [disabled]="saving"><mat-icon>close</mat-icon>{{ 'ADMIN.REJECT' |
+              translate }}</button></div> }
+        </article>
+        } @empty { <div class="empty"><mat-icon>verified_user</mat-icon>{{ 'ADMIN.RISK_QUEUE_EMPTY' | translate }}</div>
+        }
+      </div>
+      <div class="pager"><button mat-button (click)="changeTransferPage(-1)" [disabled]="transferPage === 0">{{
+          'COMMON.PREVIOUS' | translate }}</button><span>{{ transferPage + 1 }} / {{ transferTotalPages || 1
+          }}</span><button mat-button (click)="changeTransferPage(1)"
+          [disabled]="transferPage + 1 >= transferTotalPages">{{ 'COMMON.NEXT' | translate }}</button></div>
+    </section>
+  </mat-tab>
+</mat-tab-group>

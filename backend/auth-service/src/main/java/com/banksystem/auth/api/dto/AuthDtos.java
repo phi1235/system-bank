@@ -18,6 +18,8 @@ public final class AuthDtos {
 
   public record RegisterResponse(String userId, String username) {}
 
+  public record InternalUserCountsResponse(long users, long usersLocked) {}
+
   public record LoginRequest(
       @NotBlank String username,
       @NotBlank String password

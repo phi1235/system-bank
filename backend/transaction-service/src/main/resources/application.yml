@@ -52,11 +52,22 @@ resilience4j:
         slidingWindowSize: ${CIRCUIT_BREAKER_WINDOW_SIZE}
         failureRateThreshold: ${CIRCUIT_BREAKER_FAILURE_RATE_THRESHOLD}
         waitDurationInOpenState: ${CIRCUIT_BREAKER_OPEN_STATE_DURATION}
+      NAPAS:
+        slidingWindowSize: ${NAPAS_CIRCUIT_BREAKER_WINDOW_SIZE}
+        minimumNumberOfCalls: ${NAPAS_CIRCUIT_BREAKER_MIN_CALLS}
+        failureRateThreshold: ${NAPAS_CIRCUIT_BREAKER_FAILURE_RATE}
+        waitDurationInOpenState: ${NAPAS_CIRCUIT_BREAKER_OPEN_DURATION}
   retry:
     instances:
       ACCOUNT-SERVICE:
         maxAttempts: ${RETRY_MAX_ATTEMPTS}
         waitDuration: ${RETRY_WAIT_DURATION}
+      NAPAS_READ:
+        maxAttempts: ${NAPAS_READ_RETRY_MAX_ATTEMPTS}
+        waitDuration: ${NAPAS_READ_RETRY_WAIT_DURATION}
+        retryExceptions:
+          - java.io.IOException
+          - java.net.http.HttpTimeoutException
 
 bank:
   feign:
@@ -93,9 +104,17 @@ bank:
     cron: ${RECON_CRON:0 30 0 * * *}
   # mock (default) | http — real switch URL/key only via env
   napas:
-    provider: ${NAPAS_PROVIDER:mock}
-    base-url: ${NAPAS_BASE_URL:}
-    api-key: ${NAPAS_API_KEY:}
+    provider: ${NAPAS_PROVIDER}
+    base-url: ${NAPAS_BASE_URL}
+    api-key: ${NAPAS_API_KEY}
+    webhook-secret: ${NAPAS_WEBHOOK_SECRET}
+    webhook-max-clock-skew-seconds: ${NAPAS_WEBHOOK_MAX_CLOCK_SKEW_SECONDS}
+    connect-timeout-ms: ${NAPAS_CONNECT_TIMEOUT_MS}
+    request-timeout-ms: ${NAPAS_REQUEST_TIMEOUT_MS}
+    status:
+      poll-ms: ${NAPAS_STATUS_POLL_MS}
+      min-age-seconds: ${NAPAS_STATUS_MIN_AGE_SECONDS}
+      max-attempts: ${NAPAS_STATUS_MAX_ATTEMPTS}
   transfer:
     # Internal transfer limits (VND). Override via env when needed.
     max-per-transaction: ${TRANSFER_MAX_PER_TX:50000000}

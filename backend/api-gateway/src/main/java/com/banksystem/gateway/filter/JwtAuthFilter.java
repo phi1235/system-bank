@@ -41,6 +41,7 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
       "/api/v1/auth/mfa/verify",
       // Guest password-reset ticket create (from uat management-password-reset)
       "/api/v1/auth/password-reset/tickets",
+      "/api/v1/callbacks/napas/payments",
       // Dev-only sandbox — no auth, local env only
       "/api/v1/dev/notifications/sandbox"
       // /actuator is intentionally NOT public on the gateway app port;

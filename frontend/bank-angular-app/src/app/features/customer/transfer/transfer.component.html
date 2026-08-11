@@ -89,10 +89,21 @@
 
         <div class="recipient-grid">
           @if (activeTab === 'INTERBANK') {
+            @if (banksLoading) {
+              <div class="inquiry-badge loading">
+                <mat-icon class="spin">sync</mat-icon>
+                <span>{{ 'TRANSFER.BANK_LOADING' | translate }}</span>
+              </div>
+            } @else if (banksError) {
+              <div class="inquiry-badge error">
+                <mat-icon>error_outline</mat-icon>
+                <span>{{ banksError }}</span>
+              </div>
+            }
             <mat-form-field appearance="outline" class="compact-field">
               <mat-label>{{ 'TRANSFER.BANK_SELECT_LABEL' | translate }}</mat-label>
               <mat-icon matPrefix>account_balance</mat-icon>
-              <mat-select [value]="selectedBankCode" (selectionChange)="onBankChange($event.value)">
+              <mat-select [value]="selectedBankCode" [disabled]="banksLoading || !!banksError" (selectionChange)="onBankChange($event.value)">
                 <mat-option value="">{{ 'TRANSFER.BANK_SELECT_PLACEHOLDER' | translate }}</mat-option>
                 @for (b of banks; track b.bankCode) {
                   <mat-option [value]="b.bankCode" [disabled]="b.isInternal">
@@ -215,7 +226,7 @@
             color="primary"
             type="submit"
             class="submit-btn"
-            [disabled]="(creating$ | async) || noActiveSource"
+            [disabled]="(creating$ | async) || noActiveSource || (activeTab === 'INTERBANK' && (!selectedBankCode || !inquiryResult))"
           >
             <mat-icon>send</mat-icon>
             <span>{{ (creating$ | async) ? ('CUSTOMER.PROCESSING' | translate) : ('CUSTOMER.CONFIRM_TRANSFER' | translate) }}</span>
@@ -293,7 +304,7 @@
     @if (last$ | async; as t) {
       <mat-card class="result-card" [class.ok]="t.status === 'COMPLETED'" [class.warn]="t.status !== 'COMPLETED'">
         <div class="result-header">
-          <mat-icon>{{ t.status === 'COMPLETED' ? 'check_circle' : 'error' }}</mat-icon>
+          <mat-icon>{{ t.status === 'COMPLETED' ? 'check_circle' : (isPendingOutcome(t.status) ? 'schedule' : 'error') }}</mat-icon>
           <h3>{{ 'TRANSFER.RESULT_TITLE' | translate }}</h3>
         </div>
         <div class="result-body">
@@ -303,10 +314,26 @@
           </div>
           <div class="result-item">
             <span class="k">{{ 'TRANSFER.RESULT_STATUS' | translate }}</span>
-            <span class="status-chip" [class.ok]="t.status === 'COMPLETED'" [class.bad]="t.status !== 'COMPLETED'">
+            <span class="status-chip" [class.ok]="t.status === 'COMPLETED'" [class.bad]="t.status !== 'COMPLETED' && !isPendingOutcome(t.status)">
               {{ t.status | transferStatus }}
             </span>
           </div>
+          <div class="result-item">
+            <span class="k">{{ 'TRANSFER.RESULT_MODE' | translate }}</span>
+            <strong class="v">{{ (t.transferType === 'INTERBANK' ? 'TRANSFER.MODE_INTERBANK' : 'TRANSFER.MODE_INTERNAL') | translate }}</strong>
+          </div>
+          @if (t.transferType === 'INTERBANK' && t.targetBankCode) {
+            <div class="result-item">
+              <span class="k">{{ 'TRANSFER.RESULT_BANK' | translate }}</span>
+              <strong class="v">{{ t.targetBankCode }}</strong>
+            </div>
+          }
+          @if (t.targetAccountName) {
+            <div class="result-item">
+              <span class="k">{{ 'TRANSFER.RESULT_RECIPIENT_NAME' | translate }}</span>
+              <strong class="v">{{ t.targetAccountName }}</strong>
+            </div>
+          }
           <div class="result-item">
             <span class="k">{{ 'TRANSFER.RESULT_TOTAL_DEBITED' | translate }}</span>
             <strong class="v amount">{{ (t.amount + (t.feeAmount || 0)) | moneyVnd: t.currency }}</strong>
@@ -315,6 +342,12 @@
             <div class="result-item">
               <span class="k">{{ 'TRANSFER.RESULT_FAIL_REASON' | translate }}</span>
               <span class="v reason">{{ t.failureReason | friendlyTransferError }}</span>
+            </div>
+          }
+          @if (isPendingOutcome(t.status)) {
+            <div class="result-item">
+              <mat-icon>manage_search</mat-icon>
+              <span class="v reason">{{ 'TRANSFER.RESULT_PENDING_HINT' | translate }}</span>
             </div>
           }
         </div>

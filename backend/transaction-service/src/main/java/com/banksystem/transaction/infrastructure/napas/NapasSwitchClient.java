@@ -5,11 +5,13 @@ import java.math.BigDecimal;
 /** NAPAS 24/7 switch adapter (inquiry + payment). */
 public interface NapasSwitchClient {
 
+  enum ProviderOutcome { SUCCESS, FAILED, PENDING, UNKNOWN }
+
   record NapasInquiryResponse(
       String bankCode, String accountNumber, String accountName, boolean valid) {}
 
   record NapasPaymentResponse(
-      String napasRefId, boolean success, String responseCode, String responseMessage) {}
+      String napasRefId, ProviderOutcome outcome, String responseCode, String responseMessage) {}
 
   NapasInquiryResponse inquireAccount(String bankCode, String accountNumber);
 
@@ -18,5 +20,9 @@ public interface NapasSwitchClient {
       String targetBankCode,
       String targetAccountNumber,
       BigDecimal amount,
-      String description);
+      String description,
+      String clientRequestId);
+
+  /** Non-mutating status inquiry used after a timeout or asynchronous provider acceptance. */
+  NapasPaymentResponse inquirePayment(String clientRequestId, String napasRefId);
 }

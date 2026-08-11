@@ -38,6 +38,8 @@ public class ReconciliationMatcher {
   public static final String UNEXPECTED_COMPENSATION = "UNEXPECTED_COMPENSATION";
   public static final String UNEXPECTED_DEBIT_FOR_FAILED = "UNEXPECTED_DEBIT_FOR_FAILED";
   public static final String STALE_IN_FLIGHT = "STALE_IN_FLIGHT";
+  public static final String PROVIDER_OUTCOME_UNKNOWN = "PROVIDER_OUTCOME_UNKNOWN";
+  public static final String MANUAL_REVIEW_REQUIRED = "MANUAL_REVIEW_REQUIRED";
 
   static final String SUFFIX_FEE = "-fee";
   static final String SUFFIX_COMPENSATION = "-compensation";
@@ -70,6 +72,14 @@ public class ReconciliationMatcher {
                     null,
                     null,
                     "Still " + t.getStatus() + " at reconciliation time"));
+        case UNKNOWN -> out.add(
+            new Discrepancy(
+                t.getId(), PROVIDER_OUTCOME_UNKNOWN, t.getProviderReferenceId(), null, null,
+                "External provider outcome is still unknown"));
+        case REVIEW_REQUIRED, RISK_REVIEW -> out.add(
+            new Discrepancy(
+                t.getId(), MANUAL_REVIEW_REQUIRED, t.getProviderReferenceId(), null, null,
+                t.getFailureReason()));
       }
     }
     return out;

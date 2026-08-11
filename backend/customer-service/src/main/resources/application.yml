@@ -16,6 +16,10 @@ spring:
       hibernate.jdbc.time_zone: UTC
   flyway:
     enabled: true
+  servlet:
+    multipart:
+      max-file-size: ${KYC_MULTIPART_MAX_FILE_SIZE}
+      max-request-size: ${KYC_MULTIPART_MAX_REQUEST_SIZE}
 
 eureka:
   client:
@@ -41,6 +45,18 @@ bank:
     transaction-api-key: ${TRANSACTION_INTERNAL_API_KEY}
     user-api-key: ${AUTH_INTERNAL_API_KEY}
     notification-api-key: ${NOTIFICATION_INTERNAL_API_KEY}
+  kyc:
+    max-file-bytes: ${KYC_MAX_FILE_BYTES}
+    storage:
+      endpoint: ${KYC_STORAGE_ENDPOINT}
+      access-key: ${KYC_STORAGE_ACCESS_KEY}
+      secret-key: ${KYC_STORAGE_SECRET_KEY}
+      bucket: ${KYC_STORAGE_BUCKET}
+    antivirus:
+      host: ${KYC_ANTIVIRUS_HOST}
+      port: ${KYC_ANTIVIRUS_PORT}
+      connect-timeout-ms: ${KYC_ANTIVIRUS_CONNECT_TIMEOUT_MS}
+      read-timeout-ms: ${KYC_ANTIVIRUS_READ_TIMEOUT_MS}
 
 management:
   endpoints:

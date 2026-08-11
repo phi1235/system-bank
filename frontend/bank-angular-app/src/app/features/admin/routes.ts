@@ -82,8 +82,7 @@ export const ADMIN_ROUTES: Routes = [
       {
         path: 'risk',
         canActivate: [permissionGuard([PERMISSIONS.RISK_VIEW])],
-        loadComponent: () => import('./placeholder/placeholder.component').then((m) => m.AdminPlaceholderComponent),
-        data: { titleKey: 'ADMIN.RISK_TITLE', subtitleKey: 'ADMIN.RISK_SUB' },
+        loadComponent: () => import('./risk/risk.component').then((m) => m.AdminRiskComponent),
       },
       {
         path: 'users',

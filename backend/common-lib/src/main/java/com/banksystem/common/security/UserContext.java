@@ -29,6 +29,17 @@ public final class UserContext {
     }
   }
 
+  public static void requireAnyPermission(String... permissions) {
+    GatewayUser user = requireUser();
+    for (String permission : permissions) {
+      if (user.hasPermission(permission)) {
+        return;
+      }
+    }
+    throw new BusinessException(
+        "FORBIDDEN", "Missing any required permission", HttpStatus.FORBIDDEN);
+  }
+
   private static Object currentGatewayUser() {
     RequestAttributes attrs = RequestContextHolder.getRequestAttributes();
     if (attrs != null) {

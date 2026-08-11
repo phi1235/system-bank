@@ -6,6 +6,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
@@ -16,6 +17,10 @@ public class TransferOrderEntity {
 
   @Id
   private UUID id;
+
+  @Version
+  @Column(nullable = false)
+  private long version;
 
   @Column(name = "idempotency_key", nullable = false, unique = true, length = 100)
   private String idempotencyKey;
@@ -31,6 +36,36 @@ public class TransferOrderEntity {
 
   @Column(name = "to_account_number", nullable = false, length = 20)
   private String toAccountNumber;
+
+  @Column(name = "transfer_type", nullable = false, length = 20)
+  private String transferType = "INTERNAL";
+
+  @Column(name = "target_bank_code", length = 20)
+  private String targetBankCode;
+
+  @Column(name = "target_account_name", length = 160)
+  private String targetAccountName;
+
+  @Column(name = "provider_reference_id", length = 100)
+  private String providerReferenceId;
+
+  @Column(name = "provider_status", length = 30)
+  private String providerStatus;
+
+  @Column(name = "provider_attempt_count", nullable = false)
+  private int providerAttemptCount;
+
+  @Column(name = "last_provider_query_at")
+  private Instant lastProviderQueryAt;
+
+  @Column(name = "risk_decision", length = 20)
+  private String riskDecision;
+
+  @Column(name = "risk_score")
+  private Integer riskScore;
+
+  @Column(name = "risk_reason", length = 500)
+  private String riskReason;
 
   @Column(nullable = false, precision = 19, scale = 2)
   private BigDecimal amount;
@@ -118,6 +153,41 @@ public class TransferOrderEntity {
   public void setToAccountNumber(String toAccountNumber) {
     this.toAccountNumber = toAccountNumber;
   }
+
+  public String getTransferType() { return transferType; }
+
+  public void setTransferType(String transferType) { this.transferType = transferType; }
+
+  public String getTargetBankCode() { return targetBankCode; }
+
+  public void setTargetBankCode(String targetBankCode) { this.targetBankCode = targetBankCode; }
+
+  public String getTargetAccountName() { return targetAccountName; }
+
+  public void setTargetAccountName(String targetAccountName) { this.targetAccountName = targetAccountName; }
+
+  public String getProviderReferenceId() { return providerReferenceId; }
+
+  public void setProviderReferenceId(String providerReferenceId) { this.providerReferenceId = providerReferenceId; }
+
+  public String getProviderStatus() { return providerStatus; }
+
+  public void setProviderStatus(String providerStatus) { this.providerStatus = providerStatus; }
+
+  public int getProviderAttemptCount() { return providerAttemptCount; }
+
+  public void setProviderAttemptCount(int providerAttemptCount) { this.providerAttemptCount = providerAttemptCount; }
+
+  public Instant getLastProviderQueryAt() { return lastProviderQueryAt; }
+
+  public void setLastProviderQueryAt(Instant lastProviderQueryAt) { this.lastProviderQueryAt = lastProviderQueryAt; }
+
+  public String getRiskDecision() { return riskDecision; }
+  public void setRiskDecision(String riskDecision) { this.riskDecision = riskDecision; }
+  public Integer getRiskScore() { return riskScore; }
+  public void setRiskScore(Integer riskScore) { this.riskScore = riskScore; }
+  public String getRiskReason() { return riskReason; }
+  public void setRiskReason(String riskReason) { this.riskReason = riskReason; }
 
   public BigDecimal getAmount() {
     return amount;

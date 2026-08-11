@@ -9,6 +9,8 @@
 #   Redis    127.0.0.1:${REDIS_HOST_PORT}
 #   Kafka    127.0.0.1:${KAFKA_HOST_PORT}
 #   Zipkin   http://127.0.0.1:${ZIPKIN_HOST_PORT}
+# ClamAV uses close to 1 GB RAM, so it is opt-in for KYC upload work:
+#   docker compose -f infra/docker-compose.dev.yml --env-file infra/.env --profile kyc up -d clamav
 #
 # Full stack (images for all services):
 #   docker compose -f infra/docker-compose.yml --env-file infra/.env up -d --build
@@ -21,7 +23,8 @@ services:
   postgres:
     image: postgres:16-alpine
     container_name: bank-postgres
-    command: postgres -c max_connections=150
+    command: postgres -c max_connections=80 -c shared_buffers=64MB
+    mem_limit: 384m
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in infra/.env}
@@ -41,6 +44,8 @@ services:
 
   redis:
     image: redis:7-alpine
+    command: redis-server --maxmemory 64mb --maxmemory-policy allkeys-lru
+    mem_limit: 128m
     container_name: bank-redis
     ports:
       - "${HOST_BIND_ADDRESS}:${REDIS_HOST_PORT}:${REDIS_CONTAINER_PORT}"
@@ -54,9 +59,52 @@ services:
     networks:
       - bank-net
 
+  minio:
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    container_name: bank-minio
+    command: server /data --console-address ":${MINIO_CONSOLE_CONTAINER_PORT}"
+    mem_limit: 256m
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "${HOST_BIND_ADDRESS}:${MINIO_HOST_PORT}:${MINIO_CONTAINER_PORT}"
+      - "${HOST_BIND_ADDRESS}:${MINIO_CONSOLE_HOST_PORT}:${MINIO_CONSOLE_CONTAINER_PORT}"
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+    networks:
+      - bank-net
+
+  clamav:
+    profiles: ["kyc"]
+    image: clamav/clamav:1.4.3
+    container_name: bank-clamav
+    mem_limit: 900m
+    environment:
+      CLAMD_CONF_MaxThreads: 2
+      CLAMD_CONF_MaxQueue: 20
+    ports:
+      - "${HOST_BIND_ADDRESS}:${CLAMAV_HOST_PORT}:${KYC_ANTIVIRUS_PORT}"
+    volumes:
+      - clamavdata:/var/lib/clamav
+    healthcheck:
+      test: ["CMD-SHELL", "clamdscan --ping 1 || exit 1"]
+      interval: 20s
+      timeout: 10s
+      retries: 15
+      start_period: 90s
+    networks:
+      - bank-net
+
   kafka:
     image: apache/kafka:3.8.0
     container_name: bank-kafka
+    mem_limit: 640m
     ports:
       - "${HOST_BIND_ADDRESS}:${KAFKA_HOST_PORT}:${KAFKA_BROKER_PORT}"
     environment:
@@ -73,6 +121,7 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: ${KAFKA_TRANSACTION_MIN_ISR}
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: ${KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS}
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: ${KAFKA_AUTO_CREATE_TOPICS_ENABLE}
+      KAFKA_HEAP_OPTS: -Xms128m -Xmx384m
       CLUSTER_ID: ${KAFKA_CLUSTER_ID:?KAFKA_CLUSTER_ID must be set in infra/.env}
     healthcheck:
       test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:${KAFKA_BROKER_PORT} --list || exit 1"]
@@ -140,3 +189,7 @@ volumes:
   grafanadata:
     name: bank-system_grafanadata
     external: true
+  miniodata:
+    name: bank-system_miniodata
+  clamavdata:
+    name: bank-system_clamavdata

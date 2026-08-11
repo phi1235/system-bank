@@ -14,21 +14,18 @@ import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { Store } from '@ngrx/store';
-import { filter, switchMap } from 'rxjs';
+import { take } from 'rxjs';
 import { CustomerProfile } from '../../../core/models/domain.model';
 import { BankApiService } from '../../../core/services/bank-api.service';
 import { PERMISSIONS } from '../../../core/services/rbac.util';
 import { ToastService } from '../../../core/services/toast.service';
 import { resolveHttpErrorMessage } from '../../../core/utils/http-error.util';
-import {
-  ConfirmDialogComponent,
-  ConfirmDialogData,
-} from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { EnumLabelPipe } from '../../../shared/pipes/enum-label.pipe';
-import { selectHasPermission } from '../../../store/auth/auth.selectors';
+import { selectHasAnyPermission, selectHasPermission } from '../../../store/auth/auth.selectors';
+import { KycDetailDialogComponent } from './kyc-detail-dialog.component';
 
-type KycStatus = 'PENDING' | 'VERIFIED' | 'REJECTED';
+type KycStatus = 'NOT_STARTED' | 'PENDING' | 'VERIFIED' | 'REJECTED';
 
 @Component({
   selector: 'app-admin-customers',
@@ -66,17 +63,23 @@ export class AdminCustomersComponent implements OnInit {
   pageSize = 20;
   totalElements = 0;
   loading = false;
-  busyId: string | null = null;
   q = '';
   kycStatus = '';
   cols = ['fullName', 'email', 'phone', 'kycStatus', 'actions'];
-  canKyc$ = this.store.select(selectHasPermission(PERMISSIONS.CUSTOMERS_KYC_DECIDE));
+  canKycView$ = this.store.select(selectHasAnyPermission([
+    PERMISSIONS.CUSTOMERS_KYC_REVIEW,
+    PERMISSIONS.CUSTOMERS_KYC_APPROVE,
+  ]));
+  canKycApprove$ = this.store.select(selectHasPermission(PERMISSIONS.CUSTOMERS_KYC_APPROVE));
 
-  readonly kycOptions: Array<'' | KycStatus> = ['', 'PENDING', 'VERIFIED', 'REJECTED'];
+  readonly kycOptions: Array<'' | KycStatus> = [
+    '', 'NOT_STARTED', 'PENDING', 'VERIFIED', 'REJECTED',
+  ];
 
   ngOnInit(): void {
     const kyc = (this.route.snapshot.queryParamMap.get('kycStatus') || '').toUpperCase();
-    if (kyc === 'PENDING' || kyc === 'VERIFIED' || kyc === 'REJECTED') {
+    if (kyc === 'NOT_STARTED' || kyc === 'PENDING'
+        || kyc === 'VERIFIED' || kyc === 'REJECTED') {
       this.kycStatus = kyc;
     }
     this.load();
@@ -128,52 +131,18 @@ export class AdminCustomersComponent implements OnInit {
     this.load();
   }
 
-  setKyc(c: CustomerProfile, next: KycStatus): void {
-    if (!c?.id || this.busyId || c.kycStatus === next) {
-      return;
-    }
-    const label = this.i18n.instant(`KYC_STATUS.${next}`);
-    const data: ConfirmDialogData = {
-      title: this.i18n.instant(`ADMIN.KYC_${next}_TITLE`),
-      message: this.i18n.instant(`ADMIN.KYC_${next}_CONFIRM`, {
-        name: c.fullName || c.email || c.id,
-        status: label,
-      }),
-      confirmLabel: this.i18n.instant(`ADMIN.KYC_${next}_ACTION`),
-      destructive: next === 'REJECTED',
-    };
-
-    this.dialog
-      .open(ConfirmDialogComponent, { data, width: '460px' })
-      .afterClosed()
-      .pipe(
-        filter(Boolean),
-        switchMap(() => {
-          this.busyId = c.id;
-          return this.api.updateKyc(c.id, next);
-        }),
-      )
-      .subscribe({
-        next: (u) => {
-          this.busyId = null;
-          this.rows = this.rows.map((x) => (x.id === u.id ? u : x));
-          this.toast.success(
-            this.i18n.instant('ADMIN.KYC_OK', {
-              status: this.i18n.instant(`KYC_STATUS.${u.kycStatus}`),
-            }),
-          );
-        },
-        error: (err) => {
-          this.busyId = null;
-          // Interceptor toasts HTTP errors; keep local friendly fallback if needed.
-          if (!err?.status) {
-            this.toast.error(resolveHttpErrorMessage(err, this.i18n));
-          }
-        },
-      });
-  }
-
-  canAct(c: CustomerProfile, next: KycStatus): boolean {
-    return !!c && c.kycStatus !== next && this.busyId !== c.id;
+  openKycDetail(customer: CustomerProfile): void {
+    this.canKycApprove$.pipe(take(1)).subscribe((canApprove) => {
+      this.dialog
+        .open(KycDetailDialogComponent, {
+          data: { customer, canApprove },
+          width: '940px',
+          maxWidth: '96vw',
+        })
+        .afterClosed()
+        .subscribe((updated) => {
+          if (updated) this.load();
+        });
+    });
   }
 }

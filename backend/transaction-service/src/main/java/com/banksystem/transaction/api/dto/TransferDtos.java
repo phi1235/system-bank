@@ -37,7 +37,20 @@ public final class TransferDtos {
       Instant createdAt,
       String transferType,
       String targetBankCode,
-      String targetAccountName
+      String targetAccountName,
+      String riskDecision,
+      Integer riskScore,
+      String riskReason
+  ) {}
+
+  public record InternalTransactionCountsResponse(
+      long transfers,
+      long transfersFailed,
+      long transfersCompensated,
+      long audits,
+      long outboxDead,
+      long outboxPending,
+      long outboxPublished
   ) {}
 
   /**
@@ -96,6 +109,15 @@ public final class TransferDtos {
       String ip,
       String metadata,
       Instant createdAt
+  ) {}
+
+  public record CreateAuditLogRequest(
+      UUID actorUserId,
+      @NotBlank String action,
+      String resourceType,
+      String resourceId,
+      String ip,
+      String metadata
   ) {}
 
   public record AdminTransferFilterRequest(
