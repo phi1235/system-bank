@@ -1,0 +1,912 @@
+<mat-card class="queue-card">
+  <div class="section-header">
+    <div class="header-titles">
+      <div class="title-with-badge">
+        <mat-icon color="primary">folder_special</mat-icon>
+        <h3>{{ 'FORENSICS.CASE_QUEUE' | translate }}</h3>
+      </div>
+      <p>{{ 'FORENSICS.CASE_QUEUE_SUB' | translate }}</p>
+    </div>
+
+    <div class="header-actions">
+      @if (canAdmin$ | async) {
+      <button mat-flat-button color="primary" type="button" (click)="showCreatePanel = !showCreatePanel">
+        <mat-icon>{{ showCreatePanel ? 'close' : 'add' }}</mat-icon>
+        {{ 'FORENSICS.CREATE_CASE' | translate }}
+      </button>
+      }
+    </div>
+  </div>
+
+  <!-- COLLAPSIBLE CREATE CASE PANEL -->
+  @if (showCreatePanel && (canAdmin$ | async)) {
+  <div class="create-case-box">
+    <div class="box-title">
+      <mat-icon>add_circle_outline</mat-icon>
+      <h4>{{ 'FORENSICS.CREATE_CASE' | translate }}</h4>
+    </div>
+    <div class="create-form">
+      <mat-form-field appearance="outline" class="form-field-tx">
+        <mat-label>{{ 'FORENSICS.TRANSACTION_ID' | translate }}</mat-label>
+        <input matInput [(ngModel)]="createDraft.transactionId" placeholder="UUID" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="form-field-title">
+        <mat-label>{{ 'FORENSICS.CASE_TITLE' | translate }}</mat-label>
+        <input matInput [(ngModel)]="createDraft.title" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="form-field-priority">
+        <mat-label>{{ 'FORENSICS.PRIORITY' | translate }}</mat-label>
+        <mat-select [(ngModel)]="createDraft.priority">
+          @for (p of priorities; track p) {
+          <mat-option [value]="p">{{ ('FORENSICS.PRIORITY_VALUE.' + p) | translate }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="form-field-summary">
+        <mat-label>{{ 'FORENSICS.CASE_SUMMARY' | translate }}</mat-label>
+        <input matInput [(ngModel)]="createDraft.summary" />
+      </mat-form-field>
+      <div class="create-btn-wrapper">
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          (click)="create()"
+          [disabled]="busy || !createDraft.transactionId.trim() || !createDraft.title.trim()"
+        >
+          <mat-icon>save</mat-icon>{{ 'FORENSICS.CREATE_CASE' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- FILTER TOOLBAR -->
+  <div class="filter-toolbar">
+    <mat-form-field appearance="outline" class="filter-search">
+      <mat-icon matPrefix>search</mat-icon>
+      <mat-label>{{ 'FORENSICS.SEARCH' | translate }}</mat-label>
+      <input matInput [(ngModel)]="q" (keyup.enter)="load(true)" [placeholder]="'FORENSICS.SEARCH_HINT' | translate" />
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="filter-select">
+      <mat-label>{{ 'COMMON.STATUS' | translate }}</mat-label>
+      <mat-select [(ngModel)]="status" (selectionChange)="load(true)">
+        <mat-option value="">{{ 'COMMON.ALL' | translate }}</mat-option>
+        @for (s of statuses; track s) {
+        <mat-option [value]="s">{{ ('FORENSICS.STATUS.' + s) | translate }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="filter-select">
+      <mat-label>{{ 'FORENSICS.PRIORITY' | translate }}</mat-label>
+      <mat-select [(ngModel)]="priority" (selectionChange)="load(true)">
+        <mat-option value="">{{ 'COMMON.ALL' | translate }}</mat-option>
+        @for (p of priorities; track p) {
+        <mat-option [value]="p">{{ ('FORENSICS.PRIORITY_VALUE.' + p) | translate }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <button mat-stroked-button color="primary" type="button" (click)="load(true)" [disabled]="loading" class="filter-refresh-btn">
+      <mat-icon>refresh</mat-icon>{{ 'FORENSICS.REFRESH' | translate }}
+    </button>
+  </div>
+
+  <!-- CASE LIST -->
+  @if (loading) {
+  <div class="center-spinner"><mat-spinner diameter="36" /></div>
+  } @else {
+  <div class="case-list-grid">
+    @for (row of rows; track row.id) {
+    <article
+      class="case-card-item"
+      [class.selected]="selected?.forensicCase?.id === row.id"
+      (click)="open(row)"
+    >
+      <div class="case-card-header">
+        <div class="case-number-badge">
+          <mat-icon>gavel</mat-icon>
+          <code>{{ row.caseNumber }}</code>
+        </div>
+        <div class="case-badges">
+          <span class="priority-chip" [attr.data-priority]="row.priority">
+            {{ ('FORENSICS.PRIORITY_VALUE.' + row.priority) | translate }}
+          </span>
+          <span class="status-chip" [attr.data-status]="row.status">
+            {{ ('FORENSICS.STATUS.' + row.status) | translate }}
+          </span>
+          @if (row.remediationStatus && row.remediationStatus !== 'NOT_REQUIRED') {
+          <span class="remediation-chip" [class.completed]="row.remediationStatus === 'COMPLETED'">
+            {{ ('FORENSICS.REMEDIATION.' + row.remediationStatus) | translate }}
+          </span>
+          }
+        </div>
+      </div>
+
+      <h4 class="case-card-title">{{ row.title }}</h4>
+      <p class="case-card-summary">{{ row.summary || ('FORENSICS.NO_SUMMARY' | translate) }}</p>
+
+      <div class="case-card-footer">
+        <span class="footer-meta"><mat-icon>person</mat-icon> {{ row.assignedTo || '—' }}</span>
+        <span class="footer-meta"><mat-icon>linear_scale</mat-icon> {{ row.investigationStage || 'INITIALIZED' }}</span>
+        <span class="footer-meta"><mat-icon>schedule</mat-icon> {{ row.createdAt | date: 'short' }}</span>
+      </div>
+    </article>
+    } @empty {
+    <div class="empty-state">
+      <mat-icon>folder_open</mat-icon>
+      <p>{{ 'FORENSICS.CASE_EMPTY' | translate }}</p>
+    </div>
+    }
+  </div>
+  }
+
+  <mat-paginator
+    [length]="totalElements"
+    [pageIndex]="pageIndex"
+    [pageSize]="pageSize"
+    [pageSizeOptions]="[10, 20, 50]"
+    (page)="page($event)"
+  />
+</mat-card>
+
+<!-- CASE DETAIL WORKSPACE -->
+@if (selected; as detail) {
+<section class="case-detail-workspace">
+  <mat-card class="detail-container-card">
+    <!-- DETAIL HEADER -->
+    <div class="detail-top-bar">
+      <div class="detail-heading">
+        <div class="case-code-wrapper">
+          <span class="eyebrow-code">{{ detail.forensicCase.caseNumber }}</span>
+          <span class="status-chip" [attr.data-status]="detail.forensicCase.status">
+            {{ ('FORENSICS.STATUS.' + detail.forensicCase.status) | translate }}
+          </span>
+          <span class="priority-chip" [attr.data-priority]="detail.forensicCase.priority">
+            {{ ('FORENSICS.PRIORITY_VALUE.' + detail.forensicCase.priority) | translate }}
+          </span>
+        </div>
+        <h2 class="detail-title">{{ detail.forensicCase.title }}</h2>
+        <p class="detail-sub">{{ detail.forensicCase.summary || ('FORENSICS.NO_SUMMARY' | translate) }}</p>
+      </div>
+
+      <div class="detail-header-actions">
+        @if (detail.forensicCase.transactionId) {
+        <button mat-stroked-button color="accent" type="button" (click)="askCopilot()">
+          <mat-icon>smart_toy</mat-icon>{{ 'FORENSICS.START_COPILOT_CASE' | translate }}
+        </button>
+        }
+        <button mat-icon-button type="button" (click)="closeSelected()" [attr.aria-label]="'COMMON.CLOSE' | translate">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    <!-- 5-STAGE PROGRESS STEPPER -->
+    <div class="stage-stepper-container">
+      <div class="step-item" [class.active]="isStageActive('VIOLATION_DETECTED')" [class.completed]="isStagePassed('VIOLATION_DETECTED')">
+        <span class="step-circle">
+          @if (isStagePassed('VIOLATION_DETECTED')) { <mat-icon>check</mat-icon> } @else { <span>1</span> }
+        </span>
+        <span class="step-text">{{ 'FORENSICS.STAGE_VIOLATION' | translate }}</span>
+      </div>
+      <div class="step-divider" [class.completed]="isStagePassed('VIOLATION_DETECTED')"></div>
+      <div class="step-item" [class.active]="isStageActive('CAUSAL_GRAPH_ATTACHED')" [class.completed]="isStagePassed('CAUSAL_GRAPH_ATTACHED')">
+        <span class="step-circle">
+          @if (isStagePassed('CAUSAL_GRAPH_ATTACHED')) { <mat-icon>check</mat-icon> } @else { <span>2</span> }
+        </span>
+        <span class="step-text">{{ 'FORENSICS.STAGE_GRAPH' | translate }}</span>
+      </div>
+      <div class="step-divider" [class.completed]="isStagePassed('CAUSAL_GRAPH_ATTACHED')"></div>
+      <div class="step-item" [class.active]="isStageActive('ROOT_CAUSE_CONFIRMED')" [class.completed]="isStagePassed('ROOT_CAUSE_CONFIRMED')">
+        <span class="step-circle">
+          @if (isStagePassed('ROOT_CAUSE_CONFIRMED')) { <mat-icon>check</mat-icon> } @else { <span>3</span> }
+        </span>
+        <span class="step-text">{{ 'FORENSICS.STAGE_ROOT_CAUSE' | translate }}</span>
+      </div>
+      <div class="step-divider" [class.completed]="isStagePassed('ROOT_CAUSE_CONFIRMED')"></div>
+      <div class="step-item" [class.active]="isStageActive('REPLAY_VERIFIED')" [class.completed]="isStagePassed('REPLAY_VERIFIED')">
+        <span class="step-circle">
+          @if (isStagePassed('REPLAY_VERIFIED')) { <mat-icon>check</mat-icon> } @else { <span>4</span> }
+        </span>
+        <span class="step-text">{{ 'FORENSICS.STAGE_REPLAY' | translate }}</span>
+      </div>
+      <div class="step-divider" [class.completed]="isStagePassed('REPLAY_VERIFIED')"></div>
+      <div class="step-item" [class.active]="isStageActive('INVESTIGATION_CONCLUDED')" [class.completed]="isStagePassed('INVESTIGATION_CONCLUDED')">
+        <span class="step-circle">
+          @if (isStagePassed('INVESTIGATION_CONCLUDED')) { <mat-icon>check</mat-icon> } @else { <span>5</span> }
+        </span>
+        <span class="step-text">{{ 'FORENSICS.STAGE_CONCLUDED' | translate }}</span>
+      </div>
+    </div>
+
+    <!-- ASYNC ORCHESTRATOR ANALYZING BANNER -->
+    @if (isOrchestratorAnalyzing()) {
+    <div class="orchestrator-analyzing-banner">
+      <mat-spinner diameter="24" color="primary"></mat-spinner>
+      <div class="banner-text">
+        <strong>{{ 'FORENSICS.ORCHESTRATOR_ANALYZING_TITLE' | translate }}</strong>
+        <p>{{ 'FORENSICS.ORCHESTRATOR_ANALYZING_DESC' | translate }}</p>
+      </div>
+    </div>
+    }
+
+    <!-- 4 SUB-TABS NAVIGATION -->
+    <mat-tab-group
+      [(selectedIndex)]="selectedDetailTabIndex"
+      animationDuration="150ms"
+      class="case-subtabs"
+    >
+      <!-- TAB 1: TỔNG QUAN & DIỄN GIẢI NGHIỆP VỤ -->
+      <mat-tab>
+        <ng-template matTabLabel>
+          <mat-icon class="subtab-icon">dashboard</mat-icon>
+          <span>{{ 'FORENSICS.DETAIL_TAB_OVERVIEW' | translate }}</span>
+        </ng-template>
+
+        <div class="subtab-body">
+          <!-- QUICK METRIC STATS -->
+          <div class="metric-grid">
+            <div class="metric-card">
+              <span class="metric-label">{{ 'COMMON.STATUS' | translate }}</span>
+              <strong class="metric-val">{{ ('FORENSICS.STATUS.' + detail.forensicCase.status) | translate }}</strong>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">{{ 'FORENSICS.PRIORITY' | translate }}</span>
+              <strong class="metric-val">{{ ('FORENSICS.PRIORITY_VALUE.' + detail.forensicCase.priority) | translate }}</strong>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">{{ 'FORENSICS.ASSIGNEE' | translate }}</span>
+              <strong class="metric-val">{{ detail.forensicCase.assignedTo || '—' }}</strong>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">{{ 'FORENSICS.TRANSACTION_ID' | translate }}</span>
+              <strong class="metric-val"><code>{{ detail.forensicCase.transactionId || '—' }}</code></strong>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">{{ 'FORENSICS.COMPLETENESS' | translate }}</span>
+              <strong class="metric-val">{{ detail.forensicCase.evidenceCompleteness }}</strong>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">{{ 'FORENSICS.REMEDIATION_STATUS' | translate }}</span>
+              <strong class="metric-val">{{ ('FORENSICS.REMEDIATION.' + detail.forensicCase.remediationStatus) | translate }}</strong>
+            </div>
+          </div>
+
+          <!-- BUSINESS NARRATIVE CARD -->
+          @if (detail.forensicCase.businessNarrative; as narrative) {
+          <div class="business-narrative-card">
+            <div class="narrative-header">
+              <div class="title-with-badge">
+                <mat-icon color="primary">auto_awesome</mat-icon>
+                <h3>{{ 'FORENSICS.NARRATIVE_TITLE' | translate }}</h3>
+                <span class="source-badge" [attr.data-source]="narrative.generatedBy">{{ narrative.generatedBy }}</span>
+              </div>
+              <button mat-button type="button" (click)="showTechnicalDetails = !showTechnicalDetails">
+                <mat-icon>{{ showTechnicalDetails ? 'visibility_off' : 'visibility' }}</mat-icon>
+                {{ (showTechnicalDetails ? 'FORENSICS.HIDE_TECH_DETAILS' : 'FORENSICS.SHOW_TECH_DETAILS') | translate }}
+              </button>
+            </div>
+
+            <div class="narrative-grid">
+              <div class="narrative-item">
+                <span class="label">{{ 'FORENSICS.NARRATIVE_SUMMARY' | translate }}</span>
+                <p class="content">{{ narrative.summary }}</p>
+              </div>
+              <div class="narrative-item">
+                <span class="label">{{ 'FORENSICS.NARRATIVE_IMPACT' | translate }}</span>
+                <p class="content">{{ narrative.impactAnalysis }}</p>
+              </div>
+              <div class="narrative-item">
+                <span class="label">{{ 'FORENSICS.NARRATIVE_ROOT_CAUSE' | translate }}</span>
+                <p class="content">{{ narrative.rootCauseNarrative }}</p>
+              </div>
+              <div class="narrative-item remediation">
+                <span class="label">{{ 'FORENSICS.NARRATIVE_SUGGESTION' | translate }}</span>
+                <p class="content">{{ narrative.suggestedRemediationNarrative }}</p>
+              </div>
+            </div>
+
+            @if (showTechnicalDetails) {
+            <div class="technical-details-panel">
+              <h4>{{ 'FORENSICS.TECH_BREAKDOWN' | translate }}</h4>
+              <div class="tech-tags">
+                @for (key of narrative.groundedEvidenceKeys; track key) {
+                <span class="tech-tag">{{ key }}</span>
+                }
+              </div>
+            </div>
+            }
+          </div>
+          }
+
+          <!-- QUICK CROSS-NAVIGATION TOOLBAR -->
+          <div class="quick-nav-box">
+            <span class="box-label">{{ 'FORENSICS.QUICK_ACTIONS_LABEL' | translate }}</span>
+            <div class="nav-btn-row">
+              @if (detail.forensicCase.transactionId) {
+              <button mat-stroked-button color="primary" type="button" (click)="goToInvestigation()">
+                <mat-icon>manage_search</mat-icon>{{ 'FORENSICS.VIEW_EVIDENCE' | translate }}
+              </button>
+              <button mat-stroked-button type="button" (click)="goToReplay()">
+                <mat-icon>replay</mat-icon>{{ 'FORENSICS.RUN_REPLAY' | translate }}
+              </button>
+              }
+              <button mat-flat-button color="primary" type="button" (click)="selectedDetailTabIndex = 1">
+                <mat-icon>account_tree</mat-icon>{{ 'FORENSICS.DETAIL_TAB_EVIDENCE' | translate }}
+              </button>
+              <button mat-flat-button color="accent" type="button" (click)="selectedDetailTabIndex = 2">
+                <mat-icon>rule</mat-icon>{{ 'FORENSICS.DETAIL_TAB_WORKFLOW' | translate }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- TAB 2: BẰNG CHỨNG & ĐỒ THỊ NHÂN QUẢ -->
+      <mat-tab>
+        <ng-template matTabLabel>
+          <mat-icon class="subtab-icon">account_tree</mat-icon>
+          <span>{{ 'FORENSICS.DETAIL_TAB_EVIDENCE' | translate }}</span>
+        </ng-template>
+
+        <div class="subtab-body">
+          <!-- FINDINGS SECTION -->
+          <div class="content-section">
+            <div class="section-title-row">
+              <mat-icon color="warn">warning</mat-icon>
+              <h3>{{ 'FORENSICS.FINDINGS' | translate }} ({{ detail.findings.length }})</h3>
+            </div>
+
+            <div class="finding-cards-grid">
+              @for (finding of detail.findings; track finding.id) {
+              <article
+                (click)="highlightEvidence(finding.id)"
+                [class.highlighted]="highlightedFindingId === finding.id"
+                class="finding-card clickable"
+              >
+                <div class="finding-top">
+                  <span class="severity-pill" [attr.data-severity]="finding.severity">{{ finding.severity }}</span>
+                  <span class="finding-rule">{{ finding.ruleCode }}</span>
+                  <span class="finding-outcome">{{ finding.outcome }}</span>
+                </div>
+                <h4 class="finding-title">{{ finding.title }}</h4>
+                <p class="finding-detail">{{ finding.detail || '—' }}</p>
+                <div class="finding-footer">
+                  <span class="hash-label">Hash:</span>
+                  <code>{{ finding.evidenceHash }}</code>
+                </div>
+              </article>
+              } @empty {
+              <div class="empty-substate">
+                <mat-icon>check_circle</mat-icon>
+                <p>{{ 'FORENSICS.NO_FINDINGS' | translate }}</p>
+              </div>
+              }
+            </div>
+          </div>
+
+          <!-- VISUAL CAUSAL GRAPH SECTION -->
+          <div class="content-section">
+            <div class="section-title-row">
+              <mat-icon color="primary">hub</mat-icon>
+              <h3>{{ 'FORENSICS.CAUSAL_GRAPH_LOADED' | translate }}</h3>
+              @if (causalGraph) {
+              <span class="graph-status-badge">{{ causalGraph.completeness }}</span>
+              }
+              <button
+                mat-stroked-button
+                color="primary"
+                type="button"
+                (click)="loadCausalGraph()"
+                [disabled]="causalGraphLoading"
+                class="refresh-graph-btn"
+              >
+                <mat-icon>refresh</mat-icon>{{ 'FORENSICS.LOAD_CAUSAL_GRAPH' | translate }}
+              </button>
+            </div>
+
+            @if (causalGraphLoading) {
+            <div class="center-spinner"><mat-spinner diameter="32"></mat-spinner></div>
+            } @else if (causalGraph) {
+            <div class="causal-graph-wrapper">
+              <!-- ANOMALY ALERT -->
+              @if (causalGraph.firstAnomalousNodeId) {
+              <div class="anomaly-alert-box">
+                <mat-icon>crisis_alert</mat-icon>
+                <span>{{ 'FORENSICS.FIRST_ANOMALY' | translate: { node: causalGraph.firstAnomalousNodeId } }}</span>
+              </div>
+              }
+
+              <!-- FAILURE SIGNATURE -->
+              @if (causalGraph.failureSignature) {
+              <div class="failure-sig-box">
+                <span class="sig-label">{{ 'FORENSICS.FAILURE_SIGNATURE' | translate }}:</span>
+                <code>{{ causalGraph.failureSignature }}</code>
+              </div>
+              }
+
+              <!-- VISUAL NODE CARDS -->
+              <div class="graph-nodes-grid">
+                @for (node of graphNodes; track node.id) {
+                <div class="causal-node-card" [class.anomalous]="node.anomalous">
+                  <div class="node-icon-box">
+                    <mat-icon>{{ getNodeIcon(node.type) }}</mat-icon>
+                  </div>
+                  <div class="node-info">
+                    <div class="node-type-row">
+                      <span class="node-type">{{ node.type }}</span>
+                      @if (node.anomalous) {
+                      <span class="node-anomalous-tag">{{ 'FORENSICS.ANOMALOUS_NODE' | translate }}</span>
+                      }
+                    </div>
+                    <strong class="node-label">{{ node.label }}</strong>
+                    <div class="node-meta">
+                      @if (node.status) { <span class="node-status">{{ node.status }}</span> }
+                      @if (node.occurredAt) { <time>{{ node.occurredAt | date: 'shortTime' }}</time> }
+                    </div>
+                  </div>
+                </div>
+                }
+              </div>
+
+              <!-- GRAPH EDGES RELATION SUMMARY -->
+              @if (graphEdges.length) {
+              <div class="graph-relations-panel">
+                <h4>{{ 'FORENSICS.NODE_RELATIONS' | translate }} ({{ graphEdges.length }})</h4>
+                <div class="relations-chips">
+                  @for (edge of graphEdges; track edge.id) {
+                  <span class="relation-chip">
+                    <code>{{ edge.fromNodeId }}</code>
+                    <mat-icon>arrow_right_alt</mat-icon>
+                    <strong>{{ edge.relation }}</strong>
+                    <mat-icon>arrow_right_alt</mat-icon>
+                    <code>{{ edge.toNodeId }}</code>
+                  </span>
+                  }
+                </div>
+              </div>
+              }
+            </div>
+            } @else {
+            <div class="empty-substate">
+              <mat-icon>account_tree</mat-icon>
+              <p>{{ 'FORENSICS.CAUSAL_GRAPH_EMPTY' | translate }}</p>
+              <button mat-flat-button color="primary" type="button" (click)="loadCausalGraph()">
+                <mat-icon>download</mat-icon>{{ 'FORENSICS.LOAD_CAUSAL_GRAPH' | translate }}
+              </button>
+            </div>
+            }
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- TAB 3: XỬ LÝ & KHẮC PHỤC (MAKER-CHECKER WORKFLOW) -->
+      <mat-tab>
+        <ng-template matTabLabel>
+          <mat-icon class="subtab-icon">rule</mat-icon>
+          <span>{{ 'FORENSICS.DETAIL_TAB_WORKFLOW' | translate }}</span>
+        </ng-template>
+
+        <div class="subtab-body">
+          <!-- MAKER INVESTIGATION PANEL -->
+          @if (canReview$ | async) {
+          <div class="content-section">
+            <div class="section-title-row">
+              <mat-icon color="primary">assignment_ind</mat-icon>
+              <h3>{{ 'FORENSICS.MAKER_ACTIONS_TITLE' | translate }}</h3>
+            </div>
+
+            <!-- WORKFLOW STATUS ACTION BUTTONS -->
+            <div class="workflow-stage-actions">
+              @if (detail.forensicCase.status === 'OPEN' || detail.forensicCase.status === 'REOPENED') {
+              <button mat-flat-button color="primary" type="button" (click)="claim()" [disabled]="busy || !currentUserId">
+                <mat-icon>assignment_ind</mat-icon>{{ 'FORENSICS.CLAIM_CASE' | translate }}
+              </button>
+              }
+              @if (detail.forensicCase.status === 'ASSIGNED') {
+              <button mat-flat-button color="primary" type="button" (click)="start()" [disabled]="busy">
+                <mat-icon>play_arrow</mat-icon>{{ 'FORENSICS.START_CASE' | translate }}
+              </button>
+              }
+              @if (detail.forensicCase.status === 'INVESTIGATING' || detail.forensicCase.status === 'ASSIGNED') {
+                @if (detail.forensicCase.investigationStage === 'CAUSAL_GRAPH_ATTACHED' || detail.forensicCase.investigationStage === 'VIOLATION_DETECTED' || detail.forensicCase.investigationStage === 'INITIALIZED') {
+                <button mat-flat-button color="accent" type="button" (click)="confirmRootCause()" [disabled]="busy">
+                  <mat-icon>check_circle</mat-icon>{{ 'FORENSICS.CONFIRM_ROOT_CAUSE' | translate }}
+                </button>
+                }
+                @if (detail.forensicCase.investigationStage === 'ROOT_CAUSE_CONFIRMED') {
+                <button mat-flat-button color="accent" type="button" (click)="verifyReplay()" [disabled]="busy">
+                  <mat-icon>verified</mat-icon>{{ 'FORENSICS.VERIFY_REPLAY' | translate }}
+                </button>
+                }
+              }
+            </div>
+
+            <!-- ADD FINDING FORM -->
+            @if (detail.forensicCase.status === 'INVESTIGATING') {
+            <div class="form-subpanel">
+              <h4>{{ 'FORENSICS.ADD_FINDING' | translate }}</h4>
+              <div class="form-grid-4">
+                <mat-form-field appearance="outline">
+                  <mat-label>{{ 'FORENSICS.RULE_CODE' | translate }}</mat-label>
+                  <input matInput [(ngModel)]="findingDraft.ruleCode" />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>{{ 'FORENSICS.SEVERITY' | translate }}</mat-label>
+                  <mat-select [(ngModel)]="findingDraft.severity">
+                    @for (item of severities; track item) {
+                    <mat-option [value]="item">{{ item }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>{{ 'FORENSICS.FINDING_TITLE' | translate }}</mat-label>
+                  <input matInput [(ngModel)]="findingDraft.title" />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>{{ 'FORENSICS.FINDING_DETAIL' | translate }}</mat-label>
+                  <input matInput [(ngModel)]="findingDraft.detail" />
+                </mat-form-field>
+              </div>
+              <button mat-stroked-button color="primary" type="button" (click)="addFinding()" [disabled]="busy">
+                <mat-icon>add</mat-icon>{{ 'FORENSICS.ADD_FINDING' | translate }}
+              </button>
+            </div>
+
+            <!-- SUBMIT TO CHECKER FORM -->
+            <div class="form-subpanel submit-subpanel">
+              <h4>{{ 'FORENSICS.RECOMMENDATION' | translate }}</h4>
+              <div class="submit-input-row">
+                <mat-form-field appearance="outline" class="wide-input">
+                  <mat-label>{{ 'FORENSICS.RECOMMENDATION' | translate }}</mat-label>
+                  <input matInput [(ngModel)]="recommendation" maxlength="2000" />
+                </mat-form-field>
+                <button
+                  mat-flat-button
+                  color="primary"
+                  type="button"
+                  (click)="submit()"
+                  [disabled]="busy || !recommendation.trim()"
+                >
+                  <mat-icon>send</mat-icon>{{ 'FORENSICS.SUBMIT_CHECKER' | translate }}
+                </button>
+              </div>
+            </div>
+            }
+          </div>
+          }
+
+          <!-- REMEDIATION ACTIONS CHECKLIST SECTION -->
+          <div class="content-section remediation-card-section">
+            <div class="section-title-row">
+              <mat-icon color="accent">checklist</mat-icon>
+              <h3>{{ 'FORENSICS.REMEDIATION_CHECKLIST' | translate }}</h3>
+              <span class="progress-badge">
+                {{ completedRemediationCount }}/{{ totalRemediationCount }} ({{ remediationPercentage }}%)
+              </span>
+            </div>
+            <p class="remediation-hint">{{ 'FORENSICS.REMEDIATION_HINT' | translate }}</p>
+
+            <!-- REMEDIATION ACTION LIST -->
+            @if (detail.forensicCase.remediationActions.length) {
+            <div class="remediation-list">
+              @for (action of detail.forensicCase.remediationActions; track $index) {
+              <div class="remediation-item" [class.completed]="action.completed">
+                <mat-icon class="action-icon">{{ action.completed ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
+                <div class="action-content">
+                  <div class="action-type-row">
+                    <strong>{{ ('FORENSICS.REMEDIATION_TYPE.' + action.actionType) | translate }}</strong>
+                    <span class="action-status-pill" [class.completed]="action.completed">
+                      {{ action.completed ? ('FORENSICS.REMEDIATION.COMPLETED' | translate) : ('FORENSICS.REMEDIATION.IN_PROGRESS' | translate) }}
+                    </span>
+                  </div>
+                  <span class="action-desc">{{ action.description }}</span>
+                  <div class="action-meta">
+                    @if (action.referenceId) { <code>Ref: {{ action.referenceId }}</code> }
+                    @if (action.completedAt) { <time>{{ action.completedAt | date: 'short' }}</time> }
+                  </div>
+                </div>
+              </div>
+              }
+            </div>
+            }
+
+            <!-- ADD REMEDIATION FORM -->
+            @if (detail.forensicCase.status === 'PENDING_CHECKER' || detail.forensicCase.status === 'INVESTIGATING') {
+            <div class="form-subpanel add-remediation-subpanel">
+              <h4>{{ 'FORENSICS.RECORD_REMEDIATION' | translate }}</h4>
+              <div class="remediation-form-grid">
+                <mat-form-field appearance="outline">
+                  <mat-label>{{ 'FORENSICS.ACTION_TYPE' | translate }}</mat-label>
+                  <mat-select [(ngModel)]="remediationDraft.actionType">
+                    @for (item of remediationActionTypes; track item) {
+                    <mat-option [value]="item">{{ ('FORENSICS.REMEDIATION_TYPE.' + item) | translate }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>{{ 'FORENSICS.DESCRIPTION' | translate }}</mat-label>
+                  <input matInput [(ngModel)]="remediationDraft.description" maxlength="500" />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>{{ 'FORENSICS.REFERENCE_ID' | translate }}</mat-label>
+                  <input matInput [(ngModel)]="remediationDraft.referenceId" maxlength="200" />
+                </mat-form-field>
+                <div class="checkbox-wrapper">
+                  <mat-checkbox [(ngModel)]="remediationDraft.completed">{{ 'FORENSICS.MARK_COMPLETED' | translate }}</mat-checkbox>
+                </div>
+                <button
+                  mat-flat-button
+                  color="accent"
+                  type="button"
+                  (click)="addRemediation()"
+                  [disabled]="busy || !remediationDraft.description.trim()"
+                >
+                  <mat-icon>add_task</mat-icon>{{ 'FORENSICS.RECORD_REMEDIATION' | translate }}
+                </button>
+              </div>
+            </div>
+            }
+          </div>
+
+          <!-- CHECKER APPROVAL PANEL -->
+          @if (detail.forensicCase.status === 'PENDING_CHECKER') {
+          <div class="content-section checker-approval-section" [class.blocked]="isMaker(detail.forensicCase)">
+            <div class="section-title-row">
+              <mat-icon color="primary">fact_check</mat-icon>
+              <h3>{{ 'FORENSICS.CHECKER_ACTIONS_TITLE' | translate }}</h3>
+            </div>
+
+            @if (isMaker(detail.forensicCase)) {
+            <div class="maker-block-banner">
+              <mat-icon>gpp_bad</mat-icon>
+              <p>{{ 'FORENSICS.MAKER_CANNOT_CHECK' | translate }}</p>
+            </div>
+            }
+
+            <div class="checker-form-grid">
+              <mat-form-field appearance="outline" class="form-field-resolution">
+                <mat-label>{{ 'FORENSICS.RESOLUTION' | translate }}</mat-label>
+                <mat-select [(ngModel)]="resolutionCode">
+                  @for (item of resolutionCodes; track item) {
+                  <mat-option [value]="item">{{ item }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="form-field-note">
+                <mat-label>{{ 'FORENSICS.RESOLUTION_NOTE' | translate }}</mat-label>
+                <input matInput [(ngModel)]="resolutionNote" maxlength="2000" />
+              </mat-form-field>
+              @if (resolutionCode === 'CONFIRMED_ISSUE') {
+              <div class="form-field-systemic">
+                <mat-checkbox [(ngModel)]="systemicFlag">{{ 'FORENSICS.SYSTEMIC_FLAG' | translate }}</mat-checkbox>
+              </div>
+              }
+            </div>
+
+            @if (isRemediationRequired()) {
+            <div class="remediation-warning-banner">
+              <mat-icon>warning</mat-icon>
+              <span>{{ 'FORENSICS.REMEDIATION_REQUIRED_WARN' | translate }}</span>
+            </div>
+            }
+
+            <div class="checker-action-btns">
+              <button
+                mat-flat-button
+                color="primary"
+                type="button"
+                (click)="approve()"
+                [disabled]="busy || isMaker(detail.forensicCase) || !resolutionNote.trim() || isRemediationRequired()"
+              >
+                <mat-icon>check_circle</mat-icon>{{ 'FORENSICS.APPROVE_RESOLUTION' | translate }}
+              </button>
+              <button
+                mat-stroked-button
+                color="warn"
+                type="button"
+                (click)="reject()"
+                [disabled]="busy || isMaker(detail.forensicCase) || !resolutionNote.trim()"
+              >
+                <mat-icon>cancel</mat-icon>{{ 'FORENSICS.REJECT_RESOLUTION' | translate }}
+              </button>
+            </div>
+          </div>
+          }
+
+          <!-- REOPEN PANEL (FOR ADMIN) -->
+          @if ((canAdmin$ | async) && ['RESOLVED', 'DISMISSED', 'DUPLICATE'].includes(detail.forensicCase.status)) {
+          <div class="content-section reopen-section">
+            <div class="section-title-row">
+              <mat-icon>lock_open</mat-icon>
+              <h3>{{ 'FORENSICS.REOPEN' | translate }}</h3>
+            </div>
+            <div class="reopen-form-row">
+              <mat-form-field appearance="outline" class="wide-input">
+                <mat-label>{{ 'FORENSICS.REOPEN_REASON' | translate }}</mat-label>
+                <input matInput [(ngModel)]="resolutionNote" />
+              </mat-form-field>
+              <button mat-stroked-button color="warn" type="button" (click)="reopen()" [disabled]="busy || !resolutionNote.trim()">
+                <mat-icon>refresh</mat-icon>{{ 'FORENSICS.REOPEN' | translate }}
+              </button>
+            </div>
+          </div>
+          }
+        </div>
+      </mat-tab>
+
+      <!-- TAB 4: NHẬT KÝ & XUẤT BÁO CÁO -->
+      <mat-tab>
+        <ng-template matTabLabel>
+          <mat-icon class="subtab-icon">history_edu</mat-icon>
+          <span>{{ 'FORENSICS.DETAIL_TAB_HISTORY' | translate }}</span>
+        </ng-template>
+
+        <div class="subtab-body">
+          <!-- EVIDENCE PACKAGE EXPORT -->
+          @if (canExport$ | async) {
+          <div class="content-section export-section">
+            <div class="section-title-row">
+              <mat-icon color="accent">download</mat-icon>
+              <h3>{{ 'FORENSICS.EVIDENCE_EXPORT' | translate }}</h3>
+            </div>
+            <div class="export-form-row">
+              <mat-form-field appearance="outline" class="wide-input">
+                <mat-label>{{ 'FORENSICS.EXPORT_REASON' | translate }}</mat-label>
+                <input matInput [(ngModel)]="exportReason" maxlength="500" />
+              </mat-form-field>
+              <button
+                mat-flat-button
+                color="primary"
+                type="button"
+                (click)="requestExport()"
+                [disabled]="busy || !exportReason.trim()"
+              >
+                <mat-icon>inventory_2</mat-icon>{{ 'FORENSICS.CREATE_EXPORT' | translate }}
+              </button>
+            </div>
+
+            @if (exportJob; as job) {
+            <div class="export-result-box">
+              <span class="status-chip" [attr.data-status]="job.status">{{ job.status }}</span>
+              <code>{{ job.packageSha256 || '—' }}</code>
+              @if (job.status === 'PENDING' || job.status === 'RUNNING') {
+              <button mat-button type="button" (click)="refreshExport()" [disabled]="busy">
+                <mat-icon>refresh</mat-icon>{{ 'FORENSICS.REFRESH_STATUS' | translate }}
+              </button>
+              }
+              @if (job.status === 'COMPLETED') {
+              <button mat-flat-button color="accent" type="button" (click)="downloadExport()">
+                <mat-icon>download</mat-icon>{{ 'FORENSICS.DOWNLOAD_EXPORT' | translate }}
+              </button>
+              }
+            </div>
+            }
+          </div>
+          }
+
+          <!-- CASE AUDIT TRAIL TIMELINE -->
+          <div class="content-section">
+            <div class="section-title-row">
+              <mat-icon color="primary">history</mat-icon>
+              <h3>{{ 'FORENSICS.CASE_HISTORY' | translate }} ({{ history.length }})</h3>
+            </div>
+
+            <div class="history-timeline">
+              @for (item of history; track item.id) {
+              <article class="history-timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                  <div class="timeline-top">
+                    <strong class="action-tag">{{ item.action }}</strong>
+                    <span class="actor-code"><code>{{ item.actorUserId }}</code></span>
+                    <time>{{ item.createdAt | date: 'medium' }}</time>
+                  </div>
+                  <p class="timeline-note">{{ item.decision || '—' }} · {{ item.note || ('FORENSICS.NO_NOTE' | translate) }}</p>
+                  <div class="timeline-footer">
+                    <span class="version-tag">v{{ item.caseVersion }}</span>
+                    <span class="status-transition">{{ item.fromStatus || 'NONE' }} → {{ item.toStatus }}</span>
+                  </div>
+                </div>
+              </article>
+              } @empty {
+              <div class="empty-substate">
+                <mat-icon>history</mat-icon>
+                <p>{{ 'FORENSICS.NO_HISTORY' | translate }}</p>
+              </div>
+              }
+            </div>
+          </div>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </mat-card>
+
+  <!-- SLIDING OVERLAY COPILOT SIDE DRAWER -->
+  @if (copilotDrawerOpen) {
+  <div class="copilot-drawer-backdrop" (click)="closeCopilotDrawer()"></div>
+  <aside class="copilot-sliding-drawer">
+    <div class="drawer-header">
+      <div class="drawer-header-left">
+        <mat-icon color="primary">smart_toy</mat-icon>
+        <div>
+          <h3>{{ 'FORENSICS.COPILOT_DRAWER_TITLE' | translate }}</h3>
+          <span class="context-badge">
+            {{ 'FORENSICS.COPILOT_CONTEXT_ACTIVE' | translate: { caseNumber: detail.forensicCase.caseNumber } }}
+          </span>
+        </div>
+      </div>
+      <button mat-icon-button type="button" (click)="closeCopilotDrawer()" [attr.aria-label]="'COMMON.CLOSE' | translate">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <!-- QUICK PROMPTS -->
+    <div class="quick-prompts-bar">
+      <button mat-stroked-button type="button" (click)="sendQuickPrompt('ROOT_CAUSE')" [disabled]="copilotLoading">
+        <mat-icon>psychology</mat-icon>{{ 'FORENSICS.COPILOT_QUICK_ROOT_CAUSE' | translate }}
+      </button>
+      <button mat-stroked-button type="button" (click)="sendQuickPrompt('BALANCE_DIFF')" [disabled]="copilotLoading">
+        <mat-icon>balance</mat-icon>{{ 'FORENSICS.COPILOT_QUICK_BALANCE_DIFF' | translate }}
+      </button>
+      <button mat-stroked-button type="button" (click)="sendQuickPrompt('REMEDIATION')" [disabled]="copilotLoading">
+        <mat-icon>build</mat-icon>{{ 'FORENSICS.COPILOT_QUICK_REMEDIATION' | translate }}
+      </button>
+    </div>
+
+    <!-- CHAT MESSAGES -->
+    <div class="drawer-chat-scroll">
+      @for (answer of copilotAnswers; track answer.messageId) {
+      <article class="chat-bubble" [class.verified]="answer.status === 'VERIFIED' || answer.status === 'GROUNDED'">
+        <div class="chat-bubble-top">
+          <span class="chat-status-pill">{{ answer.status }}</span>
+          <time>{{ answer.createdAt | date: 'shortTime' }}</time>
+        </div>
+        <p class="chat-bubble-text">{{ answer.answer }}</p>
+        @if (answer.citations && answer.citations.length) {
+        <div class="chat-citations">
+          <strong>{{ 'FORENSICS.CITATIONS' | translate }}:</strong>
+          @for (citation of answer.citations; track citation.sourceType + citation.sourceId) {
+          <code>{{ citation.sourceType }}:{{ citation.sourceId }} · {{ citation.label }}</code>
+          }
+        </div>
+        }
+      </article>
+      } @empty {
+      <div class="empty-chat-state">
+        <mat-icon>forum</mat-icon>
+        <p>{{ 'FORENSICS.COPILOT_DRAWER_HINT' | translate }}</p>
+      </div>
+      }
+      @if (copilotLoading) {
+      <div class="chat-loading-indicator">
+        <mat-spinner diameter="20"></mat-spinner>
+        <span>{{ 'FORENSICS.COPILOT_ANALYZING' | translate }}</span>
+      </div>
+      }
+    </div>
+
+    <!-- CHAT INPUT BOX -->
+    <div class="drawer-chat-input">
+      <mat-form-field appearance="outline" class="chat-input-control">
+        <input
+          matInput
+          [(ngModel)]="copilotQuestion"
+          (keyup.enter)="askCopilotInDrawer()"
+          [placeholder]="'FORENSICS.COPILOT_DRAWER_HINT' | translate"
+        />
+      </mat-form-field>
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        (click)="askCopilotInDrawer()"
+        [disabled]="copilotLoading || !copilotQuestion.trim()"
+      >
+        <mat-icon>send</mat-icon>
+      </button>
+    </div>
+  </aside>
+  }
+</section>
+}

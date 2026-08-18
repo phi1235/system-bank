@@ -1,16 +1,10 @@
 package com.banksystem.account.application.account;
-import com.banksystem.account.application.account.*;
-import com.banksystem.account.application.card.*;
-import com.banksystem.account.application.deposit.*;
-import com.banksystem.account.application.ledger.*;
-import com.banksystem.account.domain.account.*;
-import com.banksystem.account.domain.card.*;
-import com.banksystem.account.domain.deposit.*;
-import com.banksystem.account.domain.ledger.*;
-import com.banksystem.account.api.dto.*;
 
-import com.banksystem.common.security.GatewayUser;
+import com.banksystem.account.domain.account.AccountEntity;
+import com.banksystem.account.domain.account.AccountRepository;
+import com.banksystem.account.domain.account.AccountStatus;
 import com.banksystem.common.exception.BusinessException;
+import com.banksystem.common.security.GatewayUser;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 
@@ -29,6 +23,11 @@ public class AccountAccessService {
 
   public AccountEntity require(UUID id) {
     return accountRepository.findById(id)
+        .orElseThrow(() -> new BusinessException("ACCOUNT_NOT_FOUND", "Account not found"));
+  }
+
+  public AccountEntity requireForUpdate(UUID id) {
+    return accountRepository.findByIdForUpdate(id)
         .orElseThrow(() -> new BusinessException("ACCOUNT_NOT_FOUND", "Account not found"));
   }
 

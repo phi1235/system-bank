@@ -24,12 +24,32 @@ public class InternalAccountController {
 
   private final AccountMoneyService moneyService;
   private final InternalAccountQueryService queryService;
+  private final com.banksystem.account.application.ledger.AccountInboxService inboxService;
 
   public InternalAccountController(
       AccountMoneyService moneyService,
-      InternalAccountQueryService queryService) {
+      InternalAccountQueryService queryService,
+      com.banksystem.account.application.ledger.AccountInboxService inboxService) {
     this.moneyService = moneyService;
     this.queryService = queryService;
+    this.inboxService = inboxService;
+  }
+
+  @PostMapping("/remediation/inbox")
+  public ApiResponse<Boolean> processRemediationInbox(
+      @Valid @RequestBody com.banksystem.account.api.dto.AccountDtos.AdjustmentRequestedEventRequest req) {
+    boolean processed = inboxService.processAdjustmentRequestedEvent(
+        req.eventId(),
+        req.proposalId(),
+        req.caseId(),
+        req.cycle(),
+        req.targetAccountId(),
+        req.direction(),
+        req.amount(),
+        req.currency(),
+        req.referenceId(),
+        req.reason());
+    return ApiResponse.ok(processed);
   }
 
   @GetMapping("/counts")
@@ -59,5 +79,12 @@ public class InternalAccountController {
       @PathVariable UUID id,
       @Valid @RequestBody MoneyCommand command) {
     return ApiResponse.ok(moneyService.credit(id, command));
+  }
+
+  @PostMapping("/{id}/compensation-credit")
+  public ApiResponse<MoneyResult> compensationCredit(
+      @PathVariable UUID id,
+      @Valid @RequestBody MoneyCommand command) {
+    return ApiResponse.ok(moneyService.compensateCredit(id, command));
   }
 }

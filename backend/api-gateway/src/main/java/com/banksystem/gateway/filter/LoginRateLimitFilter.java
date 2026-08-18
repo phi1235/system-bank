@@ -27,8 +27,8 @@ public class LoginRateLimitFilter implements GlobalFilter, Ordered {
 
   public LoginRateLimitFilter(
       ReactiveStringRedisTemplate redis,
-      @Value("${bank.rate-limit.login.limit:5}") int limit,
-      @Value("${bank.rate-limit.login.window-seconds:60}") int windowSeconds) {
+      @Value("${bank.rate-limit.login.limit}") int limit,
+      @Value("${bank.rate-limit.login.window-seconds}") int windowSeconds) {
     this.redis = redis;
     this.limit = limit;
     this.window = Duration.ofSeconds(windowSeconds);

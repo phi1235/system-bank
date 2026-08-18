@@ -35,10 +35,14 @@ import com.banksystem.transaction.infrastructure.feign.AccountClientDtos.Account
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 @Service
 public class TransferServiceImpl implements TransferService {
+
+  private static final Logger log = LoggerFactory.getLogger(TransferServiceImpl.class);
 
   private final TransferOrderRepository transferOrderRepository;
   private final AuditLogRepository auditLogRepository;
@@ -147,14 +151,22 @@ public class TransferServiceImpl implements TransferService {
         user.userId(), "TRANSFER_CREATE", "TRANSFER", order.getId().toString(), ip,
         "amount=" + req.amount() + ",fee=" + feeAmount.toPlainString() + ",to=" + req.toAccountNumber()));
 
+    log.info("[TRANSFER-CREATE] Created transfer order [{}] User=[{}] Type=[{}] Amount={} {} From=[{}] To=[{}] (Bank: {})",
+        order.getId(), user.userId(), order.getTransferType(), order.getAmount(), order.getCurrency(),
+        from.accountNumber(), req.toAccountNumber(), targetBankCode);
+
     RiskResult risk = riskEngine.assess(order);
     order = transferOrderRepository.findById(order.getId())
         .orElseThrow(() -> new BusinessException("TRANSFER_NOT_FOUND", "Transfer not found"));
+    log.info("[TRANSFER-RISK] Risk assessed for order [{}]: Decision=[{}] Score=[{}] Reason=[{}]",
+        order.getId(), risk.decision(), risk.score(), risk.reason());
+
     if ("BLOCK".equals(risk.decision())) {
       order.setStatus(TransferStatus.FAILED);
       order.setFailureReason("RISK_BLOCKED: " + risk.reason());
       order.setUpdatedAt(Instant.now());
       order = transferOrderRepository.saveAndFlush(order);
+      log.warn("[TRANSFER-BLOCKED] Transfer order [{}] was blocked by RiskEngine: Reason=[{}]", order.getId(), risk.reason());
       return mapper.toResponse(order);
     }
     if ("REVIEW".equals(risk.decision())) {
@@ -162,10 +174,13 @@ public class TransferServiceImpl implements TransferService {
       order.setFailureReason("RISK_REVIEW_REQUIRED: " + risk.reason());
       order.setUpdatedAt(Instant.now());
       order = transferOrderRepository.saveAndFlush(order);
+      log.warn("[TRANSFER-REVIEW] Transfer order [{}] requires manual risk review: Reason=[{}]", order.getId(), risk.reason());
       return mapper.toResponse(order);
     }
 
+    log.info("[TRANSFER-SAGA] Starting saga execution for transfer order [{}]", order.getId());
     TransferOrderEntity result = sagaOrchestrator.run(order);
+    log.info("[TRANSFER-COMPLETED] Transfer order [{}] completed with Status=[{}]", result.getId(), result.getStatus());
     return mapper.toResponse(result);
   }
 

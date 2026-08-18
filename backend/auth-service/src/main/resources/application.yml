@@ -34,7 +34,7 @@ eureka:
 
 bank:
   feign:
-    transaction-url: ${FEIGN_TRANSACTION_URL:}
+    transaction-url: ${FEIGN_TRANSACTION_URL}
   gateway:
     signing-secret: ${GATEWAY_SIGNING_SECRET}
     max-clock-skew-seconds: ${GATEWAY_MAX_CLOCK_SKEW_SECONDS}
@@ -59,8 +59,8 @@ bank:
     password: ${ADMIN_PASSWORD}
     email: ${ADMIN_EMAIL}
   notification:
-    internal-url: ${NOTIFICATION_INTERNAL_URL:http://bank-notification:8085}
-    internal-api-key: ${NOTIFICATION_INTERNAL_API_KEY:}
+    internal-url: ${NOTIFICATION_INTERNAL_URL}
+    internal-api-key: ${NOTIFICATION_INTERNAL_API_KEY}
 
 management:
   endpoints:
@@ -89,6 +89,9 @@ springdoc:
 
 logging:
   pattern:
-    level: "%5p [${spring.application.name:},%X{correlationId:-},%X{traceId:-},%X{spanId:-}]"
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%magenta(${spring.application.name:system-bank})] [%thread] %highlight(%-5level) [%cyan(%X{correlationId:-})][%blue(%X{userId:-})] [%yellow(%-35logger{35})] : %msg%n"
+    level: "%5p [${spring.application.name:},%X{correlationId:-},%X{userId:-}]"
   level:
-    com.banksystem.auth: INFO
+    root: INFO
+    com.banksystem: INFO
+    org.springframework.web: INFO

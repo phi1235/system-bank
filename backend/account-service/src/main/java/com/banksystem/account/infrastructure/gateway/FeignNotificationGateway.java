@@ -1,14 +1,4 @@
 package com.banksystem.account.infrastructure.gateway;
-import com.banksystem.account.application.account.*;
-import com.banksystem.account.application.card.*;
-import com.banksystem.account.application.deposit.*;
-import com.banksystem.account.application.ledger.*;
-import com.banksystem.account.domain.account.*;
-import com.banksystem.account.domain.card.*;
-import com.banksystem.account.domain.deposit.*;
-import com.banksystem.account.domain.ledger.*;
-import com.banksystem.account.api.dto.*;
-
 import com.banksystem.account.application.gateway.NotificationGateway;
 import com.banksystem.account.infrastructure.feign.NotificationClient;
 import com.banksystem.account.infrastructure.feign.NotificationClientDtos.CreateNotificationRequest;
@@ -25,7 +15,7 @@ public class FeignNotificationGateway implements NotificationGateway {
 
   public FeignNotificationGateway(
       Optional<NotificationClient> notificationClient,
-      @Value("${bank.internal.notification-api-key:internal-secret-key-12345}") String notificationApiKey) {
+      @Value("${bank.internal.notification-api-key}") String notificationApiKey) {
     this.notificationClient = notificationClient.orElse(null);
     this.notificationApiKey = notificationApiKey;
   }

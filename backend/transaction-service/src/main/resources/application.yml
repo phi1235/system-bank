@@ -71,8 +71,8 @@ resilience4j:
 
 bank:
   feign:
-    notification-url: ${FEIGN_NOTIFICATION_URL:}
-    account-url: ${FEIGN_ACCOUNT_URL:}
+    notification-url: ${FEIGN_NOTIFICATION_URL}
+    account-url: ${FEIGN_ACCOUNT_URL}
   gateway:
     signing-secret: ${GATEWAY_SIGNING_SECRET}
     max-clock-skew-seconds: ${GATEWAY_MAX_CLOCK_SKEW_SECONDS}
@@ -92,16 +92,17 @@ bank:
   outbox:
     poll-ms: ${OUTBOX_POLL_MS}
     batch-size: ${OUTBOX_BATCH_SIZE}
+    claim-lease-seconds: ${OUTBOX_CLAIM_LEASE_SECONDS}
     # Retry / dead-letter for unpublished events
-    max-attempts: ${OUTBOX_MAX_ATTEMPTS:10}
-    base-delay-ms: ${OUTBOX_BASE_DELAY_MS:1000}
-    max-delay-ms: ${OUTBOX_MAX_DELAY_MS:300000}
+    max-attempts: ${OUTBOX_MAX_ATTEMPTS}
+    base-delay-ms: ${OUTBOX_BASE_DELAY_MS}
+    max-delay-ms: ${OUTBOX_MAX_DELAY_MS}
   # End-of-day ledger reconciliation (transfer_orders vs account-service ledger).
   # Scheduled run is opt-in; manual runs via POST /api/v1/admin/recon/runs always work.
   recon:
-    enabled: ${RECON_ENABLED:false}
+    enabled: ${RECON_ENABLED}
     # Default 00:30 banking-day zone, reconciling the previous banking day.
-    cron: ${RECON_CRON:0 30 0 * * *}
+    cron: ${RECON_CRON}
   # mock (default) | http — real switch URL/key only via env
   napas:
     provider: ${NAPAS_PROVIDER}
@@ -117,21 +118,55 @@ bank:
       max-attempts: ${NAPAS_STATUS_MAX_ATTEMPTS}
   transfer:
     # Internal transfer limits (VND). Override via env when needed.
-    max-per-transaction: ${TRANSFER_MAX_PER_TX:50000000}
-    daily-limit: ${TRANSFER_DAILY_LIMIT:200000000}
+    max-per-transaction: ${TRANSFER_MAX_PER_TX}
+    daily-limit: ${TRANSFER_DAILY_LIMIT}
     # Calendar day for daily limit (banking day). Default Vietnam.
-    daily-limit-zone: ${TRANSFER_DAILY_LIMIT_ZONE:Asia/Bangkok}
+    daily-limit-zone: ${TRANSFER_DAILY_LIMIT_ZONE}
     # Fee: fee = clamp(min, max, flat + amount * percent/100). Defaults free.
     # Source debited amount+fee; dest credited amount; fee credited to bank income account (GL).
     fee:
-      enabled: ${TRANSFER_FEE_ENABLED:true}
-      flat: ${TRANSFER_FEE_FLAT:0}
-      percent: ${TRANSFER_FEE_PERCENT:0}
-      min: ${TRANSFER_FEE_MIN:0}
-      max: ${TRANSFER_FEE_MAX:50000}
+      enabled: ${TRANSFER_FEE_ENABLED}
+      flat: ${TRANSFER_FEE_FLAT}
+      percent: ${TRANSFER_FEE_PERCENT}
+      min: ${TRANSFER_FEE_MIN}
+      max: ${TRANSFER_FEE_MAX}
       # Seeded in account-service V2__fee_income_account.sql (must match FEE_INCOME_ACCOUNT_NUMBER).
       # Value only from env (infra/.env) — no default in this pushed file.
       income-account-number: ${TRANSFER_FEE_INCOME_ACCOUNT}
+  forensics:
+    enabled: ${FORENSICS_ENABLED}
+    storage:
+      endpoint: ${FORENSICS_STORAGE_ENDPOINT}
+      access-key: ${FORENSICS_STORAGE_ACCESS_KEY}
+      secret-key: ${FORENSICS_STORAGE_SECRET_KEY}
+      bucket: ${FORENSICS_STORAGE_BUCKET}
+    ai:
+      enabled: ${FORENSICS_AI_ENABLED}
+      endpoint: ${FORENSICS_AI_ENDPOINT}
+      api-key: ${FORENSICS_AI_API_KEY}
+      model: ${FORENSICS_AI_MODEL}
+      connect-timeout: ${FORENSICS_AI_CONNECT_TIMEOUT}
+      read-timeout: ${FORENSICS_AI_READ_TIMEOUT}
+      session-retention: ${FORENSICS_AI_SESSION_RETENTION}
+      max-messages-per-session: ${FORENSICS_AI_MAX_MESSAGES_PER_SESSION}
+    replay:
+      deployed-commit-sha: ${FORENSICS_REPLAY_DEPLOYED_COMMIT_SHA}
+      execution-image-sha: ${FORENSICS_REPLAY_EXECUTION_IMAGE_SHA}
+    export-retention: ${FORENSICS_EXPORT_RETENTION}
+    graph-cache-ttl: ${FORENSICS_GRAPH_CACHE_TTL}
+    replay-retention: ${FORENSICS_REPLAY_RETENTION}
+    fork-quota-per-user: ${FORENSICS_FORK_QUOTA_PER_USER}
+    retention-cron: ${FORENSICS_RETENTION_CRON}
+    batch:
+      enabled: ${FORENSICS_BATCH_ENABLED}
+      actor-id: ${FORENSICS_BATCH_ACTOR_ID}
+      size: ${FORENSICS_BATCH_SIZE}
+      overlap: ${FORENSICS_BATCH_OVERLAP}
+      lease: ${FORENSICS_BATCH_LEASE}
+      cron: ${FORENSICS_BATCH_CRON}
+    orchestrator:
+      auto-case-enabled: ${FORENSICS_ORCHESTRATOR_AUTO_CASE_ENABLED}
+      causal-concurrency: ${FORENSICS_ORCHESTRATOR_CAUSAL_CONCURRENCY}
 
 management:
   endpoints:
@@ -163,6 +198,9 @@ springdoc:
 
 logging:
   pattern:
-    level: "%5p [${spring.application.name:},%X{correlationId:-},%X{traceId:-},%X{spanId:-}]"
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%magenta(${spring.application.name:system-bank})] [%thread] %highlight(%-5level) [%cyan(%X{correlationId:-})][%blue(%X{userId:-})] [%yellow(%-35logger{35})] : %msg%n"
+    level: "%5p [${spring.application.name:},%X{correlationId:-},%X{userId:-}]"
   level:
-    com.banksystem.transaction: INFO
+    root: INFO
+    com.banksystem: INFO
+    org.springframework.web: INFO

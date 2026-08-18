@@ -25,16 +25,16 @@ spring:
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       enable-auto-commit: ${KAFKA_ENABLE_AUTO_COMMIT}
   mail:
-    host: ${SMTP_HOST:}
-    port: ${SMTP_PORT:587}
-    username: ${SMTP_USERNAME:}
-    password: ${SMTP_PASSWORD:}
+    host: ${SMTP_HOST}
+    port: ${SMTP_PORT}
+    username: ${SMTP_USERNAME}
+    password: ${SMTP_PASSWORD}
     properties:
       mail:
         smtp:
-          auth: ${SMTP_AUTH:true}
+          auth: ${SMTP_AUTH}
           starttls:
-            enable: ${SMTP_STARTTLS:true}
+            enable: ${SMTP_STARTTLS}
 
 eureka:
   client:
@@ -52,16 +52,25 @@ bank:
     topic-failed: ${KAFKA_TOPIC_FAILED}
   internal:
     api-key: ${NOTIFICATION_INTERNAL_API_KEY}
+  notification:
+    ops-recipient: ${OPS_NOTIFICATION_RECIPIENT}
+    delivery-cron: ${NOTIFICATION_DELIVERY_CRON}
+    delivery-batch-size: ${NOTIFICATION_DELIVERY_BATCH_SIZE}
+    delivery-max-attempts: ${NOTIFICATION_DELIVERY_MAX_ATTEMPTS}
+    delivery-initial-backoff: ${NOTIFICATION_DELIVERY_INITIAL_BACKOFF}
+    sse-timeout: ${NOTIFICATION_SSE_TIMEOUT}
   # mock (default) | smtp — real credentials only via env / infra/.env
   email:
-    provider: ${EMAIL_PROVIDER:mock}
-    from: ${EMAIL_FROM:}
+    provider: ${EMAIL_PROVIDER}
+    from: ${EMAIL_FROM}
   # mock (default) | http — real SMS gateway URL/key only via env
   sms:
-    provider: ${SMS_PROVIDER:mock}
-    base-url: ${SMS_BASE_URL:}
-    api-key: ${SMS_API_KEY:}
-    from: ${SMS_FROM:}
+    provider: ${SMS_PROVIDER}
+    base-url: ${SMS_BASE_URL}
+    api-key: ${SMS_API_KEY}
+    from: ${SMS_FROM}
+    connect-timeout: ${SMS_CONNECT_TIMEOUT}
+    read-timeout: ${SMS_READ_TIMEOUT}
 
 management:
   endpoints:
@@ -74,7 +83,7 @@ management:
   health:
     # Avoid probing SMTP when EMAIL_PROVIDER=mock / SMTP credentials unset.
     mail:
-      enabled: ${MAIL_HEALTH_ENABLED:false}
+      enabled: ${MAIL_HEALTH_ENABLED}
 
   metrics:
     tags:
@@ -88,6 +97,9 @@ management:
 
 logging:
   pattern:
-    level: "%5p [${spring.application.name:},%X{correlationId:-},%X{traceId:-},%X{spanId:-}]"
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%magenta(${spring.application.name:system-bank})] [%thread] %highlight(%-5level) [%cyan(%X{correlationId:-})][%blue(%X{userId:-})] [%yellow(%-35logger{35})] : %msg%n"
+    level: "%5p [${spring.application.name:},%X{correlationId:-},%X{userId:-}]"
   level:
-    com.banksystem.notification: INFO
+    root: INFO
+    com.banksystem: INFO
+    org.springframework.web: INFO

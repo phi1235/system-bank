@@ -39,4 +39,8 @@ management:
 
 logging:
   pattern:
-    level: "%5p [${spring.application.name:},%X{correlationId:-},%X{traceId:-},%X{spanId:-}]"
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %highlight(%-5level) [%cyan(%X{correlationId:-NO-CORR})] [%blue(%X{userId:-ANON})] %yellow(%logger{36}) - %msg%n"
+    level: "%5p [${spring.application.name:},%X{correlationId:-},%X{userId:-}]"
+  level:
+    root: INFO
+    com.banksystem: INFO

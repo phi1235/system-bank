@@ -1,0 +1,181 @@
+openapi: 3.1.0
+info:
+  title: BankSystem Financial Forensics API
+  version: 1.0.0
+  description: Admin API for deterministic investigation, verification, case management, replay and evidence-grounded Copilot.
+servers:
+  - url: /api/v1
+security:
+  - bearerAuth: []
+tags:
+  - name: Investigations
+  - name: Verification
+  - name: Violations
+  - name: Cases
+  - name: Replay
+  - name: Scenarios
+  - name: Copilot
+paths:
+  /admin/forensics/capabilities:
+    get:
+      tags: [Investigations]
+      summary: Return enabled forensic capabilities for the current deployment
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+  /admin/forensics/investigations:
+    get:
+      tags: [Investigations]
+      summary: Search investigations with bounded pagination and allowlisted filters
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+  /admin/forensics/investigations/{transactionId}:
+    get:
+      tags: [Investigations]
+      summary: Load durable evidence and completeness for a transaction
+      parameters: [ { $ref: '#/components/parameters/TransactionId' } ]
+      responses: { '200': { $ref: '#/components/responses/Success' }, '404': { $ref: '#/components/responses/Error' } }
+  /admin/forensics/investigations/{transactionId}/timeline:
+    get:
+      tags: [Investigations]
+      summary: Load a paginated evidence timeline
+      parameters: [ { $ref: '#/components/parameters/TransactionId' } ]
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+  /admin/forensics/investigations/{transactionId}/temporal-state:
+    get:
+      tags: [Investigations]
+      summary: Reconstruct transaction and account state at an instant
+      parameters:
+        - $ref: '#/components/parameters/TransactionId'
+        - { name: at, in: query, required: true, schema: { type: string, format: date-time } }
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+  /admin/forensics/causal-graph/{transactionId}:
+    get:
+      tags: [Investigations]
+      summary: Return causal graph, first anomaly, completeness and canonical failure signature
+      parameters: [ { $ref: '#/components/parameters/TransactionId' } ]
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+  /admin/forensics/verification/check/{transactionId}:
+    post:
+      tags: [Verification]
+      summary: Run deterministic invariant verification
+      parameters:
+        - $ref: '#/components/parameters/TransactionId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses: { '200': { $ref: '#/components/responses/Success' }, '409': { $ref: '#/components/responses/Error' } }
+  /admin/forensics/verification/runs/{runId}:
+    get:
+      tags: [Verification]
+      summary: Get verification run and rule results
+      parameters: [ { $ref: '#/components/parameters/RunId' } ]
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+  /admin/forensics/violations:
+    get:
+      tags: [Violations]
+      summary: Search the violation work queue
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+  /admin/forensics/violations/{findingId}/acknowledge:
+    post:
+      tags: [Violations]
+      summary: Acknowledge a finding with reason and optimistic version
+      parameters: [ { name: findingId, in: path, required: true, schema: { type: string, format: uuid } } ]
+      responses: { '200': { $ref: '#/components/responses/Success' }, '409': { $ref: '#/components/responses/Error' } }
+  /admin/forensics/violations/{findingId}/resolve:
+    post:
+      tags: [Violations]
+      summary: Resolve or mark false positive; critical findings enforce maker-checker
+      parameters: [ { name: findingId, in: path, required: true, schema: { type: string, format: uuid } } ]
+      responses: { '200': { $ref: '#/components/responses/Success' }, '409': { $ref: '#/components/responses/Error' } }
+  /admin/forensics/cases:
+    get:
+      tags: [Cases]
+      summary: Search forensic cases
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+    post:
+      tags: [Cases]
+      summary: Create a case from a transaction or finding
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+  /admin/forensics/cases/{caseId}:
+    get:
+      tags: [Cases]
+      summary: Get case detail, findings and history projection
+      parameters: [ { $ref: '#/components/parameters/CaseId' } ]
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+  /admin/forensics/cases/{caseId}/exports:
+    post:
+      tags: [Cases]
+      summary: Create an asynchronous redacted evidence package
+      parameters: [ { $ref: '#/components/parameters/CaseId' } ]
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+  /admin/forensics/twin/forks:
+    post:
+      tags: [Replay]
+      summary: Create an isolated sanitized fork with TTL and quota
+      responses: { '200': { $ref: '#/components/responses/Success' }, '429': { $ref: '#/components/responses/Error' } }
+  /admin/forensics/twin/replays:
+    post:
+      tags: [Replay]
+      summary: Run a confirmed allowlisted scenario against the deployed commit
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      responses: { '200': { $ref: '#/components/responses/Success' }, '409': { $ref: '#/components/responses/Error' } }
+  /admin/forensics/twin/runs/{runId}:
+    get:
+      tags: [Replay]
+      summary: Return replay lifecycle and before/after verification metadata
+      parameters: [ { $ref: '#/components/parameters/RunId' } ]
+      responses: { '200': { $ref: '#/components/responses/Success' }, '403': { $ref: '#/components/responses/Error' } }
+  /admin/forensics/scenarios:
+    get:
+      tags: [Scenarios]
+      summary: List confirmed scenarios available to replay operators
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+    post:
+      tags: [Scenarios]
+      summary: Create a sanitized scenario draft from durable incident evidence
+      responses: { '200': { $ref: '#/components/responses/Success' }, '400': { $ref: '#/components/responses/Error' } }
+  /admin/forensics/scenarios/{scenarioId}/confirm:
+    post:
+      tags: [Scenarios]
+      summary: Confirm an unchanged draft as a different platform administrator
+      parameters: [ { name: scenarioId, in: path, required: true, schema: { type: string } } ]
+      responses: { '200': { $ref: '#/components/responses/Success' }, '409': { $ref: '#/components/responses/Error' } }
+  /admin/forensics/copilot/sessions:
+    post:
+      tags: [Copilot]
+      summary: Create a scoped read-only Copilot session
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+  /admin/forensics/copilot/sessions/{sessionId}/messages:
+    post:
+      tags: [Copilot]
+      summary: Ask against sanitized outputs from the fixed read-only tool registry
+      parameters: [ { name: sessionId, in: path, required: true, schema: { type: string, format: uuid } } ]
+      responses: { '200': { $ref: '#/components/responses/Success' }, '422': { $ref: '#/components/responses/Error' } }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    TransactionId: { name: transactionId, in: path, required: true, schema: { type: string, format: uuid } }
+    RunId: { name: runId, in: path, required: true, schema: { type: string, format: uuid } }
+    CaseId: { name: caseId, in: path, required: true, schema: { type: string, format: uuid } }
+    IdempotencyKey: { name: Idempotency-Key, in: header, required: true, schema: { type: string, minLength: 8, maxLength: 120 } }
+  responses:
+    Success:
+      description: ApiResponse success envelope
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiResponse' }
+    Error:
+      description: Stable business error envelope without stack trace or sensitive detail
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiResponse' }
+  schemas:
+    ApiResponse:
+      type: object
+      required: [success, timestamp]
+      properties:
+        success: { type: boolean }
+        data: {}
+        error:
+          type: object
+          properties:
+            code: { type: string }
+            message: { type: string }
+        timestamp: { type: string, format: date-time }

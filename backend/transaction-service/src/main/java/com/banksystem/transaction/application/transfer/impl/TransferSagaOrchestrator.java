@@ -54,7 +54,7 @@ public class TransferSagaOrchestrator {
       TransferFeeGlService feeGlService,
       NapasSwitchClient napasSwitchClient,
       TransactionTemplate transactionTemplate,
-      @Value("${bank.saga.fail-credit:false}") boolean failCredit) {
+      @Value("${bank.saga.fail-credit}") boolean failCredit) {
     this.transferOrderRepository = transferOrderRepository;
     this.sagaStepLogRepository = sagaStepLogRepository;
     this.accountGateway = accountGateway;
@@ -317,7 +317,13 @@ public class TransferSagaOrchestrator {
   private MoneyResult callCreditTotal(UUID accountId, TransferOrderEntity order, String referenceId) {
     BigDecimal fee = order.getFeeAmount() == null ? BigDecimal.ZERO : order.getFeeAmount();
     BigDecimal total = order.getAmount().add(fee);
-    return callCreditAmount(accountId, total, referenceId, "Compensation " + order.getId());
+    MoneyResult result = accountGateway.compensateCredit(
+        accountId,
+        new MoneyCommand(total, referenceId, "Compensation " + order.getId(), referenceId));
+    if (result == null) {
+      throw new BusinessException("COMPENSATION_CREDIT_FAILED", "Compensation credit failed");
+    }
+    return result;
   }
 
   private MoneyResult callCreditAmount(

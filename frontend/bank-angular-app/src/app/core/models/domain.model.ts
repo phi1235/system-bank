@@ -541,3 +541,382 @@ export interface BillPaymentHistory {
   transactionRef: string;
   createdAt: string;
 }
+
+export interface ForensicInvestigation {
+  transactionId: string;
+  status: string;
+  transferType: string;
+  fromAccountId: string;
+  toAccountId: string | null;
+  toAccountNumber: string;
+  targetBankCode: string | null;
+  targetAccountName: string | null;
+  amount: number;
+  feeAmount: number;
+  currency: string;
+  riskDecision: string | null;
+  riskScore: number | null;
+  providerStatus: string | null;
+  failureReason: string | null;
+  needsAttention: boolean;
+  primarySignal: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ForensicSagaEvidence {
+  id: string;
+  step: string;
+  status: string;
+  detail: string | null;
+  occurredAt: string;
+}
+
+export interface ForensicOutboxEvidence {
+  id: string;
+  eventType: string;
+  status: string;
+  attemptCount: number;
+  lastError: string | null;
+  occurredAt: string;
+  publishedAt: string | null;
+}
+
+export interface ForensicReconciliationEvidence {
+  id: string;
+  runId: string;
+  kind: string;
+  entryRef: string | null;
+  expectedAmount: number | null;
+  actualAmount: number | null;
+  detail: string | null;
+}
+
+export interface ForensicAuditEvidence {
+  id: string;
+  actorUserId: string | null;
+  action: string;
+  resourceType: string | null;
+  detail: string | null;
+  occurredAt: string;
+}
+
+export interface ForensicTimelineEvidence {
+  source: string;
+  sourceId: string;
+  event: string;
+  status: string | null;
+  detail: string | null;
+  occurredAt: string;
+}
+
+export interface ForensicLedgerPostingEvidence {
+  id: string;
+  accountId: string | null;
+  ledgerAccountCode: string;
+  side: string;
+  amount: number;
+  currency: string;
+  createdAt: string;
+}
+
+export interface ForensicLedgerJournalEvidence {
+  id: string;
+  businessCommandId: string;
+  businessReference: string;
+  journalType: string;
+  status: string;
+  currency: string;
+  description: string | null;
+  reversalOfJournalId: string | null;
+  sequenceNo: number;
+  createdAt: string;
+  postedAt: string | null;
+  postings: ForensicLedgerPostingEvidence[];
+}
+
+export interface ForensicLedgerHoldEvidence {
+  id: string;
+  accountId: string;
+  amount: number;
+  currency: string;
+  status: string;
+  expiresAt: string | null;
+  capturedJournalId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ForensicFinancialEventEvidence {
+  eventId: string;
+  aggregateType: string;
+  aggregateId: string;
+  sequenceNo: number;
+  eventType: string;
+  schemaVersion: number;
+  occurredAt: string;
+  payload: Record<string, unknown>;
+  payloadSha256: string;
+}
+
+export interface ForensicLedgerEvidence {
+  available: boolean;
+  completeness: string;
+  journals: ForensicLedgerJournalEvidence[];
+  holds: ForensicLedgerHoldEvidence[];
+  events: ForensicFinancialEventEvidence[];
+}
+
+export interface ForensicFinancialViolation {
+  ruleCode: string;
+  severity: string;
+  status: string;
+  message: string;
+  evidenceIds: string[];
+}
+
+export interface ForensicCausalNode {
+  id: string;
+  type: string;
+  label: string;
+  status: string | null;
+  occurredAt: string | null;
+  anomalous: boolean;
+}
+
+export interface ForensicCausalEdge {
+  id: string;
+  fromNodeId: string;
+  toNodeId: string;
+  relation: string;
+}
+
+export interface ForensicCausalGraph {
+  nodes: ForensicCausalNode[];
+  edges: ForensicCausalEdge[];
+  firstAnomalousNodeId: string | null;
+  failureSignature: string | null;
+  completeness: string;
+}
+
+export interface ForensicTemporalAccountState {
+  accountId: string;
+  currency: string;
+  ledgerBalance: number;
+  activeHoldAmount: number;
+  availableBalance: number;
+  completeness: string;
+}
+
+export interface ForensicTemporalState {
+  transactionId: string;
+  at: string;
+  transactionState: string;
+  accountStates: ForensicTemporalAccountState[];
+  missingSources: string[];
+  completeness: string;
+}
+
+export interface ForensicVerificationRuleResult {
+  id: string;
+  ruleCode: string;
+  outcome: string;
+  severity: string;
+  message: string;
+  evidence: Record<string, unknown>;
+  evaluatedAt: string;
+}
+
+export interface ForensicVerificationRun {
+  id: string;
+  transactionId: string;
+  ruleSetVersion: string;
+  status: string;
+  outcome: string | null;
+  sourceWatermark: string | null;
+  startedAt: string;
+  completedAt: string | null;
+  results: ForensicVerificationRuleResult[];
+}
+
+export interface ForensicEvidenceExport {
+  id: string;
+  caseId: string;
+  status: string;
+  sensitivity: string;
+  packageSha256: string | null;
+  errorDetail: string | null;
+  createdAt: string;
+  completedAt: string | null;
+  expiresAt: string;
+}
+
+export interface ForensicTwinFork {
+  id: string;
+  transactionId: string;
+  status: string;
+  snapshotSha256: string;
+  schemaVersion: number;
+  createdAt: string;
+  expiresAt: string;
+}
+
+export interface ForensicReplayRun {
+  id: string;
+  forkId: string;
+  scenarioId: string;
+  seed: number;
+  targetCommitSha: string;
+  status: string;
+  resultSha256: string | null;
+  errorDetail: string | null;
+  createdAt: string;
+  startedAt: string | null;
+  completedAt: string | null;
+  expiresAt: string;
+}
+
+export interface ForensicReplayScenario {
+  scenarioId: string;
+  title: string;
+  engineKey: string;
+  sourceIncidentId: string;
+  sourceEvidenceRef: string;
+  definition: Record<string, unknown>;
+  sanitized: boolean;
+  status: string;
+  createdBy: string;
+  confirmedBy: string | null;
+  confirmedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  version: number;
+}
+
+export interface ForensicCopilotSession {
+  id: string;
+  transactionId: string | null;
+  caseId: string | null;
+  status: string;
+  createdAt: string;
+  expiresAt: string;
+}
+
+export interface ForensicCopilotCitation {
+  sourceType: string;
+  sourceId: string;
+  label: string;
+}
+
+export interface ForensicCopilotAnswer {
+  messageId: string;
+  answer: string;
+  status: string;
+  toolCalls: string[];
+  citations: ForensicCopilotCitation[];
+  validation: Record<string, unknown>;
+  createdAt: string;
+}
+
+export interface ForensicInvestigationDetail {
+  transaction: ForensicInvestigation;
+  evidenceCompleteness: string;
+  missingSources: string[];
+  sagaSteps: ForensicSagaEvidence[];
+  outboxEvents: ForensicOutboxEvidence[];
+  reconciliationItems: ForensicReconciliationEvidence[];
+  auditEvents: ForensicAuditEvidence[];
+  ledgerEvidence: ForensicLedgerEvidence;
+  violations: ForensicFinancialViolation[];
+  causalGraph: ForensicCausalGraph;
+  timeline: ForensicTimelineEvidence[];
+}
+
+export interface ForensicBusinessNarrative {
+  summary: string;
+  impactAnalysis: string;
+  rootCauseNarrative: string;
+  suggestedRemediationNarrative: string;
+  groundedEvidenceKeys: string[];
+  generatedBy: string;
+  generatedAt: string;
+}
+
+export interface ForensicCase {
+  id: string;
+  caseNumber: string;
+  transactionId: string | null;
+  accountId: string | null;
+  sourceType: string;
+  sourceReferenceId: string | null;
+  status: string;
+  investigationStage: string;
+  priority: string;
+  title: string;
+  summary: string | null;
+  evidenceCompleteness: string;
+  assignedTo: string | null;
+  createdBy: string;
+  submittedBy: string | null;
+  checkerId: string | null;
+  resolutionCode: string | null;
+  resolutionNote: string | null;
+  remediationStatus: string;
+  remediationActions: RemediationAction[];
+  businessNarrative?: ForensicBusinessNarrative | null;
+  systemic: boolean;
+  investigationCycle: number;
+  version: number;
+  submittedAt: string | null;
+  resolvedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RemediationAction {
+  actionType: string;
+  referenceId: string | null;
+  description: string;
+  completed: boolean;
+  completedAt: string | null;
+}
+
+export interface ForensicFinding {
+  id: string;
+  findingKey: string;
+  ruleCode: string;
+  outcome: string;
+  severity: string;
+  disposition: string;
+  title: string;
+  detail: string | null;
+  evidence: Record<string, unknown>;
+  evidenceHash: string;
+  occurrenceCount: number;
+  detectedAt: string;
+  lastSeenAt: string;
+  acknowledgedBy: string | null;
+  acknowledgedAt: string | null;
+  resolutionReason: string | null;
+  resolutionEvidence: Record<string, unknown>;
+  resolvedBy: string | null;
+  resolvedAt: string | null;
+  version: number;
+}
+
+export interface ForensicCaseDetail {
+  forensicCase: ForensicCase;
+  findings: ForensicFinding[];
+}
+
+export interface ForensicCaseHistory {
+  id: string;
+  actorUserId: string;
+  action: string;
+  fromStatus: string | null;
+  toStatus: string;
+  decision: string | null;
+  note: string | null;
+  caseVersion: number;
+  createdAt: string;
+}

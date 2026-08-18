@@ -1,21 +1,21 @@
 package com.banksystem.account.application.account.impl;
-import com.banksystem.account.application.account.*;
-import com.banksystem.account.application.card.*;
-import com.banksystem.account.application.deposit.*;
-import com.banksystem.account.application.ledger.*;
-import com.banksystem.account.domain.account.*;
-import com.banksystem.account.domain.card.*;
-import com.banksystem.account.domain.deposit.*;
-import com.banksystem.account.domain.ledger.*;
-import com.banksystem.account.api.dto.*;
-
 import com.banksystem.account.api.dto.AccountDtos.AccountResponse;
 import com.banksystem.account.api.dto.AccountDtos.AdminAccountFilterRequest;
 import com.banksystem.account.api.dto.AccountDtos.MoneyCommand;
 import com.banksystem.account.api.dto.AccountDtos.MoneyResult;
 import com.banksystem.account.api.dto.AccountDtos.TopUpRequest;
 import com.banksystem.account.api.dto.AccountDtos.TopUpResponse;
+import com.banksystem.account.application.account.AccountAccessService;
+import com.banksystem.account.application.account.AccountMapper;
+import com.banksystem.account.application.account.AccountMoneyService;
+import com.banksystem.account.application.account.AdminAccountSearchQuery;
+import com.banksystem.account.application.account.AdminAccountService;
 import com.banksystem.account.application.gateway.AuditGateway;
+import com.banksystem.account.application.ledger.OpsAlertPublisher;
+import com.banksystem.account.domain.account.AccountEntity;
+import com.banksystem.account.domain.account.AccountRepository;
+import com.banksystem.account.domain.account.AccountStatus;
+import com.banksystem.account.domain.account.AccountType;
 import com.banksystem.common.api.PageResponse;
 import com.banksystem.common.exception.BusinessException;
 import com.banksystem.common.security.GatewayUser;
@@ -61,7 +61,7 @@ public class AdminAccountServiceImpl implements AdminAccountService {
       OpsAlertPublisher opsAlertPublisher,
       AccountMoneyService moneyService,
       AuditGateway auditGateway,
-      @Value("${bank.account.topup.max-amount:50000000}") BigDecimal maxTopUpAmount) {
+      @Value("${bank.account.topup.max-amount}") BigDecimal maxTopUpAmount) {
     this.accountRepository = accountRepository;
     this.access = access;
     this.mapper = mapper;

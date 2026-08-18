@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://banksystem.local/schemas/forensic-replay-scenario-v1.json",
+  "title": "BankSystem forensic replay scenario",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "faults"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "faults": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type", "target"],
+        "properties": {
+          "type": {
+            "enum": [
+              "TIMEOUT",
+              "DELAY",
+              "DUPLICATE",
+              "FAIL_BEFORE_COMMIT",
+              "FAIL_AFTER_COMMIT",
+              "KAFKA_UNAVAILABLE"
+            ]
+          },
+          "target": { "type": "string", "minLength": 1, "maxLength": 120 },
+          "occurrence": { "type": "integer", "minimum": 1, "maximum": 1000, "default": 1 },
+          "probabilityBps": { "type": "integer", "minimum": 0, "maximum": 10000, "default": 10000 },
+          "delayMs": { "type": "integer", "minimum": 0, "maximum": 60000, "default": 0 }
+        },
+        "allOf": [
+          {
+            "if": { "properties": { "type": { "const": "DELAY" } } },
+            "then": { "required": ["delayMs"], "properties": { "delayMs": { "minimum": 1 } } },
+            "else": { "properties": { "delayMs": { "const": 0 } } }
+          }
+        ]
+      }
+    }
+  }
+}

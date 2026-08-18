@@ -1,0 +1,109 @@
+<mat-card class="violation-queue-card">
+  <div class="queue-heading">
+    <div class="title-group">
+      <div class="icon-title">
+        <mat-icon color="warn">report_problem</mat-icon>
+        <h3>{{ 'FORENSICS.VIOLATION_QUEUE' | translate }}</h3>
+      </div>
+      <p>{{ 'FORENSICS.VIOLATION_QUEUE_SUB' | translate }}</p>
+    </div>
+
+    <div class="filters-row">
+      <mat-form-field appearance="outline" class="filter-control">
+        <mat-label>{{ 'COMMON.STATUS' | translate }}</mat-label>
+        <mat-select [(ngModel)]="disposition" (selectionChange)="pageIndex = 0; load()">
+          @for (item of dispositions; track item) {
+          <mat-option [value]="item">{{ item || ('COMMON.ALL' | translate) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="filter-control">
+        <mat-label>{{ 'FORENSICS.SEVERITY' | translate }}</mat-label>
+        <mat-select [(ngModel)]="severity" (selectionChange)="pageIndex = 0; load()">
+          @for (item of severities; track item) {
+          <mat-option [value]="item">{{ item || ('COMMON.ALL' | translate) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+  </div>
+
+  <div class="queue-layout">
+    <!-- LEFT: VIOLATION ITEMS LIST -->
+    <div class="violation-list-col">
+      @for (item of rows; track item.id) {
+      <button
+        type="button"
+        class="violation-item-card"
+        [class.selected]="selected?.id === item.id"
+        (click)="choose(item)"
+      >
+        <div class="item-header">
+          <span class="rule-code">{{ item.ruleCode }}</span>
+          <span class="severity-tag" [attr.data-severity]="item.severity">{{ item.severity }}</span>
+          <span class="disposition-tag">{{ item.disposition }}</span>
+        </div>
+        <p class="item-title">{{ item.title }}</p>
+        <time class="item-time"><mat-icon>schedule</mat-icon> {{ item.lastSeenAt | date: 'medium' }}</time>
+      </button>
+      } @empty {
+      <div class="empty-violation-state">
+        <mat-icon>verified</mat-icon>
+        <p>{{ 'FORENSICS.NO_VIOLATIONS' | translate }}</p>
+      </div>
+      }
+
+      <mat-paginator
+        [length]="totalElements"
+        [pageIndex]="pageIndex"
+        [pageSize]="pageSize"
+        [pageSizeOptions]="[10, 20, 50]"
+        (page)="page($event)"
+      />
+    </div>
+
+    <!-- RIGHT: SELECTED VIOLATION DECISION WORKSPACE -->
+    @if (selected; as item) {
+    <div class="violation-decision-col">
+      <div class="decision-card">
+        <div class="decision-header">
+          <span class="severity-tag" [attr.data-severity]="item.severity">{{ item.severity }}</span>
+          <span class="disposition-tag">{{ item.disposition }}</span>
+        </div>
+
+        <h3 class="decision-title">{{ item.title }}</h3>
+        <p class="decision-detail">{{ item.detail || '—' }}</p>
+        <div class="violation-code-row">
+          <span class="code-label">{{ 'FORENSICS.VIOLATION_ID' | translate }}:</span>
+          <code>{{ item.id }}</code>
+        </div>
+
+        <div class="ho-actions-section">
+          <mat-form-field appearance="outline" class="note-input">
+            <mat-label>{{ 'FORENSICS.HO_NOTE_LABEL' | translate }}</mat-label>
+            <textarea
+              matInput
+              [(ngModel)]="reason"
+              rows="3"
+              [placeholder]="'FORENSICS.HO_NOTE_PLACEHOLDER' | translate"
+            ></textarea>
+          </mat-form-field>
+
+          <div class="action-btn-row">
+            @if (item.disposition !== 'RESOLVED') {
+            <button mat-flat-button color="primary" type="button" [disabled]="busy" (click)="resolveDirect()">
+              <mat-icon>task_alt</mat-icon> {{ 'FORENSICS.HO_CLOSE_FINDING' | translate }}
+            </button>
+            } @else {
+            <div class="resolved-alert">
+              <mat-icon>check_circle</mat-icon>
+              <span>{{ 'FORENSICS.HO_FINDING_CLOSED' | translate }}</span>
+            </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+    }
+  </div>
+</mat-card>

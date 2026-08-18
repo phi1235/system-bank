@@ -1,19 +1,16 @@
 package com.banksystem.account.application.card.impl;
-import com.banksystem.account.application.account.*;
-import com.banksystem.account.application.card.*;
-import com.banksystem.account.application.deposit.*;
-import com.banksystem.account.application.ledger.*;
-import com.banksystem.account.domain.account.*;
-import com.banksystem.account.domain.card.*;
-import com.banksystem.account.domain.deposit.*;
-import com.banksystem.account.domain.ledger.*;
-import com.banksystem.account.api.dto.*;
-
 import com.banksystem.account.api.dto.CardDtos.AdminCardFilterRequest;
 import com.banksystem.account.api.dto.CardDtos.AdminCardRow;
 import com.banksystem.account.api.dto.CardDtos.BatchApproveResult;
 import com.banksystem.account.api.dto.CardDtos.CardResponse;
+import com.banksystem.account.application.card.CardApprovalService;
+import com.banksystem.account.application.card.CardNumberGenerator;
 import com.banksystem.account.application.mapper.CardMapper;
+import com.banksystem.account.domain.account.AccountEntity;
+import com.banksystem.account.domain.account.AccountRepository;
+import com.banksystem.account.domain.card.CardEntity;
+import com.banksystem.account.domain.card.CardRepository;
+import com.banksystem.account.domain.card.CardStatus;
 import com.banksystem.account.infrastructure.feign.AuditClient;
 import com.banksystem.account.infrastructure.feign.CustomerClient;
 import com.banksystem.account.infrastructure.feign.NotificationClient;
@@ -77,7 +74,7 @@ public class CardApprovalServiceImpl implements CardApprovalService {
       Clock clock,
       @Value("${bank.deposit.zone}") String zone,
       @Value("${bank.aes.secret-key}") String aesKey,
-      @Value("${bank.card.validity-years:3}") int validityYears) {
+      @Value("${bank.card.validity-years}") int validityYears) {
     this.cardRepository = cardRepository;
     this.accountRepository = accountRepository;
     this.customerClient = customerClient;
@@ -190,6 +187,8 @@ public class CardApprovalServiceImpl implements CardApprovalService {
         "CARD_APPROVED",
         "The the ao duoi so " + card.getPanLast4()
             + " da duoc duyet. Vao muc The de kich hoat va su dung.");
+    log.info("[CARD-APPROVE] Card [{}] approved by staff [{}], panLast4=[{}]",
+        card.getId(), staffId, card.getPanLast4());
     return toResponse(card);
   }
 
@@ -207,6 +206,8 @@ public class CardApprovalServiceImpl implements CardApprovalService {
 
     audit(staffId, "CARD_REJECT", card, "reason=" + reason);
     notify(card, "CARD_REJECTED", "Yeu cau mo the bi tu choi: " + reason);
+    log.warn("[CARD-REJECT] Card [{}] rejected by staff [{}]: Reason=[{}]",
+        card.getId(), staffId, reason);
     return toResponse(card);
   }
 

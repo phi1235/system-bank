@@ -1,12 +1,8 @@
 package com.banksystem.notification.application.notification.impl;
-import com.banksystem.notification.application.notification.*;
-import com.banksystem.notification.domain.notification.*;
-import com.banksystem.notification.domain.event.*;
-import com.banksystem.notification.api.dto.*;
-
 import com.banksystem.notification.api.dto.NotificationDtos.NotificationItem;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -14,6 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -26,19 +23,21 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 public class NotificationRealtimeHub {
 
   private static final Logger log = LoggerFactory.getLogger(NotificationRealtimeHub.class);
-  private static final long TIMEOUT_MS = 0L; // no timeout; client reconnects on drop
-
   private final ObjectMapper objectMapper;
+  private final long timeoutMillis;
   private final Map<UUID, CopyOnWriteArrayList<SseEmitter>> emittersByUser = new ConcurrentHashMap<>();
   private final CopyOnWriteArrayList<SseEmitter> opsEmitters = new CopyOnWriteArrayList<>();
 
-  public NotificationRealtimeHub(ObjectMapper objectMapper) {
+  public NotificationRealtimeHub(
+      ObjectMapper objectMapper,
+      @Value("${bank.notification.sse-timeout}") Duration timeout) {
     // Spring Boot ObjectMapper already has JavaTimeModule; copy + register keeps unit tests safe too.
     this.objectMapper = objectMapper.copy().findAndRegisterModules();
+    this.timeoutMillis = timeout.toMillis();
   }
 
   public SseEmitter subscribe(UUID userId) {
-    SseEmitter emitter = new SseEmitter(TIMEOUT_MS);
+    SseEmitter emitter = new SseEmitter(timeoutMillis);
     emittersByUser.computeIfAbsent(userId, id -> new CopyOnWriteArrayList<>()).add(emitter);
 
     Runnable cleanup = () -> remove(userId, emitter);
@@ -55,7 +54,7 @@ public class NotificationRealtimeHub {
   }
 
   public SseEmitter subscribeOps() {
-    SseEmitter emitter = new SseEmitter(TIMEOUT_MS);
+    SseEmitter emitter = new SseEmitter(timeoutMillis);
     opsEmitters.add(emitter);
 
     Runnable cleanup = () -> removeOps(emitter);

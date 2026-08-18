@@ -1,14 +1,6 @@
 package com.banksystem.account.domain.account;
-import com.banksystem.account.application.account.*;
-import com.banksystem.account.application.card.*;
-import com.banksystem.account.application.deposit.*;
-import com.banksystem.account.application.ledger.*;
-import com.banksystem.account.domain.account.*;
-import com.banksystem.account.domain.card.*;
-import com.banksystem.account.domain.deposit.*;
-import com.banksystem.account.domain.ledger.*;
-import com.banksystem.account.api.dto.*;
 
+import jakarta.persistence.LockModeType;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
@@ -17,11 +9,16 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface AccountRepository extends JpaRepository<AccountEntity, UUID> {
+
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @Query("SELECT a FROM AccountEntity a WHERE a.id = :id")
+  Optional<AccountEntity> findByIdForUpdate(@Param("id") UUID id);
 
   List<AccountEntity> findByUserIdOrderByCreatedAtDesc(UUID userId);
 
@@ -102,4 +99,12 @@ public interface AccountRepository extends JpaRepository<AccountEntity, UUID> {
       WHERE id = :id AND status = 'ACTIVE'
       """, nativeQuery = true)
   int creditIfActive(@Param("id") UUID id, @Param("amount") BigDecimal amount);
+
+  @Modifying(clearAutomatically = true, flushAutomatically = true)
+  @Query(value = """
+      UPDATE accounts
+      SET balance = balance + :amount, updated_at = NOW()
+      WHERE id = :id AND status IN ('ACTIVE', 'FROZEN')
+      """, nativeQuery = true)
+  int creditForCompensation(@Param("id") UUID id, @Param("amount") BigDecimal amount);
 }

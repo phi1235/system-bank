@@ -1,14 +1,4 @@
 package com.banksystem.account.infrastructure.gateway;
-import com.banksystem.account.application.account.*;
-import com.banksystem.account.application.card.*;
-import com.banksystem.account.application.deposit.*;
-import com.banksystem.account.application.ledger.*;
-import com.banksystem.account.domain.account.*;
-import com.banksystem.account.domain.card.*;
-import com.banksystem.account.domain.deposit.*;
-import com.banksystem.account.domain.ledger.*;
-import com.banksystem.account.api.dto.*;
-
 import com.banksystem.account.application.gateway.CustomerGateway;
 import com.banksystem.account.infrastructure.feign.CustomerClient;
 import com.banksystem.account.infrastructure.feign.CustomerClient.CustomerNameView;
@@ -34,7 +24,7 @@ public class FeignCustomerGateway implements CustomerGateway {
 
   public FeignCustomerGateway(
       Optional<CustomerClient> customerClient,
-      @Value("${bank.internal.customer-api-key:internal-secret-key-12345}") String customerApiKey) {
+      @Value("${bank.internal.customer-api-key}") String customerApiKey) {
     this.customerClient = customerClient.orElse(null);
     this.customerApiKey = customerApiKey;
   }

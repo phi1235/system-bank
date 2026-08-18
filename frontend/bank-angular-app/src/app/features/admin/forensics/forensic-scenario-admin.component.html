@@ -1,0 +1,42 @@
+@if (canAdmin$ | async) {
+<mat-card class="scenario-admin">
+  <h2>{{ 'FORENSICS.SCENARIO_ADMIN' | translate }}</h2>
+  <p>{{ 'FORENSICS.SCENARIO_ADMIN_SUB' | translate }}</p>
+  <div class="scenario-grid">
+    <form (ngSubmit)="create()" class="draft">
+      <mat-form-field appearance="outline"><mat-label>{{ 'FORENSICS.SCENARIO_ID' | translate }}</mat-label><input
+          matInput [(ngModel)]="draft.scenarioId" name="scenarioId" required /></mat-form-field>
+      <mat-form-field appearance="outline"><mat-label>{{ 'COMMON.TITLE' | translate }}</mat-label><input matInput
+          [(ngModel)]="draft.title" name="title" required /></mat-form-field>
+      <mat-form-field appearance="outline"><mat-label>{{ 'FORENSICS.SCENARIO_ENGINE' | translate
+          }}</mat-label><mat-select [(ngModel)]="draft.engineKey" name="engineKey">@for (engine of engines; track
+          engine) { <mat-option [value]="engine">{{ engine }}</mat-option> }</mat-select></mat-form-field>
+      <mat-form-field appearance="outline"><mat-label>{{ 'FORENSICS.INCIDENT_ID' | translate }}</mat-label><input
+          matInput [(ngModel)]="draft.sourceIncidentId" name="incident" required /></mat-form-field>
+      <mat-form-field appearance="outline"><mat-label>{{ 'FORENSICS.SOURCE_EVIDENCE' | translate }}</mat-label><input
+          matInput [(ngModel)]="draft.sourceEvidenceRef" name="evidenceRef" required /></mat-form-field>
+      <mat-form-field appearance="outline" class="wide"><mat-label>{{ 'FORENSICS.SCENARIO_DEFINITION' | translate
+          }}</mat-label><textarea matInput [(ngModel)]="draft.definition" name="definition"></textarea></mat-form-field>
+      <small class="wide fault-catalog">{{ 'FORENSICS.ALLOWED_FAULTS' | translate }}: {{ faultTypes.join(', ')
+        }}</small>
+      <button mat-flat-button color="primary" type="submit" [disabled]="busy">{{ 'FORENSICS.CREATE_SCENARIO_DRAFT' |
+        translate }}</button>
+    </form>
+    <div class="scenario-list">
+      @for (item of scenarios; track item.scenarioId) {
+      <article>
+        <div><strong>{{ item.title }}</strong><span>{{ item.status }}</span></div><small>{{ item.scenarioId }} · {{
+          item.engineKey }}</small>
+        @if (item.sourceIncidentId) { <button mat-button class="case-badge" type="button"
+          (click)="navigateToCase.emit(item.sourceIncidentId)">🔗 {{ 'FORENSICS.FROM_CASE' | translate }} {{
+          item.sourceIncidentId.substring(0, 8) }}</button> }
+        @if (item.status === 'DRAFT') { <button mat-stroked-button type="button" [disabled]="busy"
+          (click)="confirm(item)">{{ 'FORENSICS.CONFIRM_SCENARIO' | translate }}</button> }
+        @if (item.status === 'CONFIRMED') { <button mat-stroked-button type="button" (click)="download(item)">{{
+          'FORENSICS.DOWNLOAD_SCENARIO' | translate }}</button> }
+      </article>
+      }
+    </div>
+  </div>
+</mat-card>
+}

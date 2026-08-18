@@ -1,0 +1,59 @@
+{
+  "transaction" : {
+    "transactionId" : "ffffffff-0000-4000-a000-000000000001",
+    "status" : "FAILED",
+    "transferType" : "INTERNAL",
+    "fromAccountId" : "22222222-2222-2222-2222-222222222222",
+    "toAccountId" : "33333333-3333-3333-3333-333333333333",
+    "toAccountNumber" : "REDACTED:86a3533af20f",
+    "targetBankCode" : null,
+    "targetAccountName" : null,
+    "amount" : 5E+6,
+    "feeAmount" : 0,
+    "currency" : "VND",
+    "riskDecision" : null,
+    "riskScore" : null,
+    "providerStatus" : null,
+    "failureReason" : "SAGA_STEP_FAILED: Ledger balance mismatch detected during debit",
+    "needsAttention" : true,
+    "primarySignal" : "TRANSFER_FAILED",
+    "createdAt" : "2026-08-11T15:50:03.835010Z",
+    "updatedAt" : "2026-08-11T15:50:03.835010Z"
+  },
+  "evidenceCompleteness" : "PARTIAL",
+  "missingSources" : [ "SAGA", "OUTBOX", "AUDIT", "LEDGER" ],
+  "sagaSteps" : [ ],
+  "outboxEvents" : [ ],
+  "reconciliationItems" : [ ],
+  "auditEvents" : [ ],
+  "ledgerEvidence" : {
+    "available" : true,
+    "completeness" : "EMPTY",
+    "journals" : [ ],
+    "holds" : [ ],
+    "events" : [ ]
+  },
+  "violations" : [ ],
+  "causalGraph" : {
+    "nodes" : [ {
+      "id" : "TRANSFER:ffffffff-0000-4000-a000-000000000001",
+      "type" : "TRANSFER",
+      "label" : "ffffffff-0000-4000-a000-000000000001",
+      "status" : "FAILED",
+      "occurredAt" : "2026-08-11T15:50:03.835010Z",
+      "anomalous" : true
+    } ],
+    "edges" : [ ],
+    "firstAnomalousNodeId" : "TRANSFER:ffffffff-0000-4000-a000-000000000001",
+    "failureSignature" : "fsig-v1:6ac193d4c1abdafa3b91c17b182ae32f9cb08e5f1ba75432781d8ba11bcfdf81",
+    "completeness" : "DURABLE_COMPLETE"
+  },
+  "timeline" : [ {
+    "source" : "TRANSFER",
+    "sourceId" : "ffffffff-0000-4000-a000-000000000001",
+    "event" : "TRANSFER_CREATED",
+    "status" : "FAILED",
+    "detail" : null,
+    "occurredAt" : "2026-08-11T15:50:03.835010Z"
+  } ]
+}

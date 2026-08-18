@@ -32,6 +32,14 @@ public final class SecurityHeaders {
   public static final String PERM_RISK_VIEW = "risk:view";
   public static final String PERM_RISK_MANAGE = "risk:manage";
   public static final String PERM_RISK_DECIDE = "risk:decide";
+  public static final String PERM_FORENSICS_VIEW = "forensics:view";
+  public static final String PERM_FORENSICS_VERIFY_EXECUTE = "forensics:verify:execute";
+  public static final String PERM_FORENSICS_CASE_REVIEW = "forensics:case:review";
+  public static final String PERM_FORENSICS_EVIDENCE_EXPORT = "forensics:evidence:export";
+  public static final String PERM_FORENSICS_REPLAY_EXECUTE = "forensics:replay:execute";
+  public static final String PERM_FORENSICS_COPILOT_USE = "forensics:copilot:use";
+  public static final String PERM_FORENSICS_AUDIT_VIEW = "forensics:audit:view";
+  public static final String PERM_FORENSICS_ADMIN = "forensics:admin";
   public static final String PERM_NOTIFICATIONS_OPS_VIEW = "notifications:ops:view";
 
   /* ── Internet Banking (customer portal) ── */

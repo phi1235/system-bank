@@ -1,16 +1,11 @@
 package com.banksystem.customer.application.dashboard.impl;
-import com.banksystem.customer.application.customer.*;
-import com.banksystem.customer.application.support.*;
-import com.banksystem.customer.application.dashboard.*;
-import com.banksystem.customer.domain.customer.*;
-import com.banksystem.customer.domain.support.*;
-import com.banksystem.customer.api.dto.*;
-
 import com.banksystem.common.api.ApiResponse;
 import com.banksystem.customer.api.dto.DashboardDtos.DashboardSummaryResponse;
 import com.banksystem.customer.api.dto.DashboardDtos.InternalAccountCountsResponse;
 import com.banksystem.customer.api.dto.DashboardDtos.InternalTransactionCountsResponse;
 import com.banksystem.customer.api.dto.DashboardDtos.InternalUserCountsResponse;
+import com.banksystem.customer.application.dashboard.DashboardQueryService;
+import com.banksystem.customer.domain.customer.CustomerRepository;
 import com.banksystem.customer.infrastructure.feign.DashboardClients.AccountCountsClient;
 import com.banksystem.customer.infrastructure.feign.DashboardClients.TransactionCountsClient;
 import com.banksystem.customer.infrastructure.feign.DashboardClients.UserCountsClient;
@@ -40,9 +35,9 @@ public class DashboardQueryServiceImpl implements DashboardQueryService {
       AccountCountsClient accountClient,
       TransactionCountsClient transactionClient,
       UserCountsClient userClient,
-      @Value("${bank.internal.account-api-key:${bank.internal.api-key:}}") String accountApiKey,
-      @Value("${bank.internal.transaction-api-key:${bank.internal.api-key:}}") String transactionApiKey,
-      @Value("${bank.internal.user-api-key:${bank.internal.api-key:}}") String userApiKey) {
+      @Value("${bank.internal.account-api-key}") String accountApiKey,
+      @Value("${bank.internal.transaction-api-key}") String transactionApiKey,
+      @Value("${bank.internal.user-api-key}") String userApiKey) {
     this.customerRepository = customerRepository;
     this.accountClient = accountClient;
     this.transactionClient = transactionClient;

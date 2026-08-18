@@ -12,6 +12,11 @@
   <name>transaction-service</name>
   <dependencies>
     <dependency>
+      <groupId>io.minio</groupId>
+      <artifactId>minio</artifactId>
+      <version>8.5.17</version>
+    </dependency>
+    <dependency>
       <groupId>com.banksystem</groupId>
       <artifactId>common-lib</artifactId>
     </dependency>

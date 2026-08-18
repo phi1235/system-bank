@@ -1,18 +1,16 @@
 package com.banksystem.account.application.card.impl;
-import com.banksystem.account.application.account.*;
-import com.banksystem.account.application.card.*;
-import com.banksystem.account.application.deposit.*;
-import com.banksystem.account.application.ledger.*;
-import com.banksystem.account.domain.account.*;
-import com.banksystem.account.domain.card.*;
-import com.banksystem.account.domain.deposit.*;
-import com.banksystem.account.domain.ledger.*;
-import com.banksystem.account.api.dto.*;
-
 import com.banksystem.account.api.dto.CardDtos.CardResponse;
 import com.banksystem.account.api.dto.CardDtos.CardRevealResponse;
 import com.banksystem.account.api.dto.CardDtos.UpdateCardLimitRequest;
+import com.banksystem.account.application.account.AccountAccessService;
+import com.banksystem.account.application.card.CardService;
 import com.banksystem.account.application.mapper.CardMapper;
+import com.banksystem.account.domain.account.AccountEntity;
+import com.banksystem.account.domain.account.AccountRepository;
+import com.banksystem.account.domain.account.AccountStatus;
+import com.banksystem.account.domain.card.CardEntity;
+import com.banksystem.account.domain.card.CardRepository;
+import com.banksystem.account.domain.card.CardStatus;
 import com.banksystem.common.exception.BusinessException;
 import com.banksystem.common.security.CryptoUtils;
 import com.banksystem.common.security.GatewayUser;
@@ -56,8 +54,8 @@ public class CardServiceImpl implements CardService {
       Clock clock,
       @Value("${bank.deposit.zone}") String zone,
       @Value("${bank.aes.secret-key}") String aesKey,
-      @Value("${bank.card.default-daily-limit:20000000}") BigDecimal defaultDailyLimit,
-      @Value("${bank.card.max-daily-limit:100000000}") BigDecimal maxDailyLimit) {
+      @Value("${bank.card.default-daily-limit}") BigDecimal defaultDailyLimit,
+      @Value("${bank.card.max-daily-limit}") BigDecimal maxDailyLimit) {
     this.cardRepository = cardRepository;
     this.access = access;
     this.accountRepository = accountRepository;

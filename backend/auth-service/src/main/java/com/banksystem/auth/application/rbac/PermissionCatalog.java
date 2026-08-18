@@ -1,12 +1,4 @@
 package com.banksystem.auth.application.rbac;
-import static com.banksystem.auth.api.dto.AuthDtos.*;
-import static com.banksystem.auth.api.dto.PasswordResetDtos.*;
-import static com.banksystem.auth.api.dto.RbacDtos.*;
-import com.banksystem.auth.application.auth.*;
-import com.banksystem.auth.application.rbac.*;
-import com.banksystem.auth.domain.auth.*;
-import com.banksystem.auth.domain.rbac.*;
-import com.banksystem.auth.api.dto.*;
 
 import com.banksystem.common.security.SecurityHeaders;
 import java.util.List;
@@ -31,6 +23,14 @@ public final class PermissionCatalog {
       SecurityHeaders.PERM_RISK_VIEW,
       SecurityHeaders.PERM_RISK_MANAGE,
       SecurityHeaders.PERM_RISK_DECIDE,
+      SecurityHeaders.PERM_FORENSICS_VIEW,
+      SecurityHeaders.PERM_FORENSICS_VERIFY_EXECUTE,
+      SecurityHeaders.PERM_FORENSICS_CASE_REVIEW,
+      SecurityHeaders.PERM_FORENSICS_EVIDENCE_EXPORT,
+      SecurityHeaders.PERM_FORENSICS_REPLAY_EXECUTE,
+      SecurityHeaders.PERM_FORENSICS_COPILOT_USE,
+      SecurityHeaders.PERM_FORENSICS_AUDIT_VIEW,
+      SecurityHeaders.PERM_FORENSICS_ADMIN,
       SecurityHeaders.PERM_IB_HOME_VIEW,
       SecurityHeaders.PERM_IB_ACCOUNTS_VIEW,
       SecurityHeaders.PERM_IB_ACCOUNTS_OPEN,

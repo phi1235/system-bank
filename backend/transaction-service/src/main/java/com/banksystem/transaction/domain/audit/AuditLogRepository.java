@@ -1,6 +1,7 @@
 package com.banksystem.transaction.domain.audit;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Slice;
@@ -11,6 +12,8 @@ import org.springframework.data.repository.query.Param;
 
 public interface AuditLogRepository extends JpaRepository<AuditLogEntity, UUID> {
   Page<AuditLogEntity> findAllByOrderByCreatedAtDesc(Pageable pageable);
+
+  List<AuditLogEntity> findByResourceIdOrderByCreatedAtAsc(String resourceId);
 
   /**
    * Admin audit search. Callers must pass concrete from/to bounds (epoch / far-future when

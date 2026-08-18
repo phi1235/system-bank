@@ -17,7 +17,7 @@ public class FeignLedgerGateway implements LedgerGateway {
 
   public FeignLedgerGateway(
       Optional<LedgerClient> ledgerClient,
-      @Value("${bank.internal.account-api-key:internal-secret-key-12345}") String internalApiKey) {
+      @Value("${bank.internal.account-api-key}") String internalApiKey) {
     this.ledgerClient = ledgerClient.orElse(null);
     this.internalApiKey = internalApiKey;
   }

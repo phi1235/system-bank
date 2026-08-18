@@ -1,19 +1,18 @@
 package com.banksystem.auth.application.auth.impl;
-import static com.banksystem.auth.api.dto.AuthDtos.*;
-import static com.banksystem.auth.api.dto.PasswordResetDtos.*;
-import static com.banksystem.auth.api.dto.RbacDtos.*;
-import com.banksystem.auth.application.auth.*;
-import com.banksystem.auth.application.rbac.*;
-import com.banksystem.auth.domain.auth.*;
-import com.banksystem.auth.domain.rbac.*;
-import com.banksystem.auth.api.dto.*;
-
 import com.banksystem.auth.api.dto.PasswordResetDtos.ChangePasswordRequest;
 import com.banksystem.auth.api.dto.PasswordResetDtos.CreateTicketRequest;
 import com.banksystem.auth.api.dto.PasswordResetDtos.FulfillResponse;
 import com.banksystem.auth.api.dto.PasswordResetDtos.LockRequest;
 import com.banksystem.auth.api.dto.PasswordResetDtos.RejectRequest;
 import com.banksystem.auth.api.dto.PasswordResetDtos.TicketResponse;
+import com.banksystem.auth.application.auth.PasswordResetService;
+import com.banksystem.auth.application.auth.SessionService;
+import com.banksystem.auth.domain.auth.AuthAuditLogEntity;
+import com.banksystem.auth.domain.auth.AuthAuditLogRepository;
+import com.banksystem.auth.domain.auth.PasswordResetTicketEntity;
+import com.banksystem.auth.domain.auth.PasswordResetTicketRepository;
+import com.banksystem.auth.domain.auth.UserEntity;
+import com.banksystem.auth.domain.auth.UserRepository;
 import com.banksystem.auth.infrastructure.security.BoundPasswordEncoder;
 import com.banksystem.common.api.PageResponse;
 import com.banksystem.common.exception.BusinessException;
@@ -55,10 +54,10 @@ public class PasswordResetServiceImpl implements PasswordResetService {
   private final BoundPasswordEncoder passwordEncoder;
   private final SessionService sessionService;
 
-  @Value("${bank.notification.internal-url:http://bank-notification:8085}")
+  @Value("${bank.notification.internal-url}")
   private String notificationServiceUrl;
 
-  @Value("${bank.notification.internal-api-key:}")
+  @Value("${bank.notification.internal-api-key}")
   private String notificationApiKey;
 
   public PasswordResetServiceImpl(

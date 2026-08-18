@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.cache.annotation.Cacheable;
@@ -39,6 +41,8 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 public class TermDepositServiceImpl implements TermDepositService {
+
+  private static final Logger log = LoggerFactory.getLogger(TermDepositServiceImpl.class);
 
   private final TermDepositRepository depositRepository;
   private final DepositProductRepository productRepository;
@@ -126,6 +130,8 @@ public class TermDepositServiceImpl implements TermDepositService {
     deposit.setCreatedAt(now);
     deposit.setUpdatedAt(now);
     depositRepository.save(deposit);
+    log.info("[DEPOSIT-OPEN] Opened savings contract [{}] Product=[{}] Amount={} VND SourceAccount=[{}] MaturityDate=[{}]",
+        deposit.getId(), product.getCode(), deposit.getAmount(), source.getId(), deposit.getMaturityDate());
     return toResponse(deposit, product.getTenorMonths());
   }
 
@@ -158,6 +164,8 @@ public class TermDepositServiceImpl implements TermDepositService {
     deposit.setClosedAt(Instant.now(clock));
     deposit.setUpdatedAt(Instant.now(clock));
     depositRepository.save(deposit);
+    log.info("[DEPOSIT-CLOSE-EARLY] Closed savings contract [{}] EarlyInterest={} VND TotalReturned={} VND",
+        deposit.getId(), interest, deposit.getAmount().add(interest));
     return toResponse(deposit, tenorOf(deposit));
   }
 

@@ -1,9 +1,4 @@
 package com.banksystem.notification.domain.event;
-import com.banksystem.notification.application.notification.*;
-import com.banksystem.notification.domain.notification.*;
-import com.banksystem.notification.domain.event.*;
-import com.banksystem.notification.api.dto.*;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -20,7 +15,7 @@ public class ProcessedEventEntity {
   private UUID eventId;
 
   @Column(name = "processed_at", nullable = false)
-  private Instant processedAt = Instant.now();
+  private Instant processedAt;
 
   public UUID getEventId() {
     return eventId;

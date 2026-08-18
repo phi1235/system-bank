@@ -46,8 +46,8 @@ public class OutboxPoller {
       OutboxMetrics metrics,
       OpsAlertPublisher opsAlertPublisher,
       TransactionTemplate transactionTemplate,
-      @Value("${bank.outbox.batch-size:50}") int batchSize,
-      @Value("${bank.outbox.claim-lease-seconds:120}") long claimLeaseSeconds,
+      @Value("${bank.outbox.batch-size}") int batchSize,
+      @Value("${bank.outbox.claim-lease-seconds}") long claimLeaseSeconds,
       @Value("${bank.kafka.topic-completed}") String topicCompleted,
       @Value("${bank.kafka.topic-failed}") String topicFailed) {
     this.repository = repository;
@@ -62,7 +62,7 @@ public class OutboxPoller {
     this.topicFailed = topicFailed;
   }
 
-  @Scheduled(fixedDelayString = "${bank.outbox.poll-ms:1000}")
+  @Scheduled(fixedDelayString = "${bank.outbox.poll-ms}")
   public void poll() {
     List<OutboxEventEntity> batch = claimBatch();
     for (OutboxEventEntity event : batch) {

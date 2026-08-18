@@ -1,12 +1,11 @@
 package com.banksystem.notification.application.notification.impl;
-import com.banksystem.notification.application.notification.*;
-import com.banksystem.notification.domain.notification.*;
-import com.banksystem.notification.domain.event.*;
-import com.banksystem.notification.api.dto.*;
-
 import com.banksystem.common.api.PageResponse;
 import com.banksystem.common.exception.BusinessException;
 import com.banksystem.notification.api.dto.NotificationDtos.NotificationItem;
+import com.banksystem.notification.application.notification.NotificationInboxService;
+import com.banksystem.notification.domain.notification.NotificationLogEntity;
+import com.banksystem.notification.domain.notification.NotificationLogRepository;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -20,9 +19,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class NotificationInboxServiceImpl implements NotificationInboxService {
 
   private final NotificationLogRepository repository;
+  private final Clock clock;
 
-  public NotificationInboxServiceImpl(NotificationLogRepository repository) {
+  public NotificationInboxServiceImpl(NotificationLogRepository repository, Clock clock) {
     this.repository = repository;
+    this.clock = clock;
   }
 
   @Transactional(readOnly = true)
@@ -102,7 +103,7 @@ public class NotificationInboxServiceImpl implements NotificationInboxService {
 
   private NotificationItem markReadEntity(NotificationLogEntity e) {
     if (e.getReadAt() == null) {
-      e.setReadAt(Instant.now());
+      e.setReadAt(clock.instant());
       e = repository.save(e);
     }
     return toItem(e);
