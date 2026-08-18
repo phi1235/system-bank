@@ -25,6 +25,9 @@ public interface TransferOrderRepository extends JpaRepository<TransferOrderEnti
   List<TransferOrderEntity> findTop50ByStatusAndUpdatedAtBeforeOrderByUpdatedAtAsc(
       TransferStatus status, Instant updatedBefore);
 
+  Slice<TransferOrderEntity> findByUpdatedAtGreaterThanEqualAndUpdatedAtLessThanEqualOrderByUpdatedAtAscIdAsc(
+      Instant fromInclusive, Instant toInclusive, Pageable pageable);
+
   Page<TransferOrderEntity> findByUserIdOrderByCreatedAtDesc(UUID userId, Pageable pageable);
 
   long countByStatus(TransferStatus status);
@@ -74,6 +77,36 @@ public interface TransferOrderRepository extends JpaRepository<TransferOrderEnti
       @Param("status") TransferStatus status,
       @Param("hasTransferId") boolean hasTransferId,
       @Param("transferId") UUID transferId,
+      @Param("hasQ") boolean hasQ,
+      @Param("q") String q,
+      @Param("fromTs") Instant fromTs,
+      @Param("toTs") Instant toTs,
+      Pageable pageable);
+
+  @Query("""
+      SELECT t FROM TransferOrderEntity t
+      WHERE (:hasStatus = false OR t.status = :status)
+        AND (:hasTransferId = false OR t.id = :transferId)
+        AND (:hasAccountId = false OR t.fromAccountId = :accountId OR t.toAccountId = :accountId)
+        AND (:hasRiskDecision = false OR UPPER(COALESCE(t.riskDecision, '')) = :riskDecision)
+        AND (:hasQ = false
+          OR LOWER(t.toAccountNumber) LIKE LOWER(CONCAT('%', :q, '%'))
+          OR LOWER(COALESCE(t.targetAccountName, '')) LIKE LOWER(CONCAT('%', :q, '%'))
+          OR LOWER(COALESCE(t.providerReferenceId, '')) LIKE LOWER(CONCAT('%', :q, '%'))
+          OR LOWER(COALESCE(t.description, '')) LIKE LOWER(CONCAT('%', :q, '%')))
+        AND t.createdAt >= :fromTs
+        AND t.createdAt <= :toTs
+      ORDER BY t.createdAt DESC
+      """)
+  Page<TransferOrderEntity> searchForensics(
+      @Param("hasStatus") boolean hasStatus,
+      @Param("status") TransferStatus status,
+      @Param("hasTransferId") boolean hasTransferId,
+      @Param("transferId") UUID transferId,
+      @Param("hasAccountId") boolean hasAccountId,
+      @Param("accountId") UUID accountId,
+      @Param("hasRiskDecision") boolean hasRiskDecision,
+      @Param("riskDecision") String riskDecision,
       @Param("hasQ") boolean hasQ,
       @Param("q") String q,
       @Param("fromTs") Instant fromTs,

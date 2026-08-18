@@ -1,0 +1,579 @@
+<app-page-header
+  [title]="'FORENSICS.TITLE' | translate"
+  [subtitle]="'FORENSICS.SUBTITLE' | translate"
+/>
+
+<mat-tab-group [(selectedIndex)]="mainTabIndex" animationDuration="200ms" class="forensics-tabs">
+  <!-- TAB 1: TRA CỨU & BẰNG CHỨNG -->
+  <mat-tab>
+    <ng-template matTabLabel>
+      <mat-icon class="tab-icon">manage_search</mat-icon>
+      <span>{{ 'FORENSICS.TAB_INVESTIGATION' | translate }}</span>
+    </ng-template>
+    <div class="tab-content page-stack">
+      <mat-card class="filters-card">
+        <form [formGroup]="form" (ngSubmit)="search()" class="filters">
+          <mat-form-field appearance="outline" class="q-field">
+            <mat-label>{{ 'FORENSICS.SEARCH' | translate }}</mat-label>
+            <input matInput formControlName="q" [placeholder]="'FORENSICS.SEARCH_HINT' | translate" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="tx-field">
+            <mat-label>{{ 'FORENSICS.TRANSACTION_ID' | translate }}</mat-label>
+            <input matInput formControlName="transactionId" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="status-field">
+            <mat-label>{{ 'COMMON.STATUS' | translate }}</mat-label>
+            <mat-select formControlName="transferStatus">
+              <mat-option value="">{{ 'COMMON.ALL' | translate }}</mat-option>
+              @for (status of statuses; track status) {
+                <mat-option [value]="status">{{ status }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="risk-field">
+            <mat-label>{{ 'FORENSICS.RISK_DECISION' | translate }}</mat-label>
+            <mat-select formControlName="riskDecision">
+              <mat-option value="">{{ 'COMMON.ALL' | translate }}</mat-option>
+              @for (decision of riskDecisions; track decision) {
+                <mat-option [value]="decision">{{ decision }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="date-field">
+            <mat-label>{{ 'FORENSICS.FROM' | translate }}</mat-label>
+            <input matInput type="date" formControlName="from" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="date-field">
+            <mat-label>{{ 'FORENSICS.TO' | translate }}</mat-label>
+            <input matInput type="date" formControlName="to" />
+          </mat-form-field>
+          <div class="filter-actions">
+            <button mat-flat-button color="primary" type="submit" [disabled]="loading">
+              <mat-icon>search</mat-icon>{{ 'COMMON.SEARCH' | translate }}
+            </button>
+            <button mat-stroked-button type="button" (click)="reset()" [disabled]="loading">
+              {{ 'FORENSICS.RESET' | translate }}
+            </button>
+          </div>
+        </form>
+      </mat-card>
+
+      <mat-card class="table-card">
+        @if (loading) {
+          <div class="center"><mat-spinner diameter="36" /></div>
+        } @else if (rows.length) {
+          <div class="table-wrap">
+            <table mat-table [dataSource]="rows">
+              <ng-container matColumnDef="createdAt">
+                <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.TIME' | translate }}</th>
+                <td mat-cell *matCellDef="let row">{{ row.createdAt | date: 'short' }}</td>
+              </ng-container>
+              <ng-container matColumnDef="transactionId">
+                <th mat-header-cell *matHeaderCellDef>{{ 'FORENSICS.TRANSACTION_ID' | translate }}</th>
+                <td mat-cell *matCellDef="let row"><code>{{ shortId(row.transactionId) }}</code></td>
+              </ng-container>
+              <ng-container matColumnDef="amount">
+                <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.AMOUNT' | translate }}</th>
+                <td mat-cell *matCellDef="let row">{{ row.amount | moneyVnd }}</td>
+              </ng-container>
+              <ng-container matColumnDef="status">
+                <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.STATUS' | translate }}</th>
+                <td mat-cell *matCellDef="let row"><span class="badge">{{ row.status }}</span></td>
+              </ng-container>
+              <ng-container matColumnDef="risk">
+                <th mat-header-cell *matHeaderCellDef>{{ 'FORENSICS.RISK' | translate }}</th>
+                <td mat-cell *matCellDef="let row">{{ row.riskDecision || '—' }} / {{ row.riskScore ?? '—' }}</td>
+              </ng-container>
+              <ng-container matColumnDef="signal">
+                <th mat-header-cell *matHeaderCellDef>{{ 'FORENSICS.PRIMARY_SIGNAL' | translate }}</th>
+                <td mat-cell *matCellDef="let row">
+                  <span class="badge" [class.warning]="row.needsAttention">{{ row.primarySignal }}</span>
+                </td>
+              </ng-container>
+              <ng-container matColumnDef="action">
+                <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.ACTIONS' | translate }}</th>
+                <td mat-cell *matCellDef="let row">
+                  <button mat-stroked-button color="primary" type="button" (click)="open(row)">
+                    <mat-icon>manage_search</mat-icon>{{ 'FORENSICS.OPEN' | translate }}
+                  </button>
+                </td>
+              </ng-container>
+              <tr mat-header-row *matHeaderRowDef="columns"></tr>
+              <tr mat-row *matRowDef="let row; columns: columns"></tr>
+            </table>
+          </div>
+        } @else {
+          <div class="empty">
+            <mat-icon>policy</mat-icon>
+            <p>{{ 'FORENSICS.EMPTY' | translate }}</p>
+          </div>
+        }
+        <mat-paginator
+          [length]="totalElements"
+          [pageIndex]="pageIndex"
+          [pageSize]="pageSize"
+          [pageSizeOptions]="[10, 20, 50]"
+          (page)="page($event)"
+        />
+      </mat-card>
+    </div>
+  </mat-tab>
+
+  <!-- TAB 2: HỒ SƠ ĐIỀU TRA SỰ CỐ -->
+  <mat-tab>
+    <ng-template matTabLabel>
+      <mat-icon class="tab-icon">folder_special</mat-icon>
+      <span>{{ 'FORENSICS.TAB_CASES' | translate }}</span>
+    </ng-template>
+    <div class="tab-content page-stack">
+      <app-forensic-case-queue #caseQueueRef
+        (viewInvestigation)="onViewInvestigation($event)"
+        (runReplayForCase)="onRunReplayForCase($event)"
+        (startCopilotForCase)="onStartCopilotForCase($event)" />
+    </div>
+  </mat-tab>
+
+  <!-- TAB 3: HÀNG ĐỢI VI PHẠM BẤT BIẾN -->
+  <mat-tab>
+    <ng-template matTabLabel>
+      <mat-icon class="tab-icon">report_problem</mat-icon>
+      <span>{{ 'FORENSICS.TAB_VIOLATIONS' | translate }}</span>
+    </ng-template>
+    <div class="tab-content page-stack">
+      <app-forensic-violation-queue />
+    </div>
+  </mat-tab>
+
+  <!-- TAB 4: KỊCH BẢN & REPLAY ENGINE -->
+  <mat-tab>
+    <ng-template matTabLabel>
+      <mat-icon class="tab-icon">alt_route</mat-icon>
+      <span>{{ 'FORENSICS.TAB_SCENARIOS' | translate }}</span>
+    </ng-template>
+    <div class="tab-content page-stack">
+      <app-forensic-scenario-admin
+        (navigateToCase)="onNavigateToCase($event)" />
+    </div>
+  </mat-tab>
+</mat-tab-group>
+
+<!-- MASTER-DETAIL INVESTIGATION OVERLAY MODAL -->
+@if (detailLoading) {
+  <div class="detail-modal-backdrop"></div>
+  <div class="detail-modal-container">
+    <mat-card class="detail-card center-modal"><mat-spinner diameter="40" /></mat-card>
+  </div>
+}
+
+@if (selected; as detail) {
+  <div class="detail-modal-backdrop" (click)="closeDetail()"></div>
+  <div class="detail-modal-container">
+    <mat-card class="detail-card">
+      <div class="detail-header sticky-header">
+        <div>
+          <p class="eyebrow">{{ 'FORENSICS.INVESTIGATION' | translate }}</p>
+          <h2>{{ detail.transaction.transactionId }}</h2>
+        </div>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <button mat-flat-button color="accent" type="button" (click)="exportEvidencePackage()">
+            <mat-icon>download</mat-icon> {{ 'FORENSICS.EXPORT_EVIDENCE_JSON' | translate }}
+          </button>
+          <button mat-icon-button type="button" (click)="closeDetail()" [attr.aria-label]="'COMMON.CLOSE' | translate">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <div class="detail-body-scroll">
+        <!-- EXECUTIVE AUDIT VERDICT BANNER -->
+        <article class="audit-verdict-banner" [ngClass]="getVerdictClass()">
+          <div class="verdict-banner-header">
+            <div class="verdict-title-box">
+              <mat-icon class="verdict-icon">{{ getVerdictIcon() }}</mat-icon>
+              <div>
+                <span class="verdict-status-tag">{{ getVerdictStatusBadge() }}</span>
+                <h3>{{ getVerdictTitle() }}</h3>
+              </div>
+            </div>
+            <span class="verdict-impact-badge">{{ getVerdictImpact() }}</span>
+          </div>
+
+          <div class="verdict-banner-body">
+            <p class="verdict-desc">{{ getVerdictDescription() }}</p>
+
+            @if (hasViolation()) {
+              <div class="remediation-protocol-box">
+                <h4><mat-icon inline>build_circle</mat-icon> {{ 'FORENSICS.REMEDIATION_PROTOCOL' | translate }}:</h4>
+                <div class="protocol-grid">
+                  @for (rec of getVerdictRecommendations(); track rec.id) {
+                    <div class="protocol-card">
+                      <div class="protocol-content">
+                        <strong>{{ rec.step }}. {{ rec.title }}</strong>
+                        <p>{{ rec.description }}</p>
+                      </div>
+                      <button mat-flat-button [color]="rec.color" type="button" (click)="executeRecommendation(rec)">
+                        <mat-icon>{{ rec.icon }}</mat-icon> {{ rec.actionText }}
+                      </button>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </article>
+
+        <div class="summary-grid">
+          <div><span>{{ 'COMMON.STATUS' | translate }}</span><strong>{{ detail.transaction.status }}</strong></div>
+          <div><span>{{ 'COMMON.AMOUNT' | translate }}</span><strong>{{ detail.transaction.amount | moneyVnd }}</strong></div>
+          <div><span>{{ 'FORENSICS.PRIMARY_SIGNAL' | translate }}</span><strong>{{ detail.transaction.primarySignal }}</strong></div>
+          <div><span>{{ 'FORENSICS.COMPLETENESS' | translate }}</span><strong>{{ detail.evidenceCompleteness }}</strong></div>
+        </div>
+
+        @if (detail.missingSources.length) {
+          <div class="evidence-warning">
+            <mat-icon>warning_amber</mat-icon>
+            {{ 'FORENSICS.MISSING_SOURCES' | translate: { sources: detail.missingSources.join(', ') } }}
+          </div>
+        }
+
+        <mat-tab-group animationDuration="150ms" class="detail-subtabs">
+          <!-- SUB-TAB 1: TỔNG QUAN & TRẠNG THÁI -->
+          <mat-tab>
+            <ng-template matTabLabel>
+              <mat-icon class="subtab-icon">speed</mat-icon>
+              <span>{{ 'FORENSICS.DETAIL_TAB_OVERVIEW' | translate }}</span>
+            </ng-template>
+            <div class="subtab-content page-stack">
+              @if (canVerify$ | async) {
+                <section class="verification-section">
+                  <div class="section-heading">
+                    <h3>{{ 'FORENSICS.VERIFICATION_RUN' | translate }}</h3>
+                    <button mat-flat-button color="primary" type="button"
+                            (click)="runVerification()" [disabled]="verificationLoading">
+                      @if (verificationLoading) { <mat-spinner diameter="18" /> }
+                      @else { <mat-icon>fact_check</mat-icon> }
+                      {{ 'FORENSICS.RUN_VERIFICATION' | translate }}
+                    </button>
+                  </div>
+                  @if (verificationRun; as run) {
+                    <div class="summary-grid">
+                      <div><span>{{ 'FORENSICS.RUN_ID' | translate }}</span><strong>{{ run.id }}</strong></div>
+                      <div><span>{{ 'COMMON.STATUS' | translate }}</span><strong>{{ run.status }}</strong></div>
+                      <div><span>{{ 'FORENSICS.OUTCOME' | translate }}</span><strong>{{ run.outcome }}</strong></div>
+                      <div><span>{{ 'FORENSICS.RULE_SET' | translate }}</span><strong>{{ run.ruleSetVersion }}</strong></div>
+                    </div>
+                    @for (result of run.results; track result.id) {
+                      <article class="violation-card">
+                        <div><strong>{{ result.ruleCode }}</strong><span class="badge warning">{{ result.severity }}</span></div>
+                        <p>{{ result.message }}</p>
+                      </article>
+                    }
+                  }
+                </section>
+              }
+
+              <section class="temporal-section">
+                <div class="section-header-wrap">
+                  <h3>{{ 'FORENSICS.TEMPORAL_STATE' | translate }}</h3>
+                  <p class="section-hint">
+                    <mat-icon inline>info</mat-icon> {{ 'FORENSICS.TEMPORAL_NOTE' | translate }}
+                  </p>
+                </div>
+                <form [formGroup]="temporalForm" (ngSubmit)="loadTemporalState()" class="temporal-form">
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'FORENSICS.STATE_AT' | translate }}</mat-label>
+                    <input matInput type="datetime-local" formControlName="at" />
+                  </mat-form-field>
+                  <button mat-flat-button color="primary" type="submit" [disabled]="temporalLoading">
+                    @if (temporalLoading) { <mat-spinner diameter="18" /> }
+                    @else { <mat-icon>history</mat-icon> }
+                    {{ 'FORENSICS.RECONSTRUCT' | translate }}
+                  </button>
+                </form>
+                @if (temporalState; as state) {
+                  <div class="summary-grid temporal-summary">
+                    <div><span>{{ 'FORENSICS.STATE_AT' | translate }}</span><strong>{{ state.at | date: 'medium' }}</strong></div>
+                    <div><span>{{ 'FORENSICS.TRANSACTION_STATE' | translate }}</span><span class="badge" [class.warning]="state.transactionState === 'NOT_CREATED' || state.transactionState === 'FAILED'" [class.success]="state.transactionState === 'COMPLETED'">{{ state.transactionState }}</span></div>
+                    <div><span>{{ 'FORENSICS.COMPLETENESS' | translate }}</span><span class="badge" [class.success]="state.completeness === 'COMPLETE'">{{ state.completeness }}</span></div>
+                  </div>
+                  <div class="temporal-accounts">
+                    @for (account of state.accountStates; track account.accountId) {
+                      <article class="account-card" [ngClass]="getAccountRoleBadgeClass(account.accountId)">
+                        <div class="account-card-header">
+                          <span class="role-badge">{{ getAccountRoleKey(account.accountId) | translate }}</span>
+                          <code>{{ getAccountDetailLabel(account.accountId) }}</code>
+                        </div>
+                        <div class="account-card-body">
+                          <span>{{ 'FORENSICS.BOOKED_BALANCE' | translate }}: <strong>{{ account.ledgerBalance | moneyVnd }}</strong></span>
+                          <span>{{ 'FORENSICS.ACTIVE_HOLD' | translate }}: <strong>{{ account.activeHoldAmount | moneyVnd }}</strong></span>
+                          <span class="available-balance">{{ 'FORENSICS.AVAILABLE_BALANCE' | translate }}: <strong>{{ account.availableBalance | moneyVnd }}</strong></span>
+                        </div>
+                      </article>
+                    }
+                  </div>
+                }
+              </section>
+
+              <section>
+                <h3>{{ 'FORENSICS.TIMELINE' | translate }}</h3>
+                <div class="timeline">
+                  @for (event of detail.timeline; track event.source + event.sourceId) {
+                    <article>
+                      <time>{{ event.occurredAt | date: 'medium' }}</time>
+                      <div><strong>{{ event.event }}</strong><span>{{ event.source }} · {{ event.status || '—' }}</span></div>
+                      @if (event.detail) { <p>{{ event.detail }}</p> }
+                    </article>
+                  } @empty {
+                    <p>{{ 'FORENSICS.NO_EVIDENCE' | translate }}</p>
+                  }
+                </div>
+              </section>
+            </div>
+          </mat-tab>
+
+          <!-- SUB-TAB 2: SỔ CÁI & BẰNG CHỨNG -->
+          <mat-tab>
+            <ng-template matTabLabel>
+              <mat-icon class="subtab-icon">account_balance</mat-icon>
+              <span>{{ 'FORENSICS.DETAIL_TAB_LEDGER' | translate }}</span>
+            </ng-template>
+            <div class="subtab-content page-stack">
+              <section class="ledger-section">
+                <div class="section-heading">
+                  <h3>{{ 'FORENSICS.LEDGER' | translate }} ({{ detail.ledgerEvidence.journals.length }})</h3>
+                  <span class="badge" [class.warning]="detail.ledgerEvidence.completeness !== 'COMPLETE'">
+                    {{ detail.ledgerEvidence.completeness }}
+                  </span>
+                </div>
+                @if (!detail.ledgerEvidence.available) {
+                  <div class="evidence-warning">
+                    <mat-icon>cloud_off</mat-icon>{{ 'FORENSICS.LEDGER_UNAVAILABLE' | translate }}
+                  </div>
+                } @else {
+                  @for (journal of detail.ledgerEvidence.journals; track journal.id) {
+                    <article class="journal-card">
+                      <div class="journal-header">
+                        <div>
+                          <strong>{{ journal.journalType }}</strong>
+                          <code>#{{ journal.sequenceNo }} · {{ journal.id }}</code>
+                        </div>
+                        <span class="badge">{{ journal.status }}</span>
+                      </div>
+                      <p>{{ journal.businessReference }} · {{ journal.description || ('FORENSICS.NO_DESCRIPTION' | translate) }}</p>
+                      <div class="postings">
+                        @for (posting of journal.postings; track posting.id) {
+                          <div class="posting-row">
+                            <span>{{ posting.side }}</span>
+                            <code>{{ posting.ledgerAccountCode }}</code>
+                            <strong>{{ posting.amount | moneyVnd }}</strong>
+                          </div>
+                        }
+                      </div>
+                    </article>
+                  } @empty {
+                    <p>{{ 'FORENSICS.NO_LEDGER_JOURNALS' | translate }}</p>
+                  }
+                  @if (detail.ledgerEvidence.holds.length) {
+                    <h4>{{ 'FORENSICS.HOLDS' | translate }}</h4>
+                    @for (hold of detail.ledgerEvidence.holds; track hold.id) {
+                      <div class="evidence-row">
+                        <strong>{{ hold.amount | moneyVnd }}</strong>
+                        <span>{{ hold.status }}</span>
+                        <small>{{ hold.accountId }}</small>
+                      </div>
+                    }
+                  }
+                }
+              </section>
+
+              <div class="evidence-grid">
+                <section>
+                  <h3>{{ 'FORENSICS.SAGA' | translate }} ({{ detail.sagaSteps.length }})</h3>
+                  @for (item of detail.sagaSteps; track item.id) {
+                    <div class="evidence-row"><strong>{{ item.step }}</strong><span>{{ item.status }}</span><small>{{ item.detail || '—' }}</small></div>
+                  } @empty { <p>{{ 'FORENSICS.NO_EVIDENCE' | translate }}</p> }
+                </section>
+                <section>
+                  <h3>{{ 'FORENSICS.OUTBOX' | translate }} ({{ detail.outboxEvents.length }})</h3>
+                  @for (item of detail.outboxEvents; track item.id) {
+                    <div class="evidence-row"><strong>{{ item.eventType }}</strong><span>{{ item.status }} · {{ item.attemptCount }}</span><small>{{ item.lastError || '—' }}</small></div>
+                  } @empty { <p>{{ 'FORENSICS.NO_EVIDENCE' | translate }}</p> }
+                </section>
+                <section>
+                  <h3>{{ 'FORENSICS.RECONCILIATION' | translate }} ({{ detail.reconciliationItems.length }})</h3>
+                  @for (item of detail.reconciliationItems; track item.id) {
+                    <div class="evidence-row"><strong>{{ item.kind }}</strong><span>{{ item.expectedAmount ?? '—' }} / {{ item.actualAmount ?? '—' }}</span><small>{{ item.detail || '—' }}</small></div>
+                  } @empty { <p>{{ 'FORENSICS.NO_EVIDENCE' | translate }}</p> }
+                </section>
+                <section>
+                  <h3>{{ 'FORENSICS.AUDIT' | translate }} ({{ detail.auditEvents.length }})</h3>
+                  @for (item of detail.auditEvents; track item.id) {
+                    <div class="evidence-row"><strong>{{ item.action }}</strong><span>{{ item.actorUserId || '—' }}</span><small>{{ item.detail || '—' }}</small></div>
+                  } @empty { <p>{{ 'FORENSICS.NO_EVIDENCE' | translate }}</p> }
+                </section>
+              </div>
+            </div>
+          </mat-tab>
+
+          <!-- SUB-TAB 3: ĐỒ THỊ NHÂN QUẢ & VI PHẠM -->
+          <mat-tab>
+            <ng-template matTabLabel>
+              <mat-icon class="subtab-icon">account_tree</mat-icon>
+              <span>{{ 'FORENSICS.DETAIL_TAB_GRAPH' | translate }}</span>
+            </ng-template>
+            <div class="subtab-content page-stack">
+              <section class="violations-section">
+                <h3>{{ 'FORENSICS.VIOLATIONS' | translate }} ({{ detail.violations.length }})</h3>
+                @for (violation of detail.violations; track violation.ruleCode + violation.evidenceIds.join()) {
+                  <article class="violation-card">
+                    <div><strong>{{ violation.ruleCode }}</strong><span class="badge warning">{{ violation.severity }}</span></div>
+                    <p>{{ violation.message }}</p>
+                    <small>{{ violation.evidenceIds.join(', ') }}</small>
+                  </article>
+                } @empty {
+                  <p class="verification-ok"><mat-icon>verified</mat-icon>{{ 'FORENSICS.NO_VIOLATIONS' | translate }}</p>
+                }
+              </section>
+
+              <section class="graph-section">
+                <div class="section-heading">
+                  <h3>{{ 'FORENSICS.CAUSAL_GRAPH' | translate }}</h3>
+                  <span class="badge">{{ detail.causalGraph.completeness }}</span>
+                </div>
+                @if (detail.causalGraph.firstAnomalousNodeId) {
+                  <div class="evidence-warning">
+                    <mat-icon>crisis_alert</mat-icon>
+                    {{ 'FORENSICS.FIRST_ANOMALY' | translate: { node: detail.causalGraph.firstAnomalousNodeId } }}
+                  </div>
+                }
+                @if (detail.causalGraph.failureSignature) {
+                  <div class="failure-signature">
+                    <span>{{ 'FORENSICS.FAILURE_SIGNATURE' | translate }}</span>
+                    <code>{{ detail.causalGraph.failureSignature }}</code>
+                  </div>
+                }
+                <div class="causal-graph" role="list" [attr.aria-label]="'FORENSICS.CAUSAL_GRAPH' | translate">
+                  @for (node of detail.causalGraph.nodes; track node.id) {
+                    <article role="listitem" class="causal-node" [class.anomalous]="node.anomalous">
+                      <span>{{ node.type }}</span>
+                      <strong>{{ node.label }}</strong>
+                      <small>{{ node.status || '—' }} · {{ node.occurredAt | date: 'short' }}</small>
+                    </article>
+                  }
+                </div>
+              </section>
+            </div>
+          </mat-tab>
+
+          <!-- SUB-TAB 4: REPLAY & AI COPILOT -->
+          <mat-tab>
+            <ng-template matTabLabel>
+              <mat-icon class="subtab-icon">smart_toy</mat-icon>
+              <span>{{ 'FORENSICS.DETAIL_TAB_REPLAY_COPILOT' | translate }}</span>
+            </ng-template>
+            <div class="subtab-content page-stack">
+              @if (canReplay$ | async) {
+                <section class="replay-section">
+                  <div class="section-heading">
+                    <h3>{{ 'FORENSICS.DIGITAL_TWIN' | translate }}</h3>
+                    @if (twinFork) { <span class="badge">{{ twinFork.status }}</span> }
+                  </div>
+                  <p>{{ 'FORENSICS.DIGITAL_TWIN_NOTE' | translate }}</p>
+                  @if (!twinFork) {
+                    <button mat-stroked-button color="primary" type="button" (click)="createFork()" [disabled]="detailLoading">
+                      <mat-icon>call_split</mat-icon>{{ 'FORENSICS.CREATE_FORK' | translate }}
+                    </button>
+                  } @else {
+                    <div class="fork-metadata">
+                      <code>{{ twinFork.id }}</code>
+                      <small>SHA-256: {{ twinFork.snapshotSha256 }}</small>
+                      <small>{{ 'FORENSICS.EXPIRES_AT' | translate }}: {{ twinFork.expiresAt | date: 'medium' }}</small>
+                    </div>
+                    <form [formGroup]="replayForm" (ngSubmit)="runReplay()" class="replay-form">
+                      <mat-form-field appearance="outline">
+                        <mat-label>{{ 'FORENSICS.SCENARIO_ID' | translate }}</mat-label>
+                        <mat-select formControlName="scenarioId">
+                          @for (scenario of replayScenarios; track scenario.scenarioId) {
+                            <mat-option [value]="scenario.scenarioId">{{ scenario.title }}</mat-option>
+                          }
+                        </mat-select>
+                      </mat-form-field>
+                      <mat-form-field appearance="outline">
+                        <mat-label>{{ 'FORENSICS.SEED' | translate }}</mat-label>
+                        <input matInput type="number" formControlName="seed" />
+                      </mat-form-field>
+                      <mat-form-field appearance="outline">
+                        <mat-label>{{ 'FORENSICS.TARGET_COMMIT' | translate }}</mat-label>
+                        <input matInput formControlName="targetCommitSha" />
+                      </mat-form-field>
+                      <button mat-flat-button color="primary" type="submit" [disabled]="detailLoading">
+                        <mat-icon>play_arrow</mat-icon>{{ 'FORENSICS.RUN_REPLAY' | translate }}
+                      </button>
+                      <button mat-button color="warn" type="button" (click)="deleteFork()">
+                        {{ 'FORENSICS.DELETE_FORK' | translate }}
+                      </button>
+                    </form>
+                    @if (replayRun; as run) {
+                      <div class="replay-result" [class.passed]="run.status === 'PASSED'" [class.failed]="run.status === 'FAILED' || run.status === 'ERROR'">
+                        <strong>{{ run.status }}</strong>
+                        <code>{{ run.resultSha256 || run.errorDetail || '—' }}</code>
+                        @if (run.status === 'PENDING' || run.status === 'RUNNING') {
+                          <button mat-button type="button" (click)="refreshReplay()">{{ 'FORENSICS.REFRESH_STATUS' | translate }}</button>
+                        }
+                        @if (run.status === 'PASSED' || run.status === 'FAILED') {
+                          <button mat-stroked-button type="button" (click)="downloadReplayResult()">
+                            <mat-icon>download</mat-icon>{{ 'FORENSICS.REPLAY_RESULT' | translate }}
+                          </button>
+                        }
+                      </div>
+                    }
+                  }
+                </section>
+              }
+
+              @if (canCopilot$ | async) {
+                <section class="copilot-section">
+                  <div class="section-heading">
+                    <h3>{{ 'FORENSICS.COPILOT' | translate }}</h3>
+                    @if (copilotSession) { <span class="badge">{{ copilotSession.status }}</span> }
+                  </div>
+                  <p>{{ 'FORENSICS.COPILOT_GUARDRAIL' | translate }}</p>
+                  @if (!copilotSession) {
+                    <button mat-stroked-button color="primary" type="button" (click)="startCopilot()" [disabled]="copilotLoading">
+                      <mat-icon>smart_toy</mat-icon>{{ 'FORENSICS.START_COPILOT' | translate }}
+                    </button>
+                  } @else {
+                    <div class="copilot-thread">
+                      @for (answer of copilotAnswers; track answer.messageId) {
+                        <article>
+                          <div><strong>{{ answer.status }}</strong><time>{{ answer.createdAt | date: 'short' }}</time></div>
+                          <p>{{ answer.answer }}</p>
+                          <aside>
+                            <strong>{{ 'FORENSICS.CITATIONS' | translate }}</strong>
+                            @for (citation of answer.citations; track citation.sourceType + citation.sourceId) {
+                              <code>{{ citation.sourceType }}:{{ citation.sourceId }} · {{ citation.label }}</code>
+                            }
+                          </aside>
+                        </article>
+                      }
+                    </div>
+                    <form [formGroup]="copilotForm" (ngSubmit)="askCopilot()" class="copilot-form">
+                      <mat-form-field appearance="outline">
+                        <mat-label>{{ 'FORENSICS.COPILOT_QUESTION' | translate }}</mat-label>
+                        <textarea matInput formControlName="question" maxlength="2000" rows="3"></textarea>
+                      </mat-form-field>
+                      <button mat-flat-button color="primary" type="submit" [disabled]="copilotLoading || !copilotForm.controls.question.value.trim()">
+                        @if (copilotLoading) { <mat-spinner diameter="18" /> } @else { <mat-icon>send</mat-icon> }
+                        {{ 'FORENSICS.ASK_COPILOT' | translate }}
+                      </button>
+                    </form>
+                  }
+                </section>
+              }
+            </div>
+          </mat-tab>
+        </mat-tab-group>
+      </div>
+    </mat-card>
+  </div>
+}

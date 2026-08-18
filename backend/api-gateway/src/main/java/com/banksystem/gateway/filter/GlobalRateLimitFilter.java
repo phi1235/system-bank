@@ -28,9 +28,9 @@ public class GlobalRateLimitFilter implements GlobalFilter, Ordered {
 
   public GlobalRateLimitFilter(
       ReactiveStringRedisTemplate redis,
-      @Value("${bank.rate-limit.global.enabled:true}") boolean enabled,
-      @Value("${bank.rate-limit.global.limit:100}") int limit,
-      @Value("${bank.rate-limit.global.window-seconds:60}") int windowSeconds) {
+      @Value("${bank.rate-limit.global.enabled}") boolean enabled,
+      @Value("${bank.rate-limit.global.limit}") int limit,
+      @Value("${bank.rate-limit.global.window-seconds}") int windowSeconds) {
     this.redis = redis;
     this.enabled = enabled;
     this.limit = limit;

@@ -16,6 +16,7 @@ import {
   ConfirmDialogComponent,
   ConfirmDialogData,
 } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { TopupModalComponent } from './topup-modal/topup-modal.component';
 import { MoneyVndPipe } from '../../../shared/pipes/money-vnd.pipe';
 import { EnumLabelPipe } from '../../../shared/pipes/enum-label.pipe';
 import { ToastService } from '../../../core/services/toast.service';
@@ -94,6 +95,17 @@ export class AccountsComponent implements OnInit {
       .pipe(filter(Boolean))
       .subscribe(() => {
         this.store.dispatch(AccountsActions.open({ accountType: type }));
+      });
+  }
+
+  openTopUp(a: Account): void {
+    this.dialog
+      .open(TopupModalComponent, { data: { account: a }, width: '500px', disableClose: true })
+      .afterClosed()
+      .subscribe((result) => {
+        if (result) {
+          this.refresh();
+        }
       });
   }
 

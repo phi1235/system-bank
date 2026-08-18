@@ -28,9 +28,9 @@ public class TransferLimitPolicy {
 
   public TransferLimitPolicy(
       TransferOrderRepository transferOrderRepository,
-      @Value("${bank.transfer.max-per-transaction:50000000}") BigDecimal maxPerTransaction,
-      @Value("${bank.transfer.daily-limit:200000000}") BigDecimal dailyLimit,
-      @Value("${bank.transfer.daily-limit-zone:Asia/Bangkok}") String dailyLimitZone,
+      @Value("${bank.transfer.max-per-transaction}") BigDecimal maxPerTransaction,
+      @Value("${bank.transfer.daily-limit}") BigDecimal dailyLimit,
+      @Value("${bank.transfer.daily-limit-zone}") String dailyLimitZone,
       Clock clock) {
     this.transferOrderRepository = transferOrderRepository;
     this.maxPerTransaction = maxPerTransaction;

@@ -48,6 +48,19 @@ public class RequirePermissionAspect {
     return joinPoint.proceed();
   }
 
+  public Object enforce(ProceedingJoinPoint joinPoint) throws Throwable {
+    Method method = ((MethodSignature) joinPoint.getSignature()).getMethod();
+    RequirePermission required = AnnotationUtils.findAnnotation(method, RequirePermission.class);
+    if (required != null) {
+      return enforceMethod(joinPoint, required);
+    }
+    RequirePermission classReq = AnnotationUtils.findAnnotation(method.getDeclaringClass(), RequirePermission.class);
+    if (classReq != null) {
+      return enforceClass(joinPoint, classReq);
+    }
+    return joinPoint.proceed();
+  }
+
   private static boolean hasMethodAnnotation(
       ProceedingJoinPoint joinPoint, Class<? extends Annotation> type) {
     Method method = ((MethodSignature) joinPoint.getSignature()).getMethod();

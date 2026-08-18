@@ -1,10 +1,8 @@
 package com.banksystem.notification.application.notification.impl;
-import com.banksystem.notification.application.notification.*;
-import com.banksystem.notification.domain.notification.*;
-import com.banksystem.notification.domain.event.*;
-import com.banksystem.notification.api.dto.*;
-
+import com.banksystem.notification.application.notification.SmsSender;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -17,8 +15,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
-import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
-import io.github.resilience4j.retry.annotation.Retry;
 
 /**
  * HTTP SMS gateway adapter. Point {@code SMS_BASE_URL} at a real provider or sandbox proxy.
@@ -35,11 +31,14 @@ public class HttpSmsSender implements SmsSender {
   private final String from;
   private final ObjectMapper objectMapper;
   private final HttpClient httpClient;
+  private final Duration readTimeout;
 
   public HttpSmsSender(
       @Value("${bank.sms.base-url}") String baseUrl,
-      @Value("${bank.sms.api-key:}") String apiKey,
-      @Value("${bank.sms.from:}") String from,
+      @Value("${bank.sms.api-key}") String apiKey,
+      @Value("${bank.sms.from}") String from,
+      @Value("${bank.sms.connect-timeout}") Duration connectTimeout,
+      @Value("${bank.sms.read-timeout}") Duration readTimeout,
       ObjectMapper objectMapper) {
     if (baseUrl == null || baseUrl.isBlank()) {
       throw new IllegalStateException("bank.sms.base-url (SMS_BASE_URL) must be set when provider=http");
@@ -48,7 +47,8 @@ public class HttpSmsSender implements SmsSender {
     this.apiKey = apiKey == null ? "" : apiKey;
     this.from = from == null ? "" : from;
     this.objectMapper = objectMapper;
-    this.httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
+    this.httpClient = HttpClient.newBuilder().connectTimeout(connectTimeout).build();
+    this.readTimeout = readTimeout;
   }
 
   @Override
@@ -66,7 +66,7 @@ public class HttpSmsSender implements SmsSender {
       HttpRequest.Builder b =
           HttpRequest.newBuilder()
               .uri(URI.create(baseUrl + "/v1/sms/send"))
-              .timeout(Duration.ofSeconds(15))
+              .timeout(readTimeout)
               .header("Content-Type", "application/json")
               .POST(HttpRequest.BodyPublishers.ofByteArray(json));
       if (!apiKey.isBlank()) {

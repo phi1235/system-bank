@@ -5,6 +5,10 @@ import com.banksystem.common.exception.BusinessException;
 import com.banksystem.transaction.infrastructure.feign.AccountClientDtos.AccountView;
 import com.banksystem.transaction.infrastructure.feign.AccountClientDtos.MoneyCommand;
 import com.banksystem.transaction.infrastructure.feign.AccountClientDtos.MoneyResult;
+import com.banksystem.transaction.infrastructure.feign.AccountClientDtos.TransactionLedgerEvidenceView;
+import com.banksystem.transaction.infrastructure.feign.AccountClientDtos.AccountStateEvidenceView;
+import com.banksystem.transaction.infrastructure.feign.AccountClientDtos.AccountHoldView;
+import java.time.Instant;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -44,6 +48,51 @@ public class AccountClientFallback implements AccountClient {
     throw new BusinessException(
         "ACCOUNT_SERVICE_UNAVAILABLE",
         "Unable to process account credit as Account service is unavailable.",
+        HttpStatus.SERVICE_UNAVAILABLE);
+  }
+
+  @Override
+  public ApiResponse<MoneyResult> compensateCredit(
+      UUID id, MoneyCommand command, String apiKey) {
+    throw new BusinessException(
+        "ACCOUNT_SERVICE_UNAVAILABLE",
+        "Unable to process compensation as Account service is unavailable.",
+        HttpStatus.SERVICE_UNAVAILABLE);
+  }
+
+  @Override
+  public ApiResponse<TransactionLedgerEvidenceView> transactionLedgerEvidence(
+      UUID transactionId, String apiKey) {
+    throw new BusinessException(
+        "ACCOUNT_SERVICE_UNAVAILABLE",
+        "Ledger evidence is temporarily unavailable.",
+        HttpStatus.SERVICE_UNAVAILABLE);
+  }
+
+  @Override
+  public ApiResponse<AccountStateEvidenceView> accountStateEvidence(
+      UUID accountId, Instant at, String apiKey) {
+    throw new BusinessException(
+        "ACCOUNT_SERVICE_UNAVAILABLE",
+        "Temporal account evidence is temporarily unavailable.",
+        HttpStatus.SERVICE_UNAVAILABLE);
+  }
+
+  @Override
+  public ApiResponse<AccountHoldView> createHold(
+      UUID accountId, AccountClientDtos.CreateHoldCommand command, String apiKey) {
+    throw new BusinessException(
+        "ACCOUNT_SERVICE_UNAVAILABLE",
+        "Hold service is temporarily unavailable.",
+        HttpStatus.SERVICE_UNAVAILABLE);
+  }
+
+  @Override
+  public ApiResponse<Boolean> processRemediationInbox(
+      AccountClientDtos.AdjustmentRequestedEventRequest request, String apiKey) {
+    throw new BusinessException(
+        "ACCOUNT_SERVICE_UNAVAILABLE",
+        "Account remediation inbox service is temporarily unavailable.",
         HttpStatus.SERVICE_UNAVAILABLE);
   }
 }

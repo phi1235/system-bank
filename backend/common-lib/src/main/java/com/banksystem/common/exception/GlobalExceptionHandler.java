@@ -25,9 +25,10 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(BusinessException.class)
   public ResponseEntity<ApiResponse<Void>> handleBusiness(BusinessException ex, HttpServletRequest request) {
     String correlationId = correlationId(request);
-    log.warn("business error code={} message={} path={}", ex.getCode(), ex.getMessage(), request.getRequestURI());
-    ApiError error = new ApiError(ex.getCode(), ex.getMessage());
     HttpStatus status = ex.getStatus() != null ? ex.getStatus() : resolveStatus(ex.getCode());
+    log.warn("[ERROR-LOG] errorCode={} | status={} | uri={} | errorMsg=\"{}\"",
+        ex.getCode(), status.value(), request.getRequestURI(), ex.getMessage());
+    ApiError error = new ApiError(ex.getCode(), ex.getMessage());
     return ResponseEntity.status(status)
         .body(ApiResponse.fail(error, correlationId));
   }
@@ -51,7 +52,8 @@ public class GlobalExceptionHandler {
     List<String> details = ex.getBindingResult().getFieldErrors().stream()
         .map(this::formatFieldError)
         .collect(Collectors.toList());
-    log.warn("validation error path={} details={}", request.getRequestURI(), details);
+    log.warn("[ERROR-LOG] errorCode=VALIDATION_ERROR | status=400 | uri={} | fields=\"{}\"",
+        request.getRequestURI(), String.join(", ", details));
     ApiError error = new ApiError("VALIDATION_ERROR", "Request validation failed", details);
     return ResponseEntity.badRequest().body(ApiResponse.fail(error, correlationId));
   }
@@ -59,7 +61,8 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ApiResponse<Void>> handleGeneric(Exception ex, HttpServletRequest request) {
     String correlationId = correlationId(request);
-    log.error("unexpected error path={}", request.getRequestURI(), ex);
+    log.error("[ERROR-LOG] errorCode=INTERNAL_ERROR | status=500 | uri={} | ex={} | errorMsg=\"{}\"",
+        request.getRequestURI(), ex.getClass().getSimpleName(), ex.getMessage(), ex);
     ApiError error = new ApiError("INTERNAL_ERROR", "Unexpected server error");
     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
         .body(ApiResponse.fail(error, correlationId));

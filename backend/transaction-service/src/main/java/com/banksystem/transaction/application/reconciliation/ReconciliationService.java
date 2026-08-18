@@ -56,7 +56,7 @@ public class ReconciliationService {
       LedgerGateway ledgerGateway,
       ReconciliationMatcher matcher,
       Clock clock,
-      @Value("${bank.transfer.daily-limit-zone:UTC}") String zone) {
+      @Value("${bank.transfer.daily-limit-zone}") String zone) {
     this.transferOrderRepository = transferOrderRepository;
     this.runRepository = runRepository;
     this.itemRepository = itemRepository;
@@ -83,6 +83,7 @@ public class ReconciliationService {
     run.setStatus(ReconRunEntity.STATUS_RUNNING);
     run.setStartedAt(Instant.now(clock));
     runRepository.save(run);
+    log.info("[RECON-RUN] Starting recon run [{}] Date=[{}] Trigger=[{}]", run.getId(), date, triggerType);
 
     try {
       Instant fromTs = date.atStartOfDay(zone).toInstant();
@@ -104,10 +105,10 @@ public class ReconciliationService {
       run.setFinishedAt(Instant.now(clock));
       runRepository.save(run);
       log.info(
-          "Recon {} date={} orders={} ledger={} discrepancies={}",
-          run.getStatus(), date, transfers.size(), entries.size(), discrepancies.size());
+          "[RECON-FINISHED] Recon [{}] Status=[{}] Date=[{}] OrdersChecked=[{}] LedgerSeen=[{}] Discrepancies=[{}]",
+          run.getId(), run.getStatus(), date, transfers.size(), entries.size(), discrepancies.size());
     } catch (Exception ex) {
-      log.error("Recon FAILED date={}: {}", date, ex.getMessage(), ex);
+      log.error("[RECON-FAILED] Recon [{}] FAILED Date=[{}]: {}", run.getId(), date, ex.getMessage(), ex);
       run.setStatus(ReconRunEntity.STATUS_FAILED);
       run.setErrorDetail(truncate(ex.getMessage(), 500));
       run.setFinishedAt(Instant.now(clock));

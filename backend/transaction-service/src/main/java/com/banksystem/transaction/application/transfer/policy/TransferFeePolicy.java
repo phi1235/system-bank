@@ -24,11 +24,11 @@ public class TransferFeePolicy {
   private final BigDecimal maxFee;
 
   public TransferFeePolicy(
-      @Value("${bank.transfer.fee.enabled:true}") boolean enabled,
-      @Value("${bank.transfer.fee.flat:0}") BigDecimal flat,
-      @Value("${bank.transfer.fee.percent:0}") BigDecimal percent,
-      @Value("${bank.transfer.fee.min:0}") BigDecimal minFee,
-      @Value("${bank.transfer.fee.max:50000}") BigDecimal maxFee) {
+      @Value("${bank.transfer.fee.enabled}") boolean enabled,
+      @Value("${bank.transfer.fee.flat}") BigDecimal flat,
+      @Value("${bank.transfer.fee.percent}") BigDecimal percent,
+      @Value("${bank.transfer.fee.min}") BigDecimal minFee,
+      @Value("${bank.transfer.fee.max}") BigDecimal maxFee) {
     this.enabled = enabled;
     this.flat = nullToZero(flat);
     this.percent = nullToZero(percent);

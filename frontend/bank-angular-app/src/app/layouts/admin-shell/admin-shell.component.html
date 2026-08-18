@@ -104,6 +104,12 @@
                 <span matListItemTitle>{{ 'NAV.ADMIN_RECON' | translate }}</span>
               </a>
             }
+            @if (canForensics$ | async) {
+              <a mat-list-item routerLink="/admin/forensics" routerLinkActive="active">
+                <mat-icon matListItemIcon>manage_search</mat-icon>
+                <span matListItemTitle>{{ 'NAV.ADMIN_FORENSICS' | translate }}</span>
+              </a>
+            }
           </div>
         }
 

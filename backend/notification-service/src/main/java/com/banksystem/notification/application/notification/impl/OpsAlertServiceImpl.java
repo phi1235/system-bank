@@ -1,69 +1,60 @@
 package com.banksystem.notification.application.notification.impl;
-import com.banksystem.notification.application.notification.*;
-import com.banksystem.notification.domain.notification.*;
-import com.banksystem.notification.domain.event.*;
-import com.banksystem.notification.api.dto.*;
 
 import com.banksystem.common.exception.BusinessException;
 import com.banksystem.notification.api.dto.NotificationDtos.NotificationItem;
 import com.banksystem.notification.api.dto.OpsAlertDtos.CreateOpsAlertRequest;
+import com.banksystem.notification.application.notification.OpsAlertService;
+import com.banksystem.notification.domain.notification.NotificationLogEntity;
+import com.banksystem.notification.domain.notification.NotificationLogRepository;
+import java.time.Clock;
 import java.time.Instant;
-import java.util.Optional;
 import java.util.UUID;
-import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-/**
- * Creates shared staff OPS alerts (audience=OPS) and pushes SSE via {@link NotificationRealtimeHub}.
- */
 @Service
 public class OpsAlertServiceImpl implements OpsAlertService {
 
   private final NotificationLogRepository repository;
   private final NotificationRealtimeHub realtimeHub;
+  private final String opsRecipient;
+  private final Clock clock;
 
   public OpsAlertServiceImpl(
       NotificationLogRepository repository,
-      NotificationRealtimeHub realtimeHub) {
+      NotificationRealtimeHub realtimeHub,
+      @Value("${bank.notification.ops-recipient}") String opsRecipient,
+      Clock clock) {
     this.repository = repository;
     this.realtimeHub = realtimeHub;
+    this.opsRecipient = opsRecipient;
+    this.clock = clock;
   }
 
+  @Override
   @Transactional
-  public NotificationItem create(CreateOpsAlertRequest req) {
-    UUID eventId = resolveEventId(req.eventId());
-    Optional<NotificationLogEntity> existing = repository.findByEventId(eventId);
-    if (existing.isPresent()) {
-      return toItem(existing.get());
-    }
+  public NotificationItem create(CreateOpsAlertRequest request) {
+    UUID eventId = resolveEventId(request.eventId());
+    Instant now = clock.instant();
+    repository.insertOpsAlert(
+        UUID.randomUUID(),
+        eventId,
+        opsRecipient,
+        request.template().trim(),
+        request.body().trim(),
+        blankToNull(request.actionType()),
+        blankToNull(request.actionId()),
+        blankToNull(request.actionPath()),
+        now);
 
-    NotificationLogEntity ops = new NotificationLogEntity();
-    ops.setId(UUID.randomUUID());
-    ops.setEventId(eventId);
-    ops.setChannel("OPS");
-    ops.setRecipient("ops@bank.local");
-    ops.setTemplate(req.template().trim());
-    ops.setStatus("OPEN");
-    ops.setBody(req.body().trim());
-    ops.setUserId(null);
-    ops.setAudience(NotificationInboxService.AUDIENCE_OPS);
-    ops.setActionType(blankToNull(req.actionType()));
-    ops.setActionId(blankToNull(req.actionId()));
-    ops.setActionPath(blankToNull(req.actionPath()));
-    ops.setCreatedAt(Instant.now());
-
-    try {
-      ops = repository.save(ops);
-    } catch (DataIntegrityViolationException dup) {
-      return repository.findByEventId(eventId)
-          .map(this::toItem)
-          .orElseThrow(() -> new BusinessException(
-              "OPS_ALERT_CONFLICT", "Ops alert conflict"));
-    }
-
-    NotificationItem item = toItem(ops);
-    realtimeHub.publishOps(item);
+    NotificationLogEntity entity = repository.findByEventId(eventId)
+        .orElseThrow(() -> new BusinessException(
+            "OPS_ALERT_PERSISTENCE_FAILED", "Ops alert could not be persisted"));
+    NotificationItem item = toItem(entity);
+    afterCommit(() -> realtimeHub.publishOps(item));
     return item;
   }
 
@@ -73,31 +64,29 @@ public class OpsAlertServiceImpl implements OpsAlertService {
     }
     try {
       return UUID.fromString(raw.trim());
-    } catch (IllegalArgumentException ex) {
-      throw new BusinessException(
-          "INVALID_EVENT_ID", "eventId must be a UUID");
+    } catch (IllegalArgumentException exception) {
+      throw new BusinessException("INVALID_EVENT_ID", "eventId must be a UUID");
     }
   }
 
-  private static String blankToNull(String v) {
-    if (v == null || v.isBlank()) {
-      return null;
-    }
-    return v.trim();
+  private static String blankToNull(String value) {
+    return value == null || value.isBlank() ? null : value.trim();
   }
 
-  private NotificationItem toItem(NotificationLogEntity e) {
+  private static void afterCommit(Runnable action) {
+    TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+      @Override
+      public void afterCommit() {
+        action.run();
+      }
+    });
+  }
+
+  private static NotificationItem toItem(NotificationLogEntity entity) {
     return new NotificationItem(
-        e.getId().toString(),
-        e.getChannel(),
-        e.getTemplate(),
-        e.getStatus(),
-        e.getBody() == null ? "" : e.getBody(),
-        e.getReadAt() != null,
-        e.getReadAt(),
-        e.getCreatedAt(),
-        e.getActionType(),
-        e.getActionId(),
-        e.getActionPath());
+        entity.getId().toString(), entity.getChannel(), entity.getTemplate(), entity.getStatus(),
+        entity.getBody() == null ? "" : entity.getBody(), entity.getReadAt() != null,
+        entity.getReadAt(), entity.getCreatedAt(), entity.getActionType(), entity.getActionId(),
+        entity.getActionPath());
   }
 }

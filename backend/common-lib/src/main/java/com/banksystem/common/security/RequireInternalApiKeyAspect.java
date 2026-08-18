@@ -23,7 +23,7 @@ public class RequireInternalApiKeyAspect {
 
   public RequireInternalApiKeyAspect(
       HttpServletRequest request,
-      @Value("${bank.internal.api-key:}") String expectedKey) {
+      @Value("${bank.internal.api-key}") String expectedKey) {
     this.request = request;
     this.expectedKey = expectedKey;
   }

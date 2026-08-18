@@ -25,7 +25,7 @@ public class TransferFeeGlService {
 
   public TransferFeeGlService(
       AccountGateway accountGateway,
-      @Value("${bank.transfer.fee.income-account-number:1099999999}") String incomeAccountNumber) {
+      @Value("${bank.transfer.fee.income-account-number}") String incomeAccountNumber) {
     this.accountGateway = accountGateway;
     if (incomeAccountNumber == null || incomeAccountNumber.isBlank()) {
       throw new IllegalStateException(

@@ -1,9 +1,7 @@
 package com.banksystem.notification.application.notification.impl;
-import com.banksystem.notification.application.notification.*;
-import com.banksystem.notification.domain.notification.*;
-import com.banksystem.notification.domain.event.*;
-import com.banksystem.notification.api.dto.*;
-
+import com.banksystem.notification.application.notification.EmailSender;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,8 +9,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Component;
-import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
-import io.github.resilience4j.retry.annotation.Retry;
 
 /**
  * Real SMTP provider. Activated when {@code bank.email.provider=smtp}.
@@ -29,7 +25,7 @@ public class SmtpEmailSender implements EmailSender {
 
   public SmtpEmailSender(
       JavaMailSender mailSender,
-      @Value("${bank.email.from:${spring.mail.username:noreply@bank.local}}") String from) {
+      @Value("${bank.email.from}") String from) {
     this.mailSender = mailSender;
     this.from = from;
   }

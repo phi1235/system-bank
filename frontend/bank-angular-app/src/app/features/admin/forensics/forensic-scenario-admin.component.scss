@@ -1,0 +1,5 @@
+.scenario-admin { padding: 1rem; }.scenario-admin h2 { margin: 0; }.scenario-admin > p { color: #64748b; }
+.scenario-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }.draft { display: grid; grid-template-columns: 1fr 1fr; gap: .65rem; }.wide { grid-column: 1 / -1; }
+.scenario-list { display: grid; gap: .6rem; align-content: start; }.scenario-list article { display: grid; gap: .4rem; border: 1px solid #cbd5e1; border-radius: 10px; padding: .75rem; }.scenario-list article div { display: flex; justify-content: space-between; gap: .5rem; }
+.fault-catalog { color: #64748b; overflow-wrap: anywhere; }
+@media (max-width: 900px) { .scenario-grid, .draft { grid-template-columns: 1fr; }.wide { grid-column: auto; } }

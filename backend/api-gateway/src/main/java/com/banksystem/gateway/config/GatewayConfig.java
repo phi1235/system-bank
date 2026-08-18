@@ -1,5 +1,6 @@
 package com.banksystem.gateway.config;
 
+import java.util.Arrays;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -13,10 +14,17 @@ public class GatewayConfig {
 
   @Bean
   public CorsWebFilter corsWebFilter(
-      @Value("${bank.cors.allowed-origins:http://localhost:4200,http://localhost:5173,http://localhost:4201,http://127.0.0.1:4201,https://phinguyenit.id.vn,https://app.phinguyenit.id.vn}") String origins) {
+      @Value("${bank.cors.allowed-origins}") String origins) {
     CorsConfiguration config = new CorsConfiguration();
     config.setAllowCredentials(true);
-    config.addAllowedOriginPattern("*");
+    List<String> allowedOrigins = Arrays.stream(origins.split(","))
+        .map(String::trim)
+        .filter(origin -> !origin.isBlank())
+        .toList();
+    if (allowedOrigins.isEmpty()) {
+      throw new IllegalStateException("bank.cors.allowed-origins must not be empty");
+    }
+    config.setAllowedOrigins(allowedOrigins);
     config.addAllowedHeader("*");
     config.addAllowedMethod("*");
     config.addExposedHeader("X-Correlation-Id");

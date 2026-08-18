@@ -30,10 +30,10 @@ eureka:
 
 bank:
   feign:
-    account-url: ${FEIGN_ACCOUNT_URL:}
-    transaction-url: ${FEIGN_TRANSACTION_URL:}
-    auth-url: ${FEIGN_AUTH_URL:}
-    notification-url: ${FEIGN_NOTIFICATION_URL:}
+    account-url: ${FEIGN_ACCOUNT_URL}
+    transaction-url: ${FEIGN_TRANSACTION_URL}
+    auth-url: ${FEIGN_AUTH_URL}
+    notification-url: ${FEIGN_NOTIFICATION_URL}
   aes:
     secret-key: ${AES_SECRET_KEY}
   gateway:
@@ -83,4 +83,9 @@ springdoc:
 
 logging:
   pattern:
-    level: "%5p [${spring.application.name:},%X{correlationId:-},%X{traceId:-},%X{spanId:-}]"
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%magenta(${spring.application.name:system-bank})] [%thread] %highlight(%-5level) [%cyan(%X{correlationId:-})][%blue(%X{userId:-})] [%yellow(%-35logger{35})] : %msg%n"
+    level: "%5p [${spring.application.name:},%X{correlationId:-},%X{userId:-}]"
+  level:
+    root: INFO
+    com.banksystem: INFO
+    org.springframework.web: INFO

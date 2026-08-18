@@ -9,7 +9,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { Subject, Subscription, filter, map, take, takeUntil } from 'rxjs';
+import { Subject, Subscription, catchError, combineLatest, filter, map, of, shareReplay, take, takeUntil } from 'rxjs';
 import { BankApiService } from '../../core/services/bank-api.service';
 import { OpsNotificationStreamService } from '../../core/services/ops-notification-stream.service';
 import { PERMISSIONS } from '../../core/services/rbac.util';
@@ -71,6 +71,16 @@ export class AdminShellComponent implements OnInit, OnDestroy {
   canTx$ = this.store.select(selectHasPermission(PERMISSIONS.TX_LIST_VIEW));
   canTxReport$ = this.store.select(selectHasPermission(PERMISSIONS.TX_REPORT_VIEW));
   canRecon$ = this.store.select(selectHasPermission(PERMISSIONS.TX_RECON_VIEW));
+  canForensics$ = combineLatest([
+    this.store.select(selectHasPermission(PERMISSIONS.FORENSICS_VIEW)),
+    this.api.forensicsCapabilities().pipe(
+      map((capabilities) => capabilities.enabled),
+      catchError(() => of(false)),
+    ),
+  ]).pipe(
+    map(([permitted, enabled]) => permitted && enabled),
+    shareReplay({ bufferSize: 1, refCount: true }),
+  );
   canAudit$ = this.store.select(selectHasPermission(PERMISSIONS.AUDIT_LIST_VIEW));
   canRbac$ = this.store.select(selectHasPermission(PERMISSIONS.RBAC_ACCESS));
   canRisk$ = this.store.select(selectHasPermission(PERMISSIONS.RISK_VIEW));
@@ -163,7 +173,8 @@ export class AdminShellComponent implements OnInit, OnDestroy {
       this.expandedCategories['products'] = true;
     } else if (
       url.startsWith('/admin/transactions') ||
-      url.startsWith('/admin/reconciliation')
+      url.startsWith('/admin/reconciliation') ||
+      url.startsWith('/admin/forensics')
     ) {
       this.expandedCategories['transactions'] = true;
     } else if (

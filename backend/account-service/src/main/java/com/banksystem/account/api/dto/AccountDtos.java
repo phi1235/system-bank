@@ -35,6 +35,19 @@ public final class AccountDtos {
 
   public record MoneyResult(String ledgerEntryId, BigDecimal balanceAfter) {}
 
+  public record AdjustmentRequestedEventRequest(
+      @NotNull java.util.UUID eventId,
+      @NotNull java.util.UUID proposalId,
+      @NotNull java.util.UUID caseId,
+      int cycle,
+      @NotNull java.util.UUID targetAccountId,
+      @NotBlank String direction,
+      @NotNull BigDecimal amount,
+      String currency,
+      @NotBlank String referenceId,
+      String reason
+  ) {}
+
   /** Single ledger line for account statement (not transfer-order history). */
   public record LedgerEntryResponse(
       String id,

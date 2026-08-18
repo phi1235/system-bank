@@ -65,6 +65,12 @@ export const ADMIN_ROUTES: Routes = [
           import('./reconciliation/reconciliation.component').then((m) => m.AdminReconciliationComponent),
       },
       {
+        path: 'forensics',
+        canActivate: [permissionGuard([PERMISSIONS.FORENSICS_VIEW])],
+        loadComponent: () =>
+          import('./forensics/forensics.component').then((m) => m.AdminForensicsComponent),
+      },
+      {
         path: 'outbox',
         canActivate: [permissionGuard([PERMISSIONS.TX_LIST_VIEW])],
         loadComponent: () => import('./outbox/outbox.component').then((m) => m.AdminOutboxComponent),

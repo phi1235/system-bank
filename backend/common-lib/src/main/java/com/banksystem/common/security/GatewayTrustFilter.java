@@ -28,7 +28,7 @@ public class GatewayTrustFilter extends OncePerRequestFilter {
   @Autowired
   public GatewayTrustFilter(
       @Value("${bank.gateway.signing-secret}") String secret,
-      @Value("${bank.gateway.max-clock-skew-seconds:30}") long maxClockSkewSeconds) {
+      @Value("${bank.gateway.max-clock-skew-seconds}") long maxClockSkewSeconds) {
     this(secret, maxClockSkewSeconds, Clock.systemUTC());
   }
 

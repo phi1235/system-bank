@@ -1,13 +1,4 @@
 package com.banksystem.auth.application.auth.impl;
-import static com.banksystem.auth.api.dto.AuthDtos.*;
-import static com.banksystem.auth.api.dto.PasswordResetDtos.*;
-import static com.banksystem.auth.api.dto.RbacDtos.*;
-import com.banksystem.auth.application.auth.*;
-import com.banksystem.auth.application.rbac.*;
-import com.banksystem.auth.domain.auth.*;
-import com.banksystem.auth.domain.rbac.*;
-import com.banksystem.auth.api.dto.*;
-
 import com.banksystem.auth.api.dto.AuthDtos.LoginRequest;
 import com.banksystem.auth.api.dto.AuthDtos.LoginResponse;
 import com.banksystem.auth.api.dto.AuthDtos.MfaEnableRequest;
@@ -17,6 +8,15 @@ import com.banksystem.auth.api.dto.AuthDtos.RefreshRequest;
 import com.banksystem.auth.api.dto.AuthDtos.RegisterRequest;
 import com.banksystem.auth.api.dto.AuthDtos.RegisterResponse;
 import com.banksystem.auth.api.dto.AuthDtos.TokenResponse;
+import com.banksystem.auth.api.dto.AuthDtos.UserMeResponse;
+import com.banksystem.auth.application.auth.AuthService;
+import com.banksystem.auth.application.auth.MfaService;
+import com.banksystem.auth.application.auth.SessionService;
+import com.banksystem.auth.application.rbac.PermissionResolver;
+import com.banksystem.auth.domain.auth.AuthAuditLogEntity;
+import com.banksystem.auth.domain.auth.AuthAuditLogRepository;
+import com.banksystem.auth.domain.auth.UserEntity;
+import com.banksystem.auth.domain.auth.UserRepository;
 import com.banksystem.auth.infrastructure.jwt.JwtService;
 import com.banksystem.auth.infrastructure.jwt.JwtService.TokenPair;
 import com.banksystem.auth.infrastructure.redis.TokenStore;
@@ -57,8 +57,8 @@ public class AuthServiceImpl implements AuthService {
       MfaService mfaService,
       SessionService sessionService,
       PermissionResolver permissionResolver,
-      @Value("${bank.login.max-failures:5}") int maxFailures,
-      @Value("${bank.login.lock-minutes:15}") long lockMinutes) {
+      @Value("${bank.security.login-max-failures}") int maxFailures,
+      @Value("${bank.security.login-lock-minutes}") long lockMinutes) {
     this.userRepository = userRepository;
     this.auditLogRepository = auditLogRepository;
     this.boundPasswordEncoder = boundPasswordEncoder;
@@ -97,12 +97,15 @@ public class AuthServiceImpl implements AuthService {
     user.setUpdatedAt(Instant.now());
     userRepository.save(user);
     audit(user.getId(), "REGISTER", null, "username=" + user.getUsername());
+    log.info("[AUTH] Registered new customer username=[{}] email=[{}] userId=[{}]",
+        user.getUsername(), user.getEmail(), user.getId());
     return new RegisterResponse(user.getId().toString(), user.getUsername());
   }
 
   @Transactional(readOnly = true)
   public LoginResponse login(LoginRequest req, String ip, String userAgent) {
     if (tokenStore.getLoginFail(ip) >= maxFailures) {
+      log.warn("[AUTH] Login rejected: IP=[{}] is locked due to excess failures", ip);
       throw new BusinessException("LOGIN_LOCKED",
           "Too many failed attempts. Try again later.");
     }
@@ -113,6 +116,7 @@ public class AuthServiceImpl implements AuthService {
         || !boundPasswordEncoder.matches(req.password(), user.getUsername(), user.getPasswordHash())) {
       long fails = tokenStore.incrementLoginFail(ip, lockMinutes);
       audit(null, "LOGIN_FAILED", ip, "username=" + username + ",fails=" + fails);
+      log.warn("[AUTH] Login failed: username=[{}] IP=[{}] failCount=[{}]", username, ip, fails);
       if (fails >= maxFailures) {
         throw new BusinessException("LOGIN_LOCKED",
             "Too many failed attempts. Try again later.");
@@ -120,6 +124,7 @@ public class AuthServiceImpl implements AuthService {
       throw new BusinessException("INVALID_CREDENTIALS", "Invalid username or password");
     }
     if (!user.isEnabled()) {
+      log.warn("[AUTH] Login rejected: username=[{}] userId=[{}] is DISABLED", username, user.getId());
       throw new BusinessException("USER_DISABLED", "Account is disabled");
     }
 
@@ -128,11 +133,14 @@ public class AuthServiceImpl implements AuthService {
     if (user.isMfaEnabled()) {
       String mfaToken = jwtService.issueMfaToken(user);
       audit(user.getId(), "LOGIN_MFA_REQUIRED", ip, null);
+      log.info("[AUTH] Login password verified, MFA OTP required: username=[{}] userId=[{}]", username, user.getId());
       return LoginResponse.mfaRequired(mfaToken);
     }
 
     TokenPair pair = issueAndStore(user, ip, userAgent);
     audit(user.getId(), "LOGIN_SUCCESS", ip, null);
+    log.info("[AUTH] Login successful: username=[{}] userId=[{}] roles=[{}] IP=[{}]",
+        username, user.getId(), user.getRoles(), ip);
     return LoginResponse.tokens(toTokenResponse(pair, user.isMustChangePassword()), user.isMustChangePassword());
   }
 
@@ -156,6 +164,7 @@ public class AuthServiceImpl implements AuthService {
     }
     TokenPair pair = issueAndStore(user, ip, userAgent);
     audit(userId, "MFA_VERIFY_SUCCESS", ip, null);
+    log.info("[AUTH] MFA code verified successfully for userId=[{}]", userId);
     return toTokenResponse(pair, user.isMustChangePassword());
   }
 
@@ -185,6 +194,7 @@ public class AuthServiceImpl implements AuthService {
         .orElseThrow(() -> new BusinessException("USER_NOT_FOUND", "User not found"));
     TokenPair pair = issueAndStore(user, ip, userAgent);
     audit(userId, "TOKEN_REFRESH", ip, null);
+    log.info("[AUTH] Refreshed tokens for userId=[{}] IP=[{}]", userId, ip);
     return toTokenResponse(pair, user.isMustChangePassword());
   }
 
@@ -197,6 +207,7 @@ public class AuthServiceImpl implements AuthService {
         tokenStore.blacklist(jti, jwtService.remainingTtlSeconds(claims));
         userId = UUID.fromString(claims.getSubject());
         audit(userId, "LOGOUT", null, "jti=" + jti);
+        log.info("[AUTH] User logged out: userId=[{}]", userId);
       } catch (Exception ignored) {
       }
     }

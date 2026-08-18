@@ -37,28 +37,40 @@ eureka:
 
 bank:
   feign:
-    notification-url: ${FEIGN_NOTIFICATION_URL:}
-    customer-url: ${FEIGN_CUSTOMER_URL:}
-    transaction-url: ${FEIGN_TRANSACTION_URL:}
+    notification-url: ${FEIGN_NOTIFICATION_URL}
+    customer-url: ${FEIGN_CUSTOMER_URL}
+    transaction-url: ${FEIGN_TRANSACTION_URL}
   account:
     max-per-user: ${ACCOUNT_MAX_PER_USER}
     initial-balance: ${ACCOUNT_INITIAL_BALANCE}
     topup:
-      max-amount: 50000000
+      max-amount: ${ACCOUNT_TOPUP_MAX_AMOUNT}
   aes:
     # PAN-at-rest encryption (same key material as customer PII).
     secret-key: ${AES_SECRET_KEY}
   card:
-    default-daily-limit: ${CARD_DEFAULT_DAILY_LIMIT:20000000}
-    max-daily-limit: ${CARD_MAX_DAILY_LIMIT:100000000}
-    validity-years: ${CARD_VALIDITY_YEARS:3}
+    default-daily-limit: ${CARD_DEFAULT_DAILY_LIMIT}
+    max-daily-limit: ${CARD_MAX_DAILY_LIMIT}
+    validity-years: ${CARD_VALIDITY_YEARS}
   deposit:
     # Banking-day zone for maturity dates and interest day counts.
-    zone: ${DEPOSIT_ZONE:Asia/Bangkok}
+    zone: ${DEPOSIT_ZONE}
     # Nightly accrual + maturity batch; opt-in. Manual runs via admin API always work.
     batch:
-      enabled: ${DEPOSIT_BATCH_ENABLED:false}
-      cron: ${DEPOSIT_BATCH_CRON:0 15 0 * * *}
+      enabled: ${DEPOSIT_BATCH_ENABLED}
+      cron: ${DEPOSIT_BATCH_CRON}
+  ledger:
+    snapshot:
+      enabled: ${LEDGER_SNAPSHOT_ENABLED}
+      batch-size: ${LEDGER_SNAPSHOT_BATCH_SIZE}
+      cron: ${LEDGER_SNAPSHOT_CRON}
+    hold-expiry:
+      batch-size: ${LEDGER_HOLD_EXPIRY_BATCH_SIZE}
+      cron: ${LEDGER_HOLD_EXPIRY_CRON}
+    backfill:
+      enabled: ${LEDGER_BACKFILL_ENABLED}
+      batch-size: ${LEDGER_BACKFILL_BATCH_SIZE}
+      cron: ${LEDGER_BACKFILL_CRON}
   gateway:
     signing-secret: ${GATEWAY_SIGNING_SECRET}
     max-clock-skew-seconds: ${GATEWAY_MAX_CLOCK_SKEW_SECONDS}
@@ -99,4 +111,9 @@ springdoc:
 
 logging:
   pattern:
-    level: "%5p [${spring.application.name:},%X{correlationId:-},%X{traceId:-},%X{spanId:-}]"
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%magenta(${spring.application.name:system-bank})] [%thread] %highlight(%-5level) [%cyan(%X{correlationId:-})][%blue(%X{userId:-})] [%yellow(%-35logger{35})] : %msg%n"
+    level: "%5p [${spring.application.name:},%X{correlationId:-},%X{userId:-}]"
+  level:
+    root: INFO
+    com.banksystem: INFO
+    org.springframework.web: INFO

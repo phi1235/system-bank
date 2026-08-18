@@ -20,9 +20,9 @@ public class OutboxRetryPolicy {
   private final Clock clock;
 
   public OutboxRetryPolicy(
-      @Value("${bank.outbox.max-attempts:10}") int maxAttempts,
-      @Value("${bank.outbox.base-delay-ms:1000}") long baseDelayMs,
-      @Value("${bank.outbox.max-delay-ms:300000}") long maxDelayMs,
+      @Value("${bank.outbox.max-attempts}") int maxAttempts,
+      @Value("${bank.outbox.base-delay-ms}") long baseDelayMs,
+      @Value("${bank.outbox.max-delay-ms}") long maxDelayMs,
       Clock clock) {
     if (maxAttempts < 1) {
       throw new IllegalArgumentException("bank.outbox.max-attempts must be >= 1");

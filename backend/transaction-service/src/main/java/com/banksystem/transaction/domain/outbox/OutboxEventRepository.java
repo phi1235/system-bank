@@ -16,6 +16,8 @@ public interface OutboxEventRepository extends JpaRepository<OutboxEventEntity, 
 
   Optional<OutboxEventEntity> findByDedupeKey(String dedupeKey);
 
+  List<OutboxEventEntity> findByAggregateIdOrderByCreatedAtAsc(UUID aggregateId);
+
   /** Atomic idempotent insert; avoids check-then-insert races between concurrent saga callbacks. */
   @Modifying
   @Query(value = """
@@ -23,12 +25,13 @@ public interface OutboxEventRepository extends JpaRepository<OutboxEventEntity, 
         id, aggregate_type, aggregate_id, event_type, dedupe_key, payload,
         created_at, status, attempt_count, next_attempt_at)
       VALUES (
-        :id, 'TRANSFER', :aggregateId, :eventType, :dedupeKey, :payload,
+        :id, :aggregateType, :aggregateId, :eventType, :dedupeKey, :payload,
         :createdAt, 'PENDING', 0, :createdAt)
       ON CONFLICT DO NOTHING
       """, nativeQuery = true)
   int insertIfAbsent(
       @Param("id") UUID id,
+      @Param("aggregateType") String aggregateType,
       @Param("aggregateId") UUID aggregateId,
       @Param("eventType") String eventType,
       @Param("dedupeKey") String dedupeKey,

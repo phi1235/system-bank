@@ -1,14 +1,4 @@
 package com.banksystem.account.infrastructure.gateway;
-import com.banksystem.account.application.account.*;
-import com.banksystem.account.application.card.*;
-import com.banksystem.account.application.deposit.*;
-import com.banksystem.account.application.ledger.*;
-import com.banksystem.account.domain.account.*;
-import com.banksystem.account.domain.card.*;
-import com.banksystem.account.domain.deposit.*;
-import com.banksystem.account.domain.ledger.*;
-import com.banksystem.account.api.dto.*;
-
 import com.banksystem.account.application.gateway.AuditGateway;
 import com.banksystem.account.infrastructure.feign.AuditClient;
 import com.banksystem.account.infrastructure.feign.AuditClient.CreateAuditLogRequest;
@@ -26,7 +16,7 @@ public class FeignAuditGateway implements AuditGateway {
 
   public FeignAuditGateway(
       Optional<AuditClient> auditClient,
-      @Value("${bank.internal.account-api-key:internal-secret-key-12345}") String internalApiKey) {
+      @Value("${bank.internal.transaction-api-key}") String internalApiKey) {
     this.auditClient = auditClient.orElse(null);
     this.internalApiKey = internalApiKey;
   }

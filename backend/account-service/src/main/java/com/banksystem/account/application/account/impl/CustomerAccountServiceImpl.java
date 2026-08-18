@@ -1,14 +1,4 @@
 package com.banksystem.account.application.account.impl;
-import com.banksystem.account.application.account.*;
-import com.banksystem.account.application.card.*;
-import com.banksystem.account.application.deposit.*;
-import com.banksystem.account.application.ledger.*;
-import com.banksystem.account.domain.account.*;
-import com.banksystem.account.domain.card.*;
-import com.banksystem.account.domain.deposit.*;
-import com.banksystem.account.domain.ledger.*;
-import com.banksystem.account.api.dto.*;
-
 import com.banksystem.account.api.dto.AccountDtos.AccountResponse;
 import com.banksystem.account.api.dto.AccountDtos.LedgerEntryResponse;
 import com.banksystem.account.api.dto.AccountDtos.MoneyCommand;
@@ -16,13 +6,27 @@ import com.banksystem.account.api.dto.AccountDtos.MoneyResult;
 import com.banksystem.account.api.dto.AccountDtos.OpenAccountRequest;
 import com.banksystem.account.api.dto.AccountDtos.TopUpRequest;
 import com.banksystem.account.api.dto.AccountDtos.TopUpResponse;
-import com.banksystem.common.security.GatewayUser;
+import com.banksystem.account.application.account.AccountAccessService;
+import com.banksystem.account.application.account.AccountMapper;
+import com.banksystem.account.application.account.AccountMoneyService;
+import com.banksystem.account.application.account.AccountNumberGenerator;
+import com.banksystem.account.application.account.CustomerAccountService;
+import com.banksystem.account.application.account.StatementCsvWriter;
+import com.banksystem.account.application.ledger.LedgerStatementQuery;
+import com.banksystem.account.domain.account.AccountEntity;
+import com.banksystem.account.domain.account.AccountRepository;
+import com.banksystem.account.domain.account.AccountStatus;
+import com.banksystem.account.domain.ledger.LedgerEntryEntity;
+import com.banksystem.account.domain.ledger.LedgerEntryRepository;
 import com.banksystem.common.api.PageResponse;
 import com.banksystem.common.exception.BusinessException;
+import com.banksystem.common.security.GatewayUser;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -33,6 +37,8 @@ import org.springframework.transaction.annotation.Transactional;
 /** Customer-facing account use-cases (open, list, get, statement, top-up). */
 @Service
 public class CustomerAccountServiceImpl implements CustomerAccountService {
+
+  private static final Logger log = LoggerFactory.getLogger(CustomerAccountServiceImpl.class);
 
   private final AccountRepository accountRepository;
   private final LedgerEntryRepository ledgerEntryRepository;
@@ -51,9 +57,9 @@ public class CustomerAccountServiceImpl implements CustomerAccountService {
       AccountMapper mapper,
       AccountNumberGenerator accountNumbers,
       AccountMoneyService moneyService,
-      @Value("${bank.account.max-per-user:3}") int maxPerUser,
-      @Value("${bank.account.initial-balance:1000000}") BigDecimal initialBalance,
-      @Value("${bank.account.topup.max-amount:50000000}") BigDecimal maxTopUpAmount) {
+      @Value("${bank.account.max-per-user}") int maxPerUser,
+      @Value("${bank.account.initial-balance}") BigDecimal initialBalance,
+      @Value("${bank.account.topup.max-amount}") BigDecimal maxTopUpAmount) {
     this.accountRepository = accountRepository;
     this.ledgerEntryRepository = ledgerEntryRepository;
     this.access = access;
@@ -84,14 +90,20 @@ public class CustomerAccountServiceImpl implements CustomerAccountService {
     a.setStatus(AccountStatus.ACTIVE.name());
     a.setCreatedAt(Instant.now());
     a.setUpdatedAt(Instant.now());
-    return mapper.toResponse(accountRepository.save(a));
+
+    AccountEntity saved = accountRepository.save(a);
+    log.info("[ACCOUNT-OPEN] Opened new account [{}] (#{}) Type=[{}] User=[{}] InitialBalance={} {}",
+        saved.getId(), saved.getAccountNumber(), saved.getAccountType(), userId, saved.getBalance(), saved.getCurrency());
+    return mapper.toResponse(saved);
   }
 
   @Transactional(readOnly = true)
   public List<AccountResponse> listMine(UUID userId) {
-    return accountRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
+    List<AccountResponse> accounts = accountRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
         .map(mapper::toResponse)
         .toList();
+    log.info("[ACCOUNT-LIST] Found {} accounts for userId=[{}]", accounts.size(), userId);
+    return accounts;
   }
 
   @Transactional(readOnly = true)
@@ -118,6 +130,8 @@ public class CustomerAccountServiceImpl implements CustomerAccountService {
         query.to(),
         pageable);
     List<LedgerEntryResponse> items = page.getContent().stream().map(mapper::toLedgerResponse).toList();
+    log.info("[ACCOUNT-STATEMENT] Account=[{}] Page={} Size={} Results={}",
+        query.accountId(), query.page(), query.size(), page.getTotalElements());
     return new PageResponse<>(
         items,
         page.getNumber(),

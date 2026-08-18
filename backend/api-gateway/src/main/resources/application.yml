@@ -10,18 +10,6 @@ spring:
       port: ${REDIS_PORT}
   cloud:
     gateway:
-      globalcors:
-        cors-configurations:
-          '[/**]':
-            allowedOrigins:
-              - "http://localhost:4200"
-              - "http://localhost:4201"
-              - "http://localhost:5173"
-              - "https://phinguyenit.id.vn"
-              - "https://app.phinguyenit.id.vn"
-            allowedMethods: "*"
-            allowedHeaders: "*"
-            allowCredentials: true
       discovery:
         locator:
           enabled: false
@@ -41,11 +29,15 @@ spring:
         - id: transaction-service
           uri: lb://TRANSACTION-SERVICE
           predicates:
-            - Path=/api/v1/transactions/**,/api/v1/banks,/api/v1/bills/**
+            - Path=/api/v1/transactions/**,/api/v1/banks,/api/v1/bills/**,/api/v1/payments/**
         - id: napas-callback
           uri: lb://TRANSACTION-SERVICE
           predicates:
             - Path=/api/v1/callbacks/napas/**
+        - id: sepay-routes
+          uri: lb://TRANSACTION-SERVICE
+          predicates:
+            - Path=/api/v1/payments/sepay/**
         # SSE first (more specific) so /** does not swallow the stream path.
         # response-timeout: 0 aborts JSON bodies as empty 200 — use a long positive ms for SSE only.
         - id: notification-service-stream
@@ -53,13 +45,13 @@ spring:
           predicates:
             - Path=/api/v1/notifications/stream
           metadata:
-            response-timeout: 3600000
+            response-timeout: ${NOTIFICATION_SSE_RESPONSE_TIMEOUT_MS}
         - id: admin-routes-notifications-stream
           uri: lb://NOTIFICATION-SERVICE
           predicates:
             - Path=/api/v1/admin/notifications/stream
           metadata:
-            response-timeout: 3600000
+            response-timeout: ${NOTIFICATION_SSE_RESPONSE_TIMEOUT_MS}
         - id: notification-service
           uri: lb://NOTIFICATION-SERVICE
           predicates:
@@ -161,6 +153,9 @@ management:
 
 logging:
   pattern:
-    level: "%5p [${spring.application.name:},%X{correlationId:-},%X{traceId:-},%X{spanId:-}]"
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%magenta(${spring.application.name:system-bank})] [%thread] %highlight(%-5level) [%cyan(%X{correlationId:-})][%blue(%X{userId:-})] [%yellow(%-35logger{35})] : %msg%n"
+    level: "%5p [${spring.application.name:},%X{correlationId:-},%X{userId:-}]"
   level:
+    root: INFO
+    com.banksystem: INFO
     org.springframework.cloud.gateway: INFO

@@ -57,7 +57,7 @@ class RequirePermissionAspectTest {
         List.of("ib:notifications:view")));
     ClassLevelController target = new ClassLevelController();
     ProceedingJoinPoint pjp = joinPoint(target, "inbox");
-    assertEquals("inbox", aspect.enforce(pjp));
+    assertEquals("inbox", aspect.enforceClass(pjp, target.getClass().getAnnotation(RequirePermission.class)));
   }
 
   private static void bindUser(GatewayUser user) {

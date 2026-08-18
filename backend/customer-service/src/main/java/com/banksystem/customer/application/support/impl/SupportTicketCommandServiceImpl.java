@@ -22,11 +22,15 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class SupportTicketCommandServiceImpl implements SupportTicketCommandService {
+
+  private static final Logger log = LoggerFactory.getLogger(SupportTicketCommandServiceImpl.class);
 
   private static final Set<String> CATEGORIES =
       Set.of("GENERAL", "ACCOUNT", "TRANSFER", "CARD", "KYC", "SECURITY", "OTHER");
@@ -98,6 +102,8 @@ public class SupportTicketCommandServiceImpl implements SupportTicketCommandServ
     SupportTicketEntity saved = ticketRepository.save(t);
     appendMessage(saved.getId(), userId, ROLE_CUSTOMER, body);
     opsAlertPublisher.supportTicketOpened(saved);
+    log.info("[SUPPORT-TICKET] Created ticket [{}] Category=[{}] Priority=[{}] User=[{}]",
+        saved.getId(), saved.getCategory(), saved.getPriority(), userId);
     return toResponse(saved, true);
   }
 
@@ -117,7 +123,9 @@ public class SupportTicketCommandServiceImpl implements SupportTicketCommandServ
     t.setStatus("IN_PROGRESS");
     t.setAssignedTo(staffId);
     t.setUpdatedAt(Instant.now());
-    return toResponse(ticketRepository.save(t), true);
+    SupportTicketEntity saved = ticketRepository.save(t);
+    log.info("[SUPPORT-CLAIM] Ticket [{}] claimed by staff [{}]", ticketId, staffId);
+    return toResponse(saved, true);
   }
 
   @Transactional
@@ -137,6 +145,7 @@ public class SupportTicketCommandServiceImpl implements SupportTicketCommandServ
     SupportTicketEntity saved = ticketRepository.save(t);
     opsAlertPublisher.supportTicketResolved(saved);
     customerNotifyPublisher.supportTicketResolved(saved);
+    log.info("[SUPPORT-RESOLVE] Ticket [{}] resolved by staff [{}]", ticketId, staffId);
     return toResponse(saved, true);
   }
 

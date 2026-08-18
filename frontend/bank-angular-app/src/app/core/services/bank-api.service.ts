@@ -23,6 +23,20 @@ import {
   DepositBatchResult,
   DepositProduct,
   DepositQuote,
+  ForensicInvestigation,
+  ForensicInvestigationDetail,
+  ForensicTemporalState,
+  ForensicVerificationRun,
+  ForensicEvidenceExport,
+  ForensicTwinFork,
+  ForensicReplayRun,
+  ForensicReplayScenario,
+  ForensicCopilotSession,
+  ForensicCopilotAnswer,
+  ForensicCase,
+  ForensicCaseDetail,
+  ForensicCaseHistory,
+  ForensicFinding,
   LedgerEntry,
   KycCase,
   NotificationItem,
@@ -32,6 +46,8 @@ import {
   ReconRunDetail,
   RiskBlacklistEntry,
   RiskRule,
+  SepayTopUpOrder,
+  SepayTopUpRequest,
   SupportTicket,
   TermDeposit,
   TopUpResponse,
@@ -555,6 +571,282 @@ export class BankApiService {
     });
   }
 
+  forensicInvestigations(
+    page = 0,
+    size = 20,
+    filters?: {
+      q?: string;
+      transactionId?: string;
+      transferStatus?: string;
+      riskDecision?: string;
+      from?: string;
+      to?: string;
+    },
+  ): Observable<PageResponse<ForensicInvestigation>> {
+    return this.api.post('/admin/forensics/investigations/findByCondition', {
+      page,
+      size,
+      ...filters,
+    });
+  }
+
+  forensicsCapabilities(): Observable<{ enabled: boolean }> {
+    return this.api.get('/admin/forensics/capabilities');
+  }
+
+  forensicInvestigation(transactionId: string): Observable<ForensicInvestigationDetail> {
+    return this.api.get(
+      `/admin/forensics/investigations/${encodeURIComponent(transactionId)}`,
+    );
+  }
+
+  forensicTemporalState(transactionId: string, at: string): Observable<ForensicTemporalState> {
+    return this.api.get(
+      `/admin/forensics/investigations/${encodeURIComponent(transactionId)}/temporal-state`,
+      { at },
+    );
+  }
+
+  runForensicVerification(
+    transactionId: string,
+    idempotencyKey: string,
+  ): Observable<ForensicVerificationRun> {
+    return this.api.post(
+      `/admin/forensics/verification/check/${encodeURIComponent(transactionId)}`,
+      {},
+      { 'Idempotency-Key': idempotencyKey },
+    );
+  }
+
+  createForensicExport(caseId: string, reason: string): Observable<ForensicEvidenceExport> {
+    return this.api.post(`/admin/forensics/cases/${encodeURIComponent(caseId)}/exports`, { reason });
+  }
+
+  forensicExport(jobId: string): Observable<ForensicEvidenceExport> {
+    return this.api.get(`/admin/forensics/exports/${encodeURIComponent(jobId)}`);
+  }
+
+  downloadForensicExport(jobId: string): Observable<Blob> {
+    return this.api.getBlob(`/admin/forensics/exports/${encodeURIComponent(jobId)}/download`);
+  }
+
+  createForensicFork(transactionId: string, ttlMinutes = 60): Observable<ForensicTwinFork> {
+    return this.api.post('/admin/forensics/twin/forks', { transactionId, ttlMinutes });
+  }
+
+  createForensicReplay(
+    idempotencyKey: string,
+    body: { forkId: string; scenarioId: string; seed: number; targetCommitSha: string },
+  ): Observable<ForensicReplayRun> {
+    return this.api.post('/admin/forensics/twin/replays', body, { 'Idempotency-Key': idempotencyKey });
+  }
+
+  forensicReplay(runId: string): Observable<ForensicReplayRun> {
+    return this.api.get(`/admin/forensics/twin/runs/${encodeURIComponent(runId)}`);
+  }
+
+  forensicReplayResult(runId: string): Observable<Blob> {
+    return this.api.getBlob(`/admin/forensics/twin/runs/${encodeURIComponent(runId)}/result`);
+  }
+
+  deleteForensicFork(forkId: string): Observable<void> {
+    return this.api.delete(`/admin/forensics/twin/forks/${encodeURIComponent(forkId)}`);
+  }
+
+  forensicReplayScenarios(all = false): Observable<ForensicReplayScenario[]> {
+    return this.api.get(`/admin/forensics/scenarios${all ? '/all' : ''}`);
+  }
+
+  forensicReplayScenarioEngines(): Observable<string[]> {
+    return this.api.get('/admin/forensics/scenarios/engines');
+  }
+
+  forensicReplayScenarioFaultTypes(): Observable<string[]> {
+    return this.api.get('/admin/forensics/scenarios/fault-types');
+  }
+
+  createForensicReplayScenario(body: {
+    scenarioId: string; title: string; engineKey: string; sourceIncidentId: string;
+    sourceEvidenceRef: string; definition: Record<string, unknown>; sanitized: boolean;
+  }): Observable<ForensicReplayScenario> {
+    return this.api.post('/admin/forensics/scenarios', body);
+  }
+
+  confirmForensicReplayScenario(id: string, expectedVersion: number): Observable<ForensicReplayScenario> {
+    return this.api.post(`/admin/forensics/scenarios/${encodeURIComponent(id)}/confirm`, { expectedVersion });
+  }
+
+  createForensicCopilotSession(transactionId?: string | null, caseId?: string | null): Observable<ForensicCopilotSession> {
+    const payload: { transactionId?: string; caseId?: string } = {};
+    if (transactionId) payload.transactionId = transactionId;
+    if (caseId) payload.caseId = caseId;
+    return this.api.post('/admin/forensics/copilot/sessions', payload);
+  }
+
+  askForensicCopilot(sessionId: string, question: string): Observable<ForensicCopilotAnswer> {
+    return this.api.post(
+      `/admin/forensics/copilot/sessions/${encodeURIComponent(sessionId)}/messages`,
+      { question },
+    );
+  }
+
+  forensicCases(
+    page = 0,
+    size = 20,
+    filters?: {
+      q?: string;
+      status?: string;
+      priority?: string;
+      assignedTo?: string;
+      transactionId?: string;
+    },
+  ): Observable<PageResponse<ForensicCase>> {
+    return this.api.post('/admin/forensics/cases/findByCondition', { page, size, ...filters });
+  }
+
+  forensicCase(id: string): Observable<ForensicCaseDetail> {
+    return this.api.get(`/admin/forensics/cases/${encodeURIComponent(id)}`);
+  }
+
+  createForensicCase(body: {
+    transactionId?: string;
+    accountId?: string;
+    sourceType: string;
+    sourceReferenceId?: string;
+    priority: string;
+    title: string;
+    summary?: string;
+  }): Observable<ForensicCase> {
+    return this.api.post('/admin/forensics/cases', body);
+  }
+
+  assignForensicCase(id: string, assignee: string, expectedVersion: number, note?: string): Observable<ForensicCase> {
+    return this.api.post(`/admin/forensics/cases/${encodeURIComponent(id)}/assign`, {
+      assignee, expectedVersion, note,
+    });
+  }
+
+  startForensicCase(id: string, expectedVersion: number): Observable<ForensicCase> {
+    return this.api.post(`/admin/forensics/cases/${encodeURIComponent(id)}/start`, { expectedVersion });
+  }
+
+  confirmForensicRootCause(id: string, expectedVersion: number, note?: string): Observable<ForensicCase> {
+    return this.api.post(`/admin/forensics/cases/${encodeURIComponent(id)}/confirm-root-cause`, {
+      expectedVersion, note,
+    });
+  }
+
+  verifyForensicReplay(id: string, expectedVersion: number, replayRunId?: string, note?: string): Observable<ForensicCase> {
+    return this.api.post(`/admin/forensics/cases/${encodeURIComponent(id)}/verify-replay`, {
+      expectedVersion, replayRunId, note,
+    });
+  }
+
+  submitForensicCase(id: string, expectedVersion: number, recommendation: string): Observable<ForensicCase> {
+    return this.api.post(`/admin/forensics/cases/${encodeURIComponent(id)}/submit`, {
+      expectedVersion, recommendation,
+    });
+  }
+
+  approveForensicCase(
+    id: string,
+    expectedVersion: number,
+    resolutionCode: string,
+    resolutionNote: string,
+    systemic = false,
+  ): Observable<ForensicCase> {
+    return this.api.post(`/admin/forensics/cases/${encodeURIComponent(id)}/approve-resolution`, {
+      expectedVersion, resolutionCode, resolutionNote, systemic,
+    });
+  }
+
+  rejectForensicCase(id: string, expectedVersion: number, reason: string): Observable<ForensicCase> {
+    return this.api.post(`/admin/forensics/cases/${encodeURIComponent(id)}/reject-resolution`, {
+      expectedVersion, reason,
+    });
+  }
+
+  reopenForensicCase(id: string, expectedVersion: number, reason: string): Observable<ForensicCase> {
+    return this.api.post(`/admin/forensics/cases/${encodeURIComponent(id)}/reopen`, {
+      expectedVersion, reason,
+    });
+  }
+
+  addForensicFinding(id: string, body: {
+    ruleCode: string;
+    severity: string;
+    title: string;
+    detail?: string;
+    evidence?: Record<string, unknown>;
+  }): Observable<ForensicFinding> {
+    return this.api.post(`/admin/forensics/cases/${encodeURIComponent(id)}/findings`, body);
+  }
+
+  forensicCaseHistory(id: string, page = 0, size = 50): Observable<PageResponse<ForensicCaseHistory>> {
+    return this.api.get(`/admin/forensics/cases/${encodeURIComponent(id)}/history`, { page, size });
+  }
+
+  recordForensicRemediation(
+    id: string,
+    expectedVersion: number,
+    actionType: string,
+    description: string,
+    referenceId?: string,
+    completed = false,
+  ): Observable<ForensicCase> {
+    return this.api.post(`/admin/forensics/cases/${encodeURIComponent(id)}/remediation`, {
+      expectedVersion, actionType, description, referenceId, completed,
+    });
+  }
+
+  forensicCausalGraph(transactionId: string): Observable<unknown> {
+    return this.api.get(`/admin/forensics/causal-graph/${encodeURIComponent(transactionId)}`);
+  }
+
+  executeRemediationAdjustment(
+    body: { transactionId?: string; caseId?: string; amount: number; reason: string },
+    idempotencyKey?: string,
+  ): Observable<Record<string, unknown>> {
+    const headers = idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : undefined;
+    return this.api.post<Record<string, unknown>>('/admin/forensics/remediation/adjustment', body, headers);
+  }
+
+  executeRemediationHold(
+    body: { targetAccountId?: string; caseId?: string; amount: number; reason: string },
+    idempotencyKey?: string,
+  ): Observable<Record<string, unknown>> {
+    const headers = idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : undefined;
+    return this.api.post<Record<string, unknown>>('/admin/forensics/remediation/hold', body, headers);
+  }
+
+  forensicViolations(
+    page = 0,
+    size = 20,
+    filters?: { disposition?: string; severity?: string; ruleCode?: string; transactionId?: string },
+  ): Observable<PageResponse<ForensicFinding>> {
+    return this.api.get('/admin/forensics/violations', { page, size, ...filters });
+  }
+
+  acknowledgeForensicViolation(id: string, expectedVersion: number, note: string): Observable<ForensicFinding> {
+    return this.api.post(`/admin/forensics/violations/${encodeURIComponent(id)}/acknowledge`, {
+      expectedVersion,
+      note,
+    });
+  }
+
+  resolveForensicViolation(
+    id: string,
+    expectedVersion: number,
+    reason: string,
+    evidence: Record<string, unknown>,
+  ): Observable<ForensicFinding> {
+    return this.api.post(`/admin/forensics/violations/${encodeURIComponent(id)}/resolve`, {
+      expectedVersion,
+      reason,
+      evidence,
+    });
+  }
+
   adminTransfersExportChunks(
     page = 0,
     size = 2000,
@@ -769,6 +1061,20 @@ export class BankApiService {
 
   billHistory(page = 0, size = 20): Observable<PageResponse<BillPaymentHistory>> {
     return this.api.post('/bills/history/findBillPaymentHistory', { page, size });
+  }
+
+  // ── SePay VietQR Top-Up ──
+
+  createSepayTopUp(body: SepayTopUpRequest): Observable<SepayTopUpOrder> {
+    return this.api.post<SepayTopUpOrder>('/payments/sepay/topup', body);
+  }
+
+  getSepayOrder(orderCode: string): Observable<SepayTopUpOrder> {
+    return this.api.get<SepayTopUpOrder>(`/payments/sepay/orders/${orderCode}`);
+  }
+
+  getMySepayOrders(): Observable<SepayTopUpOrder[]> {
+    return this.api.get<SepayTopUpOrder[]>('/payments/sepay/my-orders');
   }
 }
 

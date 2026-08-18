@@ -7,4 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface ReconItemRepository extends JpaRepository<ReconItemEntity, UUID> {
 
   List<ReconItemEntity> findByRunIdOrderByKindAscTransferIdAsc(UUID runId);
+
+  List<ReconItemEntity> findByTransferIdOrderByKindAsc(UUID transferId);
 }

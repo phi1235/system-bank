@@ -1,13 +1,6 @@
 package com.banksystem.auth.config;
-import static com.banksystem.auth.api.dto.AuthDtos.*;
-import static com.banksystem.auth.api.dto.PasswordResetDtos.*;
-import static com.banksystem.auth.api.dto.RbacDtos.*;
-import com.banksystem.auth.application.auth.*;
-import com.banksystem.auth.application.rbac.*;
-import com.banksystem.auth.domain.auth.*;
-import com.banksystem.auth.domain.rbac.*;
-import com.banksystem.auth.api.dto.*;
-
+import com.banksystem.auth.domain.auth.UserEntity;
+import com.banksystem.auth.domain.auth.UserRepository;
 import com.banksystem.auth.infrastructure.security.BoundPasswordEncoder;
 import java.time.Instant;
 import java.util.UUID;
@@ -37,7 +30,7 @@ public class AdminSeedRunner implements ApplicationRunner {
   public AdminSeedRunner(
       UserRepository userRepository,
       BoundPasswordEncoder boundPasswordEncoder,
-      @Value("${bank.admin.seed-enabled:true}") boolean seedEnabled,
+      @Value("${bank.admin.seed-enabled}") boolean seedEnabled,
       @Value("${bank.admin.username}") String username,
       @Value("${bank.admin.password}") String password,
       @Value("${bank.admin.email}") String email) {
