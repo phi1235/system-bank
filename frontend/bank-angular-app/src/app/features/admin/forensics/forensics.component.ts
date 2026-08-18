@@ -546,8 +546,6 @@ export class AdminForensicsComponent implements OnInit {
     this.openByTransactionId(event.transactionId);
   }
 
-  @ViewChild('caseQueueRef') caseQueueRef?: ForensicCaseQueueComponent;
-
   onNavigateToCase(caseId: string): void {
     this.mainTabIndex = 1;
     if (caseId) {

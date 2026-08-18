@@ -46,6 +46,8 @@ import {
   ReconRunDetail,
   RiskBlacklistEntry,
   RiskRule,
+  SepayTopUpOrder,
+  SepayTopUpRequest,
   SupportTicket,
   TermDeposit,
   TopUpResponse,
@@ -1059,6 +1061,20 @@ export class BankApiService {
 
   billHistory(page = 0, size = 20): Observable<PageResponse<BillPaymentHistory>> {
     return this.api.post('/bills/history/findBillPaymentHistory', { page, size });
+  }
+
+  // ── SePay VietQR Top-Up ──
+
+  createSepayTopUp(body: SepayTopUpRequest): Observable<SepayTopUpOrder> {
+    return this.api.post<SepayTopUpOrder>('/payments/sepay/topup', body);
+  }
+
+  getSepayOrder(orderCode: string): Observable<SepayTopUpOrder> {
+    return this.api.get<SepayTopUpOrder>(`/payments/sepay/orders/${orderCode}`);
+  }
+
+  getMySepayOrders(): Observable<SepayTopUpOrder[]> {
+    return this.api.get<SepayTopUpOrder[]>('/payments/sepay/my-orders');
   }
 }
 

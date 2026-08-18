@@ -133,6 +133,14 @@ bank:
       # Seeded in account-service V2__fee_income_account.sql (must match FEE_INCOME_ACCOUNT_NUMBER).
       # Value only from env (infra/.env) — no default in this pushed file.
       income-account-number: ${TRANSFER_FEE_INCOME_ACCOUNT}
+  sepay:
+    api-key: ${SEPAY_API_KEY:}
+    account-number: ${SEPAY_BANK_ACCOUNT:0123456789}
+    bank-name: ${SEPAY_BANK_NAME:MBBank}
+    account-name: ${SEPAY_ACCOUNT_NAME:NGUYEN CHAU PHI}
+    qr-template: ${SEPAY_QR_TEMPLATE:compact2}
+    order-expiry-minutes: ${SEPAY_ORDER_EXPIRY_MINUTES:15}
+    webhook-secret: ${SEPAY_WEBHOOK_SECRET:}
   forensics:
     enabled: ${FORENSICS_ENABLED}
     storage:

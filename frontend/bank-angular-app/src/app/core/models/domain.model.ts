@@ -20,6 +20,28 @@ export interface TopUpResponse {
   channel: string;
 }
 
+export interface SepayTopUpRequest {
+  accountNumber: string;
+  amount: number;
+  note?: string;
+}
+
+export interface SepayTopUpOrder {
+  id: string;
+  orderCode: string;
+  accountNumber: string;
+  amount: number;
+  status: 'PENDING' | 'SUCCESS' | 'EXPIRED' | 'CANCELLED' | 'MANUAL_REVIEW' | string;
+  vietQrUrl: string;
+  bankName: string;
+  bankAccount: string;
+  accountName: string;
+  transferContent: string;
+  createdAt: string;
+  expiresAt: string;
+  completedAt?: string;
+}
+
 export interface CustomerProfile {
   id: string;
   fullName: string;
