@@ -64,7 +64,7 @@ The system demonstrates enterprise architectural patterns, high-concurrency tran
 | **auth-service** | Identity & Access | Customer/Admin authentication, Refresh Tokens, MFA TOTP, Peppered BCrypt, Admin Seed |
 | **customer-service** | Customer Management | Customer profiles, KYC approval workflow, AES-GCM encrypted PII storage |
 | **account-service** | Core Ledger & Accounts | CASA accounts, balance management, transaction ledger, account freeze/unfreeze |
-| **transaction-service** | Transfer Engine | Internal transfers, **Idempotency**, **Saga Orchestrator**, **Outbox Event Publisher**, **EOD Reconciliation** |
+| **transaction-service** | Transfer & Payment Engine | Internal transfers, **Idempotency**, **Saga Orchestrator**, **VietQR / SePay Payment Gateway**, **Transactional Inbox (`REQUIRES_NEW`)**, **Outbox Event Publisher**, **EOD Reconciliation** |
 | **notification-service** | Asynchronous Messaging | Kafka event consumers, idempotent message processing, mock Email/SMS delivery logger |
 
 ---
@@ -119,6 +119,13 @@ To guarantee **at-least-once event delivery** without dual-write inconsistencies
 - Compares `transfer_orders` from `transaction-service` against raw ledger entries pulled from `account-service`.
 - Identifies and flags discrepancies (amount mismatches, uncompleted in-flight orders, missing debit/credit legs) without requiring cross-database SQL joins across isolated databases.
 
+### 5. Transactional Inbox & Idempotent Payment Webhooks (VietQR / SePay)
+To guarantee financial safety when receiving external payment webhooks without dual-write or silent loss:
+- **Transactional Inbox Pattern (TX #1):** Webhooks are durably committed into PostgreSQL (`status = RECEIVED`) via an isolated `REQUIRES_NEW` transaction BEFORE any remote HTTP call to `account-service`.
+- **PostgreSQL-Safe Duplicate Conflict Handling:** If concurrent duplicate webhooks trigger a unique constraint violation, the failed transaction rolls back completely before retrieving the existing record in a fresh transaction, returning an immediate `200 OK - Duplicate skipped` without HTTP 500 or double-crediting.
+- **Atomic Order & Webhook Completion (TX #2):** Once downstream credit succeeds with a deterministic key (`SEPAY-TX-{id}-{code}`), the order status `SUCCESS` and webhook status `PROCESSED` commit atomically in the same database transaction.
+- **Self-Healing Reconciliation Scheduler:** A background cron job periodically polls and auto-recovers any orders stuck in `PROCESSING` or `FAILED_RETRYABLE` due to network timeouts.
+
 ---
 
 ## Feature Matrix
@@ -126,14 +133,15 @@ To guarantee **at-least-once event delivery** without dual-write inconsistencies
 ### Customer Portal (Internet Banking)
 - **Authentication:** Secure Register & Login with optional MFA TOTP (Google Authenticator / Authy).
 - **Account Dashboard:** View active CASA accounts, real-time balances, and account details.
+- **VietQR Account Top-Up:** Instant deposit via dynamic NAPAS 247 QR codes (SePay Integration) with preset amount chips, countdown expiry timer, and automatic balance refresh.
 - **Money Transfers:** Internal transfers with **Idempotency-Key** protection against accidental double submissions.
 - **Transaction History:** Detailed statement view with status filtering and multi-language support.
 
 ### Admin Back-Office Portal
-- **Staff Access:** Bootstrapped secure admin authentication.
+- **Staff Access & Governance:** Bootstrapped admin authentication with fine-grained **RBAC (`@RequirePermission`)** and **Maker-Checker Workflow** for high-value approvals and manual balance adjustments.
 - **Customer Directory & KYC:** Manage customer profiles, review KYC documents, update verification status.
 - **Account Operations:** Freeze / unfreeze customer accounts instantly.
-- **Audit & Monitoring:** Real-time audit logs, transaction monitoring dashboard, and MyBatis-powered financial reports.
+- **Payment & Transaction Oversight:** Monitor real-time transactions, handle SePay manual reviews (`MANUAL_REVIEW`), and inspect audit logs.
 - **EOD Reconciliation Management:** Trigger and review daily financial reconciliation balance reports.
 
 ---
@@ -269,6 +277,29 @@ for i in {1..10}; do
 done
 # Expect HTTP 429 (Too Many Requests) after threshold limit
 ```
+
+### 4. VietQR Top-Up & Webhook Simulation (SePay Integration)
+1. In **Customer Portal** $\rightarrow$ **Accounts** $\rightarrow$ Click **"Nạp tiền" (Top-up)** on an active account.
+2. Select an amount (e.g., `500,000 VND`), enter a note, and generate the dynamic VietQR code.
+3. Simulate an incoming SePay webhook confirmation using `curl`:
+```bash
+curl -X POST "http://localhost:8080/api/v1/payments/sepay/webhook" \
+  -H "Authorization: Apikey test-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": 999901,
+    "gateway": "MBBank",
+    "transactionDate": "2026-08-18 15:30:00",
+    "accountNumber": "0987654321",
+    "code": "SB12345678",
+    "content": "Chuyen tien SB12345678",
+    "transferType": "in",
+    "transferAmount": 500000,
+    "accumulated": 500000,
+    "referenceCode": "MB999901"
+  }'
+```
+4. Observe the popup immediately transition to **Success** and the account balance update in real time.
 
 ---
 
