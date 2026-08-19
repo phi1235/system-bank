@@ -17,124 +17,108 @@
   </button>
 </app-page-header>
 
-<div class="notif-layout">
-  <div class="main-col">
-    <mat-card class="filter-card">
-      <div class="filters">
-        <mat-form-field appearance="outline">
-          <mat-label>{{ 'CUSTOMER.NOTIF_FILTER_READ' | translate }}</mat-label>
-          <mat-select [(ngModel)]="readFilter" (selectionChange)="applyFilters()">
-            <mat-option value="ALL">{{ 'CUSTOMER.NOTIF_FILTER_ALL' | translate }}</mat-option>
-            <mat-option value="UNREAD">{{ 'CUSTOMER.NOTIF_UNREAD' | translate }}</mat-option>
-            <mat-option value="READ">{{ 'CUSTOMER.NOTIF_READ' | translate }}</mat-option>
-          </mat-select>
-        </mat-form-field>
+<div class="notif-container">
+  <mat-card class="filter-card">
+    <div class="filters">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="field-filter">
+        <mat-label>{{ 'CUSTOMER.NOTIF_FILTER_READ' | translate }}</mat-label>
+        <mat-select [(ngModel)]="readFilter" (selectionChange)="applyFilters()">
+          <mat-option value="ALL">{{ 'CUSTOMER.NOTIF_FILTER_ALL' | translate }}</mat-option>
+          <mat-option value="UNREAD">{{ 'CUSTOMER.NOTIF_UNREAD' | translate }}</mat-option>
+          <mat-option value="READ">{{ 'CUSTOMER.NOTIF_READ' | translate }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+      @if (hasActiveFilters) {
+        <button mat-stroked-button type="button" (click)="resetFilters()">
+          {{ 'CUSTOMER.HISTORY_RESET' | translate }}
+        </button>
+      }
+    </div>
+  </mat-card>
+
+  @if (loading && items.length === 0) {
+    <app-loading />
+  } @else if (!loading && items.length === 0) {
+    <mat-card class="empty-card">
+      <div class="empty-state">
+        <mat-icon>notifications_none</mat-icon>
         @if (hasActiveFilters) {
-          <button mat-button type="button" (click)="resetFilters()">
+          <p class="empty-title">{{ 'CUSTOMER.NOTIF_EMPTY_FILTERED' | translate }}</p>
+          <p class="empty-hint">{{ 'CUSTOMER.NOTIF_EMPTY_FILTERED_HINT' | translate }}</p>
+          <button mat-stroked-button type="button" (click)="resetFilters()">
             {{ 'CUSTOMER.HISTORY_RESET' | translate }}
           </button>
+        } @else {
+          <p class="empty-title">{{ 'CUSTOMER.NOTIF_EMPTY' | translate }}</p>
+          <p class="empty-hint">{{ 'CUSTOMER.NOTIF_EMPTY_HINT' | translate }}</p>
+          <a mat-flat-button color="primary" routerLink="/customer/payments/transfer">
+            {{ 'NAV.TRANSFER' | translate }}
+          </a>
         }
       </div>
     </mat-card>
-
-    @if (loading && items.length === 0) {
-      <app-loading />
-    } @else if (!loading && items.length === 0) {
-      <mat-card class="empty-card">
-        <div class="empty-state">
-          <mat-icon>notifications_none</mat-icon>
-          @if (hasActiveFilters) {
-            <p class="empty-title">{{ 'CUSTOMER.NOTIF_EMPTY_FILTERED' | translate }}</p>
-            <p class="empty-hint">{{ 'CUSTOMER.NOTIF_EMPTY_FILTERED_HINT' | translate }}</p>
-            <button mat-stroked-button type="button" (click)="resetFilters()">
-              {{ 'CUSTOMER.HISTORY_RESET' | translate }}
-            </button>
-          } @else {
-            <p class="empty-title">{{ 'CUSTOMER.NOTIF_EMPTY' | translate }}</p>
-            <p class="empty-hint">{{ 'CUSTOMER.NOTIF_EMPTY_HINT' | translate }}</p>
-            <a mat-flat-button color="primary" routerLink="/customer/payments/transfer">
-              {{ 'NAV.TRANSFER' | translate }}
-            </a>
-          }
-        </div>
-      </mat-card>
-    } @else {
-      <mat-card class="list-card">
-        <ul class="notif-list">
-          @for (n of items; track n.id) {
-            <li class="notif-item" [class.unread]="!n.read" [class.bad]="isBad(n)">
-              <div
-                class="icon-wrap"
-                [class.bad]="isBad(n)"
-                [class.ok]="n.template === 'TRANSFER_COMPLETED'"
-              >
-                <mat-icon>{{ iconFor(n) }}</mat-icon>
+  } @else {
+    <mat-card class="list-card">
+      <ul class="notif-list">
+        @for (n of items; track n.id) {
+          <li class="notif-item" [class.unread]="!n.read" [class.bad]="isBad(n)">
+            <div
+              class="icon-wrap"
+              [class.bad]="isBad(n)"
+              [class.ok]="n.template === 'TRANSFER_COMPLETED'"
+            >
+              <mat-icon>{{ iconFor(n) }}</mat-icon>
+            </div>
+            <div class="body">
+              <div class="row">
+                <span class="template">{{ templateLabel(n) }}</span>
+                <time>{{ n.createdAt | date: 'medium' }}</time>
               </div>
-              <div class="body">
-                <div class="row">
-                  <span class="template">{{ templateLabel(n) }}</span>
-                  <time>{{ n.createdAt | date: 'medium' }}</time>
-                </div>
-                <p class="text">{{ displayBody(n) }}</p>
-                <div class="meta">
-                  @if (!n.read) {
-                    <span class="chip unread-chip">{{ 'CUSTOMER.NOTIF_UNREAD' | translate }}</span>
-                  } @else {
-                    <span class="chip">{{ 'CUSTOMER.NOTIF_READ' | translate }}</span>
-                  }
-                  @if (transferIdFromBody(n.body); as txId) {
-                    <a
-                      class="tx-link"
-                      routerLink="/customer/history"
-                      [matTooltip]="'CUSTOMER.NOTIF_OPEN_HISTORY' | translate"
-                    >
-                      <mat-icon>open_in_new</mat-icon>
-                      {{ 'CUSTOMER.NOTIF_OPEN_HISTORY' | translate }}
-                    </a>
-                  }
-                </div>
-              </div>
-              <div class="item-actions">
+              <p class="text">{{ displayBody(n) }}</p>
+              <div class="meta">
                 @if (!n.read) {
-                  <button
-                    mat-stroked-button
-                    type="button"
-                    color="primary"
-                    (click)="openItem(n)"
-                    [disabled]="markingId === n.id"
+                  <span class="chip unread-chip">{{ 'CUSTOMER.NOTIF_UNREAD' | translate }}</span>
+                } @else {
+                  <span class="chip">{{ 'CUSTOMER.NOTIF_READ' | translate }}</span>
+                }
+                @if (transferIdFromBody(n.body); as txId) {
+                  <a
+                    class="tx-link"
+                    routerLink="/customer/history"
+                    [matTooltip]="'CUSTOMER.NOTIF_OPEN_HISTORY' | translate"
                   >
-                    <mat-icon>done</mat-icon>
-                    {{ 'CUSTOMER.NOTIF_MARK_READ' | translate }}
-                  </button>
+                    <mat-icon>open_in_new</mat-icon>
+                    {{ 'CUSTOMER.NOTIF_OPEN_HISTORY' | translate }}
+                  </a>
                 }
               </div>
-            </li>
-          }
-        </ul>
-
-        <mat-paginator
-          [length]="totalElements"
-          [pageIndex]="pageIndex"
-          [pageSize]="pageSize"
-          [pageSizeOptions]="[10, 20, 50]"
-          (page)="page($event)"
-          [disabled]="loading"
-        />
-      </mat-card>
-    }
-  </div>
-
-  <aside class="side-col">
-    <mat-card class="side-card">
-      <h3>{{ 'CUSTOMER.NOTIF_HELP_TITLE' | translate }}</h3>
-      <ul>
-        <li>{{ 'CUSTOMER.NOTIF_HELP_1' | translate }}</li>
-        <li>{{ 'CUSTOMER.NOTIF_HELP_2' | translate }}</li>
-        <li>{{ 'CUSTOMER.NOTIF_HELP_3' | translate }}</li>
+            </div>
+            <div class="item-actions">
+              @if (!n.read) {
+                <button
+                  mat-stroked-button
+                  type="button"
+                  color="primary"
+                  (click)="openItem(n)"
+                  [disabled]="markingId === n.id"
+                >
+                  <mat-icon>done</mat-icon>
+                  {{ 'CUSTOMER.NOTIF_MARK_READ' | translate }}
+                </button>
+              }
+            </div>
+          </li>
+        }
       </ul>
-      <a mat-button color="primary" routerLink="/customer/history">
-        {{ 'NAV.HISTORY' | translate }}
-      </a>
+
+      <mat-paginator
+        [length]="totalElements"
+        [pageIndex]="pageIndex"
+        [pageSize]="pageSize"
+        [pageSizeOptions]="[10, 20, 50]"
+        (page)="page($event)"
+        [disabled]="loading"
+      />
     </mat-card>
-  </aside>
+  }
 </div>

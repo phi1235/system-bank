@@ -94,53 +94,52 @@
     </mat-card>
   }
 
-  <div class="statement-layout">
-    <div class="main-col">
-      <mat-card class="filter-card">
-        <form class="filters" [formGroup]="filter" (ngSubmit)="applyFilters()">
-          <mat-form-field appearance="outline">
-            <mat-label>{{ 'CUSTOMER.STATEMENT_TYPE' | translate }}</mat-label>
-            <mat-select formControlName="entryType">
-              <mat-option value="">{{ 'CUSTOMER.STATEMENT_TYPE_ALL' | translate }}</mat-option>
-              <mat-option value="CREDIT">{{ 'LEDGER_ENTRY.CREDIT' | translate }}</mat-option>
-              <mat-option value="DEBIT">{{ 'LEDGER_ENTRY.DEBIT' | translate }}</mat-option>
-            </mat-select>
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>{{ 'CUSTOMER.STATEMENT_FROM' | translate }}</mat-label>
-            <mat-icon matPrefix (click)="sfInput.showPicker()">calendar_month</mat-icon>
-            <input matInput type="date" #sfInput formControlName="from" placeholder="YYYY-MM-DD" (click)="sfInput.showPicker()" />
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>{{ 'CUSTOMER.STATEMENT_TO' | translate }}</mat-label>
-            <mat-icon matPrefix (click)="stInput.showPicker()">calendar_month</mat-icon>
-            <input matInput type="date" #stInput formControlName="to" placeholder="YYYY-MM-DD" (click)="stInput.showPicker()" />
-          </mat-form-field>
-          <div class="filter-actions">
-            <button mat-flat-button color="primary" type="submit" [disabled]="loading">
-              <mat-icon>filter_list</mat-icon>
-              {{ 'COMMON.SEARCH' | translate }}
-            </button>
-            <button
-              mat-button
-              type="button"
-              (click)="resetFilters()"
-              [disabled]="loading || !hasActiveFilters"
-            >
-              {{ 'CUSTOMER.STATEMENT_RESET' | translate }}
-            </button>
-            <button
-              mat-flat-button
-              color="accent"
-              type="button"
-              (click)="exportCsv()"
-              [disabled]="loading || !rows.length"
-            >
-              <mat-icon>file_download</mat-icon>
-              {{ 'COMMON.EXPORT_CSV' | translate }}
-            </button>
-          </div>
-        </form>
+  <div class="statement-container">
+    <mat-card class="filter-card">
+      <form class="filters" [formGroup]="filter" (ngSubmit)="applyFilters()">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="field-type">
+          <mat-label>{{ 'CUSTOMER.STATEMENT_TYPE' | translate }}</mat-label>
+          <mat-select formControlName="entryType">
+            <mat-option value="">{{ 'CUSTOMER.STATEMENT_TYPE_ALL' | translate }}</mat-option>
+            <mat-option value="CREDIT">{{ 'LEDGER_ENTRY.CREDIT' | translate }}</mat-option>
+            <mat-option value="DEBIT">{{ 'LEDGER_ENTRY.DEBIT' | translate }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="field-date">
+          <mat-label>{{ 'CUSTOMER.STATEMENT_FROM' | translate }}</mat-label>
+          <mat-icon matPrefix (click)="sfInput.showPicker()">calendar_month</mat-icon>
+          <input matInput type="date" #sfInput formControlName="from" placeholder="YYYY-MM-DD" (click)="sfInput.showPicker()" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="field-date">
+          <mat-label>{{ 'CUSTOMER.STATEMENT_TO' | translate }}</mat-label>
+          <mat-icon matPrefix (click)="stInput.showPicker()">calendar_month</mat-icon>
+          <input matInput type="date" #stInput formControlName="to" placeholder="YYYY-MM-DD" (click)="stInput.showPicker()" />
+        </mat-form-field>
+        <div class="filter-actions">
+          <button mat-flat-button color="primary" type="submit" [disabled]="loading">
+            <mat-icon>filter_list</mat-icon>
+            {{ 'COMMON.SEARCH' | translate }}
+          </button>
+          <button
+            mat-stroked-button
+            type="button"
+            (click)="resetFilters()"
+            [disabled]="loading || !hasActiveFilters"
+          >
+            {{ 'CUSTOMER.STATEMENT_RESET' | translate }}
+          </button>
+          <button
+            mat-stroked-button
+            color="primary"
+            type="button"
+            (click)="exportCsv()"
+            [disabled]="loading || !rows.length"
+          >
+            <mat-icon>file_download</mat-icon>
+            {{ 'COMMON.EXPORT_CSV' | translate }}
+          </button>
+        </div>
+      </form>
 
         <div class="quick-ranges" role="group" [attr.aria-label]="'CUSTOMER.STATEMENT_QUICK_RANGE' | translate">
           <span class="quick-label">{{ 'CUSTOMER.STATEMENT_QUICK_RANGE' | translate }}</span>
@@ -313,19 +312,5 @@
           />
         }
       </mat-card>
-    </div>
-
-    <mat-card class="side-card">
-      <h3>{{ 'CUSTOMER.STATEMENT_HELP_TITLE' | translate }}</h3>
-      <p>{{ 'CUSTOMER.STATEMENT_HELP_BODY' | translate }}</p>
-      <ul>
-        <li>{{ 'CUSTOMER.STATEMENT_HELP_1' | translate }}</li>
-        <li>{{ 'CUSTOMER.STATEMENT_HELP_2' | translate }}</li>
-        <li>{{ 'CUSTOMER.STATEMENT_HELP_3' | translate }}</li>
-      </ul>
-      <p class="side-link">
-        <a routerLink="/customer/history">{{ 'CUSTOMER.STATEMENT_VS_HISTORY' | translate }}</a>
-      </p>
-    </mat-card>
   </div>
 }

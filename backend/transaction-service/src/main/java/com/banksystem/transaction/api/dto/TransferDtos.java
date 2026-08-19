@@ -20,7 +20,8 @@ public final class TransferDtos {
       String currency,
       String transferType,
       String targetBankCode,
-      String targetAccountName
+      String targetAccountName,
+      String inquiryId
   ) {}
 
   public record TransferResponse(

@@ -28,9 +28,13 @@ import java.util.Map;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
+
+import feign.FeignException;
+import org.springframework.http.HttpStatus;
+import com.banksystem.transaction.domain.transfer.ManualReviewAuditLogEntity;
+import com.banksystem.transaction.domain.transfer.ManualReviewAuditLogRepository;
 
 @Service
 public class TransferSagaOrchestrator {
@@ -43,8 +47,8 @@ public class TransferSagaOrchestrator {
   private final OutboxService outboxService;
   private final TransferFeeGlService feeGlService;
   private final NapasSwitchClient napasSwitchClient;
+  private final ManualReviewAuditLogRepository manualReviewAuditLogRepository;
   private final TransactionTemplate transactionTemplate;
-  private final boolean failCredit;
 
   public TransferSagaOrchestrator(
       TransferOrderRepository transferOrderRepository,
@@ -53,32 +57,39 @@ public class TransferSagaOrchestrator {
       OutboxService outboxService,
       TransferFeeGlService feeGlService,
       NapasSwitchClient napasSwitchClient,
-      TransactionTemplate transactionTemplate,
-      @Value("${bank.saga.fail-credit}") boolean failCredit) {
+      ManualReviewAuditLogRepository manualReviewAuditLogRepository,
+      TransactionTemplate transactionTemplate) {
     this.transferOrderRepository = transferOrderRepository;
     this.sagaStepLogRepository = sagaStepLogRepository;
     this.accountGateway = accountGateway;
     this.outboxService = outboxService;
     this.feeGlService = feeGlService;
     this.napasSwitchClient = napasSwitchClient;
+    this.manualReviewAuditLogRepository = manualReviewAuditLogRepository;
     this.transactionTemplate = transactionTemplate;
-    this.failCredit = failCredit;
   }
 
   public TransferOrderEntity run(TransferOrderEntity order) {
     order = reload(order.getId());
     MoneyResult debit;
     try {
-      debit = callDebit(order.getFromAccountId(), order);
-    } catch (BusinessException ex) {
-      order = markFailed(order, formatReason(ex));
-      step(order.getId(), "DEBIT_SOURCE", "FAILED", ex.getMessage());
-      return order;
+      debit = callDebitWithRetry(order.getFromAccountId(), order);
     } catch (Exception ex) {
-      order = markFailed(order, formatReason("DEBIT_ERROR", ex.getMessage()));
-      step(order.getId(), "DEBIT_SOURCE", "FAILED", ex.getMessage());
+      if (isAuthoritativeDebitFailure(ex)) {
+        log.warn("Debit source rejected with authoritative business error for transfer {}: {}", order.getId(), ex.getMessage());
+        order = markFailed(order, formatReason(ex));
+        step(order.getId(), "DEBIT_SOURCE", "FAILED", ex.getMessage());
+        return order;
+      }
+      // Transient / Timeout on debit: Do NOT mark FAILED (account may have already been debited)
+      log.error("Debit source outcome unknown after retries for transfer {}. Escalating to UNKNOWN.", order.getId());
+      order = markUnknown(order, formatReason("DEBIT_OUTCOME_UNKNOWN", ex.getMessage()), null);
+      order.setReconciliationStatus("RETRY_DEBIT");
+      order = persist(order);
+      step(order.getId(), "DEBIT_SOURCE", "UNKNOWN", "Debit outcome ambiguous after timeout/network error");
       return order;
     }
+
     // Debit succeeded. Persistence/logging failures must never relabel it as a failed debit.
     order.setDebitEntryRef(debit.ledgerEntryId());
     order.setStatus(TransferStatus.DEBITED);
@@ -90,44 +101,205 @@ public class TransferSagaOrchestrator {
       return runExternalAfterDebit(order);
     }
 
-    MoneyResult credit;
+    return runInternalAfterDebit(order);
+  }
+
+  private TransferOrderEntity runInternalAfterDebit(TransferOrderEntity order) {
+    MoneyResult credit = null;
+    Exception lastException = null;
+
+    // STEP 2 — Credit destination with deterministic idempotency key TX-CREDIT-{orderId}
     try {
-      if (failCredit) {
-        throw new BusinessException("SAGA_INJECTED_FAIL", "Injected credit failure for demo");
-      }
-      credit = callCredit(order.getToAccountId(), order, order.getId().toString());
+      credit = callCreditWithRetry(order.getToAccountId(), order, "TX-CREDIT-" + order.getId());
     } catch (Exception ex) {
-      log.warn("Credit failed for transfer {}, compensating", order.getId());
-      step(order.getId(), "CREDIT_DEST", "FAILED", ex.getMessage());
-      return compensateSourceOnly(order, formatReason(ex));
+      lastException = ex;
     }
-    // Credit succeeded. Never refund source merely because DB/audit persistence later fails.
-    order.setCreditEntryRef(credit.ledgerEntryId());
+
+    // If credit failed after retries:
+    if (credit == null) {
+      if (isAuthoritativeCreditFailure(lastException)) {
+        log.warn("Internal credit rejected with authoritative business error for transfer {}: {}",
+            order.getId(), lastException.getMessage());
+        step(order.getId(), "CREDIT_DEST", "FAILED", lastException.getMessage());
+        return compensateSourceOnly(order, formatReason(lastException));
+      }
+      // Transient / Timeout: NEVER prematurely refund source! Escalate to UNKNOWN / REVIEW_REQUIRED.
+      log.error("Internal credit outcome unknown after retries for transfer {}. Escalating to UNKNOWN without premature refund.", order.getId());
+      order = markUnknown(order, formatReason("INTERNAL_CREDIT_UNKNOWN", lastException != null ? lastException.getMessage() : "No response"), null);
+      step(order.getId(), "CREDIT_DEST", "UNKNOWN", "Credit outcome ambiguous after timeout/network error");
+      return order;
+    }
+
+    return completeInternal(order, credit.ledgerEntryId());
+  }
+
+  private TransferOrderEntity completeInternal(TransferOrderEntity order, String creditLedgerId) {
+    order.setCreditEntryRef(creditLedgerId);
     order.setUpdatedAt(Instant.now());
     order = persist(order);
-    step(order.getId(), "CREDIT_DEST", "SUCCESS", "ledger=" + credit.ledgerEntryId());
+    step(order.getId(), "CREDIT_DEST", "SUCCESS", "ledger=" + creditLedgerId);
 
     // STEP 3 — fee GL: credit bank income account (skip when fee = 0)
-    if (feeGlService.requiresPosting(order)) {
-      String feeLedgerId;
-      try {
-        feeLedgerId = feeGlService.postFee(order);
-      } catch (Exception ex) {
-        log.warn("Fee GL failed for transfer {}, reversing dest and refunding source", order.getId());
-        step(order.getId(), "CREDIT_FEE_INCOME", "FAILED", ex.getMessage());
-        return compensateAfterDestCredit(order, formatReason(ex));
-      }
+    if (feeGlService.requiresPosting(order) && order.getFeeEntryRef() == null) {
+      String feeLedgerId = postFeeWithRetry(order);
       order.setFeeEntryRef(feeLedgerId);
       order.setUpdatedAt(Instant.now());
       order = persist(order);
-      step(order.getId(), "CREDIT_FEE_INCOME", "SUCCESS", "ledger=" + feeLedgerId);
-    } else {
-      step(order.getId(), "CREDIT_FEE_INCOME", "SKIPPED", "fee=0");
     }
 
     order.setStatus(TransferStatus.COMPLETED);
+    order.setFailureReason(null);
     order.setUpdatedAt(Instant.now());
     return persistWithEvent(order, "COMPLETED");
+  }
+
+  private String postFeeWithRetry(TransferOrderEntity order) {
+    Exception lastEx = null;
+    for (int attempt = 1; attempt <= 3; attempt++) {
+      try {
+        String feeLedgerId = feeGlService.postFee(order);
+        step(order.getId(), "CREDIT_FEE_INCOME", "SUCCESS", "ledger=" + feeLedgerId);
+        return feeLedgerId;
+      } catch (Exception ex) {
+        lastEx = ex;
+        log.warn("Fee GL posting attempt {} failed for transfer {}: {}", attempt, order.getId(), ex.getMessage());
+        if (attempt < 3) {
+          try {
+            Thread.sleep(attempt * 200L);
+          } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            break;
+          }
+        }
+      }
+    }
+    log.error("Fee GL posting exhausted retries for transfer {}. Marking feeEntryRef=PENDING_RECON without reversing customer transfer.", order.getId());
+    step(order.getId(), "CREDIT_FEE_INCOME", "PENDING_RECON", lastEx != null ? lastEx.getMessage() : "Exhausted retries");
+    return "PENDING_RECON";
+  }
+
+  private MoneyResult callDebitWithRetry(UUID accountId, TransferOrderEntity order) throws Exception {
+    Exception lastEx = null;
+    for (int attempt = 1; attempt <= 3; attempt++) {
+      try {
+        return callDebit(accountId, order);
+      } catch (Exception ex) {
+        lastEx = ex;
+        if (isAuthoritativeDebitFailure(ex)) {
+          throw ex;
+        }
+        log.warn("Debit attempt {} encountered transient error for transfer {}: {}", attempt, order.getId(), ex.getMessage());
+        if (attempt < 3) {
+          try {
+            Thread.sleep(attempt * 250L);
+          } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            break;
+          }
+        }
+      }
+    }
+    throw lastEx;
+  }
+
+  private MoneyResult callCreditWithRetry(UUID accountId, TransferOrderEntity order, String referenceId) throws Exception {
+    Exception lastEx = null;
+    for (int attempt = 1; attempt <= 3; attempt++) {
+      try {
+        return callCredit(accountId, order, referenceId);
+      } catch (Exception ex) {
+        lastEx = ex;
+        if (isAuthoritativeCreditFailure(ex)) {
+          throw ex;
+        }
+        log.warn("Internal credit attempt {} encountered transient error for transfer {}: {}", attempt, order.getId(), ex.getMessage());
+        if (attempt < 3) {
+          try {
+            Thread.sleep(attempt * 250L);
+          } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            break;
+          }
+        }
+      }
+    }
+    throw lastEx;
+  }
+
+  private boolean isAuthoritativeDebitFailure(Throwable ex) {
+    if (ex == null) {
+      return false;
+    }
+    if (ex instanceof BusinessException be) {
+      String code = be.getCode();
+      if ("INSUFFICIENT_FUNDS".equalsIgnoreCase(code)
+          || "DAILY_LIMIT_EXCEEDED".equalsIgnoreCase(code)
+          || "ACCOUNT_NOT_FOUND".equalsIgnoreCase(code)
+          || "ACCOUNT_INACTIVE".equalsIgnoreCase(code)
+          || "ACCOUNT_FROZEN".equalsIgnoreCase(code)
+          || "ACCOUNT_CLOSED".equalsIgnoreCase(code)
+          || "INVALID_ACCOUNT_STATUS".equalsIgnoreCase(code)
+          || "CURRENCY_MISMATCH".equalsIgnoreCase(code)
+          || "INVALID_AMOUNT".equalsIgnoreCase(code)) {
+        return true;
+      }
+      HttpStatus status = be.getStatus();
+      if (status != null && status.is4xxClientError()
+          && status != HttpStatus.REQUEST_TIMEOUT
+          && status != HttpStatus.CONFLICT
+          && status != HttpStatus.TOO_MANY_REQUESTS) {
+        return true;
+      }
+    }
+    if (ex instanceof FeignException fe) {
+      int status = fe.status();
+      return status >= 400 && status < 500
+          && status != 408
+          && status != 409
+          && status != 429;
+    }
+    Throwable cause = ex.getCause();
+    if (cause != null && cause != ex) {
+      return isAuthoritativeDebitFailure(cause);
+    }
+    return false;
+  }
+
+  private boolean isAuthoritativeCreditFailure(Throwable ex) {
+    if (ex == null) {
+      return false;
+    }
+    if (ex instanceof BusinessException be) {
+      String code = be.getCode();
+      if ("ACCOUNT_NOT_FOUND".equalsIgnoreCase(code)
+          || "ACCOUNT_INACTIVE".equalsIgnoreCase(code)
+          || "ACCOUNT_FROZEN".equalsIgnoreCase(code)
+          || "ACCOUNT_CLOSED".equalsIgnoreCase(code)
+          || "INVALID_ACCOUNT_STATUS".equalsIgnoreCase(code)
+          || "CURRENCY_MISMATCH".equalsIgnoreCase(code)
+          || "INVALID_AMOUNT".equalsIgnoreCase(code)) {
+        return true;
+      }
+      HttpStatus status = be.getStatus();
+      if (status != null && status.is4xxClientError()
+          && status != HttpStatus.REQUEST_TIMEOUT
+          && status != HttpStatus.CONFLICT
+          && status != HttpStatus.TOO_MANY_REQUESTS) {
+        return true;
+      }
+    }
+    if (ex instanceof FeignException fe) {
+      int status = fe.status();
+      return status >= 400 && status < 500
+          && status != 408
+          && status != 409
+          && status != 429;
+    }
+    Throwable cause = ex.getCause();
+    if (cause != null && cause != ex) {
+      return isAuthoritativeCreditFailure(cause);
+    }
+    return false;
   }
 
   /** Dest not credited yet — refund full debit (principal + fee) to source. */
@@ -137,7 +309,7 @@ public class TransferSagaOrchestrator {
     order.setUpdatedAt(Instant.now());
     order = persist(order);
     try {
-      String ref = order.getId() + "-compensation";
+      String ref = "TX-REFUND-" + order.getId();
       MoneyResult refund = callCreditTotal(order.getFromAccountId(), order, ref);
       order.setStatus(TransferStatus.COMPENSATED);
       order.setUpdatedAt(Instant.now());
@@ -165,7 +337,7 @@ public class TransferSagaOrchestrator {
     order = persist(order);
 
     try {
-      String revRef = order.getId() + "-reverse-dest";
+      String revRef = "TX-REVERSE-DEST-" + order.getId();
       MoneyResult rev = callDebitAmount(
           order.getToAccountId(),
           order.getAmount(),
@@ -182,7 +354,7 @@ public class TransferSagaOrchestrator {
     }
 
     try {
-      String ref = order.getId() + "-compensation";
+      String ref = "TX-REFUND-" + order.getId();
       MoneyResult refund = callCreditTotal(order.getFromAccountId(), order, ref);
       order.setStatus(TransferStatus.COMPENSATED);
       order.setUpdatedAt(Instant.now());
@@ -213,7 +385,7 @@ public class TransferSagaOrchestrator {
           order.getToAccountNumber(),
           order.getAmount(),
           order.getDescription(),
-          order.getId().toString());
+          "TX-SWITCH-" + order.getId());
       return resolveExternalOutcome(order, response, "PAYMENT_RESPONSE");
     } catch (Exception ex) {
       // A timeout may happen after the switch accepted the payment. Never refund an unknown outcome.
@@ -250,18 +422,8 @@ public class TransferSagaOrchestrator {
 
   private TransferOrderEntity completeExternal(TransferOrderEntity order) {
     if (feeGlService.requiresPosting(order) && order.getFeeEntryRef() == null) {
-      try {
-        String feeLedgerId = feeGlService.postFee(order);
-        order.setFeeEntryRef(feeLedgerId);
-        step(order.getId(), "CREDIT_FEE_INCOME", "SUCCESS", "ledger=" + feeLedgerId);
-      } catch (Exception ex) {
-        order.setStatus(TransferStatus.REVIEW_REQUIRED);
-        order.setFailureReason(truncate(formatReason("FEE_GL_AFTER_NAPAS_FAILED", ex.getMessage())));
-        order.setUpdatedAt(Instant.now());
-        order = persistWithEvent(order, "REVIEW");
-        step(order.getId(), "CREDIT_FEE_INCOME", "FAILED", ex.getMessage());
-        return order;
-      }
+      String feeLedgerId = postFeeWithRetry(order);
+      order.setFeeEntryRef(feeLedgerId);
     }
     order.setStatus(TransferStatus.COMPLETED);
     order.setFailureReason(null);
@@ -275,6 +437,9 @@ public class TransferSagaOrchestrator {
     if (providerReferenceId != null && !providerReferenceId.isBlank()) {
       order.setProviderReferenceId(providerReferenceId);
     }
+    order.setReconciliationAttempts(0);
+    order.setNextReconciliationAt(Instant.now().plusSeconds(30));
+    order.setReconciliationStatus("RETRY_0");
     order.setUpdatedAt(Instant.now());
     return persistWithEvent(order, "REVIEW");
   }
@@ -284,80 +449,145 @@ public class TransferSagaOrchestrator {
     order.setStatus(TransferStatus.REVIEW_REQUIRED);
     order.setFailureReason(truncate(reason));
     order.setUpdatedAt(Instant.now());
-    order = persistWithEvent(order, "REVIEW");
-    step(order.getId(), "NAPAS_MANUAL_REVIEW", "REQUIRED", reason);
-    return order;
+    step(order.getId(), "ESCALATE_REVIEW", "REVIEW_REQUIRED", reason);
+    return persistWithEvent(order, "REVIEW");
   }
 
-  private MoneyResult callDebit(UUID accountId, TransferOrderEntity order) {
-    BigDecimal fee = order.getFeeAmount() == null ? BigDecimal.ZERO : order.getFeeAmount();
-    BigDecimal debitTotal = order.getAmount().add(fee);
-    String desc = order.getDescription();
-    if (fee.compareTo(BigDecimal.ZERO) > 0) {
-      desc = (desc == null || desc.isBlank() ? "Transfer" : desc)
-          + " (fee " + fee.toPlainString() + ")";
-    }
-    return callDebitAmount(accountId, debitTotal, order.getId().toString(), desc);
+  public TransferOrderEntity reconcileExternalOrder(TransferOrderEntity order) {
+    return reconcileOrder(order);
   }
 
-  private MoneyResult callDebitAmount(UUID accountId, BigDecimal amount, String referenceId, String description) {
-    MoneyResult result = accountGateway.debit(accountId, new MoneyCommand(amount, referenceId, description, referenceId));
-    if (result == null) {
-      throw new BusinessException("DEBIT_FAILED", "Debit failed");
+  public TransferOrderEntity reconcileOrder(TransferOrderEntity order) {
+    order = reload(order.getId());
+    if (order.getStatus() != TransferStatus.UNKNOWN && order.getStatus() != TransferStatus.REVIEW_REQUIRED) {
+      return order;
     }
-    return result;
+
+    // Phase 1: Reconcile DEBIT if debit outcome was ambiguous
+    if ("RETRY_DEBIT".equals(order.getReconciliationStatus()) || order.getDebitEntryRef() == null) {
+      try {
+        MoneyResult debit = callDebit(order.getFromAccountId(), order);
+        order.setDebitEntryRef(debit.ledgerEntryId());
+        order.setStatus(TransferStatus.DEBITED);
+        order.setUpdatedAt(Instant.now());
+        order = persist(order);
+        step(order.getId(), "RECON_DEBIT", "SUCCESS", "Debit confirmed on account-service: " + debit.ledgerEntryId());
+        if ("INTERBANK".equalsIgnoreCase(order.getTransferType())) {
+          return runExternalAfterDebit(order);
+        }
+        return runInternalAfterDebit(order);
+      } catch (Exception ex) {
+        if (isAuthoritativeDebitFailure(ex)) {
+          order = markFailed(order, formatReason(ex));
+          step(order.getId(), "RECON_DEBIT", "FAILED", "Authoritative debit rejection: " + ex.getMessage());
+          return order;
+        }
+        return advanceReconciliationBackoff(order, "Debit status still transient: " + ex.getMessage());
+      }
+    }
+
+    // Phase 2: Reconcile TRANSFER execution (INTERNAL vs INTERBANK)
+    if ("INTERNAL".equalsIgnoreCase(order.getTransferType())) {
+      return reconcileInternalOrder(order);
+    }
+    return reconcileInterbankOrder(order);
   }
 
-  /** Credit principal only (destination receives amount, never fee). */
-  private MoneyResult callCredit(UUID accountId, TransferOrderEntity order, String referenceId) {
-    return callCreditAmount(accountId, order.getAmount(), referenceId, order.getDescription());
+  private TransferOrderEntity reconcileInternalOrder(TransferOrderEntity order) {
+    try {
+      MoneyResult credit = callCredit(order.getToAccountId(), order, "TX-CREDIT-" + order.getId());
+      order.setReconciliationStatus("RESOLVED_SUCCESS");
+      step(order.getId(), "RECONCILIATION_INTERNAL", "SUCCESS", "Credit confirmed on account-service: " + credit.ledgerEntryId());
+      return completeInternal(order, credit.ledgerEntryId());
+    } catch (Exception ex) {
+      if (isAuthoritativeCreditFailure(ex)) {
+        order.setReconciliationStatus("RESOLVED_FAILED");
+        step(order.getId(), "RECONCILIATION_INTERNAL", "FAILED", "Authoritative credit rejection: " + ex.getMessage());
+        return compensateSourceOnly(order, formatReason(ex));
+      }
+      return advanceReconciliationBackoff(order, "Internal credit status still transient: " + ex.getMessage());
+    }
   }
 
-  /** Compensation: reverse full source debit (amount + fee). */
-  private MoneyResult callCreditTotal(UUID accountId, TransferOrderEntity order, String referenceId) {
-    BigDecimal fee = order.getFeeAmount() == null ? BigDecimal.ZERO : order.getFeeAmount();
-    BigDecimal total = order.getAmount().add(fee);
-    MoneyResult result = accountGateway.compensateCredit(
-        accountId,
-        new MoneyCommand(total, referenceId, "Compensation " + order.getId(), referenceId));
-    if (result == null) {
-      throw new BusinessException("COMPENSATION_CREDIT_FAILED", "Compensation credit failed");
+  private TransferOrderEntity reconcileInterbankOrder(TransferOrderEntity order) {
+    String clientRequestId = "TX-SWITCH-" + order.getId();
+    NapasPaymentResponse response;
+    try {
+      response = napasSwitchClient.inquirePayment(clientRequestId, order.getProviderReferenceId());
+    } catch (Exception ex) {
+      log.warn("Napas status inquiry failed for order {}: {}", order.getId(), ex.getMessage());
+      response = new NapasPaymentResponse(order.getProviderReferenceId(), ProviderOutcome.UNKNOWN, "EX", ex.getMessage());
     }
-    return result;
+
+    if (response.outcome() == ProviderOutcome.SUCCESS) {
+      order.setProviderStatus(response.outcome().name());
+      order.setReconciliationStatus("RESOLVED_SUCCESS");
+      order.setNapasRrn(response.napasRefId());
+      step(order.getId(), "RECONCILIATION_INTERBANK", "SUCCESS", "Authoritative success from switch");
+      return completeExternal(order);
+    }
+
+    if (response.outcome() == ProviderOutcome.FAILED) {
+      order.setProviderStatus(response.outcome().name());
+      order.setReconciliationStatus("RESOLVED_FAILED");
+      step(order.getId(), "RECONCILIATION_INTERBANK", "FAILED", "Authoritative rejection from switch");
+      return compensateSourceOnly(order, formatReason("NAPAS_REJECTED", response.responseCode() + ": " + response.responseMessage()));
+    }
+
+    return advanceReconciliationBackoff(order, "Switch inquiry returned outcome: " + response.outcome());
   }
 
-  private MoneyResult callCreditAmount(
-      UUID accountId,
-      BigDecimal amount,
-      String referenceId,
-      String description) {
-    MoneyResult result = accountGateway.credit(accountId, new MoneyCommand(amount, referenceId, description, referenceId));
-    if (result == null) {
-      throw new BusinessException("CREDIT_FAILED", "Credit failed");
+  private TransferOrderEntity advanceReconciliationBackoff(TransferOrderEntity order, String reason) {
+    int attempts = order.getReconciliationAttempts() + 1;
+    order.setReconciliationAttempts(attempts);
+    if (attempts >= 5) {
+      order.setStatus(TransferStatus.MANUAL_REVIEW);
+      order.setReconciliationStatus("ESCALATED_MANUAL_REVIEW");
+      order.setFailureReason("Reconciliation exhausted 5 attempts: " + reason);
+      order.setUpdatedAt(Instant.now());
+      step(order.getId(), "RECONCILIATION", "ESCALATED", "Exhausted 5 retry attempts");
+      return persistWithEvent(order, "REVIEW");
     }
-    return result;
+
+    int delaySeconds = switch (attempts) {
+      case 1 -> 30;
+      case 2 -> 60;
+      case 3 -> 300;
+      case 4 -> 900;
+      default -> 1800;
+    };
+    order.setNextReconciliationAt(Instant.now().plusSeconds(delaySeconds));
+    order.setReconciliationStatus("RETRY_" + attempts);
+    order.setUpdatedAt(Instant.now());
+    return persist(order);
   }
 
-  /** Prefer "CODE: message" so clients can map business codes to i18n. */
-  static String formatReason(Throwable ex) {
-    if (ex instanceof BusinessException be) {
-      return formatReason(be.getCode(), be.getMessage());
+  public TransferOrderEntity forceSettle(UUID orderId, UUID adminUserId, String reason) {
+    TransferOrderEntity order = reload(orderId);
+    if (order.getStatus() != TransferStatus.MANUAL_REVIEW
+        && order.getStatus() != TransferStatus.UNKNOWN
+        && order.getStatus() != TransferStatus.REVIEW_REQUIRED) {
+      throw new BusinessException("INVALID_STATUS", "Order is not in a manual review or unknown status");
     }
-    String msg = ex == null ? null : ex.getMessage();
-    return formatReason("TRANSFER_FAILED", msg);
+    TransferOrderEntity completed = completeExternal(order);
+    manualReviewAuditLogRepository.save(new ManualReviewAuditLogEntity(
+        UUID.randomUUID(), orderId, adminUserId, "FORCE_SETTLE", reason != null ? reason : "Admin force settle"));
+    step(orderId, "ADMIN_FORCE_SETTLE", "SUCCESS", "Settled by admin " + adminUserId + ": " + reason);
+    return completed;
   }
 
-  static String formatReason(String code, String message) {
-    String c = code == null || code.isBlank() ? "TRANSFER_FAILED" : code.trim();
-    String m = message == null ? "" : message.trim();
-    if (m.isEmpty()) {
-      return c;
+  public TransferOrderEntity forceRefund(UUID orderId, UUID adminUserId, String reason) {
+    TransferOrderEntity order = reload(orderId);
+    if (order.getStatus() != TransferStatus.MANUAL_REVIEW
+        && order.getStatus() != TransferStatus.UNKNOWN
+        && order.getStatus() != TransferStatus.REVIEW_REQUIRED) {
+      throw new BusinessException("INVALID_STATUS", "Order is not in a manual review or unknown status");
     }
-    // Avoid double-prefix when message already starts with CODE:
-    if (m.regionMatches(true, 0, c + ":", 0, c.length() + 1)) {
-      return m;
-    }
-    return c + ": " + m;
+    TransferOrderEntity refunded = compensateSourceOnly(order, formatReason("ADMIN_MANUAL_REFUND", reason));
+    manualReviewAuditLogRepository.save(new ManualReviewAuditLogEntity(
+        UUID.randomUUID(), orderId, adminUserId, "FORCE_REFUND", reason != null ? reason : "Admin force refund"));
+    step(orderId, "ADMIN_FORCE_REFUND", "SUCCESS", "Refunded by admin " + adminUserId + ": " + reason);
+    return refunded;
   }
 
   private TransferOrderEntity markFailed(TransferOrderEntity order, String reason) {
@@ -367,36 +597,14 @@ public class TransferSagaOrchestrator {
     return persistWithEvent(order, "FAILED");
   }
 
-  private TransferOrderEntity persist(TransferOrderEntity order) {
-    TransferOrderEntity saved = transactionTemplate.execute(tx -> persistInCurrentTransaction(order));
-    if (saved == null) {
-      throw new IllegalStateException("Transfer state transaction returned no result");
-    }
-    return saved;
-  }
-
-  /** Persists the terminal state and its outbox event in one local database transaction. */
-  private TransferOrderEntity persistWithEvent(TransferOrderEntity order, String eventKind) {
-    TransferOrderEntity saved = transactionTemplate.execute(tx -> {
-      TransferOrderEntity managed = persistInCurrentTransaction(order);
-      switch (eventKind) {
-        case "COMPLETED" -> enqueueCompleted(managed);
-        case "FAILED" -> enqueueFailed(managed);
-        case "REVIEW" -> enqueueReviewRequired(managed);
-        default -> throw new IllegalArgumentException("Unsupported event kind: " + eventKind);
-      }
-      return managed;
-    });
-    if (saved == null) {
-      throw new IllegalStateException("Transfer terminal transaction returned no result");
-    }
-    return saved;
-  }
-
-  private TransferOrderEntity persistInCurrentTransaction(TransferOrderEntity source) {
-    TransferOrderEntity managed = transferOrderRepository.findById(source.getId())
-        .orElseThrow(() -> new BusinessException("TRANSFER_NOT_FOUND", "Transfer not found"));
+  private TransferOrderEntity persist(TransferOrderEntity source) {
+    TransferOrderEntity managed = reload(source.getId());
     managed.setStatus(source.getStatus());
+    managed.setReconciliationStatus(source.getReconciliationStatus());
+    managed.setReconciliationAttempts(source.getReconciliationAttempts());
+    managed.setNextReconciliationAt(source.getNextReconciliationAt());
+    managed.setNapasRrn(source.getNapasRrn());
+    managed.setNapasTraceNo(source.getNapasTraceNo());
     managed.setFailureReason(source.getFailureReason());
     managed.setDebitEntryRef(source.getDebitEntryRef());
     managed.setCreditEntryRef(source.getCreditEntryRef());
@@ -407,6 +615,18 @@ public class TransferSagaOrchestrator {
     managed.setLastProviderQueryAt(source.getLastProviderQueryAt());
     managed.setUpdatedAt(source.getUpdatedAt());
     return transferOrderRepository.saveAndFlush(managed);
+  }
+
+  private TransferOrderEntity persistWithEvent(TransferOrderEntity source, String eventType) {
+    TransferOrderEntity saved = persist(source);
+    if ("COMPLETED".equals(eventType)) {
+      enqueueCompleted(saved);
+    } else if ("FAILED".equals(eventType)) {
+      enqueueFailed(saved);
+    } else if ("REVIEW".equals(eventType)) {
+      enqueueReviewRequired(saved);
+    }
+    return saved;
   }
 
   private TransferOrderEntity reload(UUID transferId) {
@@ -464,6 +684,77 @@ public class TransferSagaOrchestrator {
     root.put("occurredAt", Instant.now().toString());
     root.put("data", data);
     return root;
+  }
+
+  private MoneyResult callDebit(UUID accountId, TransferOrderEntity order) {
+    BigDecimal fee = order.getFeeAmount() == null ? BigDecimal.ZERO : order.getFeeAmount();
+    BigDecimal debitTotal = order.getAmount().add(fee);
+    String desc = order.getDescription();
+    if (fee.compareTo(BigDecimal.ZERO) > 0) {
+      desc = (desc == null || desc.isBlank() ? "Transfer" : desc)
+          + " (fee " + fee.toPlainString() + ")";
+    }
+    return callDebitAmount(accountId, debitTotal, "TX-DEBIT-" + order.getId(), desc);
+  }
+
+  private MoneyResult callDebitAmount(UUID accountId, BigDecimal amount, String referenceId, String description) {
+    MoneyResult result = accountGateway.debit(accountId, new MoneyCommand(amount, referenceId, description, referenceId));
+    if (result == null) {
+      throw new BusinessException("DEBIT_FAILED", "Debit failed");
+    }
+    return result;
+  }
+
+  /** Credit principal only (destination receives amount, never fee). */
+  private MoneyResult callCredit(UUID accountId, TransferOrderEntity order, String referenceId) {
+    return callCreditAmount(accountId, order.getAmount(), "TX-CREDIT-" + order.getId(), order.getDescription());
+  }
+
+  /** Compensation: reverse full source debit (amount + fee). */
+  private MoneyResult callCreditTotal(UUID accountId, TransferOrderEntity order, String referenceId) {
+    BigDecimal fee = order.getFeeAmount() == null ? BigDecimal.ZERO : order.getFeeAmount();
+    BigDecimal total = order.getAmount().add(fee);
+    MoneyResult result = accountGateway.compensateCredit(
+        accountId,
+        new MoneyCommand(total, "TX-REFUND-" + order.getId(), "Compensation " + order.getId(), "TX-REFUND-" + order.getId()));
+    if (result == null) {
+      throw new BusinessException("COMPENSATION_CREDIT_FAILED", "Compensation credit failed");
+    }
+    return result;
+  }
+
+  private MoneyResult callCreditAmount(
+      UUID accountId,
+      BigDecimal amount,
+      String referenceId,
+      String description) {
+    MoneyResult result = accountGateway.credit(accountId, new MoneyCommand(amount, referenceId, description, referenceId));
+    if (result == null) {
+      throw new BusinessException("CREDIT_FAILED", "Credit failed");
+    }
+    return result;
+  }
+
+  /** Prefer "CODE: message" so clients can map business codes to i18n. */
+  static String formatReason(Throwable ex) {
+    if (ex instanceof BusinessException be) {
+      return formatReason(be.getCode(), be.getMessage());
+    }
+    String msg = ex == null ? null : ex.getMessage();
+    return formatReason("TRANSFER_FAILED", msg);
+  }
+
+  static String formatReason(String code, String message) {
+    String c = code == null || code.isBlank() ? "TRANSFER_FAILED" : code.trim();
+    String m = message == null ? "" : message.trim();
+    if (m.isEmpty()) {
+      return c;
+    }
+    // Avoid double-prefix when message already starts with CODE:
+    if (m.regionMatches(true, 0, c + ":", 0, c.length() + 1)) {
+      return m;
+    }
+    return c + ": " + m;
   }
 
   private String truncate(String s) {

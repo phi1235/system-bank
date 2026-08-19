@@ -67,7 +67,7 @@ public class TransferFeeGlService {
   }
 
   public String feeReference(UUID transferId) {
-    return transferId + "-fee";
+    return "TX-FEE-" + transferId;
   }
 
   public UUID resolveIncomeAccountId() {

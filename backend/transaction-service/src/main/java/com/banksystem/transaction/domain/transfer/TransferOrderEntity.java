@@ -40,11 +40,14 @@ public class TransferOrderEntity {
   @Column(name = "transfer_type", nullable = false, length = 20)
   private String transferType = "INTERNAL";
 
-  @Column(name = "target_bank_code", length = 20)
+  @Column(name = "target_bank_code", length = 32)
   private String targetBankCode;
 
   @Column(name = "target_account_name", length = 160)
   private String targetAccountName;
+
+  @Column(name = "beneficiary_inquiry_id", length = 64, unique = true)
+  private String beneficiaryInquiryId;
 
   @Column(name = "provider_reference_id", length = 100)
   private String providerReferenceId;
@@ -96,9 +99,35 @@ public class TransferOrderEntity {
   @Column(name = "credit_entry_ref", length = 64)
   private String creditEntryRef;
 
-  /** Ledger entry id of fee CREDIT on bank income account. */
   @Column(name = "fee_entry_ref", length = 64)
   private String feeEntryRef;
+
+  @Column(name = "inquiry_id", length = 64)
+  private String inquiryId;
+
+  @Column(name = "bank_bin", length = 20)
+  private String bankBin;
+
+  @Column(name = "recipient_name", length = 255)
+  private String recipientName;
+
+  @Column(name = "total_debit", precision = 19, scale = 2)
+  private BigDecimal totalDebit;
+
+  @Column(name = "napas_rrn", length = 50)
+  private String napasRrn;
+
+  @Column(name = "napas_trace_no", length = 50)
+  private String napasTraceNo;
+
+  @Column(name = "reconciliation_attempts", nullable = false)
+  private int reconciliationAttempts = 0;
+
+  @Column(name = "next_reconciliation_at")
+  private Instant nextReconciliationAt;
+
+  @Column(name = "reconciliation_status", length = 32)
+  private String reconciliationStatus;
 
   @Column(name = "created_at", nullable = false)
   private Instant createdAt = Instant.now();
@@ -112,6 +141,14 @@ public class TransferOrderEntity {
 
   public void setId(UUID id) {
     this.id = id;
+  }
+
+  public long getVersion() {
+    return version;
+  }
+
+  public void setVersion(long version) {
+    this.version = version;
   }
 
   public String getIdempotencyKey() {
@@ -154,40 +191,93 @@ public class TransferOrderEntity {
     this.toAccountNumber = toAccountNumber;
   }
 
-  public String getTransferType() { return transferType; }
+  public String getTransferType() {
+    return transferType;
+  }
 
-  public void setTransferType(String transferType) { this.transferType = transferType; }
+  public void setTransferType(String transferType) {
+    this.transferType = transferType;
+  }
 
-  public String getTargetBankCode() { return targetBankCode; }
+  public String getTargetBankCode() {
+    return targetBankCode;
+  }
 
-  public void setTargetBankCode(String targetBankCode) { this.targetBankCode = targetBankCode; }
+  public void setTargetBankCode(String targetBankCode) {
+    this.targetBankCode = targetBankCode;
+  }
 
-  public String getTargetAccountName() { return targetAccountName; }
+  public String getTargetAccountName() {
+    return targetAccountName;
+  }
 
-  public void setTargetAccountName(String targetAccountName) { this.targetAccountName = targetAccountName; }
+  public void setTargetAccountName(String targetAccountName) {
+    this.targetAccountName = targetAccountName;
+  }
 
-  public String getProviderReferenceId() { return providerReferenceId; }
+  public String getBeneficiaryInquiryId() {
+    return beneficiaryInquiryId;
+  }
 
-  public void setProviderReferenceId(String providerReferenceId) { this.providerReferenceId = providerReferenceId; }
+  public void setBeneficiaryInquiryId(String beneficiaryInquiryId) {
+    this.beneficiaryInquiryId = beneficiaryInquiryId;
+  }
 
-  public String getProviderStatus() { return providerStatus; }
+  public String getProviderReferenceId() {
+    return providerReferenceId;
+  }
 
-  public void setProviderStatus(String providerStatus) { this.providerStatus = providerStatus; }
+  public void setProviderReferenceId(String providerReferenceId) {
+    this.providerReferenceId = providerReferenceId;
+  }
 
-  public int getProviderAttemptCount() { return providerAttemptCount; }
+  public String getProviderStatus() {
+    return providerStatus;
+  }
 
-  public void setProviderAttemptCount(int providerAttemptCount) { this.providerAttemptCount = providerAttemptCount; }
+  public void setProviderStatus(String providerStatus) {
+    this.providerStatus = providerStatus;
+  }
 
-  public Instant getLastProviderQueryAt() { return lastProviderQueryAt; }
+  public int getProviderAttemptCount() {
+    return providerAttemptCount;
+  }
 
-  public void setLastProviderQueryAt(Instant lastProviderQueryAt) { this.lastProviderQueryAt = lastProviderQueryAt; }
+  public void setProviderAttemptCount(int providerAttemptCount) {
+    this.providerAttemptCount = providerAttemptCount;
+  }
 
-  public String getRiskDecision() { return riskDecision; }
-  public void setRiskDecision(String riskDecision) { this.riskDecision = riskDecision; }
-  public Integer getRiskScore() { return riskScore; }
-  public void setRiskScore(Integer riskScore) { this.riskScore = riskScore; }
-  public String getRiskReason() { return riskReason; }
-  public void setRiskReason(String riskReason) { this.riskReason = riskReason; }
+  public Instant getLastProviderQueryAt() {
+    return lastProviderQueryAt;
+  }
+
+  public void setLastProviderQueryAt(Instant lastProviderQueryAt) {
+    this.lastProviderQueryAt = lastProviderQueryAt;
+  }
+
+  public String getRiskDecision() {
+    return riskDecision;
+  }
+
+  public void setRiskDecision(String riskDecision) {
+    this.riskDecision = riskDecision;
+  }
+
+  public Integer getRiskScore() {
+    return riskScore;
+  }
+
+  public void setRiskScore(Integer riskScore) {
+    this.riskScore = riskScore;
+  }
+
+  public String getRiskReason() {
+    return riskReason;
+  }
+
+  public void setRiskReason(String riskReason) {
+    this.riskReason = riskReason;
+  }
 
   public BigDecimal getAmount() {
     return amount;
@@ -202,7 +292,7 @@ public class TransferOrderEntity {
   }
 
   public void setFeeAmount(BigDecimal feeAmount) {
-    this.feeAmount = feeAmount == null ? BigDecimal.ZERO : feeAmount;
+    this.feeAmount = feeAmount;
   }
 
   public String getCurrency() {
@@ -267,6 +357,85 @@ public class TransferOrderEntity {
 
   public void setFeeEntryRef(String feeEntryRef) {
     this.feeEntryRef = feeEntryRef;
+  }
+
+  public String getInquiryId() {
+    return inquiryId;
+  }
+
+  public void setInquiryId(String inquiryId) {
+    this.inquiryId = inquiryId;
+  }
+
+  public String getBankBin() {
+    return bankBin;
+  }
+
+  public void setBankBin(String bankBin) {
+    this.bankBin = bankBin;
+  }
+
+  public String getRecipientName() {
+    return recipientName;
+  }
+
+  public void setRecipientName(String recipientName) {
+    this.recipientName = recipientName;
+  }
+
+  public BigDecimal getTotalDebit() {
+    if (totalDebit != null) {
+      return totalDebit;
+    }
+    if (amount == null) {
+      return BigDecimal.ZERO;
+    }
+    BigDecimal fee = feeAmount == null ? BigDecimal.ZERO : feeAmount;
+    return amount.add(fee);
+  }
+
+  public void setTotalDebit(BigDecimal totalDebit) {
+    this.totalDebit = totalDebit;
+  }
+
+  public String getNapasRrn() {
+    return napasRrn;
+  }
+
+  public void setNapasRrn(String napasRrn) {
+    this.napasRrn = napasRrn;
+  }
+
+  public String getNapasTraceNo() {
+    return napasTraceNo;
+  }
+
+  public void setNapasTraceNo(String napasTraceNo) {
+    this.napasTraceNo = napasTraceNo;
+  }
+
+  public int getReconciliationAttempts() {
+    return reconciliationAttempts;
+  }
+
+  public void setReconciliationAttempts(int reconciliationAttempts) {
+    this.reconciliationAttempts = reconciliationAttempts;
+  }
+
+  public Instant getNextReconciliationAt() {
+    return nextReconciliationAt;
+  }
+
+  public void setNextReconciliationAt(Instant nextReconciliationAt) {
+    this.nextReconciliationAt = nextReconciliationAt;
+  }
+
+  public String getReconciliationStatus() {
+    return reconciliationStatus;
+  }
+
+  public void setReconciliationStatus(String reconciliationStatus) {
+    this.reconciliationStatus = reconciliationStatus;
   }
 
   public Instant getCreatedAt() {

@@ -57,31 +57,57 @@
       }
     </div>
 
-    <h3 class="steps-title">{{ 'TRANSFER_DETAIL.STEPS' | translate }}</h3>
-    @if (d.steps.length === 0) {
-      <p class="empty">{{ 'TRANSFER_DETAIL.NO_STEPS' | translate }}</p>
-    } @else {
-      <ol class="steps">
-        @for (s of d.steps; track s.id) {
-          <li>
-            <div class="step-head">
-              <strong>{{ s.step }}</strong>
-              <span
-                class="chip sm"
-                [class.ok]="s.status === 'SUCCESS'"
-                [class.warn]="s.status !== 'SUCCESS' && s.status !== 'FAILED'"
-                [class.bad]="s.status === 'FAILED'"
-                >{{ s.status | transferStatus }}</span
-              >
+    <div class="timeline-section">
+      <h3 class="steps-title">
+        <mat-icon class="title-icon">schedule</mat-icon>
+        {{ 'TRANSFER_DETAIL.TIMELINE_TITLE' | translate }}
+      </h3>
+      @if (d.steps.length === 0) {
+        <p class="empty">{{ 'TRANSFER_DETAIL.NO_STEPS' | translate }}</p>
+      } @else {
+        <div class="timeline-list">
+          @for (s of d.steps; track s.id; let idx = $index) {
+            <div class="timeline-item" [class.is-ok]="s.status === 'SUCCESS'" [class.is-fail]="s.status === 'FAILED'">
+              <div class="timeline-marker">
+                <span class="marker-dot">
+                  @if (s.status === 'SUCCESS') {
+                    <mat-icon inline>check</mat-icon>
+                  } @else if (s.status === 'FAILED') {
+                    <mat-icon inline>close</mat-icon>
+                  } @else {
+                    <mat-icon inline>hourglass_empty</mat-icon>
+                  }
+                </span>
+                @if (idx < d.steps.length - 1) {
+                  <span class="marker-line"></span>
+                }
+              </div>
+              <div class="timeline-content">
+                <div class="step-head">
+                  <span class="step-name">{{ getFriendlyStepName(s.step) }}</span>
+                  <span
+                    class="chip sm"
+                    [class.ok]="s.status === 'SUCCESS'"
+                    [class.warn]="s.status !== 'SUCCESS' && s.status !== 'FAILED'"
+                    [class.bad]="s.status === 'FAILED'"
+                    >{{ s.status | transferStatus }}</span
+                  >
+                </div>
+                <div class="step-meta">{{ s.createdAt | date: 'mediumTime' }}</div>
+                @if ((isAdmin$ | async) && s.detail) {
+                  <div class="step-detail-admin">
+                    <span class="badge-admin">Debug Trace</span>
+                    <code>{{ s.detail }}</code>
+                  </div>
+                } @else if (s.status === 'FAILED' && s.detail) {
+                  <div class="step-detail-fail">{{ s.detail | friendlyTransferError }}</div>
+                }
+              </div>
             </div>
-            <div class="step-meta">{{ s.createdAt | date: 'short' }}</div>
-            @if (s.detail) {
-              <div class="step-detail">{{ s.detail }}</div>
-            }
-          </li>
-        }
-      </ol>
-    }
+          }
+        </div>
+      }
+    </div>
   }
 </mat-dialog-content>
 <mat-dialog-actions align="end" class="actions">

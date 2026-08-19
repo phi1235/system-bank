@@ -22,8 +22,12 @@ import { FriendlyTransferErrorPipe } from '../../pipes/friendly-transfer-error.p
 import { TransferStatusPipe } from '../../pipes/transfer-status.pipe';
 import { MoneyVndPipe } from '../../pipes/money-vnd.pipe';
 
+import { Store } from '@ngrx/store';
+import { selectIsAdmin } from '../../../store/auth/auth.selectors';
+
 export interface TransferDetailDialogData {
   detail: TransferDetail;
+  isAdmin?: boolean;
 }
 
 @Component({
@@ -49,11 +53,52 @@ export class TransferDetailDialogComponent {
   private readonly toast = inject(ToastService);
   private readonly i18n = inject(TranslateService);
   private readonly router = inject(Router);
+  private readonly store = inject(Store);
 
   readonly detail = this.data.detail;
+  readonly isAdmin$ = this.store.select(selectIsAdmin);
+  showTechDetails = false;
 
   get canRetry(): boolean {
     return canRetryTransfer(this.detail?.transfer?.status);
+  }
+
+  getFriendlyStepName(step: string): string {
+    if (!step) {
+      return '';
+    }
+    const clean = step.trim().toUpperCase();
+    const key = `TRANSFER_DETAIL.STEP_${clean}`;
+    const translated = this.i18n.instant(key);
+    if (translated && translated !== key) {
+      return translated;
+    }
+    switch (clean) {
+      case 'DEBIT_SOURCE':
+        return this.i18n.instant('TRANSFER_DETAIL.STEP_DEBIT');
+      case 'CREDIT_DESTINATION':
+        return this.i18n.instant('TRANSFER_DETAIL.STEP_CREDIT');
+      case 'NAPAS_PAYMENT_RESPONSE':
+      case 'NAPAS_PAYMENT':
+      case 'NAPAS_TRANSFER':
+      case 'INTERBANK_OUTWARD':
+        return this.i18n.instant('TRANSFER_DETAIL.STEP_NAPAS');
+      case 'COMPENSATE_SOURCE':
+        return this.i18n.instant('TRANSFER_DETAIL.STEP_COMPENSATION');
+      case 'FEE_REVENUE_GL':
+      case 'FEE_DEBIT':
+        return this.i18n.instant('TRANSFER_DETAIL.STEP_FEE_GL');
+      default:
+        return step;
+    }
+  }
+
+  isInternalTechnicalDetail(detail: string | null | undefined): boolean {
+    if (!detail) {
+      return true;
+    }
+    const lower = detail.toLowerCase().trim();
+    return lower.startsWith('ledger=') || lower.startsWith('od:') || lower.includes('uuid') || lower.startsWith('tx=');
   }
 
   async copyId(): Promise<void> {

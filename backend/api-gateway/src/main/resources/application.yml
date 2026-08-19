@@ -29,7 +29,7 @@ spring:
         - id: transaction-service
           uri: lb://TRANSACTION-SERVICE
           predicates:
-            - Path=/api/v1/transactions/**,/api/v1/banks,/api/v1/bills/**,/api/v1/payments/**
+            - Path=/api/v1/transactions/**,/api/v1/beneficiary-inquiries/**,/api/v1/beneficiary-inquiries,/api/v1/banks/**,/api/v1/banks,/api/v1/bills/**,/api/v1/payments/**,/api/v1/sandbox/**
         - id: napas-callback
           uri: lb://TRANSACTION-SERVICE
           predicates:
