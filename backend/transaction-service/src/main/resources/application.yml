@@ -57,6 +57,17 @@ resilience4j:
         minimumNumberOfCalls: ${NAPAS_CIRCUIT_BREAKER_MIN_CALLS}
         failureRateThreshold: ${NAPAS_CIRCUIT_BREAKER_FAILURE_RATE}
         waitDurationInOpenState: ${NAPAS_CIRCUIT_BREAKER_OPEN_DURATION}
+      BENEFICIARY_INQUIRY:
+        slidingWindowSize: ${INQUIRY_CIRCUIT_BREAKER_WINDOW_SIZE:10}
+        minimumNumberOfCalls: ${INQUIRY_CIRCUIT_BREAKER_MIN_CALLS:5}
+        failureRateThreshold: ${INQUIRY_CIRCUIT_BREAKER_FAILURE_RATE:50}
+        waitDurationInOpenState: ${INQUIRY_CIRCUIT_BREAKER_OPEN_DURATION:5s}
+  ratelimiter:
+    instances:
+      BENEFICIARY_INQUIRY:
+        limitForPeriod: ${BANK_INQUIRY_RATE_LIMIT:10}
+        limitRefreshPeriod: 1s
+        timeoutDuration: 500ms
   retry:
     instances:
       ACCOUNT-SERVICE:
@@ -68,6 +79,11 @@ resilience4j:
         retryExceptions:
           - java.io.IOException
           - java.net.http.HttpTimeoutException
+      BENEFICIARY_INQUIRY_RETRY:
+        maxAttempts: ${INQUIRY_RETRY_MAX_ATTEMPTS:2}
+        waitDuration: ${INQUIRY_RETRY_WAIT_DURATION:500ms}
+        retryExceptions:
+          - com.banksystem.transaction.application.transfer.BeneficiaryProviderException
 
 bank:
   feign:
@@ -84,8 +100,6 @@ bank:
   beneficiary:
     # Redis TTL for GET /transactions/beneficiaries (seconds). Set in infra/.env.
     cache-ttl-seconds: ${BENEFICIARY_CACHE_TTL_SECONDS}
-  saga:
-    fail-credit: ${SAGA_FAIL_CREDIT}
   kafka:
     topic-completed: ${KAFKA_TOPIC_COMPLETED}
     topic-failed: ${KAFKA_TOPIC_FAILED}
@@ -105,7 +119,7 @@ bank:
     cron: ${RECON_CRON}
   # mock (default) | http — real switch URL/key only via env
   napas:
-    provider: ${NAPAS_PROVIDER}
+    provider: ${NAPAS_PROVIDER:mock}
     base-url: ${NAPAS_BASE_URL}
     api-key: ${NAPAS_API_KEY}
     webhook-secret: ${NAPAS_WEBHOOK_SECRET}
@@ -134,47 +148,32 @@ bank:
       # Value only from env (infra/.env) — no default in this pushed file.
       income-account-number: ${TRANSFER_FEE_INCOME_ACCOUNT}
   sepay:
-    api-key: ${SEPAY_API_KEY:}
-    account-number: ${SEPAY_BANK_ACCOUNT:0123456789}
-    bank-name: ${SEPAY_BANK_NAME:MBBank}
-    account-name: ${SEPAY_ACCOUNT_NAME:NGUYEN CHAU PHI}
-    qr-template: ${SEPAY_QR_TEMPLATE:compact2}
-    order-expiry-minutes: ${SEPAY_ORDER_EXPIRY_MINUTES:15}
-    webhook-secret: ${SEPAY_WEBHOOK_SECRET:}
-  forensics:
-    enabled: ${FORENSICS_ENABLED}
-    storage:
-      endpoint: ${FORENSICS_STORAGE_ENDPOINT}
-      access-key: ${FORENSICS_STORAGE_ACCESS_KEY}
-      secret-key: ${FORENSICS_STORAGE_SECRET_KEY}
-      bucket: ${FORENSICS_STORAGE_BUCKET}
-    ai:
-      enabled: ${FORENSICS_AI_ENABLED}
-      endpoint: ${FORENSICS_AI_ENDPOINT}
-      api-key: ${FORENSICS_AI_API_KEY}
-      model: ${FORENSICS_AI_MODEL}
-      connect-timeout: ${FORENSICS_AI_CONNECT_TIMEOUT}
-      read-timeout: ${FORENSICS_AI_READ_TIMEOUT}
-      session-retention: ${FORENSICS_AI_SESSION_RETENTION}
-      max-messages-per-session: ${FORENSICS_AI_MAX_MESSAGES_PER_SESSION}
-    replay:
-      deployed-commit-sha: ${FORENSICS_REPLAY_DEPLOYED_COMMIT_SHA}
-      execution-image-sha: ${FORENSICS_REPLAY_EXECUTION_IMAGE_SHA}
-    export-retention: ${FORENSICS_EXPORT_RETENTION}
-    graph-cache-ttl: ${FORENSICS_GRAPH_CACHE_TTL}
-    replay-retention: ${FORENSICS_REPLAY_RETENTION}
-    fork-quota-per-user: ${FORENSICS_FORK_QUOTA_PER_USER}
-    retention-cron: ${FORENSICS_RETENTION_CRON}
-    batch:
-      enabled: ${FORENSICS_BATCH_ENABLED}
-      actor-id: ${FORENSICS_BATCH_ACTOR_ID}
-      size: ${FORENSICS_BATCH_SIZE}
-      overlap: ${FORENSICS_BATCH_OVERLAP}
-      lease: ${FORENSICS_BATCH_LEASE}
-      cron: ${FORENSICS_BATCH_CRON}
-    orchestrator:
-      auto-case-enabled: ${FORENSICS_ORCHESTRATOR_AUTO_CASE_ENABLED}
-      causal-concurrency: ${FORENSICS_ORCHESTRATOR_CAUSAL_CONCURRENCY}
+    api-key: ${SEPAY_API_KEY}
+    account-number: ${SEPAY_BANK_ACCOUNT}
+    bank-name: ${SEPAY_BANK_NAME}
+    account-name: ${SEPAY_ACCOUNT_NAME}
+    qr-template: ${SEPAY_QR_TEMPLATE}
+    order-expiry-minutes: ${SEPAY_ORDER_EXPIRY_MINUTES}
+    webhook-secret: ${SEPAY_WEBHOOK_SECRET}
+  inquiry:
+    # mock (default) | external
+    provider: ${BANK_INQUIRY_PROVIDER}
+    ttl: ${BANK_INQUIRY_TTL}
+    external:
+      base-url: ${BANK_INQUIRY_EXTERNAL_BASE_URL}
+      client-id: ${BANK_INQUIRY_EXTERNAL_CLIENT_ID}
+      api-key: ${BANK_INQUIRY_EXTERNAL_API_KEY}
+      timeout-ms: ${BANK_INQUIRY_TIMEOUT_MS}
+  directory:
+    sync:
+      url: ${BANK_DIRECTORY_SYNC_URL}
+      cron: ${BANK_DIRECTORY_SYNC_CRON}
+  security:
+    aes-key: ${BANK_ENCRYPTION_AES_KEY}
+    hmac-key: ${BANK_ENCRYPTION_HMAC_KEY}
+  sandbox:
+    topup:
+      enabled: ${BANK_SANDBOX_TOPUP_ENABLED}
 
 management:
   endpoints:

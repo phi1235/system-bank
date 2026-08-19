@@ -1,15 +1,5 @@
 package com.banksystem.transaction.application.transfer.impl;
 
-import com.banksystem.transaction.application.transfer.TransferService;
-import com.banksystem.transaction.application.transfer.TransferQueryService;
-import com.banksystem.transaction.application.transfer.TransferFeeGlService;
-import com.banksystem.transaction.application.transfer.AccountInquiryService;
-import com.banksystem.transaction.application.transfer.AccountInquiryService.InquiryRequest;
-import com.banksystem.transaction.application.risk.RiskEngine;
-import com.banksystem.transaction.application.risk.RiskEngine.RiskResult;
-import com.banksystem.transaction.application.transfer.policy.TransferLimitPolicy;
-import com.banksystem.transaction.application.transfer.policy.TransferFeePolicy;
-
 import com.banksystem.common.api.PageResponse;
 import com.banksystem.common.exception.BusinessException;
 import com.banksystem.common.security.GatewayUser;
@@ -21,7 +11,10 @@ import com.banksystem.transaction.api.dto.TransferDtos.TransferRequest;
 import com.banksystem.transaction.api.dto.TransferDtos.TransferResponse;
 import com.banksystem.transaction.application.gateway.AccountGateway;
 import com.banksystem.transaction.application.mapper.TransferMapper;
-import com.banksystem.transaction.application.transfer.AdminTransferListQuery;
+import com.banksystem.transaction.application.risk.RiskEngine;
+import com.banksystem.transaction.application.risk.RiskEngine.RiskResult;
+import com.banksystem.transaction.application.transfer.BeneficiaryInquiryService;
+import com.banksystem.transaction.application.transfer.BeneficiaryInquiryService.VerifiedBinding;
 import com.banksystem.transaction.application.transfer.TransferService;
 import com.banksystem.transaction.application.transfer.TransferQueryService;
 import com.banksystem.transaction.application.transfer.policy.TransferFeePolicy;
@@ -38,6 +31,7 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @Service
 public class TransferServiceImpl implements TransferService {
@@ -52,8 +46,9 @@ public class TransferServiceImpl implements TransferService {
   private final TransferFeePolicy transferFeePolicy;
   private final TransferQueryService queryService;
   private final TransferMapper mapper;
-  private final AccountInquiryService inquiryService;
+  private final BeneficiaryInquiryService inquiryService;
   private final RiskEngine riskEngine;
+  private final TransactionTemplate transactionTemplate;
 
   public TransferServiceImpl(
       TransferOrderRepository transferOrderRepository,
@@ -64,8 +59,9 @@ public class TransferServiceImpl implements TransferService {
       TransferFeePolicy transferFeePolicy,
       TransferQueryService queryService,
       TransferMapper mapper,
-      AccountInquiryService inquiryService,
-      RiskEngine riskEngine) {
+      BeneficiaryInquiryService inquiryService,
+      RiskEngine riskEngine,
+      TransactionTemplate transactionTemplate) {
     this.transferOrderRepository = transferOrderRepository;
     this.auditLogRepository = auditLogRepository;
     this.accountGateway = accountGateway;
@@ -76,6 +72,7 @@ public class TransferServiceImpl implements TransferService {
     this.mapper = mapper;
     this.inquiryService = inquiryService;
     this.riskEngine = riskEngine;
+    this.transactionTemplate = transactionTemplate;
   }
 
   public TransferResponse transfer(GatewayUser user, String idempotencyKey, TransferRequest req, String ip) {
@@ -90,6 +87,9 @@ public class TransferServiceImpl implements TransferService {
     var existing = transferOrderRepository.findByIdempotencyKey(idempotencyKey);
     if (existing.isPresent()) {
       TransferOrderEntity e = existing.get();
+      if (!e.getUserId().equals(user.userId())) {
+        throw new BusinessException("IDEMPOTENCY_CONFLICT", "Idempotency-Key is already in use");
+      }
       if (!e.getRequestFingerprint().equals(fingerprint)) {
         throw new BusinessException("IDEMPOTENCY_CONFLICT", "Idempotency-Key reused with different payload");
       }
@@ -111,12 +111,12 @@ public class TransferServiceImpl implements TransferService {
     AccountView to = null;
     String targetBankCode = interbank ? normalizeBankCode(req.targetBankCode()) : "SYSTEM_BANK";
     String targetAccountName = req.targetAccountName();
+    VerifiedBinding verifiedBinding = null;
     if (interbank) {
-      var inquiry = inquiryService.inquire(new InquiryRequest(targetBankCode, req.toAccountNumber()));
-      if (inquiry.isInternal()) {
-        throw new BusinessException("INVALID_TRANSFER_TYPE", "Use INTERNAL transfer for System Bank accounts");
-      }
-      targetAccountName = inquiry.accountName();
+      verifiedBinding = inquiryService.validateForTransfer(
+          user.userId(), req.inquiryId(), targetBankCode, req.toAccountNumber());
+      targetBankCode = verifiedBinding.bankCode();
+      targetAccountName = verifiedBinding.accountName();
     } else {
       to = loadByNumber(req.toAccountNumber());
       if (from.idUuid().equals(to.idUuid())) {
@@ -125,6 +125,7 @@ public class TransferServiceImpl implements TransferService {
       if (!"ACTIVE".equals(to.status())) {
         throw new BusinessException("ACCOUNT_FROZEN", "Destination account is not active");
       }
+      targetAccountName = "TK KH (" + lastFour(to.accountNumber()) + ")";
     }
 
     TransferOrderEntity order = new TransferOrderEntity();
@@ -137,23 +138,53 @@ public class TransferServiceImpl implements TransferService {
     order.setTransferType(interbank ? "INTERBANK" : "INTERNAL");
     order.setTargetBankCode(targetBankCode);
     order.setTargetAccountName(targetAccountName);
+    order.setBeneficiaryInquiryId(verifiedBinding == null ? null : verifiedBinding.inquiryId());
     order.setAmount(req.amount());
     order.setFeeAmount(feeAmount);
+    order.setTotalDebit(req.amount().add(feeAmount));
+    order.setBankBin(interbank && verifiedBinding != null ? verifiedBinding.bankBin() : "970499");
+    order.setRecipientName(targetAccountName);
     order.setCurrency(req.currency() == null || req.currency().isBlank() ? "VND" : req.currency());
     order.setDescription(req.description());
     order.setRequestFingerprint(fingerprint);
     order.setStatus(TransferStatus.PENDING);
     order.setCreatedAt(Instant.now());
     order.setUpdatedAt(Instant.now());
-    order = transferOrderRepository.saveAndFlush(order);
-
-    auditLogRepository.save(AuditLogEntity.of(
-        user.userId(), "TRANSFER_CREATE", "TRANSFER", order.getId().toString(), ip,
-        "amount=" + req.amount() + ",fee=" + feeAmount.toPlainString() + ",to=" + req.toAccountNumber()));
+    TransferOrderEntity pendingOrder = order;
+    VerifiedBinding pendingBinding = verifiedBinding;
+    try {
+      order = transactionTemplate.execute(status -> {
+        if (pendingBinding != null) {
+          inquiryService.consumeForTransfer(user.userId(), pendingBinding.inquiryId());
+        }
+        TransferOrderEntity saved = transferOrderRepository.saveAndFlush(pendingOrder);
+        auditLogRepository.save(AuditLogEntity.of(
+            user.userId(), "TRANSFER_CREATE", "TRANSFER", saved.getId().toString(), ip,
+            "amount=" + req.amount() + ",fee=" + feeAmount.toPlainString()
+                + ",beneficiaryInquiryId=" + String.valueOf(saved.getBeneficiaryInquiryId())));
+        return saved;
+      });
+    } catch (RuntimeException createFailure) {
+      // A concurrent retry can lose either the inquiry atomic-consume race or the
+      // unique idempotency-key insert race. Once the winner commits, return that
+      // exact order instead of exposing a false "inquiry consumed" failure.
+      var concurrentWinner = transferOrderRepository.findByIdempotencyKey(idempotencyKey);
+      if (concurrentWinner.isPresent()) {
+        TransferOrderEntity winner = concurrentWinner.get();
+        if (winner.getUserId().equals(user.userId())
+            && winner.getRequestFingerprint().equals(fingerprint)) {
+          return mapper.toResponse(winner);
+        }
+      }
+      throw createFailure;
+    }
+    if (order == null) {
+      throw new BusinessException("TRANSFER_CREATE_FAILED", "Could not create transfer order");
+    }
 
     log.info("[TRANSFER-CREATE] Created transfer order [{}] User=[{}] Type=[{}] Amount={} {} From=[{}] To=[{}] (Bank: {})",
         order.getId(), user.userId(), order.getTransferType(), order.getAmount(), order.getCurrency(),
-        from.accountNumber(), req.toAccountNumber(), targetBankCode);
+        maskAccount(from.accountNumber()), maskAccount(req.toAccountNumber()), targetBankCode);
 
     RiskResult risk = riskEngine.assess(order);
     order = transferOrderRepository.findById(order.getId())
@@ -227,7 +258,7 @@ public class TransferServiceImpl implements TransferService {
   private String fingerprint(TransferRequest req) {
     return req.fromAccountId() + "|" + req.toAccountNumber().trim() + "|"
         + req.amount().toPlainString() + "|" + String.valueOf(req.transferType()) + "|"
-        + String.valueOf(req.targetBankCode());
+        + String.valueOf(req.targetBankCode()) + "|" + String.valueOf(req.inquiryId());
   }
 
   private String normalizeBankCode(String bankCode) {
@@ -239,5 +270,16 @@ public class TransferServiceImpl implements TransferService {
       throw new BusinessException("INVALID_TARGET_BANK", "External bank must be selected");
     }
     return code;
+  }
+
+  private String maskAccount(String accountNumber) {
+    return "******" + lastFour(accountNumber);
+  }
+
+  private String lastFour(String value) {
+    if (value == null || value.isBlank()) {
+      return "";
+    }
+    return value.substring(Math.max(0, value.length() - 4));
   }
 }

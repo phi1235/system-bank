@@ -9,6 +9,7 @@
   <app-loading />
 } @else {
   <div class="page-stack">
+    <!-- 1. Card Issuing Section (if there are accounts eligible for new cards) -->
     @if (issuableAccounts.length) {
       <mat-card class="issue-card">
         <h3>{{ 'CUSTOMER.CARDS_ISSUE_TITLE' | translate }}</h3>
@@ -30,101 +31,109 @@
       </mat-card>
     }
 
+    <!-- 2. Management Toolbar (Status Tabs, Search, Account Filter, View Mode Switcher) -->
     @if (cards.length) {
-      <div class="cards-grid">
-        @for (c of cards; track c.id) {
-          <div class="card-tile" [class.locked]="c.status === 'LOCKED'" [class.closed]="c.status === 'CLOSED' || c.status === 'REJECTED'" [class.pending]="c.status === 'PENDING_ACTIVATION' || c.status === 'REQUESTED'">
-            <div class="visual" [class.inactive]="c.status !== 'ACTIVE'">
-              <div class="row top">
-                <span class="brand">{{ c.brand }}</span>
-                <span class="chip status"
-                      [class.ok]="c.status === 'ACTIVE'"
-                      [class.warn]="c.status === 'PENDING_ACTIVATION' || c.status === 'LOCKED' || c.status === 'REQUESTED'"
-                      [class.bad]="c.status === 'CLOSED' || c.status === 'REJECTED'">
-                  {{ 'CUSTOMER.CARDS_STATUS_' + c.status | translate }}
-                </span>
-              </div>
-              <div class="pan">
-                @if (revealed.get(c.id); as r) {
-                  {{ formatPan(r.pan) }}
-                } @else {
-                  {{ c.maskedPan || '•••• •••• •••• ••••' }}
-                }
-              </div>
-              <div class="row bottom">
-                <span class="label">{{ 'CUSTOMER.CARDS_LINKED' | translate }} {{ c.accountNumber || '—' }}</span>
-                <span class="label">{{ 'CUSTOMER.CARDS_EXPIRES' | translate }} {{ c.expiresOn || '—' }}</span>
-              </div>
-            </div>
+      <mat-card class="toolbar-card">
+        <!-- Status Tabs Bar -->
+        <div class="filter-tabs-row">
+          <button
+            type="button"
+            class="tab-chip"
+            [class.active]="statusFilter === 'ALL'"
+            (click)="setStatusFilter('ALL')"
+          >
+            {{ 'CUSTOMER.CARDS_FILTER_ALL' | translate }}
+            <span class="count-badge">{{ statusCounts.all }}</span>
+          </button>
+          <button
+            type="button"
+            class="tab-chip active-chip"
+            [class.active]="statusFilter === 'ACTIVE'"
+            (click)="setStatusFilter('ACTIVE')"
+          >
+            <span class="dot ok"></span>
+            {{ 'CUSTOMER.CARDS_FILTER_ACTIVE' | translate }}
+            <span class="count-badge">{{ statusCounts.active }}</span>
+          </button>
+          <button
+            type="button"
+            class="tab-chip pending-chip"
+            [class.active]="statusFilter === 'PENDING'"
+            (click)="setStatusFilter('PENDING')"
+          >
+            <span class="dot warn"></span>
+            {{ 'CUSTOMER.CARDS_FILTER_PENDING' | translate }}
+            <span class="count-badge">{{ statusCounts.pending }}</span>
+          </button>
+          <button
+            type="button"
+            class="tab-chip locked-chip"
+            [class.active]="statusFilter === 'LOCKED'"
+            (click)="setStatusFilter('LOCKED')"
+          >
+            <span class="dot locked"></span>
+            {{ 'CUSTOMER.CARDS_FILTER_LOCKED' | translate }}
+            <span class="count-badge">{{ statusCounts.locked }}</span>
+          </button>
+          <button
+            type="button"
+            class="tab-chip archived-chip"
+            [class.active]="statusFilter === 'ARCHIVED'"
+            (click)="setStatusFilter('ARCHIVED')"
+          >
+            <span class="dot bad"></span>
+            {{ 'CUSTOMER.CARDS_FILTER_ARCHIVED' | translate }}
+            <span class="count-badge">{{ statusCounts.archived }}</span>
+          </button>
+        </div>
 
-            <div class="meta">
-              <span>{{ 'CUSTOMER.CARDS_DAILY_LIMIT' | translate }}:</span>
-              @if (limitEditId === c.id) {
-                <mat-form-field appearance="outline" class="limit-field" subscriptSizing="dynamic">
-                  <input matInput type="number" [(ngModel)]="limitValue" min="0" />
-                </mat-form-field>
-                <button mat-icon-button color="primary" (click)="saveLimit(c)" [matTooltip]="'COMMON.SAVE' | translate">
-                  <mat-icon>check</mat-icon>
-                </button>
-                <button mat-icon-button (click)="limitEditId = null">
+        <!-- Search & Control Bar -->
+        <div class="controls-row">
+          <div class="search-wrap">
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="search-field">
+              <mat-icon matPrefix>search</mat-icon>
+              <input
+                matInput
+                [(ngModel)]="searchTerm"
+                [placeholder]="'CUSTOMER.CARDS_SEARCH_PH' | translate"
+                (ngModelChange)="pageIndex = 0"
+              />
+              @if (searchTerm) {
+                <button matSuffix mat-icon-button type="button" (click)="searchTerm = ''; pageIndex = 0">
                   <mat-icon>close</mat-icon>
                 </button>
-              } @else {
-                <strong>{{ c.dailyLimit | moneyVnd }}</strong>
-                @if (isIssued(c)) {
-                  <button mat-icon-button (click)="startLimitEdit(c)" [matTooltip]="'CUSTOMER.CARDS_EDIT_LIMIT' | translate">
-                    <mat-icon>edit</mat-icon>
-                  </button>
-                }
               }
-            </div>
-
-            @if (c.status === 'REQUESTED') {
-              <p class="flow-note pending-note">
-                <mat-icon inline>hourglass_top</mat-icon>
-                {{ 'CUSTOMER.CARDS_WAITING_APPROVAL' | translate }}
-              </p>
-            }
-            @if (c.status === 'REJECTED' && c.rejectReason) {
-              <p class="flow-note reject-note">
-                <mat-icon inline>block</mat-icon>
-                {{ 'CUSTOMER.CARDS_REJECTED_REASON' | translate }}: {{ c.rejectReason }}
-              </p>
-            }
-            <div class="actions">
-              @if (c.status === 'PENDING_ACTIVATION') {
-                <button mat-flat-button color="primary" (click)="action(c, 'activate')" [disabled]="busyId === c.id">
-                  <mat-icon>check_circle</mat-icon> {{ 'CUSTOMER.CARDS_ACTIVATE' | translate }}
-                </button>
-              }
-              @if (c.status === 'ACTIVE') {
-                <button mat-stroked-button (click)="toggleReveal(c)">
-                  <mat-icon>{{ revealed.has(c.id) ? 'visibility_off' : 'visibility' }}</mat-icon>
-                  {{ (revealed.has(c.id) ? 'CUSTOMER.CARDS_HIDE' : 'CUSTOMER.CARDS_REVEAL') | translate }}
-                </button>
-                <button mat-stroked-button (click)="action(c, 'lock')" [disabled]="busyId === c.id">
-                  <mat-icon>lock</mat-icon> {{ 'CUSTOMER.CARDS_LOCK' | translate }}
-                </button>
-              }
-              @if (c.status === 'LOCKED') {
-                <button mat-flat-button color="primary" (click)="action(c, 'unlock')" [disabled]="busyId === c.id">
-                  <mat-icon>lock_open</mat-icon> {{ 'CUSTOMER.CARDS_UNLOCK' | translate }}
-                </button>
-              }
-              @if (c.status === 'REQUESTED') {
-                <button mat-stroked-button color="warn" (click)="confirmClose(c)" [disabled]="busyId === c.id">
-                  {{ 'CUSTOMER.CARDS_CANCEL_REQUEST' | translate }}
-                </button>
-              } @else if (isIssued(c)) {
-                <button mat-stroked-button color="warn" (click)="confirmClose(c)" [disabled]="busyId === c.id">
-                  {{ 'CUSTOMER.CARDS_CLOSE_BTN' | translate }}
-                </button>
-              }
-            </div>
+            </mat-form-field>
           </div>
-        }
-      </div>
-    } @else {
+
+          <div class="account-select-wrap">
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="account-field">
+              <mat-label>{{ 'CUSTOMER.CARDS_FILTER_ACCOUNT' | translate }}</mat-label>
+              <mat-select [(ngModel)]="accountFilter" (ngModelChange)="pageIndex = 0">
+                <mat-option value="ALL">{{ 'CUSTOMER.CARDS_ALL_ACCOUNTS' | translate }}</mat-option>
+                @for (a of accounts; track a.id) {
+                  <mat-option [value]="a.id">{{ a.accountNumber }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <div class="view-mode-toggle">
+            <mat-button-toggle-group [(ngModel)]="viewMode" aria-label="View Mode">
+              <mat-button-toggle value="grid" [matTooltip]="'CUSTOMER.CARDS_VIEW_GRID' | translate">
+                <mat-icon>grid_view</mat-icon>
+              </mat-button-toggle>
+              <mat-button-toggle value="table" [matTooltip]="'CUSTOMER.CARDS_VIEW_TABLE' | translate">
+                <mat-icon>view_list</mat-icon>
+              </mat-button-toggle>
+            </mat-button-toggle-group>
+          </div>
+        </div>
+      </mat-card>
+    }
+
+    <!-- 3. Cards Content Area -->
+    @if (cards.length === 0) {
       <mat-card class="empty-card">
         <div class="empty-state">
           <mat-icon>credit_card</mat-icon>
@@ -132,6 +141,295 @@
           <p class="empty-hint">{{ 'CUSTOMER.CARDS_EMPTY_HINT' | translate }}</p>
         </div>
       </mat-card>
+    } @else if (filteredCards.length === 0) {
+      <mat-card class="empty-card">
+        <div class="empty-state">
+          <mat-icon>filter_list_off</mat-icon>
+          <p class="empty-title">{{ 'CUSTOMER.CARDS_NO_MATCH' | translate }}</p>
+          <button mat-stroked-button color="primary" type="button" (click)="clearFilters()">
+            <mat-icon>refresh</mat-icon>
+            {{ 'CUSTOMER.CARDS_CLEAR_FILTER' | translate }}
+          </button>
+        </div>
+      </mat-card>
+    } @else {
+      <!-- 3A. Grid View -->
+      @if (viewMode === 'grid') {
+        <div class="cards-grid">
+          @for (c of paginatedCards; track c.id) {
+            <div
+              class="card-tile"
+              [class.locked]="c.status === 'LOCKED'"
+              [class.closed]="c.status === 'CLOSED'"
+              [class.rejected]="c.status === 'REJECTED'"
+              [class.pending]="c.status === 'PENDING_ACTIVATION' || c.status === 'REQUESTED'"
+            >
+              <!-- Card Visual Deck -->
+              <div class="visual" [class.inactive]="c.status !== 'ACTIVE'">
+                <div class="row top">
+                  <div class="brand-wrap">
+                    <mat-icon class="brand-icon">contactless</mat-icon>
+                    <span class="brand">{{ c.brand }}</span>
+                  </div>
+                  <span
+                    class="chip status"
+                    [class.ok]="c.status === 'ACTIVE'"
+                    [class.warn]="c.status === 'PENDING_ACTIVATION' || c.status === 'LOCKED' || c.status === 'REQUESTED'"
+                    [class.bad]="c.status === 'CLOSED' || c.status === 'REJECTED'"
+                  >
+                    {{ 'CUSTOMER.CARDS_STATUS_' + c.status | translate }}
+                  </span>
+                </div>
+
+                <div class="pan">
+                  @if (revealed.get(c.id); as r) {
+                    {{ formatPan(r.pan) }}
+                  } @else {
+                    {{ c.maskedPan || '•••• •••• •••• ••••' }}
+                  }
+                </div>
+
+                <div class="row bottom">
+                  <div class="meta-item">
+                    <span class="meta-label">{{ 'CUSTOMER.CARDS_LINKED' | translate }}</span>
+                    <span class="meta-val">{{ c.accountNumber || '—' }}</span>
+                  </div>
+                  <div class="meta-item text-right">
+                    <span class="meta-label">{{ 'CUSTOMER.CARDS_EXPIRES' | translate }}</span>
+                    <span class="meta-val">{{ c.expiresOn || '—' }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Daily Limit Section -->
+              <div class="meta">
+                <span>{{ 'CUSTOMER.CARDS_DAILY_LIMIT' | translate }}:</span>
+                @if (limitEditId === c.id) {
+                  <mat-form-field appearance="outline" class="limit-field" subscriptSizing="dynamic">
+                    <input matInput type="number" [(ngModel)]="limitValue" min="0" />
+                  </mat-form-field>
+                  <button mat-icon-button color="primary" (click)="saveLimit(c)" [matTooltip]="'COMMON.SAVE' | translate">
+                    <mat-icon>check</mat-icon>
+                  </button>
+                  <button mat-icon-button (click)="limitEditId = null">
+                    <mat-icon>close</mat-icon>
+                  </button>
+                } @else {
+                  <strong>{{ c.dailyLimit | moneyVnd }}</strong>
+                  @if (isIssued(c)) {
+                    <button mat-icon-button (click)="startLimitEdit(c)" [matTooltip]="'CUSTOMER.CARDS_EDIT_LIMIT' | translate">
+                      <mat-icon>edit</mat-icon>
+                    </button>
+                  }
+                }
+              </div>
+
+              <!-- Context Notes for Pending / Rejected -->
+              @if (c.status === 'REQUESTED') {
+                <div class="flow-note pending-note">
+                  <mat-icon inline>hourglass_top</mat-icon>
+                  <span>{{ 'CUSTOMER.CARDS_WAITING_APPROVAL' | translate }}</span>
+                </div>
+              }
+              @if (c.status === 'REJECTED' && c.rejectReason) {
+                <div class="flow-note reject-note">
+                  <mat-icon inline>error_outline</mat-icon>
+                  <span><strong>{{ 'CUSTOMER.CARDS_REJECTED_REASON' | translate }}:</strong> {{ c.rejectReason }}</span>
+                </div>
+              }
+
+              <!-- Actions Buttons -->
+              <div class="actions">
+                @if (c.status === 'PENDING_ACTIVATION') {
+                  <button mat-flat-button color="primary" (click)="action(c, 'activate')" [disabled]="busyId === c.id">
+                    <mat-icon>check_circle</mat-icon> {{ 'CUSTOMER.CARDS_ACTIVATE' | translate }}
+                  </button>
+                }
+                @if (c.status === 'ACTIVE') {
+                  <button mat-stroked-button (click)="toggleReveal(c)">
+                    <mat-icon>{{ revealed.has(c.id) ? 'visibility_off' : 'visibility' }}</mat-icon>
+                    {{ (revealed.has(c.id) ? 'CUSTOMER.CARDS_HIDE' : 'CUSTOMER.CARDS_REVEAL') | translate }}
+                  </button>
+                  <button mat-stroked-button (click)="action(c, 'lock')" [disabled]="busyId === c.id">
+                    <mat-icon>lock</mat-icon> {{ 'CUSTOMER.CARDS_LOCK' | translate }}
+                  </button>
+                }
+                @if (c.status === 'LOCKED') {
+                  <button mat-flat-button color="primary" (click)="action(c, 'unlock')" [disabled]="busyId === c.id">
+                    <mat-icon>lock_open</mat-icon> {{ 'CUSTOMER.CARDS_UNLOCK' | translate }}
+                  </button>
+                }
+                @if (c.status === 'REQUESTED') {
+                  <button mat-stroked-button color="warn" (click)="confirmClose(c)" [disabled]="busyId === c.id">
+                    {{ 'CUSTOMER.CARDS_CANCEL_REQUEST' | translate }}
+                  </button>
+                } @else if (isIssued(c)) {
+                  <button mat-stroked-button color="warn" (click)="confirmClose(c)" [disabled]="busyId === c.id">
+                    {{ 'CUSTOMER.CARDS_CLOSE_BTN' | translate }}
+                  </button>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- 3B. Table View (Best for 10 - 100+ cards) -->
+      @if (viewMode === 'table') {
+        <mat-card class="table-card">
+          <div class="table-container">
+            <table mat-table [dataSource]="paginatedCards" class="cards-table">
+              <!-- Brand Column -->
+              <ng-container matColumnDef="brand">
+                <th mat-header-cell *matHeaderCellDef>Loại thẻ</th>
+                <td mat-cell *matCellDef="let c">
+                  <div class="table-brand">
+                    <mat-icon class="card-icon">credit_card</mat-icon>
+                    <strong>{{ c.brand }}</strong>
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- PAN Column -->
+              <ng-container matColumnDef="pan">
+                <th mat-header-cell *matHeaderCellDef>{{ 'CUSTOMER.CARDS_PAN' | translate }}</th>
+                <td mat-cell *matCellDef="let c">
+                  <div class="table-pan-cell">
+                    <code>
+                      @if (revealed.get(c.id); as r) {
+                        {{ formatPan(r.pan) }}
+                      } @else {
+                        {{ c.maskedPan || '•••• •••• •••• ••••' }}
+                      }
+                    </code>
+                    @if (c.status === 'ACTIVE') {
+                      <button
+                        mat-icon-button
+                        type="button"
+                        class="reveal-icon-btn"
+                        (click)="toggleReveal(c)"
+                        [matTooltip]="(revealed.has(c.id) ? 'CUSTOMER.CARDS_HIDE' : 'CUSTOMER.CARDS_REVEAL') | translate"
+                      >
+                        <mat-icon>{{ revealed.has(c.id) ? 'visibility_off' : 'visibility' }}</mat-icon>
+                      </button>
+                    }
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- Account Column -->
+              <ng-container matColumnDef="account">
+                <th mat-header-cell *matHeaderCellDef>{{ 'CUSTOMER.CARDS_ACCOUNT' | translate }}</th>
+                <td mat-cell *matCellDef="let c">
+                  <span class="acc-badge">{{ c.accountNumber || '—' }}</span>
+                </td>
+              </ng-container>
+
+              <!-- Limit Column -->
+              <ng-container matColumnDef="limit">
+                <th mat-header-cell *matHeaderCellDef>{{ 'CUSTOMER.CARDS_DAILY_LIMIT' | translate }}</th>
+                <td mat-cell *matCellDef="let c">
+                  @if (limitEditId === c.id) {
+                    <div class="inline-edit">
+                      <mat-form-field appearance="outline" class="limit-field-sm" subscriptSizing="dynamic">
+                        <input matInput type="number" [(ngModel)]="limitValue" min="0" />
+                      </mat-form-field>
+                      <button mat-icon-button color="primary" (click)="saveLimit(c)"><mat-icon>check</mat-icon></button>
+                      <button mat-icon-button (click)="limitEditId = null"><mat-icon>close</mat-icon></button>
+                    </div>
+                  } @else {
+                    <div class="limit-display">
+                      <span>{{ c.dailyLimit | moneyVnd }}</span>
+                      @if (isIssued(c)) {
+                        <button mat-icon-button class="edit-sm-btn" (click)="startLimitEdit(c)" [matTooltip]="'CUSTOMER.CARDS_EDIT_LIMIT' | translate">
+                          <mat-icon>edit</mat-icon>
+                        </button>
+                      }
+                    </div>
+                  }
+                </td>
+              </ng-container>
+
+              <!-- Expires Column -->
+              <ng-container matColumnDef="expires">
+                <th mat-header-cell *matHeaderCellDef>{{ 'CUSTOMER.CARDS_EXPIRY' | translate }}</th>
+                <td mat-cell *matCellDef="let c">{{ c.expiresOn || '—' }}</td>
+              </ng-container>
+
+              <!-- Status Column -->
+              <ng-container matColumnDef="status">
+                <th mat-header-cell *matHeaderCellDef>{{ 'CUSTOMER.CARDS_STATUS' | translate }}</th>
+                <td mat-cell *matCellDef="let c">
+                  <span
+                    class="chip status"
+                    [class.ok]="c.status === 'ACTIVE'"
+                    [class.warn]="c.status === 'PENDING_ACTIVATION' || c.status === 'LOCKED' || c.status === 'REQUESTED'"
+                    [class.bad]="c.status === 'CLOSED' || c.status === 'REJECTED'"
+                  >
+                    {{ 'CUSTOMER.CARDS_STATUS_' + c.status | translate }}
+                  </span>
+                  @if (c.status === 'REJECTED' && c.rejectReason) {
+                    <div class="table-reject-hint" [matTooltip]="c.rejectReason">
+                      <mat-icon inline>error_outline</mat-icon>
+                      <span>{{ c.rejectReason }}</span>
+                    </div>
+                  }
+                </td>
+              </ng-container>
+
+              <!-- Actions Column -->
+              <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef>{{ 'CUSTOMER.CARDS_ACTIONS' | translate }}</th>
+                <td mat-cell *matCellDef="let c">
+                  <div class="table-actions">
+                    @if (c.status === 'PENDING_ACTIVATION') {
+                      <button mat-stroked-button color="primary" (click)="action(c, 'activate')" [disabled]="busyId === c.id">
+                        {{ 'CUSTOMER.CARDS_ACTIVATE' | translate }}
+                      </button>
+                    }
+                    @if (c.status === 'ACTIVE') {
+                      <button mat-stroked-button (click)="action(c, 'lock')" [disabled]="busyId === c.id">
+                        {{ 'CUSTOMER.CARDS_LOCK' | translate }}
+                      </button>
+                    }
+                    @if (c.status === 'LOCKED') {
+                      <button mat-stroked-button color="primary" (click)="action(c, 'unlock')" [disabled]="busyId === c.id">
+                        {{ 'CUSTOMER.CARDS_UNLOCK' | translate }}
+                      </button>
+                    }
+                    @if (c.status === 'REQUESTED') {
+                      <button mat-stroked-button color="warn" (click)="confirmClose(c)" [disabled]="busyId === c.id">
+                        {{ 'CUSTOMER.CARDS_CANCEL_REQUEST' | translate }}
+                      </button>
+                    } @else if (isIssued(c)) {
+                      <button mat-icon-button color="warn" (click)="confirmClose(c)" [disabled]="busyId === c.id" [matTooltip]="'CUSTOMER.CARDS_CLOSE_BTN' | translate">
+                        <mat-icon>delete_outline</mat-icon>
+                      </button>
+                    }
+                  </div>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="tableColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: tableColumns;"></tr>
+            </table>
+          </div>
+        </mat-card>
+      }
+
+      <!-- Pagination Toolbar (Applicable for both views if count > pageSize) -->
+      @if (filteredCards.length > pageSizeOptions[0]) {
+        <mat-card class="paginator-card">
+          <mat-paginator
+            [length]="filteredCards.length"
+            [pageSize]="pageSize"
+            [pageSizeOptions]="pageSizeOptions"
+            [pageIndex]="pageIndex"
+            (page)="onPageChange($event)"
+            showFirstLastButtons
+          ></mat-paginator>
+        </mat-card>
+      }
     }
   </div>
 }

@@ -3,6 +3,8 @@ package com.banksystem.transaction.domain.transfer;
 public enum TransferStatus {
   PENDING,
   DEBITED,
+  SUBMITTED,
+  PROCESSING,
   COMPLETED,
   FAILED,
   COMPENSATING,
@@ -11,5 +13,7 @@ public enum TransferStatus {
   UNKNOWN,
   /** Money movement is known but an accounting/compensation leg needs operator intervention. */
   REVIEW_REQUIRED,
+  /** Escalated to operations after reconciliation attempts are exhausted. */
+  MANUAL_REVIEW,
   RISK_REVIEW
 }

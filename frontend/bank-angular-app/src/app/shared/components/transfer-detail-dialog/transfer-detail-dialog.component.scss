@@ -54,40 +54,156 @@
   color: #b71c1c;
 }
 
-.steps-title {
-  margin: 0 0 0.5rem;
-  font-size: 0.95rem;
+.timeline-section {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px dashed rgba(0, 0, 0, 0.12);
 }
 
-.steps {
-  margin: 0;
-  padding-left: 1.1rem;
-  display: grid;
-  gap: 0.75rem;
+.steps-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 0.85rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1e293b;
+
+  .title-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    color: #00695c;
+  }
+}
+
+.timeline-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.timeline-item {
+  display: flex;
+  gap: 12px;
+  position: relative;
+  padding-bottom: 14px;
+
+  &:last-child {
+    padding-bottom: 0;
+  }
+
+  .timeline-marker {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 20px;
+    flex-shrink: 0;
+
+    .marker-dot {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #e2e8f0;
+      color: #64748b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      z-index: 1;
+
+      mat-icon {
+        font-size: 13px;
+        width: 13px;
+        height: 13px;
+        line-height: 13px;
+      }
+    }
+
+    .marker-line {
+      flex: 1;
+      width: 2px;
+      background: #cbd5e1;
+      margin-top: 4px;
+      margin-bottom: -4px;
+    }
+  }
+
+  &.is-ok .timeline-marker .marker-dot {
+    background: #10b981;
+    color: #ffffff;
+  }
+
+  &.is-fail .timeline-marker .marker-dot {
+    background: #ef4444;
+    color: #ffffff;
+  }
+
+  .timeline-content {
+    flex: 1;
+    min-width: 0;
+  }
 }
 
 .step-head {
   display: flex;
-  gap: 0.5rem;
+  justify-content: space-between;
   align-items: center;
+  gap: 8px;
   flex-wrap: wrap;
+
+  .step-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #1e293b;
+  }
 }
 
 .step-meta {
-  font-size: 0.8rem;
-  opacity: 0.65;
-  margin-top: 0.15rem;
+  font-size: 0.78rem;
+  color: #64748b;
+  margin-top: 2px;
 }
 
-.step-detail {
-  font-size: 0.85rem;
-  opacity: 0.85;
-  margin-top: 0.2rem;
-  word-break: break-word;
+.step-detail-admin {
+  margin-top: 6px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 0.78rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  .badge-admin {
+    background: #475569;
+    color: #fff;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  code {
+    color: #334155;
+  }
+}
+
+.step-detail-fail {
+  font-size: 0.8rem;
+  color: #b91c1c;
+  background: #fef2f2;
+  border: 1px solid #fee2e2;
+  border-radius: 4px;
+  padding: 3px 8px;
+  margin-top: 4px;
 }
 
 .empty {
-  opacity: 0.7;
+  color: #64748b;
+  font-size: 0.88rem;
   margin: 0;
 }
 

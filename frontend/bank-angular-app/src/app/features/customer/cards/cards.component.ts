@@ -2,12 +2,16 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatSelectModule } from '@angular/material/select';
+import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { forkJoin } from 'rxjs';
@@ -23,6 +27,8 @@ import { LoadingComponent } from '../../../shared/components/loading/loading.com
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { MoneyVndPipe } from '../../../shared/pipes/money-vnd.pipe';
 
+export type CardFilterType = 'ALL' | 'ACTIVE' | 'PENDING' | 'LOCKED' | 'ARCHIVED';
+
 @Component({
   selector: 'app-cards',
   standalone: true,
@@ -30,12 +36,16 @@ import { MoneyVndPipe } from '../../../shared/pipes/money-vnd.pipe';
     CommonModule,
     FormsModule,
     MatButtonModule,
+    MatButtonToggleModule,
     MatCardModule,
     MatDialogModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
+    MatMenuModule,
+    MatPaginatorModule,
     MatSelectModule,
+    MatTableModule,
     MatTooltipModule,
     LoadingComponent,
     PageHeaderComponent,
@@ -57,6 +67,20 @@ export class CardsComponent implements OnInit {
   issueAccountId = '';
   busyId: string | null = null;
   issuing = false;
+
+  /** Filter, Search & View mode */
+  statusFilter: CardFilterType = 'ALL';
+  searchTerm = '';
+  accountFilter = 'ALL';
+  viewMode: 'grid' | 'table' = 'grid';
+
+  /** Pagination */
+  pageIndex = 0;
+  pageSize = 10;
+  pageSizeOptions = [6, 12, 24, 48];
+
+  /** Table columns */
+  tableColumns: string[] = ['brand', 'pan', 'account', 'limit', 'expires', 'status', 'actions'];
 
   /** Card id → revealed PAN (kept only in memory, auto-hidden). */
   revealed = new Map<string, CardReveal>();
@@ -204,5 +228,81 @@ export class CardsComponent implements OnInit {
   get issuableAccounts(): Account[] {
     const taken = this.hasOpenCardAccounts;
     return this.accounts.filter((a) => !taken.has(a.id));
+  }
+
+  get statusCounts(): { all: number; active: number; pending: number; locked: number; archived: number } {
+    return {
+      all: this.cards.length,
+      active: this.cards.filter((c) => c.status === 'ACTIVE').length,
+      pending: this.cards.filter((c) => c.status === 'PENDING_ACTIVATION' || c.status === 'REQUESTED').length,
+      locked: this.cards.filter((c) => c.status === 'LOCKED').length,
+      archived: this.cards.filter((c) => c.status === 'CLOSED' || c.status === 'REJECTED').length,
+    };
+  }
+
+  get filteredCards(): Card[] {
+    let result = this.cards;
+
+    switch (this.statusFilter) {
+      case 'ACTIVE':
+        result = result.filter((c) => c.status === 'ACTIVE');
+        break;
+      case 'PENDING':
+        result = result.filter((c) => c.status === 'PENDING_ACTIVATION' || c.status === 'REQUESTED');
+        break;
+      case 'LOCKED':
+        result = result.filter((c) => c.status === 'LOCKED');
+        break;
+      case 'ARCHIVED':
+        result = result.filter((c) => c.status === 'CLOSED' || c.status === 'REJECTED');
+        break;
+      case 'ALL':
+      default:
+        break;
+    }
+
+    if (this.accountFilter !== 'ALL') {
+      result = result.filter(
+        (c) => c.accountId === this.accountFilter || c.accountNumber === this.accountFilter,
+      );
+    }
+
+    if (this.searchTerm && this.searchTerm.trim()) {
+      const term = this.searchTerm.trim().toLowerCase();
+      result = result.filter((c) => {
+        const masked = (c.maskedPan || '').toLowerCase();
+        const acc = (c.accountNumber || '').toLowerCase();
+        const brand = (c.brand || '').toLowerCase();
+        return masked.includes(term) || acc.includes(term) || brand.includes(term);
+      });
+    }
+
+    return result;
+  }
+
+  get paginatedCards(): Card[] {
+    const start = this.pageIndex * this.pageSize;
+    return this.filteredCards.slice(start, start + this.pageSize);
+  }
+
+  onPageChange(event: PageEvent): void {
+    this.pageIndex = event.pageIndex;
+    this.pageSize = event.pageSize;
+  }
+
+  setStatusFilter(filter: CardFilterType): void {
+    this.statusFilter = filter;
+    this.pageIndex = 0;
+  }
+
+  clearFilters(): void {
+    this.statusFilter = 'ALL';
+    this.searchTerm = '';
+    this.accountFilter = 'ALL';
+    this.pageIndex = 0;
+  }
+
+  get hasActiveFilters(): boolean {
+    return this.statusFilter !== 'ALL' || !!this.searchTerm.trim() || this.accountFilter !== 'ALL';
   }
 }

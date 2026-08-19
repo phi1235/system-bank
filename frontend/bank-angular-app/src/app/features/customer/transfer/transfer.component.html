@@ -105,9 +105,15 @@
               <mat-icon matPrefix>account_balance</mat-icon>
               <mat-select [value]="selectedBankCode" [disabled]="banksLoading || !!banksError" (selectionChange)="onBankChange($event.value)">
                 <mat-option value="">{{ 'TRANSFER.BANK_SELECT_PLACEHOLDER' | translate }}</mat-option>
-                @for (b of banks; track b.bankCode) {
-                  <mat-option [value]="b.bankCode" [disabled]="b.isInternal">
-                    {{ b.shortName }} — {{ b.fullName }}
+                @for (b of banks; track b.bin || b.bankCode) {
+                  <mat-option [value]="b.bankCode" [disabled]="b.isInternal || !b.napasSupported">
+                    <div class="bank-option-row">
+                      @if (b.logoUrl) {
+                        <img [src]="b.logoUrl" [alt]="b.shortName" class="bank-logo-mini" />
+                      }
+                      <span class="bank-short">{{ b.shortName }}</span>
+                      <span class="bank-full">— {{ b.fullName }}</span>
+                    </div>
                   </mat-option>
                 }
               </mat-select>
@@ -162,9 +168,10 @@
           } @else if (inquiryResult) {
             <div class="inquiry-badge success">
               <mat-icon>verified</mat-icon>
-              <div>
+              <div class="inquiry-info-box">
                 <span class="lbl">{{ 'TRANSFER.INQUIRY_OWNER_LABEL' | translate }}</span>
                 <strong class="owner">{{ inquiryResult.accountName }}</strong>
+                <span class="sub-check">{{ 'TRANSFER.INQUIRY_CHECK_NOTE' | translate }}</span>
               </div>
             </div>
           } @else if (inquiryError) {

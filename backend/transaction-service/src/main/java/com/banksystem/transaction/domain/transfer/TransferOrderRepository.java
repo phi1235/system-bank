@@ -22,6 +22,33 @@ public interface TransferOrderRepository extends JpaRepository<TransferOrderEnti
 
   Optional<TransferOrderEntity> findByProviderReferenceId(String providerReferenceId);
 
+  @Query("""
+      SELECT t FROM TransferOrderEntity t
+      WHERE t.status IN :statuses
+        AND (t.nextReconciliationAt IS NULL OR t.nextReconciliationAt <= :now)
+        AND t.reconciliationAttempts < 5
+      ORDER BY t.createdAt ASC
+      """)
+  List<TransferOrderEntity> findReconciliationEligible(
+      @Param("now") Instant now,
+      @Param("statuses") List<TransferStatus> statuses);
+
+  @Query("""
+      SELECT t FROM TransferOrderEntity t
+      WHERE t.status IN ('MANUAL_REVIEW', 'REVIEW_REQUIRED')
+      ORDER BY t.updatedAt DESC
+      """)
+  Page<TransferOrderEntity> findManualReviewOrders(Pageable pageable);
+
+  @Query("""
+      SELECT t FROM TransferOrderEntity t
+      WHERE t.status = 'COMPLETED'
+        AND t.feeAmount > 0
+        AND t.feeEntryRef = 'PENDING_RECON'
+      ORDER BY t.createdAt ASC
+      """)
+  List<TransferOrderEntity> findPendingFeeGlOrders();
+
   List<TransferOrderEntity> findTop50ByStatusAndUpdatedAtBeforeOrderByUpdatedAtAsc(
       TransferStatus status, Instant updatedBefore);
 

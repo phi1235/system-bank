@@ -13,7 +13,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatTabsModule } from '@angular/material/tabs';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { Store } from '@ngrx/store';
-import { Subscription, debounceTime, distinctUntilChanged, filter, take } from 'rxjs';
+import { Subscription, debounceTime, distinctUntilChanged, filter, take, tap } from 'rxjs';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import {
   ConfirmDialogComponent,
@@ -92,6 +92,7 @@ export class TransferComponent implements OnInit, OnDestroy {
   private amountSub?: Subscription;
   private toAccSub?: Subscription;
   private quoteReq = 0;
+  private inquiryReq = 0;
 
   accounts$ = this.store.select(selectAccounts);
   creating$ = this.store.select(selectTransferCreating);
@@ -108,6 +109,7 @@ export class TransferComponent implements OnInit, OnDestroy {
   inquiryLoading = false;
   inquiryResult: AccountInquiryResponse | null = null;
   inquiryError: string | null = null;
+  inquiryId: string | null = null;
 
   beneficiaries: Beneficiary[] = [];
   selectedBeneficiaryId = '';
@@ -170,7 +172,11 @@ export class TransferComponent implements OnInit, OnDestroy {
       .subscribe(() => this.refreshQuote());
 
     this.toAccSub = this.form.controls.toAccountNumber.valueChanges
-      .pipe(debounceTime(400), distinctUntilChanged())
+      .pipe(
+        tap(() => this.clearInquiryState()),
+        debounceTime(400),
+        distinctUntilChanged(),
+      )
       .subscribe(() => this.performInquiry());
   }
 
@@ -202,13 +208,12 @@ export class TransferComponent implements OnInit, OnDestroy {
 
   switchTab(tab: 'INTERNAL' | 'INTERBANK'): void {
     this.activeTab = tab;
+    this.clearInquiryState();
     if (tab === 'INTERNAL') {
       this.selectedBankCode = this.banks.find((bank) => bank.isInternal)?.bankCode ?? '';
     } else {
       this.selectedBankCode = '';
     }
-    this.inquiryResult = null;
-    this.inquiryError = null;
     if (this.selectedBankCode) {
       this.performInquiry();
     }
@@ -216,36 +221,51 @@ export class TransferComponent implements OnInit, OnDestroy {
 
   onBankChange(bankCode: string): void {
     this.selectedBankCode = bankCode;
-    this.inquiryResult = null;
-    this.inquiryError = null;
+    this.clearInquiryState();
     if (this.selectedBankCode) {
       this.performInquiry();
     }
   }
 
+  clearInquiryState(): void {
+    this.inquiryReq++;
+    this.inquiryLoading = false;
+    this.inquiryResult = null;
+    this.inquiryError = null;
+    this.inquiryId = null;
+  }
+
   performInquiry(): void {
     if (this.activeTab === 'INTERBANK' && !this.selectedBankCode) {
-      this.inquiryResult = null;
-      this.inquiryError = null;
+      this.clearInquiryState();
       return;
     }
     const accNum = this.form.controls.toAccountNumber.value?.trim();
     if (!accNum || accNum.length < 6) {
-      this.inquiryResult = null;
-      this.inquiryError = null;
+      this.clearInquiryState();
       return;
     }
     this.inquiryLoading = true;
     this.inquiryError = null;
-    this.api.accountInquiry({ bankCode: this.selectedBankCode, accountNumber: accNum }).subscribe({
+    const reqId = ++this.inquiryReq;
+    const bankItem = this.banks.find((b) => b.bankCode === this.selectedBankCode);
+    const bankBin = bankItem?.bin || this.selectedBankCode || '970499';
+    this.api.accountInquiry({ bankBin, bankCode: this.selectedBankCode, accountNumber: accNum }).subscribe({
       next: (res) => {
+        if (reqId !== this.inquiryReq) return;
         this.inquiryLoading = false;
         this.inquiryResult = res;
+        this.inquiryError = null;
+        this.inquiryId = res.inquiryId || null;
       },
       error: (err) => {
+        if (reqId !== this.inquiryReq) return;
         this.inquiryLoading = false;
         this.inquiryResult = null;
-        this.inquiryError = err?.error?.message || this.i18n.instant('ERRORS.ACCOUNT_NOT_FOUND');
+        this.inquiryId = null;
+        this.inquiryError = err?.error?.error?.message
+          || err?.error?.message
+          || this.i18n.instant('ERRORS.ACCOUNT_NOT_FOUND');
       }
     });
   }
@@ -272,7 +292,6 @@ export class TransferComponent implements OnInit, OnDestroy {
     const found = this.beneficiaries.find((b) => b.id === id);
     if (found) {
       this.form.patchValue({ toAccountNumber: found.accountNumber });
-      this.performInquiry();
     }
   }
 
@@ -359,14 +378,13 @@ export class TransferComponent implements OnInit, OnDestroy {
       this.form.markAllAsTouched();
       return;
     }
-    if (this.activeTab === 'INTERBANK' && (!this.selectedBankCode || !this.inquiryResult)) {
+    if (this.activeTab === 'INTERBANK' && !this.hasValidInterbankInquiry()) {
       this.toast.error(this.i18n.instant('TRANSFER.INTERBANK_INQUIRY_REQUIRED'));
+      this.performInquiry();
       return;
     }
     const v = this.form.getRawValue();
     const amount = Number(v.amount);
-    const fee = this.quote?.feeAmount ?? 0;
-    const total = this.quote?.totalDebit ?? amount;
 
     const recipientName = this.inquiryResult ? this.inquiryResult.accountName : '';
 
@@ -394,11 +412,22 @@ export class TransferComponent implements OnInit, OnDestroy {
               transferType: this.activeTab,
               targetBankCode: this.selectedBankCode,
               targetAccountName: recipientName || undefined,
+              inquiryId: this.inquiryId || undefined,
             },
             idempotencyKey: key,
           }),
         );
       });
+  }
+
+  private hasValidInterbankInquiry(): boolean {
+    if (!this.selectedBankCode || !this.inquiryResult || !this.inquiryId) {
+      return false;
+    }
+    if (this.inquiryResult.status && this.inquiryResult.status !== 'VERIFIED') {
+      return false;
+    }
+    return !this.inquiryResult.expiresAt || Date.parse(this.inquiryResult.expiresAt) > Date.now();
   }
 
   private refreshQuote(): void {

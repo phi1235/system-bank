@@ -43,16 +43,27 @@ export interface TopUpDialogData {
 })
 export class TopupModalComponent implements OnInit, OnDestroy {
   readonly data = inject<TopUpDialogData>(MAT_DIALOG_DATA);
-  private readonly dialogRef = inject(MatDialogRef<TopupModalComponent, SepayTopUpOrder | null>);
+  private readonly dialogRef = inject(MatDialogRef<TopupModalComponent, any>);
   private readonly fb = inject(FormBuilder);
   private readonly bankApi = inject(BankApiService);
   private readonly toast = inject(ToastService);
   private readonly i18n = inject(TranslateService);
 
+  mode: 'SEPAY' | 'SANDBOX' = 'SEPAY';
   step: 'FORM' | 'QR' | 'SUCCESS' = 'FORM';
   loading = false;
   order: SepayTopUpOrder | null = null;
   copiedKey: string | null = null;
+
+  // Sandbox variables
+  sandboxEnabled = true;
+  sandboxLoading = false;
+  sandboxRemainingQuota = 50000000;
+  sandboxSelectedAmount = 5000000;
+  readonly sandboxPresetAmounts = [1000000, 5000000, 10000000, 20000000];
+  isSandboxSuccess = false;
+  sandboxBalanceAfter = 0;
+  sandboxAmountCredited = 0;
 
   // 15-minute countdown in seconds
   remainingSeconds = 900;
@@ -66,14 +77,58 @@ export class TopupModalComponent implements OnInit, OnDestroy {
     note: [''],
   });
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    this.bankApi.getSandboxConfig().subscribe({
+      next: (cfg) => {
+        this.sandboxEnabled = cfg.enabled;
+        this.sandboxRemainingQuota = cfg.maxDailyQuota;
+      },
+      error: () => {
+        // Fallback default
+        this.sandboxEnabled = true;
+      },
+    });
+  }
 
   ngOnDestroy(): void {
     this.stopPolling();
   }
 
+  setMode(m: 'SEPAY' | 'SANDBOX'): void {
+    this.mode = m;
+  }
+
   selectPreset(amount: number): void {
     this.form.controls.amount.setValue(amount);
+  }
+
+  selectSandboxPreset(amount: number): void {
+    this.sandboxSelectedAmount = amount;
+  }
+
+  executeSandboxTopup(): void {
+    if (this.sandboxLoading) return;
+    this.sandboxLoading = true;
+    this.bankApi.sandboxTopup({
+      accountId: this.data.account.id,
+      amount: this.sandboxSelectedAmount,
+    }).subscribe({
+      next: (res) => {
+        this.sandboxLoading = false;
+        this.isSandboxSuccess = true;
+        this.sandboxBalanceAfter = res.balanceAfter;
+        this.sandboxAmountCredited = res.amount;
+        this.sandboxRemainingQuota = res.remainingQuotaToday;
+        this.data.account.balance = res.balanceAfter;
+        this.step = 'SUCCESS';
+        this.toast.success(this.i18n.instant('CUSTOMER.TOPUP_SUCCESS_TOAST'));
+      },
+      error: (err) => {
+        this.sandboxLoading = false;
+        const msg = resolveHttpErrorMessage(err, this.i18n.instant('CUSTOMER.TOPUP_CREATE_FAILED'));
+        this.toast.error(msg);
+      },
+    });
   }
 
   createOrder(): void {
@@ -93,6 +148,7 @@ export class TopupModalComponent implements OnInit, OnDestroy {
         next: (order) => {
           this.loading = false;
           this.order = order;
+          this.isSandboxSuccess = false;
           this.step = 'QR';
           this.startPolling();
         },
@@ -138,6 +194,7 @@ export class TopupModalComponent implements OnInit, OnDestroy {
         next: (updatedOrder) => {
           if (updatedOrder.status === 'SUCCESS') {
             this.order = updatedOrder;
+            this.isSandboxSuccess = false;
             this.step = 'SUCCESS';
             this.stopPolling();
             this.toast.success(this.i18n.instant('CUSTOMER.TOPUP_SUCCESS_TOAST'));
@@ -153,6 +210,6 @@ export class TopupModalComponent implements OnInit, OnDestroy {
   }
 
   close(): void {
-    this.dialogRef.close(this.order?.status === 'SUCCESS' ? this.order : null);
+    this.dialogRef.close(this.step === 'SUCCESS' ? true : null);
   }
 }

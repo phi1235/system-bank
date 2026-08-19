@@ -10,7 +10,7 @@
 
 <mat-card class="filter-card">
   <form class="filters" [formGroup]="filter" (ngSubmit)="applyFilters()">
-    <mat-form-field appearance="outline">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="field-status">
       <mat-label>{{ 'COMMON.STATUS' | translate }}</mat-label>
       <mat-select formControlName="status">
         <mat-option value="">{{ 'CUSTOMER.HISTORY_STATUS_ALL' | translate }}</mat-option>
@@ -21,16 +21,19 @@
         }
       </mat-select>
     </mat-form-field>
-    <mat-form-field appearance="outline">
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="field-date">
       <mat-label>{{ 'CUSTOMER.HISTORY_FROM' | translate }}</mat-label>
       <mat-icon matPrefix (click)="hfInput.showPicker()">calendar_month</mat-icon>
       <input matInput type="date" #hfInput formControlName="from" placeholder="YYYY-MM-DD" (click)="hfInput.showPicker()" />
     </mat-form-field>
-    <mat-form-field appearance="outline">
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="field-date">
       <mat-label>{{ 'CUSTOMER.HISTORY_TO' | translate }}</mat-label>
       <mat-icon matPrefix (click)="htInput.showPicker()">calendar_month</mat-icon>
       <input matInput type="date" #htInput formControlName="to" placeholder="YYYY-MM-DD" (click)="htInput.showPicker()" />
     </mat-form-field>
+
     <div class="filter-actions">
       <button mat-flat-button color="primary" type="submit">
         <mat-icon>filter_list</mat-icon>
@@ -39,7 +42,7 @@
       <button mat-stroked-button type="button" (click)="resetFilters()">
         {{ 'CUSTOMER.HISTORY_RESET' | translate }}
       </button>
-      <button mat-flat-button color="accent" type="button" (click)="exportCsv()">
+      <button mat-stroked-button color="primary" type="button" (click)="exportCsv()">
         <mat-icon>file_download</mat-icon>
         {{ 'COMMON.EXPORT_CSV' | translate }}
       </button>
@@ -51,7 +54,7 @@
   <app-loading />
 }
 
-<div class="history-layout">
+<div class="history-container">
   <mat-card class="table-card">
     <div class="table-wrap">
       <table mat-table [dataSource]="(rows$ | async) || []" class="full">
@@ -169,15 +172,5 @@
       [pageSizeOptions]="[10, 20, 50]"
       (page)="page($event)"
     />
-  </mat-card>
-
-  <mat-card class="side-card">
-    <h3>{{ 'CUSTOMER.HISTORY_HELP_TITLE' | translate }}</h3>
-    <p>{{ 'CUSTOMER.HISTORY_HELP_BODY' | translate }}</p>
-    <ul>
-      <li>{{ 'CUSTOMER.HISTORY_HELP_1' | translate }}</li>
-      <li>{{ 'CUSTOMER.HISTORY_HELP_2' | translate }}</li>
-      <li>{{ 'CUSTOMER.HISTORY_HELP_3' | translate }}</li>
-    </ul>
   </mat-card>
 </div>

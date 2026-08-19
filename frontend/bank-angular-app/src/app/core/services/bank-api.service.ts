@@ -48,6 +48,9 @@ import {
   RiskRule,
   SepayTopUpOrder,
   SepayTopUpRequest,
+  SandboxConfigResponse,
+  SandboxTopupRequest,
+  SandboxTopupResponse,
   SupportTicket,
   TermDeposit,
   TopUpResponse,
@@ -360,7 +363,7 @@ export class BankApiService {
   }
 
   accountInquiry(body: AccountInquiryRequest): Observable<AccountInquiryResponse> {
-    return this.api.post('/transactions/account-inquiry', body);
+    return this.api.post('/beneficiary-inquiries', body);
   }
 
   // Transfers
@@ -1075,6 +1078,30 @@ export class BankApiService {
 
   getMySepayOrders(): Observable<SepayTopUpOrder[]> {
     return this.api.get<SepayTopUpOrder[]>('/payments/sepay/my-orders');
+  }
+
+  // ── Sandbox 1-Click Top-Up ──
+
+  getSandboxConfig(): Observable<SandboxConfigResponse> {
+    return this.api.get<SandboxConfigResponse>('/sandbox/config');
+  }
+
+  sandboxTopup(body: SandboxTopupRequest): Observable<SandboxTopupResponse> {
+    return this.api.post<SandboxTopupResponse>('/sandbox/topup', body);
+  }
+
+  // ── Admin Transfer Reconciliation & Manual Action ──
+
+  listManualReviewTransfers(page = 0, size = 20): Observable<PageResponse<Transfer>> {
+    return this.api.get<PageResponse<Transfer>>('/admin/transfers/manual-review', { page, size });
+  }
+
+  forceSettleTransfer(id: string, reason: string): Observable<Transfer> {
+    return this.api.post<Transfer>(`/admin/transfers/${encodeURIComponent(id)}/force-settle`, { reason });
+  }
+
+  forceRefundTransfer(id: string, reason: string): Observable<Transfer> {
+    return this.api.post<Transfer>(`/admin/transfers/${encodeURIComponent(id)}/force-refund`, { reason });
   }
 }
 

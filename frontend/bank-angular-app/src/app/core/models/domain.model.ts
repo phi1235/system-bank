@@ -165,27 +165,41 @@ export interface BankItem {
 }
 
 export interface AccountInquiryRequest {
+  bankBin?: string;
   bankCode?: string;
   accountNumber: string;
 }
 
 export interface AccountInquiryResponse {
-  bankCode: string;
-  accountNumber: string;
+  inquiryId?: string;
+  bank?: {
+    bin: string;
+    code: string;
+    shortName: string;
+  };
+  accountNumberMasked?: string;
+  bankCode?: string;
+  accountNumber?: string;
   accountName: string;
-  isInternal: boolean;
+  accountType?: 'INTERNAL' | 'INTERBANK' | string;
+  status?: string;
+  provider?: string;
+  verifiedAt?: string;
+  expiresAt?: string;
+  isInternal?: boolean;
   accountId?: string | null;
 }
 
 export interface TransferRequest {
   fromAccountId: string;
-  toAccountNumber: string;
+  toAccountNumber?: string;
   amount: number;
   description?: string;
   currency?: string;
   transferType?: 'INTERNAL' | 'INTERBANK' | string;
   targetBankCode?: string;
   targetAccountName?: string;
+  inquiryId?: string;
 }
 
 /** Pre-transfer fee + daily limit remaining preview (includes fee formula breakdown). */
@@ -942,3 +956,26 @@ export interface ForensicCaseHistory {
   caseVersion: number;
   createdAt: string;
 }
+
+export interface SandboxTopupRequest {
+  accountId: string;
+  amount: number;
+}
+
+export interface SandboxTopupResponse {
+  accountId: string;
+  amount: number;
+  balanceAfter: number;
+  accumulatedToday: number;
+  remainingQuotaToday: number;
+}
+
+export interface SandboxConfigResponse {
+  enabled: boolean;
+  maxDailyQuota: number;
+}
+
+export interface ForceActionRequest {
+  reason: string;
+}
+
