@@ -1,5 +1,7 @@
 package com.banksystem.transaction.application.audit;
 
+import java.time.Instant;
+
 import com.banksystem.transaction.api.dto.TransferDtos.AuditResponse;
 import com.banksystem.transaction.domain.audit.AuditLogEntity;
 import com.banksystem.transaction.domain.audit.AuditLogRepository;

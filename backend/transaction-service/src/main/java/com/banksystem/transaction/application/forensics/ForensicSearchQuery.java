@@ -28,8 +28,9 @@ public record ForensicSearchQuery(
       Instant requestedFrom,
       Instant requestedTo,
       Integer requestedPage,
-      Integer requestedSize) {
-    Instant to = requestedTo != null ? requestedTo : Instant.now();
+      Integer requestedSize,
+      Instant now) {
+    Instant to = requestedTo != null ? requestedTo : now;
     Instant from = requestedFrom != null
         ? requestedFrom
         : transactionId == null ? to.minus(90, ChronoUnit.DAYS) : Instant.EPOCH;

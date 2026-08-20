@@ -42,6 +42,24 @@ public final class PermissionCatalog {
       SecurityHeaders.PERM_IB_PROFILE_MFA,
       SecurityHeaders.PERM_IB_CARDS_VIEW,
       SecurityHeaders.PERM_IB_WEALTH_VIEW,
-      SecurityHeaders.PERM_IB_SUPPORT_VIEW
+      SecurityHeaders.PERM_IB_SUPPORT_VIEW,
+      SecurityHeaders.PERM_IB_NOTIFICATIONS_VIEW,
+      SecurityHeaders.PERM_VA_OPERATIONS_VIEW,
+      SecurityHeaders.PERM_VA_OPERATIONS_REVIEW,
+      SecurityHeaders.PERM_SETTLEMENT_VIEW,
+      SecurityHeaders.PERM_SETTLEMENT_RETRY,
+      SecurityHeaders.PERM_SETTLEMENT_APPROVE,
+      SecurityHeaders.PERM_PAYOUT_VIEW,
+      SecurityHeaders.PERM_PAYOUT_APPROVE,
+      SecurityHeaders.PERM_BUSINESS_DASHBOARD_VIEW,
+      SecurityHeaders.PERM_BUSINESS_VA_VIEW,
+      SecurityHeaders.PERM_BUSINESS_VA_MANAGE,
+      SecurityHeaders.PERM_BUSINESS_ORDERS_VIEW,
+      SecurityHeaders.PERM_BUSINESS_ORDERS_MANAGE,
+      SecurityHeaders.PERM_BUSINESS_SETTLEMENTS_VIEW,
+      SecurityHeaders.PERM_BUSINESS_SETTLEMENTS_EXECUTE,
+      SecurityHeaders.PERM_BUSINESS_SPLIT_VIEW,
+      SecurityHeaders.PERM_BUSINESS_SPLIT_MANAGE,
+      SecurityHeaders.PERM_BUSINESS_CREDENTIALS_MANAGE
   );
 }

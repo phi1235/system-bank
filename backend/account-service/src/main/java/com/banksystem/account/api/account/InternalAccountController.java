@@ -1,11 +1,13 @@
 package com.banksystem.account.api.account;
 
 import com.banksystem.account.api.dto.AccountDtos.AccountResponse;
+import com.banksystem.account.api.dto.AccountDtos.AdjustmentRequestedEventRequest;
 import com.banksystem.account.api.dto.AccountDtos.InternalAccountCountsResponse;
 import com.banksystem.account.api.dto.AccountDtos.MoneyCommand;
 import com.banksystem.account.api.dto.AccountDtos.MoneyResult;
 import com.banksystem.account.application.account.AccountMoneyService;
 import com.banksystem.account.application.account.InternalAccountQueryService;
+import com.banksystem.account.application.ledger.AccountInboxService;
 import com.banksystem.common.api.ApiResponse;
 import com.banksystem.common.security.RequireInternalApiKey;
 import jakarta.validation.Valid;
@@ -24,12 +26,12 @@ public class InternalAccountController {
 
   private final AccountMoneyService moneyService;
   private final InternalAccountQueryService queryService;
-  private final com.banksystem.account.application.ledger.AccountInboxService inboxService;
+  private final AccountInboxService inboxService;
 
   public InternalAccountController(
       AccountMoneyService moneyService,
       InternalAccountQueryService queryService,
-      com.banksystem.account.application.ledger.AccountInboxService inboxService) {
+      AccountInboxService inboxService) {
     this.moneyService = moneyService;
     this.queryService = queryService;
     this.inboxService = inboxService;
@@ -37,7 +39,7 @@ public class InternalAccountController {
 
   @PostMapping("/remediation/inbox")
   public ApiResponse<Boolean> processRemediationInbox(
-      @Valid @RequestBody com.banksystem.account.api.dto.AccountDtos.AdjustmentRequestedEventRequest req) {
+      @Valid @RequestBody AdjustmentRequestedEventRequest req) {
     boolean processed = inboxService.processAdjustmentRequestedEvent(
         req.eventId(),
         req.proposalId(),

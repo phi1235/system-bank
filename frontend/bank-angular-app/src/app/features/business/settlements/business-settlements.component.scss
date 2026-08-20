@@ -1,0 +1,230 @@
+.page-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  .header-text {
+    .page-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 0;
+    }
+
+    .page-subtitle {
+      font-size: 0.875rem;
+      color: #64748b;
+      margin: 4px 0 0;
+    }
+  }
+}
+
+.filter-card {
+  padding: 16px 20px;
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+
+  .filter-row {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+
+    .status-field {
+      width: 220px;
+      margin-bottom: -1.25em;
+    }
+  }
+}
+
+.table-card {
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+
+  .full-width-table {
+    width: 100%;
+  }
+
+  .order-id-code {
+    font-family: monospace;
+    font-weight: 600;
+    color: #1e40af;
+  }
+
+  .commission-text {
+    color: #166534;
+    font-weight: 600;
+  }
+
+  .seller-net-text {
+    color: #1d4ed8;
+    font-weight: 600;
+  }
+
+  .status-badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+
+    &.completed {
+      background: #dcfce7;
+      color: #15803d;
+    }
+
+    &.pending, &.funds_reserved {
+      background: #fef9c3;
+      color: #854d0e;
+    }
+
+    &.processing, &.retrying {
+      background: #eff6ff;
+      color: #1d4ed8;
+    }
+
+    &.partially_completed, &.manual_review {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+  }
+
+  .empty-cell {
+    text-align: center;
+    padding: 40px;
+    color: #94a3b8;
+  }
+}
+
+.custom-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(2px);
+
+  .custom-modal-card {
+    background: #ffffff;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 480px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+
+    &.large-modal {
+      max-width: 720px;
+    }
+
+    .modal-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+
+      h3 {
+        margin: 0;
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #0f172a;
+      }
+    }
+
+    .modal-body {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      max-height: 70vh;
+      overflow-y: auto;
+
+      .settlement-meta-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 12px;
+
+        .meta-item {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+
+          .label {
+            font-size: 0.75rem;
+            color: #64748b;
+          }
+
+          .val {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #0f172a;
+
+            &.comm { color: #166534; }
+            &.seller { color: #1d4ed8; }
+            &.journal { font-family: monospace; font-size: 0.8rem; color: #64748b; }
+          }
+        }
+      }
+
+      h4 {
+        margin: 8px 0 0;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #334155;
+      }
+
+      .legs-table-wrapper {
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        overflow: hidden;
+
+        .legs-table {
+          width: 100%;
+          border-collapse: collapse;
+
+          th {
+            background: #f8fafc;
+            padding: 10px 12px;
+            font-size: 0.75rem;
+            text-align: left;
+            color: #64748b;
+            font-weight: 600;
+            border-bottom: 1px solid #e2e8f0;
+          }
+
+          td {
+            padding: 10px 12px;
+            font-size: 0.825rem;
+            border-bottom: 1px solid #f1f5f9;
+          }
+
+          .leg-type-badge {
+            background: #f1f5f9;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+          }
+        }
+      }
+    }
+
+    .modal-footer {
+      padding: 12px 20px;
+      background: #f8fafc;
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+  }
+}

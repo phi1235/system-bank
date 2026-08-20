@@ -7,7 +7,6 @@ import com.banksystem.transaction.api.dto.ReconDtos.ReconRunDetailResponse;
 import com.banksystem.transaction.api.dto.ReconDtos.ReconRunResponse;
 import com.banksystem.transaction.api.dto.ReconDtos.RunReconRequest;
 import com.banksystem.transaction.application.reconciliation.ReconciliationService;
-import com.banksystem.transaction.domain.reconciliation.ReconRunEntity;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -59,6 +58,6 @@ public class AdminReconciliationController {
   @PostMapping("/runs")
   @RequirePermission("transactions:recon:execute")
   public ApiResponse<ReconRunResponse> run(@Valid @RequestBody RunReconRequest request) {
-    return ApiResponse.ok(service.runForDate(request.date(), ReconRunEntity.TRIGGER_MANUAL));
+    return ApiResponse.ok(service.runManual(request.date()));
   }
 }

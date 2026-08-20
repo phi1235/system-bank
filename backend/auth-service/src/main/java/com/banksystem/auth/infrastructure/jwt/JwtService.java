@@ -31,7 +31,8 @@ public class JwtService {
   private final SecretKey key;
   private final PermissionResolver permissionResolver;
 
-  public JwtService(JwtProperties props, PermissionResolver permissionResolver) {
+  public JwtService(
+      JwtProperties props, PermissionResolver permissionResolver) {
     this.props = props;
     this.permissionResolver = permissionResolver;
     byte[] bytes = props.getSecret().getBytes(StandardCharsets.UTF_8);
@@ -77,7 +78,7 @@ public class JwtService {
     if (exp == null) {
       return 0;
     }
-    long secs = (exp.getTime() - System.currentTimeMillis()) / 1000;
+    long secs = (exp.getTime() - Instant.now().toEpochMilli()) / 1000;
     return Math.max(secs, 1);
   }
 

@@ -16,6 +16,8 @@ import com.banksystem.transaction.domain.sepay.SepayWebhookProcessingStatus;
 import com.banksystem.transaction.infrastructure.feign.AccountClientDtos.AccountView;
 import com.banksystem.transaction.infrastructure.feign.AccountClientDtos.MoneyCommand;
 import com.banksystem.transaction.infrastructure.sepay.SepayWebhookVerifier;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
 import java.security.SecureRandom;
 import java.time.Instant;
@@ -45,6 +47,7 @@ public class SepayService {
   private final AccountGateway accountGateway;
   private final SepayWebhookVerifier verifier;
   private final SepayProperties properties;
+  private final ObjectMapper objectMapper;
 
   public SepayService(
       SepayPaymentOrderRepository orderRepository,
@@ -53,7 +56,8 @@ public class SepayService {
       SepayOrderExecutionService executionService,
       AccountGateway accountGateway,
       SepayWebhookVerifier verifier,
-      SepayProperties properties) {
+      SepayProperties properties,
+      ObjectMapper objectMapper) {
     this.orderRepository = orderRepository;
     this.webhookLogRepository = webhookLogRepository;
     this.inboxService = inboxService;
@@ -61,6 +65,18 @@ public class SepayService {
     this.accountGateway = accountGateway;
     this.verifier = verifier;
     this.properties = properties;
+    this.objectMapper = objectMapper;
+  }
+
+  public SepayWebhookResponse processWebhook(
+      String authHeader, SepayWebhookPayload payload) {
+    try {
+      return processWebhook(authHeader, payload, objectMapper.writeValueAsString(payload));
+    } catch (JsonProcessingException ex) {
+      throw new BusinessException(
+          "INVALID_WEBHOOK_PAYLOAD", "Unable to preserve SePay webhook payload",
+          HttpStatus.BAD_REQUEST);
+    }
   }
 
   @Transactional
@@ -204,7 +220,7 @@ public class SepayService {
   }
 
   private String generateOrderCode() {
-    long timestampPart = System.currentTimeMillis() % 1000000L;
+    long timestampPart = Instant.now().toEpochMilli() % 1000000L;
     int randomPart = 10 + RANDOM.nextInt(90);
     return "SB" + timestampPart + randomPart;
   }

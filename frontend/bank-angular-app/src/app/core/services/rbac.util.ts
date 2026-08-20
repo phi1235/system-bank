@@ -51,6 +51,23 @@ export const PERMISSIONS = {
   SUPPORT_TICKETS_LIST: 'support:tickets:list',
   SUPPORT_TICKETS_CLAIM: 'support:tickets:claim',
   SUPPORT_TICKETS_DECIDE: 'support:tickets:decide',
+  // Back Office VA & Settlement Operations
+  VA_OPERATIONS_VIEW: 'va:operations:view',
+  VA_OPERATIONS_MANAGE: 'va:operations:manage',
+  SETTLEMENT_VIEW: 'settlement:view',
+  SETTLEMENT_APPROVE: 'settlement:approve',
+  SETTLEMENT_RETRY: 'settlement:retry',
+  PAYOUT_VIEW: 'payout:view',
+  PAYOUT_EXECUTE: 'payout:execute',
+  // B2B Business Portal
+  BUSINESS_DASHBOARD_VIEW: 'business:dashboard:view',
+  BUSINESS_VA_VIEW: 'business:va:view',
+  BUSINESS_VA_MANAGE: 'business:va:manage',
+  BUSINESS_ORDERS_VIEW: 'business:orders:view',
+  BUSINESS_ORDERS_MANAGE: 'business:orders:manage',
+  BUSINESS_SETTLEMENTS_VIEW: 'business:settlements:view',
+  BUSINESS_SETTLEMENTS_EXECUTE: 'business:settlements:execute',
+  BUSINESS_CREDENTIALS_MANAGE: 'business:credentials:manage',
   // Internet Banking (customer)
   IB_HOME_VIEW: 'ib:home:view',
   IB_ACCOUNTS_VIEW: 'ib:accounts:view',

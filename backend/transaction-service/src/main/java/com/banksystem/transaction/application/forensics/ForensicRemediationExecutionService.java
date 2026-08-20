@@ -1,5 +1,7 @@
 package com.banksystem.transaction.application.forensics;
 
+import java.time.Instant;
+
 import com.banksystem.common.exception.BusinessException;
 import com.banksystem.transaction.api.dto.ForensicCaseDtos.ExecuteAdjustmentRemediationRequest;
 import com.banksystem.transaction.api.dto.ForensicCaseDtos.ExecuteHoldRemediationRequest;
@@ -158,7 +160,8 @@ public class ForensicRemediationExecutionService {
     }
 
     CreateHoldCommand holdCmd = new CreateHoldCommand(
-        request.caseId(), referenceId, request.amount(), "VND", java.time.Instant.now().plusSeconds(86400 * 7));
+        request.caseId(), referenceId, request.amount(), "VND",
+        Instant.now().plusSeconds(86400 * 7));
     AccountHoldView holdView = accountGateway.createHold(targetAccountId, holdCmd);
     if (holdView == null || holdView.id() == null) {
       throw new BusinessException("REMEDIATION_HOLD_FAILED", "Account hold on account-service failed or returned null");

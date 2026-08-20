@@ -104,7 +104,7 @@ public class TermDepositServiceImpl implements TermDepositService {
     requireAtLeastMin(product, request.amount());
 
     UUID id = UUID.randomUUID();
-    Instant now = Instant.now(clock);
+    Instant now = Instant.now();
     LocalDate openDate = LocalDate.now(clock.withZone(zone));
 
     // Debit first: insufficient balance / frozen account aborts before the contract exists.
@@ -161,8 +161,8 @@ public class TermDepositServiceImpl implements TermDepositService {
 
     deposit.setStatus(TermDepositStatus.CLOSED_EARLY);
     deposit.setAccruedInterest(interest);
-    deposit.setClosedAt(Instant.now(clock));
-    deposit.setUpdatedAt(Instant.now(clock));
+    deposit.setClosedAt(Instant.now());
+    deposit.setUpdatedAt(Instant.now());
     depositRepository.save(deposit);
     log.info("[DEPOSIT-CLOSE-EARLY] Closed savings contract [{}] EarlyInterest={} VND TotalReturned={} VND",
         deposit.getId(), interest, deposit.getAmount().add(interest));
@@ -196,8 +196,8 @@ public class TermDepositServiceImpl implements TermDepositService {
 
     deposit.setStatus(TermDepositStatus.MATURED);
     deposit.setAccruedInterest(interest);
-    deposit.setClosedAt(Instant.now(clock));
-    deposit.setUpdatedAt(Instant.now(clock));
+    deposit.setClosedAt(Instant.now());
+    deposit.setUpdatedAt(Instant.now());
     depositRepository.save(deposit);
     return true;
   }

@@ -120,7 +120,9 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
   }
 
   private boolean isPublic(String path) {
-    return PUBLIC_PATHS.contains(path) || path.equals("/");
+    return PUBLIC_PATHS.contains(path)
+        || path.startsWith("/api/v1/callbacks/collections/")
+        || path.equals("/");
   }
 
   private String normalizeListClaim(Object claim) {

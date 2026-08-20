@@ -28,8 +28,9 @@ public record ForensicCaseSearchQuery(
       Instant from,
       Instant to,
       Integer page,
-      Integer size) {
-    Instant upper = to == null ? Instant.now() : to;
+      Integer size,
+      Instant now) {
+    Instant upper = to == null ? now : to;
     Instant lower = from == null ? upper.minus(90, ChronoUnit.DAYS) : from;
     if (lower.isAfter(upper)) {
       throw new BusinessException("INVALID_DATE_RANGE", "from must be before or equal to to");

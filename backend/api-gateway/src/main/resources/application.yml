@@ -34,10 +34,26 @@ spring:
           uri: lb://TRANSACTION-SERVICE
           predicates:
             - Path=/api/v1/callbacks/napas/**
+        - id: collection-callbacks
+          uri: lb://TRANSACTION-SERVICE
+          predicates:
+            - Path=/api/v1/callbacks/collections/**
         - id: sepay-routes
           uri: lb://TRANSACTION-SERVICE
           predicates:
             - Path=/api/v1/payments/sepay/**
+        - id: auth-service-businesses
+          uri: lb://AUTH-SERVICE
+          predicates:
+            - Path=/api/v1/businesses,/api/v1/businesses/*,/api/v1/businesses/*/members,/api/v1/businesses/*/members/**,/api/v1/businesses/*/my-membership
+        - id: transaction-service-businesses
+          uri: lb://TRANSACTION-SERVICE
+          predicates:
+            - Path=/api/v1/businesses/*/dashboard/**,/api/v1/businesses/*/merchant-account/**,/api/v1/businesses/*/credentials/**,/api/v1/businesses/*/webhook-endpoints/**,/api/v1/businesses/*/virtual-accounts/**,/api/v1/businesses/*/virtual-accounts,/api/v1/businesses/*/collection-orders/**,/api/v1/businesses/*/collection-orders,/api/v1/businesses/*/split-rules/**,/api/v1/businesses/*/split-rules,/api/v1/businesses/*/settlements/**,/api/v1/businesses/*/settlements,/api/v1/businesses/*/developer/**
+        - id: merchant-open-api
+          uri: lb://TRANSACTION-SERVICE
+          predicates:
+            - Path=/api/v1/merchant/**
         # SSE first (more specific) so /** does not swallow the stream path.
         # response-timeout: 0 aborts JSON bodies as empty 200 — use a long positive ms for SSE only.
         - id: notification-service-stream

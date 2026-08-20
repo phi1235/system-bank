@@ -572,7 +572,8 @@ public class TransferSagaOrchestrator {
     }
     TransferOrderEntity completed = completeExternal(order);
     manualReviewAuditLogRepository.save(new ManualReviewAuditLogEntity(
-        UUID.randomUUID(), orderId, adminUserId, "FORCE_SETTLE", reason != null ? reason : "Admin force settle"));
+        UUID.randomUUID(), orderId, adminUserId, "FORCE_SETTLE",
+        reason != null ? reason : "Admin force settle"));
     step(orderId, "ADMIN_FORCE_SETTLE", "SUCCESS", "Settled by admin " + adminUserId + ": " + reason);
     return completed;
   }
@@ -586,7 +587,8 @@ public class TransferSagaOrchestrator {
     }
     TransferOrderEntity refunded = compensateSourceOnly(order, formatReason("ADMIN_MANUAL_REFUND", reason));
     manualReviewAuditLogRepository.save(new ManualReviewAuditLogEntity(
-        UUID.randomUUID(), orderId, adminUserId, "FORCE_REFUND", reason != null ? reason : "Admin force refund"));
+        UUID.randomUUID(), orderId, adminUserId, "FORCE_REFUND",
+        reason != null ? reason : "Admin force refund"));
     step(orderId, "ADMIN_FORCE_REFUND", "SUCCESS", "Refunded by admin " + adminUserId + ": " + reason);
     return refunded;
   }
@@ -638,7 +640,8 @@ public class TransferSagaOrchestrator {
   protected void step(UUID transferId, String step, String status, String detail) {
     try {
       transactionTemplate.executeWithoutResult(
-          tx -> sagaStepLogRepository.save(SagaStepLogEntity.of(transferId, step, status, detail)));
+          tx -> sagaStepLogRepository.save(
+              SagaStepLogEntity.of(transferId, step, status, detail)));
     } catch (RuntimeException ex) {
       // Step history is diagnostic. It must never trigger or alter a money compensation path.
       log.error("Cannot persist saga step transfer={} step={} status={}: {}",

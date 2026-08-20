@@ -1,4 +1,6 @@
 package com.banksystem.notification.application.notification.impl;
+
+import java.time.Instant;
 import com.banksystem.notification.application.notification.NotificationInboxService;
 import com.banksystem.notification.application.notification.NotificationLogCommandService;
 import com.banksystem.notification.application.notification.NotificationLogCommandService.CreateNotificationLogCommand;
@@ -7,7 +9,6 @@ import com.banksystem.notification.api.dto.NotificationDtos.NotificationItem;
 import com.banksystem.notification.api.notification.NotificationSandboxController.NotificationSandboxItem;
 import com.banksystem.notification.domain.notification.NotificationLogEntity;
 import com.banksystem.notification.domain.notification.NotificationLogRepository;
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;

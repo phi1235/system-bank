@@ -3,6 +3,7 @@ package com.banksystem.transaction.infrastructure.outbox;
 import com.banksystem.transaction.application.gateway.AccountGateway;
 import com.banksystem.transaction.domain.forensics.RemediationOutboxEntity;
 import com.banksystem.transaction.domain.forensics.RemediationOutboxRepository;
+import com.banksystem.transaction.domain.forensics.RemediationProposalRepository;
 import com.banksystem.transaction.infrastructure.feign.AccountClientDtos.AdjustmentRequestedEventRequest;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -26,14 +27,14 @@ public class RemediationOutboxWorker {
   private static final String WORKER_ID = "transaction-service-outbox-worker-1";
 
   private final RemediationOutboxRepository outboxRepository;
-  private final com.banksystem.transaction.domain.forensics.RemediationProposalRepository proposalRepository;
+  private final RemediationProposalRepository proposalRepository;
   private final AccountGateway accountGateway;
   private final Clock clock;
   private final ObjectMapper objectMapper;
 
   public RemediationOutboxWorker(
       RemediationOutboxRepository outboxRepository,
-      com.banksystem.transaction.domain.forensics.RemediationProposalRepository proposalRepository,
+      RemediationProposalRepository proposalRepository,
       AccountGateway accountGateway,
       Clock clock,
       ObjectMapper objectMapper) {

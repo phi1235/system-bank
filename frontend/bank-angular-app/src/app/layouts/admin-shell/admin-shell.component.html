@@ -110,6 +110,18 @@
                 <span matListItemTitle>{{ 'NAV.ADMIN_FORENSICS' | translate }}</span>
               </a>
             }
+            @if (canVirtualAccounts$ | async) {
+              <a mat-list-item routerLink="/admin/virtual-accounts" routerLinkActive="active">
+                <mat-icon matListItemIcon>account_balance</mat-icon>
+                <span matListItemTitle>{{ 'BUSINESS.NAV.VIRTUAL_ACCOUNTS' | translate }}</span>
+              </a>
+            }
+            @if (canSettlements$ | async) {
+              <a mat-list-item routerLink="/admin/settlements" routerLinkActive="active">
+                <mat-icon matListItemIcon>account_tree</mat-icon>
+                <span matListItemTitle>{{ 'BUSINESS.NAV.SETTLEMENTS' | translate }}</span>
+              </a>
+            }
           </div>
         }
 

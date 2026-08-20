@@ -148,7 +148,7 @@ public class AccountMoneyService {
     entry.setAmount(command.amount());
     entry.setReferenceId(command.referenceId());
     entry.setDescription(command.description());
-    entry.setCreatedAt(Instant.now(clock));
+    entry.setCreatedAt(Instant.now());
     return entry;
   }
 

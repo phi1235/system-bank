@@ -89,6 +89,7 @@ bank:
   feign:
     notification-url: ${FEIGN_NOTIFICATION_URL}
     account-url: ${FEIGN_ACCOUNT_URL}
+    auth-url: ${FEIGN_AUTH_URL}
   gateway:
     signing-secret: ${GATEWAY_SIGNING_SECRET}
     max-clock-skew-seconds: ${GATEWAY_MAX_CLOCK_SKEW_SECONDS}
@@ -96,7 +97,13 @@ bank:
     # Own key: callers (e.g. account-service audit push) must present this.
     api-key: ${TRANSACTION_INTERNAL_API_KEY}
     account-api-key: ${ACCOUNT_INTERNAL_API_KEY}
+    auth-api-key: ${AUTH_INTERNAL_API_KEY}
     notification-api-key: ${NOTIFICATION_INTERNAL_API_KEY}
+  aes:
+    secret-key: ${AES_SECRET_KEY}
+  merchant:
+    platform-commission-account-id: ${PLATFORM_COMMISSION_ACCOUNT_ID}
+    default-bank-bin: ${VA_DEFAULT_BANK_BIN:970422}
   beneficiary:
     # Redis TTL for GET /transactions/beneficiaries (seconds). Set in infra/.env.
     cache-ttl-seconds: ${BENEFICIARY_CACHE_TTL_SECONDS}
@@ -148,6 +155,7 @@ bank:
       # Value only from env (infra/.env) — no default in this pushed file.
       income-account-number: ${TRANSFER_FEE_INCOME_ACCOUNT}
   sepay:
+    enabled: ${SEPAY_ENABLED:false}
     api-key: ${SEPAY_API_KEY}
     account-number: ${SEPAY_BANK_ACCOUNT}
     bank-name: ${SEPAY_BANK_NAME}
@@ -155,6 +163,14 @@ bank:
     qr-template: ${SEPAY_QR_TEMPLATE}
     order-expiry-minutes: ${SEPAY_ORDER_EXPIRY_MINUTES}
     webhook-secret: ${SEPAY_WEBHOOK_SECRET}
+  va:
+    mock-enabled: ${MOCK_VA_ENABLED:false}
+    mock-sandbox-key: ${MOCK_VA_SANDBOX_KEY:}
+    default-bank-bin: ${VA_DEFAULT_BANK_BIN:970422}
+    default-provider: ${VA_DEFAULT_PROVIDER:MOCK}
+  payout:
+    seller-payable-account-code: ${PAYOUT_SELLER_PAYABLE_ACCOUNT_CODE:GL:2110_SELLER_PAYABLE}
+    clearing-account-code: ${PAYOUT_CLEARING_ACCOUNT_CODE:CLEARING:NAPAS_PAYOUT}
   inquiry:
     # mock (default) | external
     provider: ${BANK_INQUIRY_PROVIDER}

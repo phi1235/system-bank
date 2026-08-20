@@ -84,7 +84,7 @@ public class CardServiceImpl implements CardService {
           "CARD_ALREADY_EXISTS", "Account already has a card or a pending request");
     }
 
-    Instant now = Instant.now(clock);
+    Instant now = Instant.now();
     CardEntity card = new CardEntity();
     card.setId(UUID.randomUUID());
     card.setAccountId(accountId);
@@ -138,7 +138,7 @@ public class CardServiceImpl implements CardService {
           "Daily limit must not exceed " + maxDailyLimit.toPlainString());
     }
     card.setDailyLimit(request.dailyLimit());
-    card.setUpdatedAt(Instant.now(clock));
+    card.setUpdatedAt(Instant.now());
     cardRepository.save(card);
     return toResponse(card, accountNumberOf(card.getAccountId()));
   }
@@ -179,7 +179,7 @@ public class CardServiceImpl implements CardService {
 
   private CardResponse saveStatus(CardEntity card, CardStatus target) {
     card.setStatus(target);
-    card.setUpdatedAt(Instant.now(clock));
+    card.setUpdatedAt(Instant.now());
     cardRepository.save(card);
     return toResponse(card, accountNumberOf(card.getAccountId()));
   }
