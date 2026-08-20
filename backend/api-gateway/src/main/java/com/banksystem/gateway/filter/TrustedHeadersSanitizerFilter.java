@@ -24,6 +24,9 @@ public class TrustedHeadersSanitizerFilter implements GlobalFilter, Ordered {
           headers.remove(SecurityHeaders.INTERNAL_API_KEY);
           headers.remove(SecurityHeaders.GATEWAY_TIMESTAMP);
           headers.remove(SecurityHeaders.GATEWAY_SIGNATURE);
+          headers.remove(SecurityHeaders.B2B_CLIENT_ID);
+          headers.remove(SecurityHeaders.B2B_SCOPES);
+          headers.remove(SecurityHeaders.B2B_ORG_TAX);
         })
         .build();
     return chain.filter(exchange.mutate().request(request).build());

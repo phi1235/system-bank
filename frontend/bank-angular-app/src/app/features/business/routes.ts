@@ -45,4 +45,9 @@ export const BUSINESS_ROUTES: Routes = [
     loadComponent: () =>
       import('./members/business-members.component').then((m) => m.BusinessMembersComponent),
   },
+  {
+    path: 'open-banking',
+    loadComponent: () =>
+      import('../b2b-portal/b2b-portal.component').then((m) => m.B2bPortalComponent),
+  },
 ];

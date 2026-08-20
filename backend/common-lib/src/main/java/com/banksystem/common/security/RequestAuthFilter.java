@@ -41,6 +41,16 @@ public class RequestAuthFilter extends OncePerRequestFilter {
         // invalid user id header — leave unauthenticated
       }
     }
+
+    String b2bClientId = request.getHeader(SecurityHeaders.B2B_CLIENT_ID);
+    if (b2bClientId != null && !b2bClientId.isBlank()) {
+      List<String> scopes = splitCsv(request.getHeader(SecurityHeaders.B2B_SCOPES));
+      String certThumbprint = request.getHeader(SecurityHeaders.B2B_CERT_THUMBPRINT);
+      String orgTax = request.getHeader(SecurityHeaders.B2B_ORG_TAX);
+      B2bClientPrincipal b2bUser = new B2bClientPrincipal(b2bClientId, scopes, certThumbprint, orgTax);
+      request.setAttribute(B2bContext.ATTR, b2bUser);
+    }
+
     filterChain.doFilter(request, response);
   }
 

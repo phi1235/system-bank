@@ -18,6 +18,22 @@ spring:
           uri: lb://AUTH-SERVICE
           predicates:
             - Path=/api/v1/auth/**
+        - id: openbanking-auth
+          uri: lb://AUTH-SERVICE
+          predicates:
+            - Path=/open-banking/v1/oauth2/**,/open-banking/v1/consents/**
+        - id: openbanking-accounts
+          uri: lb://ACCOUNT-SERVICE
+          predicates:
+            - Path=/open-banking/v1/accounts/**
+        - id: openbanking-payments
+          uri: lb://TRANSACTION-SERVICE
+          predicates:
+            - Path=/open-banking/v1/payments/**
+        - id: b2b-portal-routes
+          uri: lb://AUTH-SERVICE
+          predicates:
+            - Path=/api/v1/b2b-portal/**
         - id: customer-service
           uri: lb://CUSTOMER-SERVICE
           predicates:

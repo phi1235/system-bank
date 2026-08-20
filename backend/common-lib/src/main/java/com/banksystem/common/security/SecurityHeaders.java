@@ -10,10 +10,19 @@ public final class SecurityHeaders {
   public static final String GATEWAY_TIMESTAMP = "X-Gateway-Timestamp";
   public static final String GATEWAY_SIGNATURE = "X-Gateway-Signature";
 
+  /* ── Open Banking B2B Headers & FAPI ── */
+  public static final String B2B_CLIENT_ID = "X-B2B-Client-Id";
+  public static final String B2B_SCOPES = "X-B2B-Scopes";
+  public static final String B2B_CERT_THUMBPRINT = "X-B2B-Cert-Thumbprint";
+  public static final String B2B_ORG_TAX = "X-B2B-Org-Tax";
+  public static final String JWS_SIGNATURE = "X-JWS-Signature";
+
   public static final String JWT_CLAIM_ROLES = "roles";
   public static final String JWT_CLAIM_PERMISSIONS = "permissions";
   public static final String JWT_CLAIM_TYPE = "typ";
   public static final String JWT_CLAIM_REALM = "realm";
+  public static final String JWT_CLAIM_CNF = "cnf";
+  public static final String JWT_CLAIM_CLIENT_ID = "client_id";
 
   /* ── Granular BO permissions: screen:feature:action ── */
   public static final String PERM_DASHBOARD_VIEW = "dashboard:view";
@@ -91,6 +100,21 @@ public final class SecurityHeaders {
   public static final String PERM_CORP_MATRIX_MANAGE = "corp:matrix:manage";
   public static final String PERM_CORP_RECEIPT_DOWNLOAD = "corp:receipt:download";
   public static final String PERM_CORP_AUDIT_VIEW = "corp:audit:view";
+
+  /* ── Open Banking B2B Scopes ── */
+  public static final String SCOPE_OPENBANKING_ACCOUNTS_READ = "openbanking:accounts:read";
+  public static final String SCOPE_OPENBANKING_STATEMENTS_READ = "openbanking:statements:read";
+  public static final String SCOPE_OPENBANKING_PAYMENTS_WRITE = "openbanking:payments:write";
+  public static final String SCOPE_OPENBANKING_PAYMENTS_BULK_WRITE = "openbanking:payments:bulk:write";
+  public static final String SCOPE_OPENBANKING_PAYMENTS_READ = "openbanking:payments:read";
+
+  /* ── Open Banking Developer Portal Permissions ── */
+  public static final String PERM_B2B_OPENBANKING_APPS_VIEW = "b2b:openbanking:apps:view";
+  public static final String PERM_B2B_OPENBANKING_APPS_MANAGE = "b2b:openbanking:apps:manage";
+  public static final String PERM_B2B_OPENBANKING_CONSENTS_VIEW = "b2b:openbanking:consents:view";
+  public static final String PERM_B2B_OPENBANKING_CONSENTS_MANAGE = "b2b:openbanking:consents:manage";
+  public static final String PERM_B2B_OPENBANKING_SANDBOX_USE = "b2b:openbanking:sandbox:use";
+  public static final String PERM_B2B_OPENBANKING_LOGS_VIEW = "b2b:openbanking:logs:view";
 
   private SecurityHeaders() {}
 }

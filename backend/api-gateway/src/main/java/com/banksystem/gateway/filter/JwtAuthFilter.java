@@ -45,7 +45,10 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
       // SePay bank webhook (authenticated via Apikey/HMAC in service)
       "/api/v1/payments/sepay/webhook",
       // Dev-only sandbox — no auth, local env only
-      "/api/v1/dev/notifications/sandbox"
+      "/api/v1/dev/notifications/sandbox",
+      // Open Banking FAPI OAuth2 Token & JWKS endpoints
+      "/open-banking/v1/oauth2/token",
+      "/open-banking/v1/oauth2/jwks"
       // /actuator is intentionally NOT public on the gateway app port;
       // management endpoints live on MANAGEMENT_SERVER_PORT.
   );
@@ -94,6 +97,24 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
       return unauthorized(exchange, "Access token required");
     }
 
+    // FAPI Certificate-Bound Token verification (RFC 8705)
+    Object cnfObj = claims.get(SecurityHeaders.JWT_CLAIM_CNF);
+    if (cnfObj instanceof Map<?, ?> cnfMap) {
+      Object tokenX5t = cnfMap.get("x5t#S256");
+      if (tokenX5t != null) {
+        String clientCertThumbprint = exchange.getRequest().getHeaders().getFirst(SecurityHeaders.B2B_CERT_THUMBPRINT);
+        if (clientCertThumbprint == null || clientCertThumbprint.isBlank()) {
+          clientCertThumbprint = exchange.getRequest().getHeaders().getFirst("X-Client-Cert-Thumbprint");
+        }
+        if (clientCertThumbprint == null || clientCertThumbprint.isBlank()) {
+          clientCertThumbprint = exchange.getRequest().getHeaders().getFirst("X-SSL-Client-SHA256");
+        }
+        if (clientCertThumbprint != null && !clientCertThumbprint.isBlank() && !clientCertThumbprint.equalsIgnoreCase(tokenX5t.toString())) {
+          return unauthorized(exchange, "Certificate binding mismatch (FAPI x5t#S256)");
+        }
+      }
+    }
+
     String jti = claims.getId();
     Mono<Boolean> blacklisted = jti == null
         ? Mono.just(false)
@@ -107,12 +128,24 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
       String roles = normalizeListClaim(claims.get(SecurityHeaders.JWT_CLAIM_ROLES));
       String permissions = normalizeListClaim(claims.get(SecurityHeaders.JWT_CLAIM_PERMISSIONS));
       String realm = claims.get(SecurityHeaders.JWT_CLAIM_REALM, String.class);
+
+      String b2bClientId = claims.get(SecurityHeaders.JWT_CLAIM_CLIENT_ID, String.class);
+      String b2bScopes = claims.get(SecurityHeaders.B2B_SCOPES, String.class);
+      String b2bOrgTax = claims.get(SecurityHeaders.B2B_ORG_TAX, String.class);
+
       ServerHttpRequest request = exchange.getRequest().mutate()
           .headers(headers -> {
             headers.set(SecurityHeaders.USER_ID, userId == null ? "" : userId);
             headers.set(SecurityHeaders.USER_ROLES, roles);
             headers.set(SecurityHeaders.USER_PERMISSIONS, permissions);
             headers.set(SecurityHeaders.USER_REALM, realm == null ? "" : realm);
+            if (b2bClientId != null && !b2bClientId.isBlank()) {
+              headers.set(SecurityHeaders.B2B_CLIENT_ID, b2bClientId);
+              headers.set(SecurityHeaders.B2B_SCOPES, b2bScopes != null ? b2bScopes : permissions);
+              if (b2bOrgTax != null) {
+                headers.set(SecurityHeaders.B2B_ORG_TAX, b2bOrgTax);
+              }
+            }
           })
           .build();
       return chain.filter(exchange.mutate().request(request).build());
