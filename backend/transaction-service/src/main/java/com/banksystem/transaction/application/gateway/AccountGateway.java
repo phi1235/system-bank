@@ -12,8 +12,11 @@ public interface AccountGateway {
   AccountView getAccount(UUID accountId);
   AccountView getAccountByNumber(String accountNumber);
   MoneyResult debit(UUID accountId, MoneyCommand command);
+  MoneyResult debitAgainstHold(UUID accountId, UUID holdId, UUID batchId, MoneyCommand command);
   MoneyResult credit(UUID accountId, MoneyCommand command);
   MoneyResult compensateCredit(UUID accountId, MoneyCommand command);
+  MoneyResult compensateCreditAgainstHold(
+      UUID accountId, UUID holdId, UUID batchId, MoneyCommand command);
   AccountHoldView createHold(UUID accountId, CreateHoldCommand command);
   boolean processRemediationInbox(AdjustmentRequestedEventRequest request);
 }

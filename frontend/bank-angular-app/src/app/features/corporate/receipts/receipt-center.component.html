@@ -1,0 +1,46 @@
+    <div class="receipts-page">
+      <div class="page-title-row">
+        <div>
+          <h2>{{ 'CORPORATE.NAV_RECEIPTS' | translate }}</h2>
+          <p class="subtitle">{{ 'CORPORATE.RECEIPTS_SUB' | translate }}</p>
+        </div>
+      </div>
+
+      <div class="batches-grid" *ngIf="batches.length > 0; else emptyState">
+        <mat-card class="batch-receipt-card" *ngFor="let b of batches">
+          <div class="card-top">
+            <div>
+              <h3>{{ b.batchName }}</h3>
+              <span class="sub-text">{{ 'CORPORATE.COMPLETED_AT_LABEL' | translate: { time: (b.completedAt | date: 'dd/MM/yyyy HH:mm') } }}</span>
+            </div>
+            <span class="status-chip" [attr.data-status]="b.status">{{ b.status }}</span>
+          </div>
+
+          <div class="stats-row">
+            <div>
+              <span class="lbl">{{ 'CORPORATE.SUCCESS_COUNT' | translate }}</span>
+              <span class="val text-green-600">{{ b.successfulItems }} / {{ b.totalItems }}</span>
+            </div>
+            <div>
+              <span class="lbl">{{ 'CORPORATE.TOTAL_AMOUNT' | translate }}</span>
+              <span class="val">{{ b.totalAmount | number }} {{ b.currency }}</span>
+            </div>
+          </div>
+
+          <div class="card-actions">
+            <button mat-flat-button color="primary" (click)="downloadConsolidatedReport(b.id)">
+              <mat-icon>picture_as_pdf</mat-icon>
+              {{ 'CORPORATE.DOWNLOAD_CONSOLIDATED_REPORT_PDF' | translate }}
+            </button>
+          </div>
+        </mat-card>
+      </div>
+
+      <ng-template #emptyState>
+        <mat-card class="empty-card">
+          <mat-icon class="empty-icon">cloud_download</mat-icon>
+          <h3>{{ 'CORPORATE.RECEIPTS_EMPTY' | translate }}</h3>
+          <p>{{ 'CORPORATE.RECEIPTS_EMPTY_DESC' | translate }}</p>
+        </mat-card>
+      </ng-template>
+    </div>

@@ -12,6 +12,8 @@ public final class AccountClientDtos {
   public record AccountView(
       String id,
       String userId,
+      String ownerType,
+      String ownerId,
       String accountNumber,
       String accountType,
       String currency,
@@ -23,7 +25,15 @@ public final class AccountClientDtos {
     }
 
     public UUID userIdUuid() {
-      return UUID.fromString(userId);
+      return userId != null ? UUID.fromString(userId) : null;
+    }
+
+    public UUID ownerIdUuid() {
+      return ownerId != null ? UUID.fromString(ownerId) : null;
+    }
+
+    public boolean isCorporate() {
+      return "CORPORATE".equalsIgnoreCase(ownerType);
     }
   }
 
@@ -39,6 +49,18 @@ public final class AccountClientDtos {
       this(amount, referenceId, description, commandId, false);
     }
   }
+
+  public record DebitAgainstHoldCommand(
+      UUID holdId,
+      UUID batchId,
+      MoneyCommand command
+  ) {}
+
+  public record CompensateCreditAgainstHoldCommand(
+      UUID holdId,
+      UUID batchId,
+      MoneyCommand command
+  ) {}
 
   public record MoneyResult(String ledgerEntryId, BigDecimal balanceAfter) {}
 

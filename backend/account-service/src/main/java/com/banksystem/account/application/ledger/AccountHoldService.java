@@ -1,8 +1,10 @@
 package com.banksystem.account.application.ledger;
 
+import com.banksystem.account.api.dto.AccountHoldDtos.CreateBatchHoldRequest;
 import com.banksystem.account.api.dto.AccountHoldDtos.CreateHoldRequest;
 import com.banksystem.account.api.dto.AccountHoldDtos.HoldActionRequest;
 import com.banksystem.account.api.dto.AccountHoldDtos.HoldResponse;
+import com.banksystem.account.api.dto.AccountHoldDtos.PartialCaptureHoldRequest;
 import com.banksystem.account.domain.account.AccountEntity;
 import com.banksystem.account.domain.account.AccountRepository;
 import com.banksystem.account.domain.ledger.AccountHoldEntity;
@@ -38,7 +40,7 @@ public class AccountHoldService {
       LedgerJournalRepository journalRepository,
       JdbcTemplate jdbcTemplate,
       Clock clock,
-      @Value("${bank.ledger.hold-expiry.batch-size}") int expiryBatchSize) {
+      @Value("${bank.ledger.hold-expiry.batch-size:100}") int expiryBatchSize) {
     this.holdRepository = holdRepository;
     this.accountRepository = accountRepository;
     this.journalRepository = journalRepository;
@@ -78,6 +80,36 @@ public class AccountHoldService {
   }
 
   @Transactional
+  public HoldResponse createBatchHold(UUID accountId, CreateBatchHoldRequest request) {
+    AccountHoldEntity duplicate = holdRepository
+        .findByAccountIdAndCommandId(accountId, request.commandId()).orElse(null);
+    if (duplicate != null) return toResponse(duplicate);
+
+    AccountEntity account = accountRepository.findById(accountId).orElseThrow(() ->
+        new BusinessException("ACCOUNT_NOT_FOUND", "Account not found"));
+    if (!account.getCurrency().equalsIgnoreCase(request.currency())) {
+      throw new BusinessException("HOLD_CURRENCY_MISMATCH", "Hold currency does not match account");
+    }
+    BigDecimal available = jdbcTemplate.queryForObject(
+        "SELECT available_balance FROM accounts WHERE id = ? FOR UPDATE",
+        BigDecimal.class,
+        accountId);
+    if (available == null || available.compareTo(request.amount()) < 0) {
+      throw new BusinessException("INSUFFICIENT_AVAILABLE_BALANCE", "Available balance is insufficient");
+    }
+
+    Instant now = clock.instant();
+    AccountHoldEntity hold = AccountHoldEntity.activeForBatch(
+        UUID.randomUUID(), accountId, request.batchId(), request.commandId(), request.amount(),
+        request.currency().toUpperCase(), request.expiresAt(), now);
+    holdRepository.saveAndFlush(hold);
+    recordCommand(request.commandId(), hold.getId(), "CREATE_BATCH");
+    log.info("[ACCOUNT-HOLD] Created ACTIVE batch hold [{}] Account=[{}] BatchId=[{}] Amount={} {}",
+        hold.getId(), accountId, request.batchId(), request.amount(), request.currency());
+    return toResponse(hold);
+  }
+
+  @Transactional
   public HoldResponse capture(UUID holdId, HoldActionRequest request) {
     if (request.journalId() == null) {
       throw new BusinessException("JOURNAL_ID_REQUIRED", "journalId is required for capture");
@@ -94,6 +126,28 @@ public class AccountHoldService {
     AccountHoldEntity saved = holdRepository.saveAndFlush(hold);
     log.info("[ACCOUNT-HOLD] Captured hold [{}] with Journal=[{}] TxId=[{}]",
         holdId, journal.getId(), hold.getTransactionId());
+    return toResponse(saved);
+  }
+
+  @Transactional
+  public HoldResponse partialCapture(UUID holdId, PartialCaptureHoldRequest request) {
+    AccountHoldEntity hold = require(holdId);
+    if (!recordCommand(request.commandId(), holdId, "PARTIAL_CAPTURE")) return toResponse(hold);
+    transition(() -> hold.partialCapture(request.amount(), clock.instant()));
+    AccountHoldEntity saved = holdRepository.saveAndFlush(hold);
+    log.info("[ACCOUNT-HOLD] Partial captured hold [{}] Amount={} TotalCaptured={}",
+        holdId, request.amount(), saved.getCapturedAmount());
+    return toResponse(saved);
+  }
+
+  @Transactional
+  public HoldResponse releaseRemaining(UUID holdId, HoldActionRequest request) {
+    AccountHoldEntity hold = require(holdId);
+    if (!recordCommand(request.commandId(), holdId, "RELEASE_REMAINING")) return toResponse(hold);
+    transition(() -> hold.releaseRemaining(clock.instant()));
+    AccountHoldEntity saved = holdRepository.saveAndFlush(hold);
+    log.info("[ACCOUNT-HOLD] Released remaining hold [{}] ReleasedAmount={}",
+        holdId, saved.getReleasedAmount());
     return toResponse(saved);
   }
 
@@ -156,8 +210,20 @@ public class AccountHoldService {
 
   private HoldResponse toResponse(AccountHoldEntity hold) {
     return new HoldResponse(
-        hold.getId(), hold.getAccountId(), hold.getTransactionId(), hold.getAmount(),
-        hold.getCurrency(), hold.getStatus(), hold.getExpiresAt(), hold.getCapturedJournalId(),
-        hold.getCreatedAt(), hold.getUpdatedAt(), hold.getVersion());
+        hold.getId(),
+        hold.getAccountId(),
+        hold.getTransactionId(),
+        hold.getBatchId(),
+        hold.getAmount(),
+        hold.getOriginalAmount(),
+        hold.getCapturedAmount(),
+        hold.getReleasedAmount(),
+        hold.getCurrency(),
+        hold.getStatus(),
+        hold.getExpiresAt(),
+        hold.getCapturedJournalId(),
+        hold.getCreatedAt(),
+        hold.getUpdatedAt(),
+        hold.getVersion());
   }
 }

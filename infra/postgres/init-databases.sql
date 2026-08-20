@@ -10,3 +10,4 @@ CREATE DATABASE bank_customer;
 CREATE DATABASE bank_account;
 CREATE DATABASE bank_transaction;
 CREATE DATABASE bank_notification;
+CREATE DATABASE bank_corporate;

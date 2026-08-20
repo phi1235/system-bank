@@ -1,16 +1,10 @@
 package com.banksystem.account.application.account;
-import com.banksystem.account.application.account.*;
-import com.banksystem.account.application.card.*;
-import com.banksystem.account.application.deposit.*;
-import com.banksystem.account.application.ledger.*;
-import com.banksystem.account.domain.account.*;
-import com.banksystem.account.domain.card.*;
-import com.banksystem.account.domain.deposit.*;
-import com.banksystem.account.domain.ledger.*;
-import com.banksystem.account.api.dto.*;
 
 import com.banksystem.account.api.dto.AccountDtos.AccountResponse;
 import com.banksystem.account.api.dto.AccountDtos.LedgerEntryResponse;
+import com.banksystem.account.domain.account.AccountEntity;
+import com.banksystem.account.domain.ledger.LedgerEntryEntity;
+import com.banksystem.account.domain.ledger.LedgerEntryType;
 import java.math.BigDecimal;
 import org.springframework.stereotype.Component;
 
@@ -22,6 +16,8 @@ public class AccountMapper {
     return new AccountResponse(
         a.getId().toString(),
         a.getUserId().toString(),
+        a.getOwnerType(),
+        a.getOwnerId() != null ? a.getOwnerId().toString() : a.getUserId().toString(),
         a.getAccountNumber(),
         a.getAccountType(),
         a.getCurrency(),

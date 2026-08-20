@@ -31,6 +31,13 @@ export const routes: Routes = [
   },
 
   {
+    path: 'corporate',
+    canActivate: [authGuard],
+    loadChildren: () =>
+      import('./features/corporate/corporate.routes').then((m) => m.CORPORATE_ROUTES),
+  },
+
+  {
     path: 'business',
     canActivate: [authGuard],
     component: BusinessShellComponent,

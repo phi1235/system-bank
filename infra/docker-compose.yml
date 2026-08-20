@@ -62,6 +62,21 @@ services:
     networks:
       - bank-net
 
+  minio-init:
+    image: minio/mc:RELEASE.2025-04-16T18-13-26Z
+    container_name: bank-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        mc alias set bank http://bank-minio:${MINIO_CONTAINER_PORT} "${MINIO_ROOT_USER}" "${MINIO_ROOT_PASSWORD}" &&
+        mc mb --ignore-existing bank/${CORPORATE_STORAGE_BUCKET:-bank-corporate}
+    restart: "no"
+    networks:
+      - bank-net
+
   clamav:
     image: clamav/clamav:1.4.3
     container_name: bank-clamav
@@ -259,6 +274,8 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
       clamav:
         condition: service_healthy
     healthcheck:
@@ -545,6 +562,60 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:${NOTIFICATION_SERVICE_PORT}/actuator/health | grep -q UP || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 70s
+    networks:
+      - bank-net
+
+  corporate-service:
+    build:
+      context: ../backend
+      dockerfile: corporate-service/Dockerfile
+    container_name: bank-corporate
+    environment:
+      SERVER_PORT: ${CORPORATE_SERVICE_PORT:-8088}
+      DB_HOST: ${POSTGRES_HOST}
+      DB_PORT: ${POSTGRES_CONTAINER_PORT}
+      DB_NAME: ${CORPORATE_DB_NAME:-bank_corporate}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in infra/.env}
+      EUREKA_URL: ${EUREKA_URL}
+      GATEWAY_MAX_CLOCK_SKEW_SECONDS: ${GATEWAY_MAX_CLOCK_SKEW_SECONDS}
+      GATEWAY_SIGNING_SECRET: ${GATEWAY_SIGNING_SECRET:?GATEWAY_SIGNING_SECRET must be set in infra/.env}
+      TRACING_SAMPLE_PROBABILITY: ${TRACING_SAMPLE_PROBABILITY}
+      KAFKA_BOOTSTRAP: ${KAFKA_BOOTSTRAP}
+      CORPORATE_INTERNAL_API_KEY: ${CORPORATE_INTERNAL_API_KEY:?CORPORATE_INTERNAL_API_KEY must be set in infra/.env}
+      ACCOUNT_INTERNAL_API_KEY: ${ACCOUNT_INTERNAL_API_KEY:?ACCOUNT_INTERNAL_API_KEY must be set in infra/.env}
+      TRANSACTION_INTERNAL_API_KEY: ${TRANSACTION_INTERNAL_API_KEY:?TRANSACTION_INTERNAL_API_KEY must be set in infra/.env}
+      AUTH_INTERNAL_API_KEY: ${AUTH_INTERNAL_API_KEY:?AUTH_INTERNAL_API_KEY must be set in infra/.env}
+      NOTIFICATION_INTERNAL_API_KEY: ${NOTIFICATION_INTERNAL_API_KEY:?NOTIFICATION_INTERNAL_API_KEY must be set in infra/.env}
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT:-http://bank-minio:9000}
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      CORPORATE_STORAGE_BUCKET: ${CORPORATE_STORAGE_BUCKET:-bank-corporate}
+      CA_PROVIDER: ${CA_PROVIDER:?CA_PROVIDER must be explicitly set (mock only for local development)}
+      CA_BASE_URL: ${CA_BASE_URL:-}
+      CA_API_KEY: ${CA_API_KEY:-}
+      ZIPKIN_ENDPOINT: ${ZIPKIN_ENDPOINT}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      account-service:
+        condition: service_healthy
+      transaction-service:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:${CORPORATE_SERVICE_PORT:-8088}/actuator/health | grep -q UP || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 15

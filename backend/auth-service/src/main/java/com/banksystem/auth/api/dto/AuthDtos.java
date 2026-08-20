@@ -20,6 +20,10 @@ public final class AuthDtos {
 
   public record InternalUserCountsResponse(long users, long usersLocked) {}
 
+  public record VerifyTotpRequest(@NotBlank String code) {}
+
+  public record VerifyTotpResponse(boolean valid) {}
+
   public record LoginRequest(
       @NotBlank String username,
       @NotBlank String password

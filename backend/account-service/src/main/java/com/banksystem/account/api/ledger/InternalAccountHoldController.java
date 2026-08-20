@@ -1,8 +1,10 @@
 package com.banksystem.account.api.ledger;
 
+import com.banksystem.account.api.dto.AccountHoldDtos.CreateBatchHoldRequest;
 import com.banksystem.account.api.dto.AccountHoldDtos.CreateHoldRequest;
 import com.banksystem.account.api.dto.AccountHoldDtos.HoldActionRequest;
 import com.banksystem.account.api.dto.AccountHoldDtos.HoldResponse;
+import com.banksystem.account.api.dto.AccountHoldDtos.PartialCaptureHoldRequest;
 import com.banksystem.account.application.ledger.AccountHoldService;
 import com.banksystem.common.api.ApiResponse;
 import com.banksystem.common.security.RequireInternalApiKey;
@@ -31,11 +33,32 @@ public class InternalAccountHoldController {
     return ApiResponse.ok(holdService.create(accountId, request));
   }
 
+  @PostMapping("/batch/accounts/{accountId}")
+  public ApiResponse<HoldResponse> createBatchHold(
+      @PathVariable UUID accountId,
+      @Valid @RequestBody CreateBatchHoldRequest request) {
+    return ApiResponse.ok(holdService.createBatchHold(accountId, request));
+  }
+
   @PostMapping("/{holdId}/capture")
   public ApiResponse<HoldResponse> capture(
       @PathVariable UUID holdId,
       @Valid @RequestBody HoldActionRequest request) {
     return ApiResponse.ok(holdService.capture(holdId, request));
+  }
+
+  @PostMapping("/{holdId}/partial-capture")
+  public ApiResponse<HoldResponse> partialCapture(
+      @PathVariable UUID holdId,
+      @Valid @RequestBody PartialCaptureHoldRequest request) {
+    return ApiResponse.ok(holdService.partialCapture(holdId, request));
+  }
+
+  @PostMapping("/{holdId}/release-remaining")
+  public ApiResponse<HoldResponse> releaseRemaining(
+      @PathVariable UUID holdId,
+      @Valid @RequestBody HoldActionRequest request) {
+    return ApiResponse.ok(holdService.releaseRemaining(holdId, request));
   }
 
   @PostMapping("/{holdId}/release")

@@ -23,11 +23,26 @@ public final class AccountHoldDtos {
       @NotBlank @Size(max = 160) String commandId,
       UUID journalId) {}
 
+  public record CreateBatchHoldRequest(
+      @NotNull UUID batchId,
+      @NotBlank @Size(max = 160) String commandId,
+      @NotNull @DecimalMin("0.01") BigDecimal amount,
+      @NotBlank @Size(min = 3, max = 3) String currency,
+      @NotNull @Future Instant expiresAt) {}
+
+  public record PartialCaptureHoldRequest(
+      @NotBlank @Size(max = 160) String commandId,
+      @NotNull @DecimalMin("0.01") BigDecimal amount) {}
+
   public record HoldResponse(
       UUID id,
       UUID accountId,
       UUID transactionId,
+      UUID batchId,
       BigDecimal amount,
+      BigDecimal originalAmount,
+      BigDecimal capturedAmount,
+      BigDecimal releasedAmount,
       String currency,
       String status,
       Instant expiresAt,

@@ -1,0 +1,108 @@
+    .inbox-page { display: flex; flex-direction: column; gap: 1.5rem; }
+    .page-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      h2 { margin: 0; font-size: 1.5rem; font-weight: 700; color: #0f172a; }
+      .subtitle { margin: 0.25rem 0 0; color: #64748b; font-size: 0.95rem; }
+    }
+    .tasks-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 1.25rem;
+    }
+    .task-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1.25rem;
+      border: 1px solid #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .task-top { display: flex; justify-content: space-between; align-items: center; }
+    .task-badge {
+      font-weight: 700;
+      font-size: 0.75rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+      background: #e0e7ff;
+      color: #3730a3;
+    }
+    .auth-chip {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+      mat-icon { font-size: 14px; width: 14px; height: 14px; }
+      &[data-auth="STANDARD"] { background: #f1f5f9; color: #475569; }
+      &[data-auth="TOTP_STEPUP"] { background: #fef3c7; color: #b45309; }
+      &[data-auth="DIGITAL_SIGNATURE_CA"] { background: #fee2e2; color: #b91c1c; }
+    }
+    .task-body { margin: 1rem 0; display: flex; flex-direction: column; gap: 0.5rem; }
+    .batch-name { margin: 0; font-size: 1.1rem; font-weight: 700; color: #0f172a; }
+    .step-info { display: flex; justify-content: space-between; font-size: 0.85rem; color: #475569; }
+    .amount-box {
+      background: #f8fafc;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+      .lbl { font-size: 0.85rem; color: #64748b; }
+      .val { font-size: 1.1rem; font-weight: 700; color: #2563eb; }
+      .items-count { font-size: 0.85rem; color: #64748b; }
+    }
+    .task-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid #f1f5f9;
+      padding-top: 1rem;
+      margin-top: 0.5rem;
+    }
+    .btn-group { display: flex; gap: 0.5rem; }
+    .empty-card {
+      text-align: center;
+      padding: 4rem 1rem;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      background: #fff;
+      .empty-icon { font-size: 4rem; width: 4rem; height: 4rem; color: #16a34a; margin-bottom: 1rem; }
+      h3 { margin: 0; font-size: 1.25rem; font-weight: 700; color: #0f172a; }
+      p { color: #64748b; margin-top: 0.5rem; }
+    }
+    .dialog-container { padding: 1.5rem; min-width: 480px; }
+    .w-full { width: 100%; }
+    .challenge-info {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+    }
+    .info-row { display: flex; justify-content: space-between; align-items: center; }
+    .hash-code { font-family: monospace; font-size: 0.8rem; background: #e2e8f0; padding: 0.1rem 0.3rem; border-radius: 4px; }
+    .ca-banner {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      color: #1e40af;
+      margin-bottom: 0.75rem;
+      mat-icon { font-size: 2rem; width: 2rem; height: 2rem; }
+      p { margin: 0; font-size: 0.8rem; }
+    }

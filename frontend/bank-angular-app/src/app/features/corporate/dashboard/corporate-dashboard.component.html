@@ -1,0 +1,107 @@
+    <div class="dashboard-page">
+      <div class="page-title-row">
+        <div>
+          <h2>{{ 'CORPORATE.DASHBOARD_TITLE' | translate }}</h2>
+          <p class="subtitle">{{ 'CORPORATE.DASHBOARD_SUB' | translate }}</p>
+        </div>
+        <div class="actions">
+          <a mat-flat-button color="primary" routerLink="../payouts/create">
+            <mat-icon>add</mat-icon>
+            {{ 'CORPORATE.CREATE_PAYOUT_BATCH' | translate }}
+          </a>
+        </div>
+      </div>
+
+      <!-- KPI Summary Cards -->
+      <div class="kpi-grid">
+        <mat-card class="kpi-card">
+          <div class="kpi-icon" style="background: #e0e7ff; color: #4338ca;">
+            <mat-icon>account_balance</mat-icon>
+          </div>
+          <div class="kpi-info">
+            <span class="label">{{ 'CORPORATE.TOTAL_ACCOUNTS' | translate }}</span>
+            <span class="value">{{ accounts.length }}</span>
+          </div>
+        </mat-card>
+
+        <mat-card class="kpi-card">
+          <div class="kpi-icon" style="background: #fef3c7; color: #d97706;">
+            <mat-icon>pending_actions</mat-icon>
+          </div>
+          <div class="kpi-info">
+            <span class="label">{{ 'CORPORATE.PENDING_APPROVALS' | translate }}</span>
+            <span class="value">{{ pendingBatchCount }}</span>
+          </div>
+        </mat-card>
+
+        <mat-card class="kpi-card">
+          <div class="kpi-icon" style="background: #dcfce7; color: #15803d;">
+            <mat-icon>check_circle</mat-icon>
+          </div>
+          <div class="kpi-info">
+            <span class="label">{{ 'CORPORATE.COMPLETED_BATCHES' | translate }}</span>
+            <span class="value">{{ completedBatchCount }}</span>
+          </div>
+        </mat-card>
+
+        <mat-card class="kpi-card">
+          <div class="kpi-icon" style="background: #e0f2fe; color: #0284c7;">
+            <mat-icon>groups</mat-icon>
+          </div>
+          <div class="kpi-info">
+            <span class="label">{{ 'CORPORATE.TOTAL_MEMBERS' | translate }}</span>
+            <span class="value">{{ members.length }}</span>
+          </div>
+        </mat-card>
+      </div>
+
+      <!-- Recent Batches -->
+      <div class="section-card">
+        <div class="section-header">
+          <h3>{{ 'CORPORATE.RECENT_BATCHES' | translate }}</h3>
+          <a mat-button color="primary" routerLink="../payouts">{{ 'COMMON.VIEW_ALL' | translate }} &rarr;</a>
+        </div>
+
+        <div class="table-responsive" *ngIf="recentBatches.length > 0; else noBatches">
+          <table class="corp-table">
+            <thead>
+              <tr>
+                <th>{{ 'CORPORATE.BATCH_NAME' | translate }}</th>
+                <th>{{ 'CORPORATE.SOURCE_ACCOUNT' | translate }}</th>
+                <th>{{ 'CORPORATE.ITEMS_COUNT' | translate }}</th>
+                <th>{{ 'CORPORATE.TOTAL_AMOUNT' | translate }}</th>
+                <th>{{ 'COMMON.STATUS' | translate }}</th>
+                <th>{{ 'COMMON.CREATED_AT' | translate }}</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let b of recentBatches">
+                <td class="font-bold">{{ b.batchName }}</td>
+                <td>{{ b.sourceAccountNumber }}</td>
+                <td>{{ b.totalItems }} {{ 'CORPORATE.ITEMS_UNIT' | translate }}</td>
+                <td class="amount-cell">{{ b.totalAmount | number }} {{ b.currency }}</td>
+                <td>
+                  <span class="status-chip" [attr.data-status]="b.status">{{ b.status }}</span>
+                </td>
+                <td class="text-muted">{{ b.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+                <td>
+                  <a mat-stroked-button color="primary" [routerLink]="['../payouts', b.id]">
+                    {{ 'COMMON.DETAILS' | translate }}
+                  </a>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <ng-template #noBatches>
+          <div class="empty-state">
+            <mat-icon>inbox</mat-icon>
+            <p>{{ 'CORPORATE.NO_BATCHES_YET' | translate }}</p>
+            <a mat-flat-button color="primary" routerLink="../payouts/create">
+              {{ 'CORPORATE.CREATE_PAYOUT_BATCH' | translate }}
+            </a>
+          </div>
+        </ng-template>
+      </div>
+    </div>

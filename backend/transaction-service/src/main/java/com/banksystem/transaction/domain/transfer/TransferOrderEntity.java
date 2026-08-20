@@ -28,6 +28,24 @@ public class TransferOrderEntity {
   @Column(name = "user_id", nullable = false)
   private UUID userId;
 
+  @Column(name = "corporate_id")
+  private UUID corporateId;
+
+  @Column(name = "batch_id")
+  private UUID batchId;
+
+  @Column(name = "batch_item_id")
+  private UUID batchItemId;
+
+  @Column(name = "hold_id")
+  private UUID holdId;
+
+  @Column(name = "initiated_by")
+  private UUID initiatedBy;
+
+  @Column(name = "execution_version", nullable = false)
+  private int executionVersion = 1;
+
   @Column(name = "from_account_id", nullable = false)
   private UUID fromAccountId;
 
@@ -452,5 +470,53 @@ public class TransferOrderEntity {
 
   public void setUpdatedAt(Instant updatedAt) {
     this.updatedAt = updatedAt;
+  }
+
+  public UUID getCorporateId() {
+    return corporateId;
+  }
+
+  public void setCorporateId(UUID corporateId) {
+    this.corporateId = corporateId;
+  }
+
+  public UUID getBatchId() {
+    return batchId;
+  }
+
+  public void setBatchId(UUID batchId) {
+    this.batchId = batchId;
+  }
+
+  public UUID getBatchItemId() {
+    return batchItemId;
+  }
+
+  public void setBatchItemId(UUID batchItemId) {
+    this.batchItemId = batchItemId;
+  }
+
+  public UUID getHoldId() {
+    return holdId;
+  }
+
+  public void setHoldId(UUID holdId) {
+    this.holdId = holdId;
+  }
+
+  public UUID getInitiatedBy() {
+    return initiatedBy;
+  }
+
+  public void setInitiatedBy(UUID initiatedBy) {
+    this.initiatedBy = initiatedBy;
+  }
+
+  public int getExecutionVersion() {
+    return executionVersion;
+  }
+
+  public void setExecutionVersion(int executionVersion) {
+    this.executionVersion = executionVersion;
   }
 }

@@ -1,0 +1,46 @@
+    .accounts-page { display: flex; flex-direction: column; gap: 1.5rem; }
+    .page-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      h2 { margin: 0; font-size: 1.5rem; font-weight: 700; color: #0f172a; }
+      .subtitle { margin: 0.25rem 0 0; color: #64748b; font-size: 0.95rem; }
+    }
+    .accounts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.25rem;
+    }
+    .account-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1.25rem;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .acc-top { display: flex; justify-content: space-between; align-items: center; }
+    .acc-badge { display: flex; align-items: center; gap: 0.5rem; font-weight: 600; color: #334155; mat-icon { color: #2563eb; } }
+    .primary-badge { background: #dcfce7; color: #15803d; font-size: 0.75rem; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 6px; }
+    .acc-body { margin: 1.25rem 0; }
+    .acc-num { font-family: monospace; font-size: 1.25rem; font-weight: 700; color: #0f172a; }
+    .balance-row { display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; }
+    .lbl { color: #64748b; font-size: 0.85rem; }
+    .balance-val { font-size: 1.25rem; font-weight: 700; color: #2563eb; }
+    .acc-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f1f5f9; padding-top: 0.75rem; font-size: 0.8rem; color: #64748b; }
+    .status-chip {
+      padding: 0.15rem 0.5rem;
+      border-radius: 9999px;
+      font-weight: 700;
+      font-size: 0.75rem;
+      &[data-status="ACTIVE"] { background: #dcfce7; color: #15803d; }
+    }
+    .empty-card {
+      text-align: center;
+      padding: 4rem 1rem;
+      border-radius: 12px;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      .empty-icon { font-size: 4rem; width: 4rem; height: 4rem; color: #94a3b8; margin-bottom: 1rem; }
+      h3 { margin: 0; font-size: 1.25rem; }
+      p { color: #64748b; margin: 0.5rem 0 1.5rem; }
+    }

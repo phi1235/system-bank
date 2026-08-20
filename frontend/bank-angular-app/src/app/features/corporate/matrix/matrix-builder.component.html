@@ -1,0 +1,239 @@
+    <div class="matrix-page">
+      <div class="page-title-row">
+        <div>
+          <h2>{{ 'CORPORATE.MATRIX_TITLE' | translate }}</h2>
+          <p class="subtitle">{{ 'CORPORATE.MATRIX_SUB' | translate }}</p>
+        </div>
+        <div class="actions">
+          <button mat-flat-button color="primary" (click)="openCreatePolicyModal()">
+            <mat-icon>add</mat-icon>
+            {{ 'CORPORATE.NEW_POLICY_VERSION' | translate }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Simulator Tool -->
+      <mat-card class="simulator-card">
+        <div class="card-header">
+          <div class="card-title">
+            <mat-icon color="primary">calculate</mat-icon>
+            <h3>{{ 'CORPORATE.SIMULATOR_TITLE' | translate }}</h3>
+          </div>
+          <span class="badge-tag">{{ 'CORPORATE.SIMULATOR_TAG' | translate }}</span>
+        </div>
+        <p class="card-desc">{{ 'CORPORATE.SIMULATOR_DESC' | translate }}</p>
+
+        <div class="sim-form">
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'CORPORATE.ENTER_AMOUNT' | translate }}</mat-label>
+            <input matInput type="number" [(ngModel)]="simulateAmount" [placeholder]="'CORPORATE.SIMULATE_PLACEHOLDER' | translate" />
+            <span matSuffix>VND&nbsp;</span>
+          </mat-form-field>
+          <button mat-flat-button color="accent" (click)="runSimulation()" [disabled]="!simulateAmount || simulateAmount <= 0">
+            <mat-icon>play_arrow</mat-icon>
+            {{ 'CORPORATE.SIMULATE_BUTTON' | translate }}
+          </button>
+        </div>
+
+        <!-- Simulation Result Pipeline -->
+        <div class="sim-result" *ngIf="simulatedPlan">
+          <div class="sim-header">
+            <span>{{ 'CORPORATE.MATCHED_TIER' | translate }}: <strong>{{ simulatedPlan.tierName }}</strong> ({{ simulatedPlan.minAmount | number }} - {{ simulatedPlan.maxAmount ? (simulatedPlan.maxAmount | number) : '∞' }} VND)</span>
+            <span class="policy-version">{{ 'CORPORATE.POLICY_LABEL' | translate: { name: simulatedPlan.policyName, version: simulatedPlan.policyVersion } }}</span>
+          </div>
+
+          <div class="stepper-pipeline">
+            <div class="step-card" *ngFor="let s of simulatedPlan.steps; let i = index">
+              <div class="step-num">{{ s.stepOrder }}</div>
+              <div class="step-body">
+                <span class="step-name">{{ s.stepName }}</span>
+                <span class="step-role">{{ s.requiredRole }} {{ 'CORPORATE.MIN_APPROVERS' | translate: { count: s.minApprovals } }}</span>
+                <span class="auth-tag" [attr.data-auth]="s.authMethod">{{ s.authMethod }}</span>
+                <span class="eligible-count" *ngIf="s.eligibleUserIds">{{ 'CORPORATE.ELIGIBLE_PERSONNEL' | translate: { count: s.eligibleUserIds.length } }}</span>
+              </div>
+              <mat-icon class="arrow-icon" *ngIf="i < simulatedPlan.steps.length - 1">arrow_forward</mat-icon>
+            </div>
+          </div>
+        </div>
+      </mat-card>
+
+      <!-- Active Policy Tiers View -->
+      <div class="policy-section" *ngIf="activePolicy">
+        <div class="section-top">
+          <h3>
+            {{ activePolicy.policyName }}
+            <span class="version-badge">v{{ activePolicy.versionNumber }}</span>
+            <span class="status-badge" [attr.data-status]="activePolicy.status">{{ activePolicy.status }}</span>
+          </h3>
+          <div class="policy-rules">
+            <span class="rule-chip">
+              <mat-icon>{{ activePolicy.allowSelfApproval ? 'check' : 'close' }}</mat-icon>
+              {{ 'CORPORATE.SELF_APPROVAL_LABEL' | translate: { status: (activePolicy.allowSelfApproval ? ('CORPORATE.STATUS_ON' | translate) : ('CORPORATE.STATUS_OFF' | translate)) } }}
+            </span>
+            <span class="rule-chip">
+              <mat-icon>{{ activePolicy.requireRoleSeparation ? 'check' : 'close' }}</mat-icon>
+              {{ 'CORPORATE.ROLE_SEPARATION_LABEL' | translate: { status: (activePolicy.requireRoleSeparation ? ('CORPORATE.STATUS_ON' | translate) : ('CORPORATE.STATUS_OFF' | translate)) } }}
+            </span>
+          </div>
+        </div>
+
+        <div class="tiers-grid">
+          <div class="tier-card" *ngFor="let tier of activePolicy.tiers">
+            <div class="tier-header">
+              <h4>{{ tier.tierName }}</h4>
+              <span class="tier-range">
+                {{ tier.minAmount | number }} - {{ tier.maxAmount ? (tier.maxAmount | number) : '∞' }} {{ activePolicy.currency }}
+              </span>
+            </div>
+            <div class="tier-steps">
+              <div class="step-row" *ngFor="let step of tier.steps">
+                <span class="badge-order">{{ 'CORPORATE.STEP_ORDER_PREFIX' | translate: { order: step.stepOrder } }}</span>
+                <div class="step-details">
+                  <strong>{{ step.stepName }}</strong>
+                  <span>{{ 'CORPORATE.ROLE' | translate }}: <span class="role-highlight">{{ step.requiredRole }}</span> ({{ 'CORPORATE.APPROVER_COUNT' | translate }}: {{ step.minApprovals }})</span>
+                </div>
+                <span class="auth-chip" [attr.data-auth]="step.authMethod">{{ step.authMethod }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Policy Versions History -->
+      <div class="history-card" *ngIf="policies.length > 0">
+        <h3>{{ 'CORPORATE.POLICY_HISTORY' | translate }}</h3>
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>{{ 'CORPORATE.VERSION' | translate }}</th>
+              <th>{{ 'CORPORATE.POLICY_NAME' | translate }}</th>
+              <th>{{ 'CORPORATE.TIER_COUNT' | translate }}</th>
+              <th>{{ 'CORPORATE.STATUS' | translate }}</th>
+              <th>{{ 'CORPORATE.EFFECTIVE_FROM' | translate }}</th>
+              <th>{{ 'CORPORATE.ACTION' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of policies">
+              <td><strong>v{{ p.versionNumber }}</strong></td>
+              <td>{{ p.policyName }}</td>
+              <td>{{ p.tiers ? p.tiers.length : 0 }} {{ 'CORPORATE.TIERS_UNIT' | translate }}</td>
+              <td>
+                <span class="status-chip" [attr.data-status]="p.status">{{ p.status }}</span>
+              </td>
+              <td>{{ p.effectiveFrom ? (p.effectiveFrom | date: 'dd/MM/yyyy HH:mm') : '-' }}</td>
+              <td>
+                <button
+                  mat-stroked-button
+                  color="primary"
+                  *ngIf="p.status === 'DRAFT' || p.status === 'RETIRED'"
+                  (click)="activatePolicy(p.id)"
+                >
+                  {{ 'CORPORATE.ACTIVATE' | translate }}
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Create Policy Modal Template -->
+    <ng-template #createPolicyDialog>
+      <div class="dialog-container">
+        <h2 mat-dialog-title>{{ 'CORPORATE.CREATE_POLICY_TITLE' | translate }}</h2>
+        <mat-dialog-content>
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>{{ 'CORPORATE.POLICY_NAME_LABEL' | translate }}</mat-label>
+              <input matInput [(ngModel)]="newPolicy.policyName" [placeholder]="'CORPORATE.POLICY_NAME_PLACEHOLDER' | translate" />
+            </mat-form-field>
+          </div>
+
+          <div class="toggles-row">
+            <mat-slide-toggle [(ngModel)]="newPolicy.allowSelfApproval">
+              {{ 'CORPORATE.ALLOW_MAKER_SELF_APPROVE' | translate }}
+            </mat-slide-toggle>
+            <mat-slide-toggle [(ngModel)]="newPolicy.requireRoleSeparation">
+              {{ 'CORPORATE.REQUIRE_ROLE_SEPARATION' | translate }}
+            </mat-slide-toggle>
+          </div>
+
+          <hr class="my-4" />
+
+          <!-- Tiers Builder -->
+          <div class="tiers-builder">
+            <div class="builder-top">
+              <h4>{{ 'CORPORATE.TIER_SETUP' | translate }}</h4>
+              <button mat-button color="primary" (click)="addTier()">
+                <mat-icon>add</mat-icon> {{ 'CORPORATE.ADD_TIER' | translate }}
+              </button>
+            </div>
+
+            <div class="builder-tier-card" *ngFor="let t of newPolicy.tiers; let ti = index">
+              <div class="tier-top-row">
+                <mat-form-field appearance="outline">
+                  <mat-label>{{ 'CORPORATE.TIER_NAME' | translate }}</mat-label>
+                  <input matInput [(ngModel)]="t.tierName" [placeholder]="'CORPORATE.TIER_NAME_PLACEHOLDER' | translate" />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>{{ 'CORPORATE.MIN_AMOUNT' | translate }}</mat-label>
+                  <input matInput type="number" [(ngModel)]="t.minAmount" />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>{{ 'CORPORATE.MAX_AMOUNT' | translate }}</mat-label>
+                  <input matInput type="number" [(ngModel)]="t.maxAmount" />
+                </mat-form-field>
+                <button mat-icon-button color="warn" (click)="removeTier(ti)" *ngIf="newPolicy.tiers.length > 1">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+
+              <!-- Steps inside Tier -->
+              <div class="steps-builder">
+                <div class="step-top-row">
+                  <span class="text-sm font-semibold">{{ 'CORPORATE.APPROVAL_STEPS' | translate }}</span>
+                  <button mat-button color="accent" (click)="addStep(t)">
+                    <mat-icon>add</mat-icon> {{ 'CORPORATE.ADD_STEP' | translate }}
+                  </button>
+                </div>
+                <div class="builder-step-row" *ngFor="let s of t.steps; let si = index">
+                  <span class="step-badge">{{ 'CORPORATE.STEP_ORDER_PREFIX' | translate: { order: s.stepOrder } }}</span>
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'CORPORATE.STEP_NAME' | translate }}</mat-label>
+                    <input matInput [(ngModel)]="s.stepName" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'CORPORATE.ROLE' | translate }}</mat-label>
+                    <mat-select [(ngModel)]="s.requiredRole">
+                      <mat-option value="CHECKER">{{ 'CORPORATE.ROLE_CHECKER' | translate }}</mat-option>
+                      <mat-option value="CFO">{{ 'CORPORATE.ROLE_CFO' | translate }}</mat-option>
+                      <mat-option value="CHAIRMAN">{{ 'CORPORATE.ROLE_CHAIRMAN' | translate }}</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'CORPORATE.APPROVER_COUNT' | translate }}</mat-label>
+                    <input matInput type="number" [(ngModel)]="s.minApprovals" min="1" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'CORPORATE.SIGNING_METHOD' | translate }}</mat-label>
+                    <mat-select [(ngModel)]="s.authMethod">
+                      <mat-option value="STANDARD">{{ 'CORPORATE.SIGN_STANDARD' | translate }}</mat-option>
+                      <mat-option value="TOTP_STEPUP">{{ 'CORPORATE.SIGN_TOTP' | translate }}</mat-option>
+                      <mat-option value="DIGITAL_SIGNATURE_CA">{{ 'CORPORATE.SIGN_CA' | translate }}</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                  <button mat-icon-button color="warn" (click)="removeStep(t, si)" *ngIf="t.steps.length > 1">
+                    <mat-icon>close</mat-icon>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </mat-dialog-content>
+        <mat-dialog-actions align="end">
+          <button mat-button mat-dialog-close>{{ 'COMMON.CANCEL' | translate }}</button>
+          <button mat-flat-button color="primary" (click)="savePolicy()">{{ 'COMMON.SAVE' | translate }}</button>
+        </mat-dialog-actions>
+      </div>
+    </ng-template>

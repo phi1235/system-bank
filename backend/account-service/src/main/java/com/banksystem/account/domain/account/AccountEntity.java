@@ -1,13 +1,4 @@
 package com.banksystem.account.domain.account;
-import com.banksystem.account.application.account.*;
-import com.banksystem.account.application.card.*;
-import com.banksystem.account.application.deposit.*;
-import com.banksystem.account.application.ledger.*;
-import com.banksystem.account.domain.account.*;
-import com.banksystem.account.domain.card.*;
-import com.banksystem.account.domain.deposit.*;
-import com.banksystem.account.domain.ledger.*;
-import com.banksystem.account.api.dto.*;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -26,6 +17,15 @@ public class AccountEntity {
 
   @Column(name = "user_id", nullable = false)
   private UUID userId;
+
+  @Column(name = "owner_type", nullable = false, length = 20)
+  private String ownerType = "INDIVIDUAL";
+
+  @Column(name = "owner_id", nullable = false)
+  private UUID ownerId;
+
+  @Column(name = "creation_command_id")
+  private UUID creationCommandId;
 
   @Column(name = "account_number", nullable = false, unique = true, length = 20)
   private String accountNumber;
@@ -70,6 +70,30 @@ public class AccountEntity {
 
   public void setUserId(UUID userId) {
     this.userId = userId;
+  }
+
+  public String getOwnerType() {
+    return ownerType;
+  }
+
+  public void setOwnerType(String ownerType) {
+    this.ownerType = ownerType;
+  }
+
+  public UUID getOwnerId() {
+    return ownerId;
+  }
+
+  public void setOwnerId(UUID ownerId) {
+    this.ownerId = ownerId;
+  }
+
+  public UUID getCreationCommandId() {
+    return creationCommandId;
+  }
+
+  public void setCreationCommandId(UUID creationCommandId) {
+    this.creationCommandId = creationCommandId;
   }
 
   public String getAccountNumber() {

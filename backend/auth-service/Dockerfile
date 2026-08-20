@@ -12,6 +12,7 @@ COPY customer-service/pom.xml customer-service/
 COPY account-service/pom.xml account-service/
 COPY transaction-service/pom.xml transaction-service/
 COPY notification-service/pom.xml notification-service/
+COPY corporate-service/pom.xml corporate-service/
 
 COPY common-lib/src common-lib/src
 COPY auth-service/src auth-service/src

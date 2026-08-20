@@ -1,0 +1,91 @@
+server:
+  port: ${SERVER_PORT:8088}
+
+spring:
+  application:
+    name: CORPORATE-SERVICE
+  datasource:
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate.jdbc.time_zone: UTC
+  flyway:
+    enabled: true
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: ${KAFKA_PRODUCER_ACKS:all}
+      properties:
+        enable.idempotence: ${KAFKA_PRODUCER_IDEMPOTENCE:true}
+  servlet:
+    multipart:
+      max-file-size: ${CORPORATE_MULTIPART_MAX_FILE_SIZE:25MB}
+      max-request-size: ${CORPORATE_MULTIPART_MAX_REQUEST_SIZE:25MB}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL}
+  instance:
+    prefer-ip-address: true
+
+feign:
+  client:
+    config:
+      default:
+        connectTimeout: ${FEIGN_CONNECT_TIMEOUT_MS:5000}
+        readTimeout: ${FEIGN_READ_TIMEOUT_MS:10000}
+
+bank:
+  gateway:
+    signing-secret: ${GATEWAY_SIGNING_SECRET}
+    max-clock-skew-seconds: ${GATEWAY_MAX_CLOCK_SKEW_SECONDS:300}
+  internal:
+    api-key: ${CORPORATE_INTERNAL_API_KEY}
+    account-api-key: ${ACCOUNT_INTERNAL_API_KEY}
+    transaction-api-key: ${TRANSACTION_INTERNAL_API_KEY}
+    user-api-key: ${AUTH_INTERNAL_API_KEY}
+    notification-api-key: ${NOTIFICATION_INTERNAL_API_KEY}
+  storage:
+    endpoint: ${MINIO_ENDPOINT}
+    access-key: ${MINIO_ACCESS_KEY}
+    secret-key: ${MINIO_SECRET_KEY}
+    bucket: ${CORPORATE_STORAGE_BUCKET:bank-corporate}
+  payout:
+    batch:
+      chunk-size: ${PAYOUT_CHUNK_SIZE:200}
+      lease-duration-seconds: ${PAYOUT_LEASE_SECONDS:60}
+      max-retries: ${PAYOUT_MAX_RETRIES:5}
+      worker-delay-ms: ${PAYOUT_WORKER_DELAY_MS:5000}
+  ca:
+    provider: ${CA_PROVIDER:disabled}
+    http:
+      base-url: ${CA_BASE_URL:}
+      api-key: ${CA_API_KEY:}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus,info
+  endpoint:
+    health:
+      show-details: never
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%magenta(${spring.application.name:corporate-service})] [%thread] %highlight(%-5level) [%cyan(%X{correlationId:-})][%blue(%X{userId:-})] [%yellow(%-35logger{35})] : %msg%n"
+  level:
+    root: INFO
+    com.banksystem: INFO

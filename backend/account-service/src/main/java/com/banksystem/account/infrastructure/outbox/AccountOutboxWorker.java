@@ -29,19 +29,19 @@ public class AccountOutboxWorker {
   private final TransactionRemediationClient remediationClient;
   private final Clock clock;
   private final ObjectMapper objectMapper;
-
-  @Value("${bank.internal-api-key:internal-secret-key}")
-  private String internalApiKey;
+  private final String internalApiKey;
 
   public AccountOutboxWorker(
       AccountOutboxRepository outboxRepository,
       TransactionRemediationClient remediationClient,
       Clock clock,
-      ObjectMapper objectMapper) {
+      ObjectMapper objectMapper,
+      @Value("${bank.internal.transaction-api-key}") String internalApiKey) {
     this.outboxRepository = outboxRepository;
     this.remediationClient = remediationClient;
     this.clock = clock;
     this.objectMapper = objectMapper;
+    this.internalApiKey = internalApiKey;
   }
 
   @Scheduled(fixedDelay = 5000)

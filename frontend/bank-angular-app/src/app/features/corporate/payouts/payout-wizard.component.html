@@ -1,0 +1,196 @@
+    <div class="wizard-page">
+      <div class="page-title-row">
+        <div>
+          <h2>{{ 'CORPORATE.CREATE_PAYOUT_BATCH' | translate }}</h2>
+          <p class="subtitle">{{ 'CORPORATE.WIZARD_SUB' | translate }}</p>
+        </div>
+        <a mat-stroked-button routerLink="../">
+          <mat-icon>arrow_back</mat-icon>
+          {{ 'COMMON.BACK' | translate }}
+        </a>
+      </div>
+
+      <mat-card class="wizard-card">
+        <mat-stepper [linear]="true" #stepper>
+          <!-- Step 1: Batch Details -->
+          <mat-step [completed]="!!createdBatch">
+            <ng-template matStepLabel>{{ 'CORPORATE.STEP_DETAILS' | translate }}</ng-template>
+            <div class="step-content">
+              <h3>{{ 'CORPORATE.BATCH_INFO' | translate }}</h3>
+              <div class="form-grid">
+                <mat-form-field appearance="outline">
+                  <mat-label>{{ 'CORPORATE.BATCH_NAME' | translate }}</mat-label>
+                  <input matInput [(ngModel)]="batchName" [placeholder]="'CORPORATE.BATCH_NAME_PLACEHOLDER' | translate" />
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>{{ 'CORPORATE.SOURCE_ACCOUNT' | translate }}</mat-label>
+                  <mat-select [(ngModel)]="selectedAccountId">
+                    <mat-option *ngFor="let acc of accounts" [value]="acc.accountId">
+                      {{ acc.accountNumber }} - {{ acc.balance | number }} {{ acc.currency }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+
+              <div class="step-actions">
+                <button
+                  mat-flat-button
+                  color="primary"
+                  (click)="createBatch(stepper)"
+                  [disabled]="!batchName || !selectedAccountId || creating"
+                >
+                  {{ 'COMMON.NEXT' | translate }} &rarr;
+                </button>
+              </div>
+            </div>
+          </mat-step>
+
+          <!-- Step 2: Upload Excel File -->
+          <mat-step [completed]="!!createdBatch && createdBatch.totalItems > 0">
+            <ng-template matStepLabel>{{ 'CORPORATE.STEP_UPLOAD' | translate }}</ng-template>
+            <div class="step-content">
+              <div class="upload-top">
+                <h3>{{ 'CORPORATE.UPLOAD_EXCEL_TITLE' | translate }}</h3>
+                <button mat-button color="accent" (click)="downloadTemplate()">
+                  <mat-icon>file_download</mat-icon>
+                  {{ 'CORPORATE.DOWNLOAD_EXCEL_TEMPLATE' | translate }}
+                </button>
+              </div>
+
+              <div
+                class="dropzone"
+                (dragover)="$event.preventDefault()"
+                (drop)="onFileDropped($event)"
+                (click)="fileInput.click()"
+              >
+                <input
+                  #fileInput
+                  type="file"
+                  hidden
+                  accept=".xlsx"
+                  (change)="onFileSelected($event)"
+                />
+                <mat-icon class="upload-icon">cloud_upload</mat-icon>
+                <div class="drop-text" *ngIf="!selectedFile">
+                  <strong>{{ 'CORPORATE.DROP_EXCEL' | translate }}</strong> {{ 'CORPORATE.OR_SELECT_FILE' | translate }}
+                </div>
+                <div class="selected-file-info" *ngIf="selectedFile">
+                  <strong>{{ selectedFile.name }}</strong> ({{ selectedFile.size / 1024 | number: '1.0-1' }} KB)
+                </div>
+              </div>
+
+              <mat-progress-bar *ngIf="uploading" mode="indeterminate" class="my-4"></mat-progress-bar>
+
+              <div class="step-actions">
+                <button mat-button matStepperPrevious>{{ 'COMMON.BACK' | translate }}</button>
+                <button
+                  mat-flat-button
+                  color="primary"
+                  (click)="uploadExcel(stepper)"
+                  [disabled]="!selectedFile || uploading"
+                >
+                  {{ 'CORPORATE.PARSE_AND_VALIDATE' | translate }}
+                </button>
+              </div>
+            </div>
+          </mat-step>
+
+          <!-- Step 3: Review Validation & Simulation -->
+          <mat-step [completed]="canSubmit">
+            <ng-template matStepLabel>{{ 'CORPORATE.STEP_REVIEW' | translate }}</ng-template>
+            <div class="step-content" *ngIf="createdBatch">
+              <h3>{{ 'CORPORATE.VALIDATION_SUMMARY' | translate }}</h3>
+
+              <div class="summary-cards">
+                <div class="summary-box">
+                  <span class="label">{{ 'CORPORATE.TOTAL_ITEMS' | translate }}</span>
+                  <span class="val">{{ createdBatch.totalItems }}</span>
+                </div>
+                <div class="summary-box text-green-600">
+                  <span class="label">{{ 'CORPORATE.VALID_ITEMS' | translate }}</span>
+                  <span class="val">{{ createdBatch.validItems }}</span>
+                </div>
+                <div class="summary-box text-red-600">
+                  <span class="label">{{ 'CORPORATE.INVALID_ITEMS' | translate }}</span>
+                  <span class="val">{{ createdBatch.invalidItems }}</span>
+                </div>
+                <div class="summary-box text-blue-600">
+                  <span class="label">{{ 'CORPORATE.TOTAL_AMOUNT' | translate }}</span>
+                  <span class="val">{{ createdBatch.totalAmount | number }} {{ createdBatch.currency }}</span>
+                </div>
+              </div>
+
+              <!-- Errors alert if any -->
+              <div class="error-banner" *ngIf="createdBatch.invalidItems > 0">
+                <mat-icon>warning</mat-icon>
+                <div>
+                  <strong>{{ 'CORPORATE.INVALID_ROWS_DETECTED' | translate: { count: createdBatch.invalidItems } }}</strong>
+                  <p>{{ 'CORPORATE.VALIDATION_BLOCKED' | translate }}</p>
+                  <button mat-stroked-button color="warn" (click)="downloadErrorReport()">
+                    <mat-icon>download</mat-icon> {{ 'CORPORATE.DOWNLOAD_ERROR_REPORT' | translate }}
+                  </button>
+                </div>
+              </div>
+
+              <!-- Matched Approval Pipeline Preview -->
+              <div class="sim-preview" *ngIf="simulatedPlan">
+                <h4>{{ 'CORPORATE.SIMULATED_WORKFLOW_TITLE' | translate: { tier: simulatedPlan.tierName } }}</h4>
+                <div class="steps-flow">
+                  <div class="step-badge-flow" *ngFor="let s of simulatedPlan.steps; let i = index">
+                    <span class="badge-idx">{{ s.stepOrder }}</span>
+                    <span>{{ s.stepName }} ({{ s.requiredRole }})</span>
+                    <mat-icon *ngIf="i < simulatedPlan.steps.length - 1">arrow_forward</mat-icon>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Preview first 10 items -->
+              <div class="items-preview" *ngIf="previewItems.length > 0">
+                <h4>{{ 'CORPORATE.PREVIEW_ITEMS_TITLE' | translate: { count: previewItems.length } }}</h4>
+                <table class="preview-table">
+                  <thead>
+                    <tr>
+                      <th>{{ 'CORPORATE.ROW' | translate }}</th>
+                      <th>{{ 'CORPORATE.EMPLOYEE_CODE' | translate }}</th>
+                      <th>{{ 'CORPORATE.BENEFICIARY' | translate }}</th>
+                      <th>{{ 'CORPORATE.ACCOUNT_NUMBER' | translate }}</th>
+                      <th>{{ 'CORPORATE.BANK' | translate }}</th>
+                      <th>{{ 'CORPORATE.AMOUNT' | translate }}</th>
+                      <th>{{ 'CORPORATE.STATUS' | translate }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let item of previewItems" [class.row-invalid]="item.status === 'INVALID'">
+                      <td>{{ item.rowNumber }}</td>
+                      <td>{{ item.employeeCode || '-' }}</td>
+                      <td class="font-semibold">{{ item.beneficiaryName }}</td>
+                      <td>{{ item.accountNumber }}</td>
+                      <td>{{ item.bankCode }}</td>
+                      <td class="font-bold">{{ item.amount | number }} {{ item.currency }}</td>
+                      <td>
+                        <span class="status-chip" [attr.data-status]="item.status">{{ item.status }}</span>
+                        <div class="error-sub" *ngIf="item.validationError">{{ item.validationError }}</div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="step-actions">
+                <button mat-button matStepperPrevious>{{ 'COMMON.BACK' | translate }}</button>
+                <button
+                  mat-flat-button
+                  color="primary"
+                  (click)="submitBatch()"
+                  [disabled]="!canSubmit || submitting"
+                >
+                  <mat-icon>send</mat-icon>
+                  {{ 'CORPORATE.SUBMIT_FOR_APPROVAL' | translate }}
+                </button>
+              </div>
+            </div>
+          </mat-step>
+        </mat-stepper>
+      </mat-card>
+    </div>

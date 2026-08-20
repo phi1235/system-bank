@@ -2,6 +2,7 @@ package com.banksystem.transaction.infrastructure.feign;
 
 import com.banksystem.common.api.ApiResponse;
 import com.banksystem.transaction.infrastructure.feign.AccountClientDtos.AccountView;
+import com.banksystem.transaction.infrastructure.feign.AccountClientDtos.DebitAgainstHoldCommand;
 import com.banksystem.transaction.infrastructure.feign.AccountClientDtos.MoneyCommand;
 import com.banksystem.transaction.infrastructure.feign.AccountClientDtos.MoneyResult;
 import com.banksystem.transaction.infrastructure.feign.AccountClientDtos.TransactionLedgerEvidenceView;
@@ -35,6 +36,12 @@ public interface AccountClient {
       @RequestBody MoneyCommand command,
       @RequestHeader("X-Internal-Api-Key") String apiKey);
 
+  @PostMapping("/internal/accounts/{id}/debit-against-hold")
+  ApiResponse<MoneyResult> debitAgainstHold(
+      @PathVariable("id") UUID id,
+      @RequestBody DebitAgainstHoldCommand command,
+      @RequestHeader("X-Internal-Api-Key") String apiKey);
+
   @PostMapping("/internal/accounts/{id}/credit")
   ApiResponse<MoneyResult> credit(
       @PathVariable("id") UUID id,
@@ -45,6 +52,12 @@ public interface AccountClient {
   ApiResponse<MoneyResult> compensateCredit(
       @PathVariable("id") UUID id,
       @RequestBody MoneyCommand command,
+      @RequestHeader("X-Internal-Api-Key") String apiKey);
+
+  @PostMapping("/internal/accounts/{id}/compensation-credit-against-hold")
+  ApiResponse<MoneyResult> compensateCreditAgainstHold(
+      @PathVariable("id") UUID id,
+      @RequestBody AccountClientDtos.CompensateCreditAgainstHoldCommand command,
       @RequestHeader("X-Internal-Api-Key") String apiKey);
 
   @GetMapping("/internal/ledger/transactions/{transactionId}")

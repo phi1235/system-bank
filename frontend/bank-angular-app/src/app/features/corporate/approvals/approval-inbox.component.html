@@ -1,0 +1,171 @@
+    <div class="inbox-page">
+      <div class="page-title-row">
+        <div>
+          <h2>{{ 'CORPORATE.APPROVAL_INBOX_TITLE' | translate }}</h2>
+          <p class="subtitle">{{ 'CORPORATE.APPROVAL_INBOX_SUB' | translate }}</p>
+        </div>
+        <button mat-stroked-button (click)="loadInbox()">
+          <mat-icon>refresh</mat-icon>
+          {{ 'COMMON.REFRESH' | translate }}
+        </button>
+      </div>
+
+      <div class="tasks-grid" *ngIf="tasks.length > 0; else emptyInbox">
+        <mat-card class="task-card" *ngFor="let task of tasks">
+          <div class="task-top">
+            <div class="task-badge" [attr.data-role]="task.requiredRole">
+              {{ task.requiredRole }}
+            </div>
+            <span class="auth-chip" [attr.data-auth]="task.authMethod">
+              <mat-icon>{{ task.authMethod === 'DIGITAL_SIGNATURE_CA' ? 'vpn_key' : (task.authMethod === 'TOTP_STEPUP' ? 'pin' : 'verified_user') }}</mat-icon>
+              {{ task.authMethod }}
+            </span>
+          </div>
+
+          <div class="task-body">
+            <h3 class="batch-name">{{ task.batchName }}</h3>
+            <div class="step-info">
+              <span>{{ 'CORPORATE.STEP' | translate }} <strong>{{ task.stepOrder }}: {{ task.stepName }}</strong></span>
+              <span class="progress-sub">{{ 'CORPORATE.APPROVED_COUNT' | translate: { current: task.currentApprovals, min: task.minApprovals } }}</span>
+            </div>
+
+            <div class="amount-box">
+              <span class="lbl">{{ 'CORPORATE.PAYOUT_AMOUNT' | translate }}</span>
+              <span class="val">{{ task.totalAmount | number }} {{ task.currency }}</span>
+              <span class="items-count">({{ task.totalItems }} {{ 'CORPORATE.ITEMS_UNIT' | translate }})</span>
+            </div>
+          </div>
+
+          <div class="task-footer">
+            <a mat-button color="primary" [routerLink]="['../payouts', task.batchId]">
+              <mat-icon>visibility</mat-icon>
+              {{ 'COMMON.DETAILS' | translate }}
+            </a>
+
+            <div class="btn-group">
+              <button mat-button color="warn" (click)="openRejectDialog(task)">
+                {{ 'CORPORATE.REJECT' | translate }}
+              </button>
+              <button mat-button color="accent" (click)="openReturnDialog(task)">
+                {{ 'CORPORATE.RETURN' | translate }}
+              </button>
+              <button mat-flat-button color="primary" (click)="openApproveDialog(task)">
+                <mat-icon>check</mat-icon>
+                {{ 'CORPORATE.APPROVE' | translate }}
+              </button>
+            </div>
+          </div>
+        </mat-card>
+      </div>
+
+      <ng-template #emptyInbox>
+        <mat-card class="empty-card">
+          <mat-icon class="empty-icon">task_alt</mat-icon>
+          <h3>{{ 'CORPORATE.INBOX_EMPTY_TITLE' | translate }}</h3>
+          <p>{{ 'CORPORATE.INBOX_EMPTY_DESC' | translate }}</p>
+        </mat-card>
+      </ng-template>
+    </div>
+
+    <!-- Approve Challenge Dialog -->
+    <ng-template #approveDialog>
+      <div class="dialog-container" *ngIf="selectedTask">
+        <h2 mat-dialog-title>
+          {{ 'CORPORATE.CONFIRM_APPROVE_TITLE' | translate: { batchName: selectedTask.batchName } }}
+        </h2>
+        <mat-dialog-content>
+          <div class="challenge-info">
+            <div class="info-row">
+              <span>{{ 'CORPORATE.AMOUNT' | translate }}</span>
+              <strong>{{ selectedTask.totalAmount | number }} {{ selectedTask.currency }}</strong>
+            </div>
+            <div class="info-row">
+              <span>{{ 'CORPORATE.AUTH_METHOD' | translate }}</span>
+              <span class="auth-chip" [attr.data-auth]="selectedTask.authMethod">{{ selectedTask.authMethod }}</span>
+            </div>
+            <div class="info-row" *ngIf="challengeData">
+              <span>{{ 'CORPORATE.INTEGRITY_HASH' | translate }}</span>
+              <code class="hash-code">{{ challengeData.payloadHash | slice: 0: 20 }}...</code>
+            </div>
+          </div>
+
+          <!-- TOTP Input -->
+          <div class="auth-field-box" *ngIf="selectedTask.authMethod === 'TOTP_STEPUP'">
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>{{ 'CORPORATE.OTP_LABEL' | translate }}</mat-label>
+              <input matInput [(ngModel)]="authCode" [placeholder]="'CORPORATE.OTP_PLACEHOLDER' | translate" maxlength="6" />
+              <mat-icon matPrefix>pin</mat-icon>
+            </mat-form-field>
+          </div>
+
+          <!-- CA Signature Mock Input -->
+          <div class="auth-field-box" *ngIf="selectedTask.authMethod === 'DIGITAL_SIGNATURE_CA'">
+            <div class="ca-banner">
+              <mat-icon>usb</mat-icon>
+              <div>
+                <strong>{{ 'CORPORATE.CA_TITLE' | translate }}</strong>
+                <p>{{ 'CORPORATE.CA_DESC' | translate }}</p>
+              </div>
+            </div>
+            <mat-form-field appearance="outline" class="w-full mt-2">
+              <mat-label>{{ 'CORPORATE.CA_REFERENCE' | translate }}</mat-label>
+              <input matInput [(ngModel)]="signatureRef" [placeholder]="'CORPORATE.CA_PLACEHOLDER' | translate" />
+              <mat-icon matPrefix>vpn_key</mat-icon>
+            </mat-form-field>
+          </div>
+
+          <mat-form-field appearance="outline" class="w-full mt-2">
+            <mat-label>{{ 'CORPORATE.APPROVAL_COMMENTS' | translate }}</mat-label>
+            <textarea matInput [(ngModel)]="comments" rows="2" [placeholder]="'CORPORATE.APPROVAL_COMMENTS_PLACEHOLDER' | translate"></textarea>
+          </mat-form-field>
+        </mat-dialog-content>
+
+        <mat-dialog-actions align="end">
+          <button mat-button mat-dialog-close>{{ 'COMMON.CANCEL' | translate }}</button>
+          <button mat-flat-button color="primary" (click)="executeApprove()" [disabled]="approving">
+            <mat-icon>check_circle</mat-icon>
+            {{ 'CORPORATE.CONFIRM_APPROVE_BUTTON' | translate }}
+          </button>
+        </mat-dialog-actions>
+      </div>
+    </ng-template>
+
+    <!-- Reject Dialog -->
+    <ng-template #rejectDialog>
+      <div class="dialog-container" *ngIf="selectedTask">
+        <h2 mat-dialog-title class="text-red-600">{{ 'CORPORATE.REJECT_DIALOG_TITLE' | translate }}</h2>
+        <mat-dialog-content>
+          <p>{{ 'CORPORATE.REJECT_WARNING' | translate }}</p>
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>{{ 'CORPORATE.REJECT_REASON' | translate }}</mat-label>
+            <textarea matInput [(ngModel)]="rejectReason" rows="3" required></textarea>
+          </mat-form-field>
+        </mat-dialog-content>
+        <mat-dialog-actions align="end">
+          <button mat-button mat-dialog-close>{{ 'COMMON.CANCEL' | translate }}</button>
+          <button mat-flat-button color="warn" (click)="executeReject()" [disabled]="!rejectReason">
+            {{ 'CORPORATE.REJECT' | translate }}
+          </button>
+        </mat-dialog-actions>
+      </div>
+    </ng-template>
+
+    <!-- Return Dialog -->
+    <ng-template #returnDialog>
+      <div class="dialog-container" *ngIf="selectedTask">
+        <h2 mat-dialog-title class="text-orange-600">{{ 'CORPORATE.RETURN_DIALOG_TITLE' | translate }}</h2>
+        <mat-dialog-content>
+          <p>{{ 'CORPORATE.RETURN_WARNING' | translate }}</p>
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>{{ 'CORPORATE.RETURN_REASON' | translate }}</mat-label>
+            <textarea matInput [(ngModel)]="returnReason" rows="3" required></textarea>
+          </mat-form-field>
+        </mat-dialog-content>
+        <mat-dialog-actions align="end">
+          <button mat-button mat-dialog-close>{{ 'COMMON.CANCEL' | translate }}</button>
+          <button mat-flat-button color="accent" (click)="executeReturn()" [disabled]="!returnReason">
+            {{ 'CORPORATE.RETURN' | translate }}
+          </button>
+        </mat-dialog-actions>
+      </div>
+    </ng-template>

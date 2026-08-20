@@ -15,9 +15,19 @@ public final class AccountDtos {
 
   public record OpenAccountRequest(String accountType) {}
 
+  public record CreateCorporateAccountRequest(
+      @NotNull UUID commandId,
+      @NotNull UUID corporateId,
+      @NotNull UUID createdByUserId,
+      String accountType,
+      String currency
+  ) {}
+
   public record AccountResponse(
       String id,
       String userId,
+      String ownerType,
+      String ownerId,
       String accountNumber,
       String accountType,
       String currency,
@@ -43,6 +53,27 @@ public final class AccountDtos {
       return Boolean.TRUE.equals(allowAutoSweep);
     }
   }
+
+  public record DebitAgainstHoldCommand(
+      @NotNull UUID holdId,
+      @NotNull UUID batchId,
+      @NotNull MoneyCommand command
+  ) {}
+
+  public record CompensateCreditAgainstHoldCommand(
+      @NotNull UUID holdId,
+      @NotNull UUID batchId,
+      @NotNull MoneyCommand command
+  ) {}
+
+  public record AccountOwnershipResponse(
+      UUID id,
+      String accountNumber,
+      String ownerType,
+      UUID ownerId,
+      String status,
+      String currency
+  ) {}
 
   public record MoneyResult(String ledgerEntryId, BigDecimal balanceAfter) {}
 
