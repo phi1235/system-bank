@@ -5,6 +5,9 @@ import {
   Account,
   AccountInquiryRequest,
   AccountInquiryResponse,
+  AutoSweepOperation,
+  AutoSweepProfile,
+  SweepProduct,
   AdminCard,
   AdminTermDeposit,
   AuditLog,
@@ -236,6 +239,38 @@ export class BankApiService {
 
   closeDeposit(id: string): Observable<TermDeposit> {
     return this.api.post(`/deposits/${id}/close`, {});
+  }
+
+  myAutoSweeps(): Observable<AutoSweepProfile[]> {
+    return this.api.get('/deposits/auto-sweep');
+  }
+
+  autoSweepProducts(): Observable<SweepProduct[]> {
+    return this.api.get('/deposits/auto-sweep/products');
+  }
+
+  saveAutoSweep(
+    sourceAccountId: string,
+    productCode: string,
+    thresholdAmount: number,
+    version?: number,
+  ): Observable<AutoSweepProfile> {
+    return this.api.put(`/deposits/auto-sweep/${sourceAccountId}`, {
+      productCode,
+      thresholdAmount,
+      version,
+    });
+  }
+
+  setAutoSweepEnabled(sourceAccountId: string, enabled: boolean): Observable<AutoSweepProfile> {
+    return this.api.post(
+      `/deposits/auto-sweep/${sourceAccountId}/${enabled ? 'resume' : 'pause'}`,
+      {},
+    );
+  }
+
+  autoSweepOperations(sourceAccountId: string, limit = 20): Observable<AutoSweepOperation[]> {
+    return this.api.get(`/deposits/auto-sweep/${sourceAccountId}/operations`, { limit });
   }
 
   adminDepositSummary(): Observable<DepositAdminSummary> {

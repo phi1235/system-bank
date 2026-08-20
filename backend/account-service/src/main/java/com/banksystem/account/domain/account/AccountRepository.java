@@ -88,7 +88,10 @@ public interface AccountRepository extends JpaRepository<AccountEntity, UUID> {
   @Query(value = """
       UPDATE accounts
       SET balance = balance - :amount, updated_at = NOW()
-      WHERE id = :id AND status = 'ACTIVE' AND balance >= :amount
+      WHERE id = :id
+        AND status = 'ACTIVE'
+        AND balance >= :amount
+        AND available_balance >= :amount
       """, nativeQuery = true)
   int debitIfSufficient(@Param("id") UUID id, @Param("amount") BigDecimal amount);
 

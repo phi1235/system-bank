@@ -12,6 +12,71 @@
   <app-loading />
 } @else {
   <div class="page-stack">
+    <mat-card class="auto-sweep-card">
+      <div class="auto-sweep-head">
+        <div>
+          <h3>{{ 'CUSTOMER.AUTO_SWEEP_TITLE' | translate }}</h3>
+          <p class="hint">{{ 'CUSTOMER.AUTO_SWEEP_HINT' | translate }}</p>
+        </div>
+        @if (selectedSweepProfile) {
+          <span class="chip" [class.ok]="selectedSweepProfile.status === 'ENABLED'">
+            {{ ('CUSTOMER.AUTO_SWEEP_STATUS_' + selectedSweepProfile.status) | translate }}
+          </span>
+        }
+      </div>
+
+      <div class="auto-sweep-form">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>{{ 'CUSTOMER.WEALTH_SOURCE' | translate }}</mat-label>
+          <mat-select [(ngModel)]="sweepAccountId" (selectionChange)="selectSweepAccount()">
+            @for (a of paymentAccounts; track a.id) {
+              <mat-option [value]="a.id">{{ accountLabel(a) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>{{ 'CUSTOMER.AUTO_SWEEP_THRESHOLD' | translate }}</mat-label>
+          <input matInput type="number" [(ngModel)]="sweepThreshold"
+                 [min]="selectedSweepProduct?.minThreshold || 0"
+                 [step]="selectedSweepProduct?.minSweepAmount || 1" />
+          <mat-hint>
+            {{ 'CUSTOMER.AUTO_SWEEP_MIN_THRESHOLD' | translate }}
+            {{ (selectedSweepProduct?.minThreshold || 0) | moneyVnd }}
+          </mat-hint>
+        </mat-form-field>
+        <button mat-flat-button color="primary" type="button" (click)="saveAutoSweep()"
+                 [disabled]="!canSaveAutoSweep || sweepSaving">
+          {{ (sweepSaving ? 'CUSTOMER.AUTO_SWEEP_SAVING' : 'CUSTOMER.AUTO_SWEEP_SAVE') | translate }}
+        </button>
+        @if (selectedSweepProfile) {
+          <button mat-stroked-button type="button" (click)="toggleAutoSweep()" [disabled]="sweepToggling">
+            {{ (selectedSweepProfile.status === 'ENABLED'
+                ? 'CUSTOMER.AUTO_SWEEP_PAUSE' : 'CUSTOMER.AUTO_SWEEP_RESUME') | translate }}
+          </button>
+        }
+      </div>
+
+      @if (selectedSweepProfile; as sweep) {
+        <div class="sweep-stats">
+          <div><span>{{ 'CUSTOMER.AUTO_SWEEP_CASA' | translate }}</span><strong>{{ sweep.casaBalance | moneyVnd }}</strong></div>
+          <div><span>{{ 'CUSTOMER.AUTO_SWEEP_FLEX' | translate }}</span><strong>{{ sweep.flexiblePrincipal | moneyVnd }}</strong></div>
+          <div><span>{{ 'CUSTOMER.WEALTH_INTEREST' | translate }}</span><strong class="interest">+{{ sweep.accruedInterest | moneyVnd }}</strong></div>
+          <div><span>{{ 'CUSTOMER.AUTO_SWEEP_RATE' | translate }}</span><strong>{{ ratePct(sweep.annualRateBps) }}%/{{ 'CUSTOMER.WEALTH_YEAR' | translate }}</strong></div>
+        </div>
+        @if (sweepOperations.length) {
+          <div class="sweep-history">
+            <strong>{{ 'CUSTOMER.AUTO_SWEEP_RECENT' | translate }}</strong>
+            @for (op of sweepOperations.slice(0, 5); track op.id) {
+              <div>
+                <span>{{ ('CUSTOMER.AUTO_SWEEP_OP_' + op.operationType) | translate }} · {{ op.businessDate }}</span>
+                <b [class.interest]="op.operationType === 'INTEREST_ACCRUAL'">{{ op.amount | moneyVnd }}</b>
+              </div>
+            }
+          </div>
+        }
+      }
+    </mat-card>
+
     <div class="two-col">
       <mat-card class="open-card">
         <h3>{{ 'CUSTOMER.WEALTH_OPEN_TITLE' | translate }}</h3>

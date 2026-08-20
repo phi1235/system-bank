@@ -11,6 +11,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.banksystem.common.exception.BusinessException;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -85,6 +86,39 @@ public class DoubleEntryJournalService {
     log.info("[LEDGER-POST] Journal=[{}] Type=[{}] TxId=[{}] Ref=[{}] Amount={} {} (Customer={}, Clearing={})",
         journal.getId(), journal.getJournalType(), transactionId, businessReference, entry.getAmount(), currency,
         entry.getEntryType(), counterSide);
+    return journal.getId();
+  }
+
+  /** Posts one balanced internal movement without routing either side through legacy clearing. */
+  @Transactional
+  public UUID recordInternalTransfer(
+      String commandId,
+      String businessReference,
+      String journalType,
+      UUID debitAccountId,
+      String debitLedgerCode,
+      UUID creditAccountId,
+      String creditLedgerCode,
+      BigDecimal amount,
+      String currency,
+      String description) {
+    LedgerJournalEntity duplicate = journalRepository.findByBusinessCommandId(commandId).orElse(null);
+    if (duplicate != null) return duplicate.getId();
+
+    Instant now = clock.instant();
+    UUID transactionId = extractTransactionId(businessReference);
+    LedgerJournalEntity journal = LedgerJournalEntity.draft(
+        UUID.randomUUID(), commandId, businessReference, transactionId,
+        journalType, currency, description, now);
+    journalRepository.saveAndFlush(journal);
+    postingRepository.saveAllAndFlush(List.of(
+        LedgerPostingEntity.of(
+            journal.getId(), debitAccountId, debitLedgerCode, "DEBIT", amount, currency, now),
+        LedgerPostingEntity.of(
+            journal.getId(), creditAccountId, creditLedgerCode, "CREDIT", amount, currency, now)));
+    journal.post(now);
+    journalRepository.saveAndFlush(journal);
+    eventRepository.save(toEvent(journal, now));
     return journal.getId();
   }
 

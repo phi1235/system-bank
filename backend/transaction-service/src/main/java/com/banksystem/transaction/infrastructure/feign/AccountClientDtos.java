@@ -31,8 +31,14 @@ public final class AccountClientDtos {
       BigDecimal amount,
       String referenceId,
       String description,
-      String commandId
-  ) {}
+      String commandId,
+      Boolean allowAutoSweep
+  ) {
+    public MoneyCommand(
+        BigDecimal amount, String referenceId, String description, String commandId) {
+      this(amount, referenceId, description, commandId, false);
+    }
+  }
 
   public record MoneyResult(String ledgerEntryId, BigDecimal balanceAfter) {}
 

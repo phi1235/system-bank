@@ -59,6 +59,12 @@ bank:
     batch:
       enabled: ${DEPOSIT_BATCH_ENABLED}
       cron: ${DEPOSIT_BATCH_CRON}
+  auto-sweep:
+    batch:
+      enabled: ${AUTO_SWEEP_BATCH_ENABLED}
+      cron: ${AUTO_SWEEP_BATCH_CRON}
+      page-size: ${AUTO_SWEEP_BATCH_PAGE_SIZE}
+      lease-seconds: ${AUTO_SWEEP_BATCH_LEASE_SECONDS}
   ledger:
     snapshot:
       enabled: ${LEDGER_SNAPSHOT_ENABLED}

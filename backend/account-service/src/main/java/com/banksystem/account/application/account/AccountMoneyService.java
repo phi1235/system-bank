@@ -4,6 +4,7 @@ import com.banksystem.account.api.dto.AccountDtos.AccountResponse;
 import com.banksystem.account.api.dto.AccountDtos.MoneyCommand;
 import com.banksystem.account.api.dto.AccountDtos.MoneyResult;
 import com.banksystem.account.application.ledger.DoubleEntryJournalService;
+import com.banksystem.account.application.sweep.AutoSweepMovementService;
 import com.banksystem.account.domain.account.AccountEntity;
 import com.banksystem.account.domain.account.AccountRepository;
 import com.banksystem.account.domain.ledger.LedgerEntryEntity;
@@ -25,6 +26,7 @@ public class AccountMoneyService {
   private final AccountAccessService access;
   private final AccountMapper mapper;
   private final DoubleEntryJournalService journalService;
+  private final AutoSweepMovementService autoSweepMovementService;
   private final Clock clock;
 
   public AccountMoneyService(
@@ -33,12 +35,14 @@ public class AccountMoneyService {
       AccountAccessService access,
       AccountMapper mapper,
       DoubleEntryJournalService journalService,
+      AutoSweepMovementService autoSweepMovementService,
       Clock clock) {
     this.accountRepository = accountRepository;
     this.ledgerEntryRepository = ledgerEntryRepository;
     this.access = access;
     this.mapper = mapper;
     this.journalService = journalService;
+    this.autoSweepMovementService = autoSweepMovementService;
     this.clock = clock;
   }
 
@@ -60,7 +64,12 @@ public class AccountMoneyService {
     requireActive(account, "Account is not active");
     Optional<LedgerEntryEntity> existing = existing(id, command.referenceId(), "DEBIT");
     if (existing.isPresent()) {
+      requireSameAmount(existing.get(), command);
       return result(existing.get(), account);
+    }
+    if (command.autoSweepAllowed()) {
+      autoSweepMovementService.ensurePaymentLiquidity(
+          account, command.amount(), command.commandId(), command.referenceId());
     }
     if (accountRepository.debitIfSufficient(id, command.amount()) == 0) {
       AccountEntity current = access.require(id);
@@ -77,6 +86,7 @@ public class AccountMoneyService {
     requireActive(account, "Account is not active for credit");
     Optional<LedgerEntryEntity> existing = existing(id, command.referenceId(), "CREDIT");
     if (existing.isPresent()) {
+      requireSameAmount(existing.get(), command);
       return result(existing.get(), account);
     }
     if (accountRepository.creditIfActive(id, command.amount()) == 0) {
@@ -93,6 +103,7 @@ public class AccountMoneyService {
     AccountEntity account = access.requireForUpdate(id);
     Optional<LedgerEntryEntity> existing = existing(id, command.referenceId(), "CREDIT");
     if (existing.isPresent()) {
+      requireSameAmount(existing.get(), command);
       return result(existing.get(), account);
     }
     if (accountRepository.creditForCompensation(id, command.amount()) == 0) {
@@ -119,6 +130,14 @@ public class AccountMoneyService {
 
   private MoneyResult result(LedgerEntryEntity entry, AccountEntity account) {
     return new MoneyResult(entry.getId().toString(), account.getBalance());
+  }
+
+  private void requireSameAmount(LedgerEntryEntity existing, MoneyCommand command) {
+    if (existing.getAmount().compareTo(command.amount()) != 0) {
+      throw new BusinessException(
+          "IDEMPOTENCY_CONFLICT",
+          "The reference was already used with a different amount; submit a new command reference");
+    }
   }
 
   private LedgerEntryEntity newLedger(UUID accountId, String type, MoneyCommand command) {
