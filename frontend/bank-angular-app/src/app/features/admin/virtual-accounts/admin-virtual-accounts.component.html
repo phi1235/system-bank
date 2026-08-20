@@ -1,0 +1,235 @@
+<div class="page-container">
+  <div class="page-header">
+    <div class="header-text">
+      <h1 class="page-title">{{ 'ADMIN_B2B.VA_MONITOR_TITLE' | translate }}</h1>
+      <p class="page-subtitle">{{ 'ADMIN_B2B.VA_MONITOR_SUB' | translate }}</p>
+    </div>
+  </div>
+
+  <mat-tab-group animationDuration="200ms" class="monitor-tabs">
+    <!-- TAB 1: Inbound Webhook Inbox -->
+    <mat-tab label="{{ 'ADMIN_B2B.INBOUND_EVENTS_TAB' | translate }}">
+      <div class="tab-content">
+        <mat-card class="filter-card">
+          <div class="filter-row">
+            <mat-form-field appearance="outline" class="search-field">
+              <mat-label>{{ 'COMMON.SEARCH' | translate }}</mat-label>
+              <input matInput [(ngModel)]="eventsSearch" (keyup.enter)="loadEvents()" [placeholder]="'ADMIN.VA.EVENTS_SEARCH_PLACEHOLDER' | translate" />
+              <button mat-icon-button matSuffix (click)="loadEvents()"><mat-icon>search</mat-icon></button>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="status-field">
+              <mat-label>{{ 'COMMON.STATUS' | translate }}</mat-label>
+              <mat-select [(ngModel)]="eventsStatus" (selectionChange)="loadEvents()">
+                <mat-option value="">{{ 'COMMON.ALL' | translate }}</mat-option>
+                <mat-option value="RECEIVED">{{ 'ADMIN.VA.STATUS_RECEIVED' | translate }}</mat-option>
+                <mat-option value="PROCESSED">{{ 'ADMIN.VA.STATUS_PROCESSED' | translate }}</mat-option>
+                <mat-option value="UNMATCHED">{{ 'ADMIN.VA.STATUS_UNMATCHED' | translate }}</mat-option>
+                <mat-option value="MISMATCH">{{ 'ADMIN.VA.STATUS_MISMATCH' | translate }}</mat-option>
+                <mat-option value="DUPLICATE">{{ 'ADMIN.VA.STATUS_DUPLICATE' | translate }}</mat-option>
+                <mat-option value="FAILED">{{ 'ADMIN.VA.STATUS_FAILED' | translate }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+        </mat-card>
+
+        <mat-card class="table-card">
+          <table mat-table [dataSource]="events" class="full-width-table">
+            <ng-container matColumnDef="provider">
+              <th mat-header-cell *matHeaderCellDef>{{ 'BUSINESS.VA.PROVIDER' | translate }}</th>
+              <td mat-cell *matCellDef="let ev"><span class="provider-badge">{{ ev.provider }}</span></td>
+            </ng-container>
+
+            <ng-container matColumnDef="providerTransactionId">
+              <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.VA.TX_ID' | translate }}</th>
+              <td mat-cell *matCellDef="let ev"><code>{{ ev.providerTransactionId }}</code></td>
+            </ng-container>
+
+            <ng-container matColumnDef="virtualAccountNumber">
+              <th mat-header-cell *matHeaderCellDef>{{ 'BUSINESS.VA.ACCOUNT_NO' | translate }}</th>
+              <td mat-cell *matCellDef="let ev"><strong>{{ ev.virtualAccountNumber }}</strong></td>
+            </ng-container>
+
+            <ng-container matColumnDef="amount">
+              <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.AMOUNT' | translate }}</th>
+              <td mat-cell *matCellDef="let ev"><strong>{{ ev.amount | number:'1.0-0' }} {{ ev.currency }}</strong></td>
+            </ng-container>
+
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.STATUS' | translate }}</th>
+              <td mat-cell *matCellDef="let ev">
+                <span class="status-badge" [ngClass]="ev.status.toLowerCase()">{{ ev.status }}</span>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="createdAt">
+              <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.CREATED_AT' | translate }}</th>
+              <td mat-cell *matCellDef="let ev">{{ ev.createdAt | date:'short' }}</td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="eventColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: eventColumns;"></tr>
+
+            <tr class="mat-row" *matNoDataRow>
+              <td class="mat-cell empty-cell" [attr.colspan]="eventColumns.length">{{ 'COMMON.NO_DATA' | translate }}</td>
+            </tr>
+          </table>
+
+          <mat-paginator [length]="eventsTotal" [pageSize]="eventsSize" [pageIndex]="eventsPage" [pageSizeOptions]="[10, 20, 50]" (page)="onEventsPage($event)" showFirstLastButtons></mat-paginator>
+        </mat-card>
+      </div>
+    </mat-tab>
+
+    <!-- TAB 2: Virtual Accounts List -->
+    <mat-tab label="{{ 'ADMIN_B2B.VA_LIST_TAB' | translate }}">
+      <div class="tab-content">
+        <mat-card class="filter-card">
+          <div class="filter-row">
+            <mat-form-field appearance="outline" class="search-field">
+              <mat-label>{{ 'COMMON.SEARCH' | translate }}</mat-label>
+              <input matInput [(ngModel)]="vasSearch" (keyup.enter)="loadVas()" [placeholder]="'ADMIN.VA.VAS_SEARCH_PLACEHOLDER' | translate" />
+              <button mat-icon-button matSuffix (click)="loadVas()"><mat-icon>search</mat-icon></button>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="status-field">
+              <mat-label>{{ 'COMMON.STATUS' | translate }}</mat-label>
+              <mat-select [(ngModel)]="vasStatus" (selectionChange)="loadVas()">
+                <mat-option value="">{{ 'COMMON.ALL' | translate }}</mat-option>
+                <mat-option value="ACTIVE">{{ 'BUSINESS.VA.STATUS_ACTIVE' | translate }}</mat-option>
+                <mat-option value="CLOSED">{{ 'BUSINESS.VA.STATUS_CLOSED' | translate }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+        </mat-card>
+
+        <mat-card class="table-card">
+          <table mat-table [dataSource]="vas" class="full-width-table">
+            <ng-container matColumnDef="accountNumber">
+              <th mat-header-cell *matHeaderCellDef>{{ 'BUSINESS.VA.ACCOUNT_NO' | translate }}</th>
+              <td mat-cell *matCellDef="let v"><code>{{ v.accountNumber }}</code></td>
+            </ng-container>
+
+            <ng-container matColumnDef="bankBin">
+              <th mat-header-cell *matHeaderCellDef>{{ 'BUSINESS.VA.BANK_BIN' | translate }}</th>
+              <td mat-cell *matCellDef="let v">{{ v.bankBin }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="provider">
+              <th mat-header-cell *matHeaderCellDef>{{ 'BUSINESS.VA.PROVIDER' | translate }}</th>
+              <td mat-cell *matCellDef="let v"><span class="provider-badge">{{ v.provider }}</span></td>
+            </ng-container>
+
+            <ng-container matColumnDef="mode">
+              <th mat-header-cell *matHeaderCellDef>{{ 'BUSINESS.VA.MODE' | translate }}</th>
+              <td mat-cell *matCellDef="let v">{{ v.mode }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="organizationId">
+              <th mat-header-cell *matHeaderCellDef>{{ 'ADMIN.VA.ORG_ID' | translate }}</th>
+              <td mat-cell *matCellDef="let v">{{ v.organizationId }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.STATUS' | translate }}</th>
+              <td mat-cell *matCellDef="let v"><span class="status-badge" [ngClass]="v.status.toLowerCase()">{{ v.status }}</span></td>
+            </ng-container>
+
+            <ng-container matColumnDef="createdAt">
+              <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.CREATED_AT' | translate }}</th>
+              <td mat-cell *matCellDef="let v">{{ v.createdAt | date:'short' }}</td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="vaColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: vaColumns;"></tr>
+
+            <tr class="mat-row" *matNoDataRow>
+              <td class="mat-cell empty-cell" [attr.colspan]="vaColumns.length">{{ 'COMMON.NO_DATA' | translate }}</td>
+            </tr>
+          </table>
+
+          <mat-paginator [length]="vasTotal" [pageSize]="vasSize" [pageIndex]="vasPage" [pageSizeOptions]="[10, 20, 50]" (page)="onVasPage($event)" showFirstLastButtons></mat-paginator>
+        </mat-card>
+      </div>
+    </mat-tab>
+
+    <!-- TAB 3: Collection Orders -->
+    <mat-tab label="{{ 'ADMIN_B2B.COLLECTION_ORDERS_TAB' | translate }}">
+      <div class="tab-content">
+        <mat-card class="filter-card">
+          <div class="filter-row">
+            <mat-form-field appearance="outline" class="search-field">
+              <mat-label>{{ 'COMMON.SEARCH' | translate }}</mat-label>
+              <input matInput [(ngModel)]="ordersSearch" (keyup.enter)="loadOrders()" [placeholder]="'ADMIN.VA.ORDERS_SEARCH_PLACEHOLDER' | translate" />
+              <button mat-icon-button matSuffix (click)="loadOrders()"><mat-icon>search</mat-icon></button>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="status-field">
+              <mat-label>{{ 'COMMON.STATUS' | translate }}</mat-label>
+              <mat-select [(ngModel)]="ordersStatus" (selectionChange)="loadOrders()">
+                <mat-option value="">{{ 'COMMON.ALL' | translate }}</mat-option>
+                <mat-option value="PENDING">{{ 'BUSINESS.ORDERS.STATUS_PENDING' | translate }}</mat-option>
+                <mat-option value="PAID">{{ 'BUSINESS.ORDERS.STATUS_PAID' | translate }}</mat-option>
+                <mat-option value="PARTIAL">{{ 'BUSINESS.ORDERS.STATUS_PARTIAL' | translate }}</mat-option>
+                <mat-option value="REVIEW">{{ 'BUSINESS.ORDERS.STATUS_REVIEW' | translate }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+        </mat-card>
+
+        <mat-card class="table-card">
+          <table mat-table [dataSource]="orders" class="full-width-table">
+            <ng-container matColumnDef="merchantOrderId">
+              <th mat-header-cell *matHeaderCellDef>{{ 'BUSINESS.ORDERS.MERCHANT_ORDER_ID' | translate }}</th>
+              <td mat-cell *matCellDef="let o"><strong>{{ o.merchantOrderId }}</strong></td>
+            </ng-container>
+
+            <ng-container matColumnDef="virtualAccountNumber">
+              <th mat-header-cell *matHeaderCellDef>{{ 'BUSINESS.ORDERS.VA_NUMBER' | translate }}</th>
+              <td mat-cell *matCellDef="let o"><code>{{ o.virtualAccountNumber }}</code></td>
+            </ng-container>
+
+            <ng-container matColumnDef="expectedAmount">
+              <th mat-header-cell *matHeaderCellDef>{{ 'BUSINESS.ORDERS.EXPECTED_AMOUNT' | translate }}</th>
+              <td mat-cell *matCellDef="let o">{{ o.expectedAmount | number:'1.0-0' }} {{ o.currency }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="paidAmount">
+              <th mat-header-cell *matHeaderCellDef>{{ 'BUSINESS.ORDERS.PAID_AMOUNT' | translate }}</th>
+              <td mat-cell *matCellDef="let o"><strong>{{ o.paidAmount | number:'1.0-0' }} {{ o.currency }}</strong></td>
+            </ng-container>
+
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.STATUS' | translate }}</th>
+              <td mat-cell *matCellDef="let o">
+                <span class="status-badge" [ngClass]="o.status.toLowerCase()">{{ o.status }}</span>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="createdAt">
+              <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.CREATED_AT' | translate }}</th>
+              <td mat-cell *matCellDef="let o">{{ o.createdAt | date:'short' }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.ACTIONS' | translate }}</th>
+              <td mat-cell *matCellDef="let o">
+                <button mat-flat-button color="accent" *ngIf="o.status === 'PAID'" (click)="adminCompleteOrder(o)">
+                  {{ 'ADMIN_B2B.APPROVE_COMPLETE' | translate }}
+                </button>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="orderColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: orderColumns;"></tr>
+
+            <tr class="mat-row" *matNoDataRow>
+              <td class="mat-cell empty-cell" [attr.colspan]="orderColumns.length">{{ 'COMMON.NO_DATA' | translate }}</td>
+            </tr>
+          </table>
+
+          <mat-paginator [length]="ordersTotal" [pageSize]="ordersSize" [pageIndex]="ordersPage" [pageSizeOptions]="[10, 20, 50]" (page)="onOrdersPage($event)" showFirstLastButtons></mat-paginator>
+        </mat-card>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</div>

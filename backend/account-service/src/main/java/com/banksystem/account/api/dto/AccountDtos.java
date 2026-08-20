@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 import org.springframework.format.annotation.DateTimeFormat;
 
 public final class AccountDtos {
@@ -36,11 +37,11 @@ public final class AccountDtos {
   public record MoneyResult(String ledgerEntryId, BigDecimal balanceAfter) {}
 
   public record AdjustmentRequestedEventRequest(
-      @NotNull java.util.UUID eventId,
-      @NotNull java.util.UUID proposalId,
-      @NotNull java.util.UUID caseId,
+      @NotNull UUID eventId,
+      @NotNull UUID proposalId,
+      @NotNull UUID caseId,
       int cycle,
-      @NotNull java.util.UUID targetAccountId,
+      @NotNull UUID targetAccountId,
       @NotBlank String direction,
       @NotNull BigDecimal amount,
       String currency,

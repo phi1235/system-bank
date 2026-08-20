@@ -1,5 +1,7 @@
 package com.banksystem.transaction.application.bill;
 
+import java.time.Instant;
+
 import com.banksystem.common.api.PageResponse;
 import com.banksystem.transaction.api.dto.BillDtos.BillCategoryResponse;
 import com.banksystem.transaction.api.dto.BillDtos.BillInquiryRequest;
@@ -15,7 +17,6 @@ import com.banksystem.transaction.domain.bill.BillPaymentEntity;
 import com.banksystem.transaction.domain.bill.BillPaymentRepository;
 import com.banksystem.transaction.domain.bill.BillProviderRepository;
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.PageRequest;
@@ -110,7 +111,7 @@ public class BillPaymentService {
     payment.setAmount(req.amount());
     payment.setFee(BigDecimal.ZERO);
     payment.setStatus("COMPLETED");
-    payment.setTransactionRef("BP-" + System.currentTimeMillis());
+    payment.setTransactionRef("BP-" + Instant.now().toEpochMilli());
     payment.setCreatedAt(Instant.now());
 
     paymentRepo.save(payment);

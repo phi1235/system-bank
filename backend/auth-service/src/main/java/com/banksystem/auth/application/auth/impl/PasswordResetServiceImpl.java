@@ -1,4 +1,6 @@
 package com.banksystem.auth.application.auth.impl;
+
+import java.time.Instant;
 import com.banksystem.auth.api.dto.PasswordResetDtos.ChangePasswordRequest;
 import com.banksystem.auth.api.dto.PasswordResetDtos.CreateTicketRequest;
 import com.banksystem.auth.api.dto.PasswordResetDtos.FulfillResponse;
@@ -22,7 +24,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.security.SecureRandom;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;

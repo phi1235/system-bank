@@ -1,0 +1,168 @@
+<div class="page-container">
+  <div class="page-header">
+    <div class="header-text">
+      <h1 class="page-title">{{ 'BUSINESS.SPLIT.TITLE' | translate }}</h1>
+      <p class="page-subtitle">{{ 'BUSINESS.SPLIT.SUB' | translate }}</p>
+    </div>
+    <button mat-flat-button color="primary" (click)="openCreateModal()">
+      <mat-icon>add</mat-icon>
+      {{ 'BUSINESS.SPLIT.CREATE_RULE_BTN' | translate }}
+    </button>
+  </div>
+
+  <!-- Interactive Split Preview Calculator -->
+  <mat-card class="calculator-card">
+    <div class="card-header">
+      <mat-icon color="primary">calculate</mat-icon>
+      <h3>{{ 'BUSINESS.SPLIT.PREVIEW_TITLE' | translate }}</h3>
+    </div>
+    <div class="calculator-body">
+      <div class="calc-inputs">
+        <mat-form-field appearance="outline" class="amount-input">
+          <mat-label>{{ 'BUSINESS.SPLIT.GROSS_INPUT_VND' | translate }}</mat-label>
+          <input matInput type="number" [(ngModel)]="previewGrossAmount" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="rule-select">
+          <mat-label>{{ 'BUSINESS.SPLIT.TITLE' | translate }}</mat-label>
+          <mat-select [(ngModel)]="previewSelectedRuleId">
+            <mat-option value="">{{ 'COMMON.DEFAULT' | translate }}</mat-option>
+            <mat-option *ngFor="let r of splitRules" [value]="r.id">{{ r.name }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <button mat-flat-button color="primary" [disabled]="calculatingPreview" (click)="calculatePreview()">
+          {{ 'BUSINESS.SPLIT.CALCULATE_BTN' | translate }}
+        </button>
+      </div>
+
+      <div class="calc-results" *ngIf="previewResult">
+        <div class="result-box commission">
+          <span class="label">{{ 'BUSINESS.SPLIT.TOTAL_COMMISSION' | translate }}</span>
+          <span class="value">{{ previewResult.platformCommission | number:'1.0-0' }} VND</span>
+        </div>
+        <div class="result-box seller-net">
+          <span class="label">{{ 'BUSINESS.SPLIT.TOTAL_SELLER_NET' | translate }}</span>
+          <span class="value">{{ previewResult.sellerNetAmount | number:'1.0-0' }} VND</span>
+        </div>
+      </div>
+    </div>
+  </mat-card>
+
+  <!-- Split Rules List -->
+  <div class="rules-grid">
+    <mat-card class="rule-card" *ngFor="let rule of splitRules">
+      <div class="rule-header">
+        <div class="rule-title-group">
+          <h3>{{ rule.name }}</h3>
+          <span class="badge active">{{ rule.status }}</span>
+        </div>
+        <button mat-icon-button color="warn" (click)="deleteRule(rule)">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
+
+      <mat-divider></mat-divider>
+
+      <div class="legs-list">
+        <div class="leg-item" *ngFor="let item of rule.items">
+          <div class="leg-left">
+            <span class="priority-badge">#{{ item.priority }}</span>
+            <div class="leg-details">
+              <strong>{{ item.beneficiaryName || ('BUSINESS.SPLIT.TYPE_' + item.beneficiaryType | translate) }}</strong>
+              <small>{{ 'BUSINESS.SPLIT.TYPE_' + item.beneficiaryType | translate }}</small>
+            </div>
+          </div>
+          <div class="leg-right">
+            <span class="split-val" *ngIf="item.splitType === 'PERCENTAGE'">{{ item.value }}%</span>
+            <span class="split-val" *ngIf="item.splitType === 'FIXED_AMOUNT'">{{ item.value | number:'1.0-0' }} VND</span>
+            <span class="split-val remainder" *ngIf="item.splitType === 'REMAINDER'">{{ 'BUSINESS.SPLIT.TYPE_REMAINDER' | translate }}</span>
+          </div>
+        </div>
+      </div>
+    </mat-card>
+
+    <div class="empty-rules" *ngIf="splitRules.length === 0 && !loading">
+      <mat-icon>call_split</mat-icon>
+      <p>{{ 'COMMON.NO_DATA' | translate }}</p>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Create Split Rule -->
+<div class="custom-modal-backdrop" *ngIf="showCreateModal">
+  <div class="custom-modal-card large-modal">
+    <div class="modal-header">
+      <h3>{{ 'BUSINESS.SPLIT.CREATE_RULE_BTN' | translate }}</h3>
+      <button mat-icon-button (click)="closeCreateModal()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+    <div class="modal-body">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>{{ 'BUSINESS.SPLIT.RULE_NAME' | translate }}</mat-label>
+        <input matInput [(ngModel)]="newRuleName" [placeholder]="'BUSINESS.SPLIT.RULE_NAME_PLACEHOLDER' | translate" />
+      </mat-form-field>
+
+      <div class="legs-editor-header">
+        <h4>{{ 'BUSINESS.SPLIT.ITEMS_TITLE' | translate }}</h4>
+        <button mat-stroked-button color="primary" (click)="addLeg()">
+          <mat-icon>add</mat-icon>
+          {{ 'BUSINESS.SPLIT.ADD_LEG' | translate }}
+        </button>
+      </div>
+
+      <div class="legs-editor-list">
+        <div class="leg-editor-row" *ngFor="let leg of newRuleItems; let i = index">
+          <mat-form-field appearance="outline" class="field-type">
+            <mat-label>{{ 'BUSINESS.SPLIT.BENEFICIARY_TYPE' | translate }}</mat-label>
+            <mat-select [(ngModel)]="leg.beneficiaryType">
+              <mat-option value="PLATFORM">{{ 'BUSINESS.SPLIT.TYPE_PLATFORM' | translate }}</mat-option>
+              <mat-option value="SELLER_INTERNAL">{{ 'BUSINESS.SPLIT.TYPE_SELLER_INTERNAL' | translate }}</mat-option>
+              <mat-option value="SELLER_EXTERNAL">{{ 'BUSINESS.SPLIT.TYPE_SELLER_EXTERNAL' | translate }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="field-name">
+            <mat-label>{{ 'BUSINESS.SPLIT.BENEFICIARY_NAME' | translate }}</mat-label>
+            <input matInput [(ngModel)]="leg.beneficiaryName" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="field-split-type">
+            <mat-label>{{ 'BUSINESS.SPLIT.SPLIT_TYPE' | translate }}</mat-label>
+            <mat-select [(ngModel)]="leg.splitType">
+              <mat-option value="PERCENTAGE">{{ 'BUSINESS.SPLIT.TYPE_PERCENTAGE' | translate }}</mat-option>
+              <mat-option value="FIXED_AMOUNT">{{ 'BUSINESS.SPLIT.TYPE_FIXED_AMOUNT' | translate }}</mat-option>
+              <mat-option value="REMAINDER">{{ 'BUSINESS.SPLIT.TYPE_REMAINDER' | translate }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="field-value" *ngIf="leg.splitType !== 'REMAINDER'">
+            <mat-label>{{ 'BUSINESS.SPLIT.VALUE' | translate }}</mat-label>
+            <input matInput type="number" [(ngModel)]="leg.value" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="field-bank" *ngIf="leg.beneficiaryType === 'SELLER_EXTERNAL'">
+            <mat-label>{{ 'BUSINESS.SPLIT.BANK_BIN' | translate }}</mat-label>
+            <input matInput [(ngModel)]="leg.bankBin" [placeholder]="'BUSINESS.SPLIT.BANK_BIN_PLACEHOLDER' | translate" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="field-acc" *ngIf="leg.beneficiaryType === 'SELLER_EXTERNAL'">
+            <mat-label>{{ 'BUSINESS.SPLIT.ACCOUNT_NO' | translate }}</mat-label>
+            <input matInput [(ngModel)]="leg.accountNumber" />
+          </mat-form-field>
+
+          <button mat-icon-button color="warn" (click)="removeLeg(i)" *ngIf="newRuleItems.length > 1">
+            <mat-icon>remove_circle</mat-icon>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button mat-button (click)="closeCreateModal()">{{ 'COMMON.CANCEL' | translate }}</button>
+      <button mat-flat-button color="primary" [disabled]="creatingRule || !newRuleName" (click)="submitCreateRule()">
+        {{ 'COMMON.SAVE' | translate }}
+      </button>
+    </div>
+  </div>
+</div>

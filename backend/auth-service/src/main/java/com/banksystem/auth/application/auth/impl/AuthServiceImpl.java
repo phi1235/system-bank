@@ -1,4 +1,6 @@
 package com.banksystem.auth.application.auth.impl;
+
+import java.time.Instant;
 import com.banksystem.auth.api.dto.AuthDtos.LoginRequest;
 import com.banksystem.auth.api.dto.AuthDtos.LoginResponse;
 import com.banksystem.auth.api.dto.AuthDtos.MfaEnableRequest;
@@ -23,7 +25,6 @@ import com.banksystem.auth.infrastructure.redis.TokenStore;
 import com.banksystem.auth.infrastructure.security.BoundPasswordEncoder;
 import com.banksystem.common.exception.BusinessException;
 import io.jsonwebtoken.Claims;
-import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import org.slf4j.Logger;

@@ -31,21 +31,24 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class AdminForensicInvestigationController {
 
   private final ForensicInvestigationQueryService service;
+  private final ForensicRequestMapper requestMapper;
 
-  public AdminForensicInvestigationController(ForensicInvestigationQueryService service) {
+  public AdminForensicInvestigationController(
+      ForensicInvestigationQueryService service, ForensicRequestMapper requestMapper) {
     this.service = service;
+    this.requestMapper = requestMapper;
   }
 
   @GetMapping
   public ApiResponse<PageResponse<InvestigationItemResponse>> search(
       @Valid @ModelAttribute ForensicInvestigationFilterRequest request) {
-    return ApiResponse.ok(service.search(ForensicRequestMapper.toQuery(request)));
+    return ApiResponse.ok(service.search(requestMapper.toQuery(request)));
   }
 
   @PostMapping("/findByCondition")
   public ApiResponse<PageResponse<InvestigationItemResponse>> findByCondition(
       @Valid @RequestBody ForensicInvestigationFilterRequest request) {
-    return ApiResponse.ok(service.search(ForensicRequestMapper.toQuery(request)));
+    return ApiResponse.ok(service.search(requestMapper.toQuery(request)));
   }
 
   @GetMapping("/{transactionId}")
@@ -57,7 +60,7 @@ public class AdminForensicInvestigationController {
   public ApiResponse<PageResponse<TimelineEvidenceResponse>> timeline(
       @PathVariable UUID transactionId,
       @Valid @ModelAttribute EvidenceTimelineFilterRequest request) {
-    return ApiResponse.ok(service.timeline(transactionId, ForensicRequestMapper.toQuery(request)));
+    return ApiResponse.ok(service.timeline(transactionId, requestMapper.toQuery(request)));
   }
 
   @GetMapping("/{transactionId}/temporal-state")

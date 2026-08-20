@@ -1,13 +1,4 @@
 package com.banksystem.account.api.account;
-import com.banksystem.account.application.account.*;
-import com.banksystem.account.application.card.*;
-import com.banksystem.account.application.deposit.*;
-import com.banksystem.account.application.ledger.*;
-import com.banksystem.account.domain.account.*;
-import com.banksystem.account.domain.card.*;
-import com.banksystem.account.domain.deposit.*;
-import com.banksystem.account.domain.ledger.*;
-import com.banksystem.account.api.dto.*;
 
 import com.banksystem.account.api.dto.AccountDtos.AccountResponse;
 import com.banksystem.account.api.dto.AccountDtos.LedgerEntryResponse;
@@ -15,12 +6,13 @@ import com.banksystem.account.api.dto.AccountDtos.OpenAccountRequest;
 import com.banksystem.account.api.dto.AccountDtos.StatementFilterRequest;
 import com.banksystem.account.api.dto.AccountDtos.TopUpRequest;
 import com.banksystem.account.api.dto.AccountDtos.TopUpResponse;
+import com.banksystem.account.application.account.CustomerAccountService;
+import com.banksystem.account.application.ledger.LedgerStatementQuery;
 import com.banksystem.common.security.UserContext;
 import com.banksystem.common.api.ApiResponse;
 import com.banksystem.common.api.PageResponse;
 import jakarta.validation.Valid;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.format.annotation.DateTimeFormat;

@@ -1,0 +1,203 @@
+<div class="page-container">
+  <div class="page-header">
+    <div class="header-text">
+      <h1 class="page-title">{{ 'BUSINESS.ORDERS.TITLE' | translate }}</h1>
+      <p class="page-subtitle">{{ 'BUSINESS.ORDERS.SUB' | translate }}</p>
+    </div>
+    <button mat-flat-button color="primary" (click)="openCreateModal()">
+      <mat-icon>add</mat-icon>
+      {{ 'BUSINESS.ORDERS.CREATE_BTN' | translate }}
+    </button>
+  </div>
+
+  <!-- Filter Bar -->
+  <mat-card class="filter-card">
+    <div class="filter-row">
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>{{ 'COMMON.SEARCH' | translate }}</mat-label>
+        <input matInput [(ngModel)]="searchQuery" (keyup.enter)="onSearch()" [placeholder]="'BUSINESS.ORDERS.SEARCH_PLACEHOLDER' | translate" />
+        <button mat-icon-button matSuffix (click)="onSearch()">
+          <mat-icon>search</mat-icon>
+        </button>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="status-field">
+        <mat-label>{{ 'BUSINESS.ORDERS.STATUS' | translate }}</mat-label>
+        <mat-select [(ngModel)]="statusFilter" (selectionChange)="onSearch()">
+          <mat-option value="">{{ 'COMMON.ALL' | translate }}</mat-option>
+          <mat-option value="PENDING">{{ 'BUSINESS.ORDERS.STATUS_PENDING' | translate }}</mat-option>
+          <mat-option value="PAID">{{ 'BUSINESS.ORDERS.STATUS_PAID' | translate }}</mat-option>
+          <mat-option value="PARTIAL">{{ 'BUSINESS.ORDERS.STATUS_PARTIAL' | translate }}</mat-option>
+          <mat-option value="OVERPAID">{{ 'BUSINESS.ORDERS.STATUS_OVERPAID' | translate }}</mat-option>
+          <mat-option value="CANCELLED">{{ 'BUSINESS.ORDERS.STATUS_CANCELLED' | translate }}</mat-option>
+          <mat-option value="REVIEW">{{ 'BUSINESS.ORDERS.STATUS_REVIEW' | translate }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+  </mat-card>
+
+  <!-- Orders Table -->
+  <mat-card class="table-card">
+    <table mat-table [dataSource]="orders" class="full-width-table">
+      <!-- Merchant Order ID -->
+      <ng-container matColumnDef="merchantOrderId">
+        <th mat-header-cell *matHeaderCellDef>{{ 'BUSINESS.ORDERS.MERCHANT_ORDER_ID' | translate }}</th>
+        <td mat-cell *matCellDef="let order">
+          <span class="order-id-text">{{ order.merchantOrderId }}</span>
+          <div class="cust-ref-text" *ngIf="order.customerReference">
+            <small>{{ order.customerReference }}</small>
+          </div>
+        </td>
+      </ng-container>
+
+      <!-- VA Number -->
+      <ng-container matColumnDef="virtualAccountNumber">
+        <th mat-header-cell *matHeaderCellDef>{{ 'BUSINESS.ORDERS.VA_NUMBER' | translate }}</th>
+        <td mat-cell *matCellDef="let order">
+          <code>{{ order.virtualAccountNumber }}</code>
+        </td>
+      </ng-container>
+
+      <!-- Expected Amount -->
+      <ng-container matColumnDef="expectedAmount">
+        <th mat-header-cell *matHeaderCellDef>{{ 'BUSINESS.ORDERS.EXPECTED_AMOUNT' | translate }}</th>
+        <td mat-cell *matCellDef="let order">
+          <strong class="amount-text">{{ order.expectedAmount | number:'1.0-0' }} {{ order.currency }}</strong>
+        </td>
+      </ng-container>
+
+      <!-- Paid Amount -->
+      <ng-container matColumnDef="paidAmount">
+        <th mat-header-cell *matHeaderCellDef>{{ 'BUSINESS.ORDERS.PAID_AMOUNT' | translate }}</th>
+        <td mat-cell *matCellDef="let order">
+          <span [class.paid-success]="order.paidAmount >= order.expectedAmount">
+            {{ order.paidAmount | number:'1.0-0' }} {{ order.currency }}
+          </span>
+        </td>
+      </ng-container>
+
+      <!-- Status -->
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef>{{ 'BUSINESS.ORDERS.STATUS' | translate }}</th>
+        <td mat-cell *matCellDef="let order">
+          <span class="status-badge" [ngClass]="order.status.toLowerCase()">
+            {{ 'BUSINESS.ORDERS.STATUS_' + order.status | translate }}
+          </span>
+        </td>
+      </ng-container>
+
+      <!-- Created At -->
+      <ng-container matColumnDef="createdAt">
+        <th mat-header-cell *matHeaderCellDef>{{ 'BUSINESS.ORDERS.CREATED_AT' | translate }}</th>
+        <td mat-cell *matCellDef="let order">{{ order.createdAt | date:'short' }}</td>
+      </ng-container>
+
+      <!-- Actions -->
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.ACTIONS' | translate }}</th>
+        <td mat-cell *matCellDef="let order">
+          <button mat-icon-button color="primary" (click)="openQrModal(order)" title="{{ 'BUSINESS.ORDERS.QR_MODAL_TITLE' | translate }}">
+            <mat-icon>qr_code_2</mat-icon>
+          </button>
+          <button mat-icon-button color="accent" *ngIf="order.status === 'PAID'" (click)="completeOrder(order)" title="{{ 'BUSINESS.ORDERS.COMPLETE_BTN' | translate }}">
+            <mat-icon>check_circle</mat-icon>
+          </button>
+          <button mat-icon-button color="warn" *ngIf="order.status === 'PENDING'" (click)="cancelOrder(order)" title="{{ 'BUSINESS.ORDERS.CANCEL_BTN' | translate }}">
+            <mat-icon>cancel</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
+      <tr class="mat-row" *matNoDataRow>
+        <td class="mat-cell empty-cell" [attr.colspan]="displayedColumns.length">
+          {{ 'COMMON.NO_DATA' | translate }}
+        </td>
+      </tr>
+    </table>
+
+    <mat-paginator
+      [length]="totalElements"
+      [pageSize]="pageSize"
+      [pageIndex]="pageIndex"
+      [pageSizeOptions]="[10, 20, 50]"
+      (page)="onPageChange($event)"
+      showFirstLastButtons>
+    </mat-paginator>
+  </mat-card>
+</div>
+
+<!-- Modal Create Collection Order -->
+<div class="custom-modal-backdrop" *ngIf="showCreateModal">
+  <div class="custom-modal-card">
+    <div class="modal-header">
+      <h3>{{ 'BUSINESS.ORDERS.CREATE_BTN' | translate }}</h3>
+      <button mat-icon-button (click)="closeCreateModal()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+    <div class="modal-body">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>{{ 'BUSINESS.ORDERS.MERCHANT_ORDER_ID' | translate }}</mat-label>
+        <input matInput [(ngModel)]="newMerchantOrderId" [placeholder]="'BUSINESS.ORDERS.ORDER_ID_PLACEHOLDER' | translate" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>{{ 'BUSINESS.ORDERS.EXPECTED_AMOUNT_VND' | translate }}</mat-label>
+        <input matInput type="number" [(ngModel)]="newExpectedAmount" [placeholder]="'BUSINESS.ORDERS.AMOUNT_PLACEHOLDER' | translate" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>{{ 'BUSINESS.ORDERS.CUSTOMER_REF' | translate }}</mat-label>
+        <input matInput [(ngModel)]="newCustomerRef" [placeholder]="'BUSINESS.ORDERS.CUSTOMER_REF_PLACEHOLDER' | translate" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>{{ 'BUSINESS.SPLIT.TITLE' | translate }}</mat-label>
+        <mat-select [(ngModel)]="newSplitRuleId">
+          <mat-option value="">{{ 'BUSINESS.ORDERS.DEFAULT_SPLIT' | translate }}</mat-option>
+          <mat-option *ngFor="let r of splitRules" [value]="r.id">{{ r.name }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+    <div class="modal-footer">
+      <button mat-button (click)="closeCreateModal()">{{ 'COMMON.CANCEL' | translate }}</button>
+      <button mat-flat-button color="primary" [disabled]="creatingOrder || !newExpectedAmount" (click)="submitCreateOrder()">
+        {{ 'COMMON.SAVE' | translate }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal QR Code Payment -->
+<div class="custom-modal-backdrop" *ngIf="showQrModal && selectedOrderForQr">
+  <div class="custom-modal-card qr-card">
+    <div class="modal-header">
+      <h3>{{ 'BUSINESS.ORDERS.QR_MODAL_TITLE' | translate }}</h3>
+      <button mat-icon-button (click)="closeQrModal()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+    <div class="modal-body text-center">
+      <div class="qr-image-wrapper">
+        <img [src]="selectedOrderForQr.vietQrUrl" alt="VietQR" class="vietqr-img" />
+      </div>
+      <div class="qr-details">
+        <p><strong>{{ 'BUSINESS.ORDERS.MERCHANT_ORDER_ID' | translate }}:</strong> {{ selectedOrderForQr.merchantOrderId }}</p>
+        <p><strong>{{ 'BUSINESS.ORDERS.EXPECTED_AMOUNT' | translate }}:</strong> {{ selectedOrderForQr.expectedAmount | number:'1.0-0' }} {{ selectedOrderForQr.currency }}</p>
+        <p><strong>{{ 'BUSINESS.ORDERS.VA_NUMBER' | translate }}:</strong> {{ selectedOrderForQr.virtualAccountNumber }}</p>
+        <p><strong>{{ 'BUSINESS.ORDERS.STATUS' | translate }}:</strong>
+          <span class="status-badge" [ngClass]="selectedOrderForQr.status.toLowerCase()">
+            {{ 'BUSINESS.ORDERS.STATUS_' + selectedOrderForQr.status | translate }}
+          </span>
+        </p>
+      </div>
+      <p class="scan-hint">{{ 'BUSINESS.ORDERS.SCAN_INSTRUCTION' | translate }}</p>
+    </div>
+    <div class="modal-footer">
+      <button mat-flat-button color="primary" (click)="closeQrModal()">{{ 'COMMON.CLOSE' | translate }}</button>
+    </div>
+  </div>
+</div>

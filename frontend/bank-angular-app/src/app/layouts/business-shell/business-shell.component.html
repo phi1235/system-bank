@@ -1,0 +1,154 @@
+<div class="business-layout">
+  <!-- Top Navigation Header -->
+  <header class="business-header">
+    <div class="header-left">
+      <a routerLink="/business/dashboard" class="brand-link">
+        <div class="brand-logo">
+          <mat-icon>business</mat-icon>
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">{{ 'BUSINESS.PORTAL_TITLE' | translate }}</span>
+          <span class="brand-badge" *ngIf="selectedOrg$ | async as org">{{ org.name }} ({{ org.code }})</span>
+        </div>
+      </a>
+
+      <!-- Org Switcher Dropdown -->
+      <div class="org-switcher" *ngIf="businessContext.organizations().length > 0">
+        <mat-form-field appearance="outline" class="compact-select">
+          <mat-select [value]="(selectedOrg$ | async)?.id" (selectionChange)="onOrgChange($event.value)">
+            <mat-option *ngFor="let org of businessContext.organizations()" [value]="org.id">
+              {{ org.name }} ({{ org.code }})
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <button mat-stroked-button color="primary" class="btn-create-org" (click)="openCreateOrgModal()">
+        <mat-icon>add_business</mat-icon>
+        {{ 'BUSINESS.CREATE_ORG' | translate }}
+      </button>
+    </div>
+
+    <div class="header-right">
+      <app-lang-switcher></app-lang-switcher>
+      <app-notification-bell mode="customer"></app-notification-bell>
+
+      <button mat-button [matMenuTriggerFor]="userMenu" class="user-profile-btn">
+        <div class="avatar-circle">
+          <mat-icon>account_circle</mat-icon>
+        </div>
+        <div class="user-info-text">
+          <span class="username">{{ username$ | async }}</span>
+          <span class="user-role" *ngIf="membership$ | async as mem">{{ 'BUSINESS.MEMBERS.ROLE_' + mem.businessRole.replace('BUSINESS_', '') | translate }}</span>
+        </div>
+        <mat-icon class="dropdown-arrow">arrow_drop_down</mat-icon>
+      </button>
+
+      <mat-menu #userMenu="matMenu" class="user-dropdown-menu">
+        <a mat-menu-item routerLink="/customer/home">
+          <mat-icon>person</mat-icon>
+          <span>{{ 'NAV.PERSONAL_BANKING' | translate }}</span>
+        </a>
+        <a mat-menu-item routerLink="/business/members">
+          <mat-icon>group</mat-icon>
+          <span>{{ 'BUSINESS.NAV.MEMBERS' | translate }}</span>
+        </a>
+        <a mat-menu-item routerLink="/business/developer">
+          <mat-icon>code</mat-icon>
+          <span>{{ 'BUSINESS.NAV.DEVELOPER' | translate }}</span>
+        </a>
+        <mat-divider></mat-divider>
+        <button mat-menu-item (click)="logout()" class="logout-menu-item">
+          <mat-icon color="warn">logout</mat-icon>
+          <span>{{ 'NAV.LOGOUT' | translate }}</span>
+        </button>
+      </mat-menu>
+    </div>
+  </header>
+
+  <!-- Secondary Business Sub-nav Toolbar -->
+  <nav class="business-nav-toolbar">
+    <div class="nav-container">
+      <a routerLink="/business/dashboard" routerLinkActive="active" class="nav-item">
+        <mat-icon>dashboard</mat-icon>
+        <span>{{ 'BUSINESS.NAV.DASHBOARD' | translate }}</span>
+      </a>
+      <a routerLink="/business/virtual-accounts" routerLinkActive="active" class="nav-item">
+        <mat-icon>account_balance</mat-icon>
+        <span>{{ 'BUSINESS.NAV.VIRTUAL_ACCOUNTS' | translate }}</span>
+      </a>
+      <a routerLink="/business/collection-orders" routerLinkActive="active" class="nav-item">
+        <mat-icon>receipt_long</mat-icon>
+        <span>{{ 'BUSINESS.NAV.COLLECTION_ORDERS' | translate }}</span>
+      </a>
+      <a routerLink="/business/split-rules" routerLinkActive="active" class="nav-item">
+        <mat-icon>call_split</mat-icon>
+        <span>{{ 'BUSINESS.NAV.SPLIT_RULES' | translate }}</span>
+      </a>
+      <a routerLink="/business/settlements" routerLinkActive="active" class="nav-item">
+        <mat-icon>account_tree</mat-icon>
+        <span>{{ 'BUSINESS.NAV.SETTLEMENTS' | translate }}</span>
+      </a>
+      <a routerLink="/business/developer" routerLinkActive="active" class="nav-item">
+        <mat-icon>terminal</mat-icon>
+        <span>{{ 'BUSINESS.NAV.DEVELOPER' | translate }}</span>
+      </a>
+      <a routerLink="/business/members" routerLinkActive="active" class="nav-item">
+        <mat-icon>badge</mat-icon>
+        <span>{{ 'BUSINESS.NAV.MEMBERS' | translate }}</span>
+      </a>
+    </div>
+  </nav>
+
+  <!-- Main Content Body -->
+  <main class="business-main-content">
+    <ng-container *ngIf="selectedOrg$ | async; else noOrgSelected">
+      <router-outlet></router-outlet>
+    </ng-container>
+
+    <ng-template #noOrgSelected>
+      <div class="no-org-container">
+        <mat-icon class="large-icon">domain_disabled</mat-icon>
+        <h2>{{ 'BUSINESS.NO_ORGS' | translate }}</h2>
+        <button mat-flat-button color="primary" (click)="openCreateOrgModal()">
+          <mat-icon>add_business</mat-icon>
+          {{ 'BUSINESS.CREATE_ORG' | translate }}
+        </button>
+      </div>
+    </ng-template>
+  </main>
+</div>
+
+<!-- Modal Create Organization -->
+<div class="custom-modal-backdrop" *ngIf="showCreateOrgModal">
+  <div class="custom-modal-card">
+    <div class="modal-header">
+      <h3>{{ 'BUSINESS.CREATE_ORG' | translate }}</h3>
+      <button mat-icon-button (click)="closeCreateOrgModal()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+    <div class="modal-body">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>{{ 'BUSINESS.ORG_CODE' | translate }}</mat-label>
+        <input matInput [(ngModel)]="newOrgCode" [placeholder]="'BUSINESS.SHELL.ORG_CODE_PLACEHOLDER' | translate" maxlength="30" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>{{ 'BUSINESS.ORG_NAME' | translate }}</mat-label>
+        <input matInput [(ngModel)]="newOrgName" [placeholder]="'BUSINESS.SHELL.ORG_NAME_PLACEHOLDER' | translate" maxlength="200" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>{{ 'BUSINESS.TAX_CODE' | translate }}</mat-label>
+        <input matInput [(ngModel)]="newOrgTaxCode" [placeholder]="'BUSINESS.SHELL.TAX_CODE_PLACEHOLDER' | translate" maxlength="50" />
+      </mat-form-field>
+    </div>
+    <div class="modal-footer">
+      <button mat-button (click)="closeCreateOrgModal()">{{ 'COMMON.CANCEL' | translate }}</button>
+      <button mat-flat-button color="primary" [disabled]="creatingOrg || !newOrgCode || !newOrgName" (click)="submitCreateOrg()">
+        {{ 'COMMON.SAVE' | translate }}
+      </button>
+    </div>
+  </div>
+</div>

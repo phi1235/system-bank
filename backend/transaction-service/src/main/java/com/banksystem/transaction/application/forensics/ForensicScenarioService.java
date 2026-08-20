@@ -11,6 +11,7 @@ import com.banksystem.transaction.domain.forensics.ForensicReplayScenarioReposit
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
@@ -91,7 +92,7 @@ public class ForensicScenarioService {
       return;
     }
     String title = "Regression: " + forensicCase.getTitle();
-    Map<String, Object> definition = new java.util.LinkedHashMap<>();
+    Map<String, Object> definition = new LinkedHashMap<>();
     definition.put("schemaVersion", 1);
     definition.put("sourceType", "AUTO_GENERATED");
     definition.put("caseNumber", forensicCase.getCaseNumber());

@@ -82,6 +82,8 @@ export class AdminShellComponent implements OnInit, OnDestroy {
     shareReplay({ bufferSize: 1, refCount: true }),
   );
   canAudit$ = this.store.select(selectHasPermission(PERMISSIONS.AUDIT_LIST_VIEW));
+  canVirtualAccounts$ = this.store.select(selectHasPermission(PERMISSIONS.VA_OPERATIONS_VIEW));
+  canSettlements$ = this.store.select(selectHasPermission(PERMISSIONS.SETTLEMENT_VIEW));
   canRbac$ = this.store.select(selectHasPermission(PERMISSIONS.RBAC_ACCESS));
   canRisk$ = this.store.select(selectHasPermission(PERMISSIONS.RISK_VIEW));
   canOpsNotifications$ = this.store.select(

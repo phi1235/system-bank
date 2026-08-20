@@ -1,0 +1,202 @@
+<div class="page-container">
+  <div class="page-header">
+    <div class="header-text">
+      <h1 class="page-title">{{ 'BUSINESS.DEVELOPER.TITLE' | translate }}</h1>
+      <p class="page-subtitle">{{ 'BUSINESS.DEVELOPER.SUB' | translate }}</p>
+    </div>
+  </div>
+
+  <!-- Section 1: Merchant Accounts Config -->
+  <mat-card class="section-card">
+    <div class="card-header">
+      <mat-icon color="primary">account_balance</mat-icon>
+      <h3>{{ 'BUSINESS.DEVELOPER.MERCHANT_CONFIG_TITLE' | translate }}</h3>
+    </div>
+    <div class="card-body form-grid">
+      <mat-form-field appearance="outline" class="form-field">
+        <mat-label>{{ 'BUSINESS.DEVELOPER.COLLECTION_ACC' | translate }}</mat-label>
+        <input matInput [(ngModel)]="collectionAccountId" [placeholder]="'BUSINESS.DEVELOPER.COLLECTION_ACCOUNT_PLACEHOLDER' | translate" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="form-field">
+        <mat-label>{{ 'BUSINESS.DEVELOPER.ESCROW_ACC' | translate }}</mat-label>
+        <input matInput [(ngModel)]="escrowAccountId" [placeholder]="'BUSINESS.DEVELOPER.ESCROW_ACCOUNT_PLACEHOLDER' | translate" />
+      </mat-form-field>
+
+    </div>
+    <div class="card-footer">
+      <button mat-flat-button color="primary" [disabled]="savingConfig" (click)="saveAccountConfig()">
+        {{ 'BUSINESS.DEVELOPER.SAVE_CONFIG_BTN' | translate }}
+      </button>
+    </div>
+  </mat-card>
+
+  <!-- Section 2: API Keys -->
+  <mat-card class="section-card">
+    <div class="card-header space-between">
+      <div class="header-left-title">
+        <mat-icon color="primary">key</mat-icon>
+        <h3>{{ 'BUSINESS.DEVELOPER.CREDENTIALS_TITLE' | translate }}</h3>
+      </div>
+      <button mat-stroked-button color="primary" (click)="openCreateKeyModal()">
+        <mat-icon>add</mat-icon>
+        {{ 'BUSINESS.DEVELOPER.CREATE_KEY_BTN' | translate }}
+      </button>
+    </div>
+
+    <table mat-table [dataSource]="credentials" class="full-width-table">
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef>{{ 'BUSINESS.DEVELOPER.KEY_NAME' | translate }}</th>
+        <td mat-cell *matCellDef="let c"><strong>{{ c.name }}</strong></td>
+      </ng-container>
+
+      <ng-container matColumnDef="keyId">
+        <th mat-header-cell *matHeaderCellDef>{{ 'BUSINESS.DEVELOPER.KEY_ID' | translate }}</th>
+        <td mat-cell *matCellDef="let c"><code>{{ c.keyId }}</code></td>
+      </ng-container>
+
+      <ng-container matColumnDef="createdAt">
+        <th mat-header-cell *matHeaderCellDef>{{ 'BUSINESS.VA.CREATED_AT' | translate }}</th>
+        <td mat-cell *matCellDef="let c">{{ c.createdAt | date:'short' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.ACTIONS' | translate }}</th>
+        <td mat-cell *matCellDef="let c">
+          <button mat-icon-button color="warn" (click)="deleteKey(c)">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="credColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: credColumns;"></tr>
+
+      <tr class="mat-row" *matNoDataRow>
+        <td class="mat-cell empty-cell" [attr.colspan]="credColumns.length">
+          {{ 'COMMON.NO_DATA' | translate }}
+        </td>
+      </tr>
+    </table>
+  </mat-card>
+
+  <!-- Section 3: Webhooks -->
+  <mat-card class="section-card">
+    <div class="card-header space-between">
+      <div class="header-left-title">
+        <mat-icon color="primary">webhook</mat-icon>
+        <h3>{{ 'BUSINESS.DEVELOPER.WEBHOOKS_TITLE' | translate }}</h3>
+      </div>
+      <button mat-stroked-button color="primary" (click)="openWebhookModal()">
+        <mat-icon>add</mat-icon>
+        {{ 'BUSINESS.DEVELOPER.REGISTER_WEBHOOK_BTN' | translate }}
+      </button>
+    </div>
+
+    <table mat-table [dataSource]="webhooks" class="full-width-table">
+      <ng-container matColumnDef="url">
+        <th mat-header-cell *matHeaderCellDef>{{ 'BUSINESS.DEVELOPER.WEBHOOK_URL' | translate }}</th>
+        <td mat-cell *matCellDef="let w"><code>{{ w.url }}</code></td>
+      </ng-container>
+
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef>{{ 'BUSINESS.DEVELOPER.STATUS' | translate }}</th>
+        <td mat-cell *matCellDef="let w">
+          <span class="status-badge active">{{ w.status }}</span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="createdAt">
+        <th mat-header-cell *matHeaderCellDef>{{ 'BUSINESS.VA.CREATED_AT' | translate }}</th>
+        <td mat-cell *matCellDef="let w">{{ w.createdAt | date:'short' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.ACTIONS' | translate }}</th>
+        <td mat-cell *matCellDef="let w">
+          <button mat-icon-button color="warn" (click)="deleteWebhook(w)">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="webhookColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: webhookColumns;"></tr>
+
+      <tr class="mat-row" *matNoDataRow>
+        <td class="mat-cell empty-cell" [attr.colspan]="webhookColumns.length">
+          {{ 'COMMON.NO_DATA' | translate }}
+        </td>
+      </tr>
+    </table>
+  </mat-card>
+</div>
+
+<!-- Modal Create API Key -->
+<div class="custom-modal-backdrop" *ngIf="showCreateKeyModal">
+  <div class="custom-modal-card">
+    <div class="modal-header">
+      <h3>{{ 'BUSINESS.DEVELOPER.CREATE_KEY_BTN' | translate }}</h3>
+      <button mat-icon-button (click)="closeCreateKeyModal()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+    <div class="modal-body">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>{{ 'BUSINESS.DEVELOPER.KEY_NAME' | translate }}</mat-label>
+        <input matInput [(ngModel)]="newKeyName" [placeholder]="'BUSINESS.DEVELOPER.KEY_NAME_PLACEHOLDER' | translate" />
+      </mat-form-field>
+    </div>
+    <div class="modal-footer">
+      <button mat-button (click)="closeCreateKeyModal()">{{ 'COMMON.CANCEL' | translate }}</button>
+      <button mat-flat-button color="primary" [disabled]="creatingKey || !newKeyName" (click)="submitCreateKey()">
+        {{ 'COMMON.SAVE' | translate }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Secret Display (1-time) -->
+<div class="custom-modal-backdrop" *ngIf="showSecretModal">
+  <div class="custom-modal-card">
+    <div class="modal-header">
+      <h3>{{ 'BUSINESS.DEVELOPER.SECRET_MODAL_TITLE' | translate }}</h3>
+      <button mat-icon-button (click)="closeSecretModal()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p class="secret-warning">{{ 'BUSINESS.DEVELOPER.SECRET_WARNING' | translate }}</p>
+      <div class="secret-box">
+        <code>{{ newlyCreatedSecret }}</code>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button mat-flat-button color="primary" (click)="closeSecretModal()">{{ 'COMMON.CLOSE' | translate }}</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Register Webhook -->
+<div class="custom-modal-backdrop" *ngIf="showWebhookModal">
+  <div class="custom-modal-card">
+    <div class="modal-header">
+      <h3>{{ 'BUSINESS.DEVELOPER.REGISTER_WEBHOOK_BTN' | translate }}</h3>
+      <button mat-icon-button (click)="closeWebhookModal()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+    <div class="modal-body">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>{{ 'BUSINESS.DEVELOPER.WEBHOOK_URL' | translate }}</mat-label>
+        <input matInput [(ngModel)]="newWebhookUrl" [placeholder]="'BUSINESS.DEVELOPER.WEBHOOK_URL_PLACEHOLDER' | translate" />
+      </mat-form-field>
+    </div>
+    <div class="modal-footer">
+      <button mat-button (click)="closeWebhookModal()">{{ 'COMMON.CANCEL' | translate }}</button>
+      <button mat-flat-button color="primary" [disabled]="registeringWebhook || !newWebhookUrl" (click)="submitWebhook()">
+        {{ 'COMMON.SAVE' | translate }}
+      </button>
+    </div>
+  </div>
+</div>

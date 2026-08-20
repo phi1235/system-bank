@@ -1,8 +1,9 @@
 package com.banksystem.auth.config;
+
+import java.time.Instant;
 import com.banksystem.auth.domain.auth.UserEntity;
 import com.banksystem.auth.domain.auth.UserRepository;
 import com.banksystem.auth.infrastructure.security.BoundPasswordEncoder;
-import java.time.Instant;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -81,7 +81,7 @@ public class ReconciliationService {
     run.setZone(zone.getId());
     run.setTriggerType(triggerType);
     run.setStatus(ReconRunEntity.STATUS_RUNNING);
-    run.setStartedAt(Instant.now(clock));
+    run.setStartedAt(clock.instant());
     runRepository.save(run);
     log.info("[RECON-RUN] Starting recon run [{}] Date=[{}] Trigger=[{}]", run.getId(), date, triggerType);
 
@@ -102,7 +102,7 @@ public class ReconciliationService {
           discrepancies.isEmpty()
               ? ReconRunEntity.STATUS_MATCHED
               : ReconRunEntity.STATUS_MISMATCHED);
-      run.setFinishedAt(Instant.now(clock));
+      run.setFinishedAt(clock.instant());
       runRepository.save(run);
       log.info(
           "[RECON-FINISHED] Recon [{}] Status=[{}] Date=[{}] OrdersChecked=[{}] LedgerSeen=[{}] Discrepancies=[{}]",
@@ -111,10 +111,14 @@ public class ReconciliationService {
       log.error("[RECON-FAILED] Recon [{}] FAILED Date=[{}]: {}", run.getId(), date, ex.getMessage(), ex);
       run.setStatus(ReconRunEntity.STATUS_FAILED);
       run.setErrorDetail(truncate(ex.getMessage(), 500));
-      run.setFinishedAt(Instant.now(clock));
+      run.setFinishedAt(clock.instant());
       runRepository.save(run);
     }
     return toResponse(run);
+  }
+
+  public ReconRunResponse runManual(LocalDate date) {
+    return runForDate(date, ReconRunEntity.TRIGGER_MANUAL);
   }
 
   public PageResponse<ReconRunResponse> list(Integer page, Integer size) {

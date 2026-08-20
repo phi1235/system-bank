@@ -1,0 +1,180 @@
+<div class="page-container">
+  <div class="page-header">
+    <div class="header-text">
+      <h1 class="page-title">{{ 'BUSINESS.SETTLEMENT.TITLE' | translate }}</h1>
+      <p class="page-subtitle">{{ 'BUSINESS.SETTLEMENT.SUB' | translate }}</p>
+    </div>
+  </div>
+
+  <!-- Filter Bar -->
+  <mat-card class="filter-card">
+    <div class="filter-row">
+      <mat-form-field appearance="outline" class="status-field">
+        <mat-label>{{ 'BUSINESS.SETTLEMENT.STATUS' | translate }}</mat-label>
+        <mat-select [(ngModel)]="statusFilter" (selectionChange)="onFilterChange()">
+          <mat-option value="">{{ 'COMMON.ALL' | translate }}</mat-option>
+          <mat-option value="PENDING">{{ 'BUSINESS.SETTLEMENT.STATUS_PENDING' | translate }}</mat-option>
+          <mat-option value="FUNDS_RESERVED">{{ 'BUSINESS.SETTLEMENT.STATUS_FUNDS_RESERVED' | translate }}</mat-option>
+          <mat-option value="PROCESSING">{{ 'BUSINESS.SETTLEMENT.STATUS_PROCESSING' | translate }}</mat-option>
+          <mat-option value="COMPLETED">{{ 'BUSINESS.SETTLEMENT.STATUS_COMPLETED' | translate }}</mat-option>
+          <mat-option value="PARTIALLY_COMPLETED">{{ 'BUSINESS.SETTLEMENT.STATUS_PARTIALLY_COMPLETED' | translate }}</mat-option>
+          <mat-option value="RETRYING">{{ 'BUSINESS.SETTLEMENT.STATUS_RETRYING' | translate }}</mat-option>
+          <mat-option value="MANUAL_REVIEW">{{ 'BUSINESS.SETTLEMENT.STATUS_MANUAL_REVIEW' | translate }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+  </mat-card>
+
+  <!-- Settlements Table -->
+  <mat-card class="table-card">
+    <table mat-table [dataSource]="settlements" class="full-width-table">
+      <!-- Order ID Column -->
+      <ng-container matColumnDef="collectionOrderId">
+        <th mat-header-cell *matHeaderCellDef>{{ 'BUSINESS.SETTLEMENT.ORDER_ID' | translate }}</th>
+        <td mat-cell *matCellDef="let st">
+          <span class="order-id-code">{{ st.collectionOrderId }}</span>
+        </td>
+      </ng-container>
+
+      <!-- Gross Amount Column -->
+      <ng-container matColumnDef="grossAmount">
+        <th mat-header-cell *matHeaderCellDef>{{ 'BUSINESS.SETTLEMENT.GROSS_AMOUNT' | translate }}</th>
+        <td mat-cell *matCellDef="let st">
+          <strong>{{ st.grossAmount | number:'1.0-0' }} {{ st.currency }}</strong>
+        </td>
+      </ng-container>
+
+      <!-- Commission Column -->
+      <ng-container matColumnDef="platformCommission">
+        <th mat-header-cell *matHeaderCellDef>{{ 'BUSINESS.SETTLEMENT.COMMISSION' | translate }}</th>
+        <td mat-cell *matCellDef="let st">
+          <span class="commission-text">{{ st.platformCommission | number:'1.0-0' }} {{ st.currency }}</span>
+        </td>
+      </ng-container>
+
+      <!-- Seller Net Column -->
+      <ng-container matColumnDef="sellerNetAmount">
+        <th mat-header-cell *matHeaderCellDef>{{ 'BUSINESS.SETTLEMENT.SELLER_NET' | translate }}</th>
+        <td mat-cell *matCellDef="let st">
+          <span class="seller-net-text">{{ st.sellerNetAmount | number:'1.0-0' }} {{ st.currency }}</span>
+        </td>
+      </ng-container>
+
+      <!-- Status Column -->
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef>{{ 'BUSINESS.SETTLEMENT.STATUS' | translate }}</th>
+        <td mat-cell *matCellDef="let st">
+          <span class="status-badge" [ngClass]="st.status.toLowerCase()">
+            {{ 'BUSINESS.SETTLEMENT.STATUS_' + st.status | translate }}
+          </span>
+        </td>
+      </ng-container>
+
+      <!-- Created At Column -->
+      <ng-container matColumnDef="createdAt">
+        <th mat-header-cell *matHeaderCellDef>{{ 'BUSINESS.SETTLEMENT.CREATED_AT' | translate }}</th>
+        <td mat-cell *matCellDef="let st">{{ st.createdAt | date:'short' }}</td>
+      </ng-container>
+
+      <!-- Actions Column -->
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.ACTIONS' | translate }}</th>
+        <td mat-cell *matCellDef="let st">
+          <button mat-icon-button color="primary" (click)="openDetailModal(st)" title="{{ 'BUSINESS.ORDERS.DETAILS_BTN' | translate }}">
+            <mat-icon>visibility</mat-icon>
+          </button>
+          <button mat-icon-button color="warn" *ngIf="st.status === 'PARTIALLY_COMPLETED' || st.status === 'MANUAL_REVIEW'" (click)="retryFailedLegs(st)" title="{{ 'BUSINESS.SETTLEMENT.RETRY_BTN' | translate }}">
+            <mat-icon>refresh</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
+      <tr class="mat-row" *matNoDataRow>
+        <td class="mat-cell empty-cell" [attr.colspan]="displayedColumns.length">
+          {{ 'COMMON.NO_DATA' | translate }}
+        </td>
+      </tr>
+    </table>
+
+    <mat-paginator
+      [length]="totalElements"
+      [pageSize]="pageSize"
+      [pageIndex]="pageIndex"
+      [pageSizeOptions]="[10, 20, 50]"
+      (page)="onPageChange($event)"
+      showFirstLastButtons>
+    </mat-paginator>
+  </mat-card>
+</div>
+
+<!-- Modal Settlement Details & Legs -->
+<div class="custom-modal-backdrop" *ngIf="showDetailModal && selectedSettlement">
+  <div class="custom-modal-card large-modal">
+    <div class="modal-header">
+      <h3>{{ 'BUSINESS.SETTLEMENT.TITLE' | translate }} - {{ selectedSettlement.id }}</h3>
+      <button mat-icon-button (click)="closeDetailModal()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="settlement-meta-grid">
+        <div class="meta-item">
+          <span class="label">{{ 'BUSINESS.SETTLEMENT.GROSS_AMOUNT' | translate }}</span>
+          <span class="val">{{ selectedSettlement.grossAmount | number:'1.0-0' }} {{ selectedSettlement.currency }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="label">{{ 'BUSINESS.SETTLEMENT.COMMISSION' | translate }}</span>
+          <span class="val comm">{{ selectedSettlement.platformCommission | number:'1.0-0' }} {{ selectedSettlement.currency }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="label">{{ 'BUSINESS.SETTLEMENT.SELLER_NET' | translate }}</span>
+          <span class="val seller">{{ selectedSettlement.sellerNetAmount | number:'1.0-0' }} {{ selectedSettlement.currency }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="label">{{ 'BUSINESS.SETTLEMENT.JOURNAL_ID' | translate }}</span>
+          <span class="val journal">{{ selectedSettlement.ledgerJournalId || '—' }}</span>
+        </div>
+      </div>
+
+      <mat-divider></mat-divider>
+
+      <h4>{{ 'BUSINESS.SETTLEMENT.LEGS_TITLE' | translate }}</h4>
+      <div class="legs-table-wrapper">
+        <table class="legs-table">
+          <thead>
+            <tr>
+              <th>{{ 'BUSINESS.SPLIT.BENEFICIARY_NAME' | translate }}</th>
+              <th>{{ 'BUSINESS.SPLIT.BENEFICIARY_TYPE' | translate }}</th>
+              <th>{{ 'BUSINESS.SPLIT.ACCOUNT_NO' | translate }}</th>
+              <th>{{ 'COMMON.AMOUNT' | translate }}</th>
+              <th>{{ 'BUSINESS.SETTLEMENT.STATUS' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let leg of selectedSettlement.legs">
+              <td><strong>{{ leg.beneficiaryName || '—' }}</strong></td>
+              <td><span class="leg-type-badge">{{ leg.beneficiaryType }}</span></td>
+              <td><code>{{ leg.accountNumber || leg.accountId || '—' }}</code></td>
+              <td><strong>{{ leg.amount | number:'1.0-0' }} {{ leg.currency }}</strong></td>
+              <td>
+                <span class="status-badge" [ngClass]="leg.status.toLowerCase()">
+                  {{ leg.status }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button mat-button (click)="closeDetailModal()">{{ 'COMMON.CLOSE' | translate }}</button>
+      <button mat-flat-button color="warn" *ngIf="selectedSettlement.status === 'PARTIALLY_COMPLETED' || selectedSettlement.status === 'MANUAL_REVIEW'" (click)="retryFailedLegs(selectedSettlement)">
+        <mat-icon>refresh</mat-icon>
+        {{ 'BUSINESS.SETTLEMENT.RETRY_BTN' | translate }}
+      </button>
+    </div>
+  </div>
+</div>

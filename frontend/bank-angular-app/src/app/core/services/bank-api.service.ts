@@ -59,6 +59,19 @@ import {
   TransferDetail,
   TransferQuote,
   TransferRequest,
+  BusinessOrganization,
+  BusinessMember,
+  BusinessMembership,
+  VirtualAccount,
+  CollectionOrder,
+  InboundPaymentEvent,
+  SplitRule,
+  Settlement,
+  SettlementPreview,
+  MerchantCredential,
+  MerchantWebhookEndpoint,
+  MerchantAccountConfig,
+  BusinessDashboardSummary,
 } from '../models/domain.model';
 import { ApiService } from './api.service';
 import { DashboardKpis } from '../../features/admin/dashboard/dashboard.component';
@@ -1102,6 +1115,191 @@ export class BankApiService {
 
   forceRefundTransfer(id: string, reason: string): Observable<Transfer> {
     return this.api.post<Transfer>(`/admin/transfers/${encodeURIComponent(id)}/force-refund`, { reason });
+  }
+
+  // ── B2B Organizations & Members (Auth Service via Gateway) ──
+
+  listMyOrganizations(): Observable<BusinessOrganization[]> {
+    return this.api.get<BusinessOrganization[]>('/businesses');
+  }
+
+  registerOrganization(body: { code: string; name: string; taxCode?: string }): Observable<BusinessOrganization> {
+    return this.api.post<BusinessOrganization>('/businesses', body);
+  }
+
+  listBusinessMembers(orgId: string): Observable<BusinessMember[]> {
+    return this.api.get<BusinessMember[]>(`/businesses/${encodeURIComponent(orgId)}/members`);
+  }
+
+  addBusinessMember(orgId: string, body: { userId: string; role: string }): Observable<BusinessMember> {
+    return this.api.post<BusinessMember>(`/businesses/${encodeURIComponent(orgId)}/members`, body);
+  }
+
+  removeBusinessMember(orgId: string, memberId: string): Observable<void> {
+    return this.api.delete<void>(`/businesses/${encodeURIComponent(orgId)}/members/${encodeURIComponent(memberId)}`);
+  }
+
+  getMyBusinessMembership(orgId: string): Observable<BusinessMembership> {
+    return this.api.get<BusinessMembership>(`/businesses/${encodeURIComponent(orgId)}/my-membership`);
+  }
+
+  // ── B2B Dashboard ──
+
+  getBusinessDashboardSummary(orgId: string): Observable<BusinessDashboardSummary> {
+    return this.api.get<BusinessDashboardSummary>(`/businesses/${encodeURIComponent(orgId)}/dashboard/summary`);
+  }
+
+  // ── B2B Virtual Accounts ──
+
+  listVirtualAccounts(orgId: string, params?: { q?: string; status?: string; page?: number; size?: number }): Observable<PageResponse<VirtualAccount>> {
+    return this.api.get<PageResponse<VirtualAccount>>(`/businesses/${encodeURIComponent(orgId)}/virtual-accounts`, params);
+  }
+
+  provisionVirtualAccount(orgId: string, body: {
+    provider?: string;
+    bankBin?: string;
+    parentAccountId?: string;
+    mode: string;
+    customerReference?: string;
+    expiresAt?: string;
+  }): Observable<VirtualAccount> {
+    return this.api.post<VirtualAccount>(`/businesses/${encodeURIComponent(orgId)}/virtual-accounts`, body);
+  }
+
+  getVirtualAccount(orgId: string, id: string): Observable<VirtualAccount> {
+    return this.api.get<VirtualAccount>(`/businesses/${encodeURIComponent(orgId)}/virtual-accounts/${encodeURIComponent(id)}`);
+  }
+
+  closeVirtualAccount(orgId: string, id: string): Observable<void> {
+    return this.api.post<void>(`/businesses/${encodeURIComponent(orgId)}/virtual-accounts/${encodeURIComponent(id)}/close`, {});
+  }
+
+  // ── B2B Collection Orders ──
+
+  listCollectionOrders(orgId: string, params?: { q?: string; status?: string; page?: number; size?: number }): Observable<PageResponse<CollectionOrder>> {
+    return this.api.get<PageResponse<CollectionOrder>>(`/businesses/${encodeURIComponent(orgId)}/collection-orders`, params);
+  }
+
+  createCollectionOrder(orgId: string, body: {
+    merchantOrderId: string;
+    virtualAccountId?: string;
+    vaMode?: string;
+    expectedAmount: number;
+    currency?: string;
+    customerReference?: string;
+    splitRuleId?: string;
+    splitLegs?: any[];
+    expiresAt?: string;
+  }, idempotencyKey?: string): Observable<CollectionOrder> {
+    const headers: Record<string, string> = {};
+    if (idempotencyKey) {
+      headers['Idempotency-Key'] = idempotencyKey;
+    }
+    return this.api.post<CollectionOrder>(`/businesses/${encodeURIComponent(orgId)}/collection-orders`, body, headers);
+  }
+
+  getCollectionOrder(orgId: string, id: string): Observable<CollectionOrder> {
+    return this.api.get<CollectionOrder>(`/businesses/${encodeURIComponent(orgId)}/collection-orders/${encodeURIComponent(id)}`);
+  }
+
+  cancelCollectionOrder(orgId: string, id: string): Observable<void> {
+    return this.api.post<void>(`/businesses/${encodeURIComponent(orgId)}/collection-orders/${encodeURIComponent(id)}/cancel`, {});
+  }
+
+  completeCollectionOrder(orgId: string, id: string): Observable<Settlement> {
+    return this.api.post<Settlement>(`/businesses/${encodeURIComponent(orgId)}/collection-orders/${encodeURIComponent(id)}/complete`, {});
+  }
+
+  // ── B2B Split Rules ──
+
+  listSplitRules(orgId: string): Observable<SplitRule[]> {
+    return this.api.get<SplitRule[]>(`/businesses/${encodeURIComponent(orgId)}/split-rules`);
+  }
+
+  createSplitRule(orgId: string, body: { name: string; items: any[] }): Observable<SplitRule> {
+    return this.api.post<SplitRule>(`/businesses/${encodeURIComponent(orgId)}/split-rules`, body);
+  }
+
+  deleteSplitRule(orgId: string, ruleId: string): Observable<void> {
+    return this.api.delete<void>(`/businesses/${encodeURIComponent(orgId)}/split-rules/${encodeURIComponent(ruleId)}`);
+  }
+
+  // ── B2B Settlements ──
+
+  listSettlements(orgId: string, params?: { status?: string; page?: number; size?: number }): Observable<PageResponse<Settlement>> {
+    return this.api.get<PageResponse<Settlement>>(`/businesses/${encodeURIComponent(orgId)}/settlements`, params);
+  }
+
+  getSettlement(orgId: string, id: string): Observable<Settlement> {
+    return this.api.get<Settlement>(`/businesses/${encodeURIComponent(orgId)}/settlements/${encodeURIComponent(id)}`);
+  }
+
+  retrySettlement(orgId: string, id: string): Observable<Settlement> {
+    return this.api.post<Settlement>(`/businesses/${encodeURIComponent(orgId)}/settlements/${encodeURIComponent(id)}/retry`, {});
+  }
+
+  previewSettlement(orgId: string, body: { grossAmount: number; splitRuleId?: string; customLegs?: any[] }): Observable<SettlementPreview> {
+    return this.api.post<SettlementPreview>(`/businesses/${encodeURIComponent(orgId)}/settlements/preview`, body);
+  }
+
+  // ── B2B Merchant Developer (Credentials & Webhooks) ──
+
+  getMerchantAccountConfig(orgId: string): Observable<MerchantAccountConfig> {
+    return this.api.get<MerchantAccountConfig>(`/businesses/${encodeURIComponent(orgId)}/merchant-account`);
+  }
+
+  configureMerchantAccount(orgId: string, body: { collectionAccountId: string; escrowAccountId: string; defaultCurrency?: string }): Observable<MerchantAccountConfig> {
+    return this.api.post<MerchantAccountConfig>(`/businesses/${encodeURIComponent(orgId)}/merchant-account`, body);
+  }
+
+  listMerchantCredentials(orgId: string): Observable<MerchantCredential[]> {
+    return this.api.get<MerchantCredential[]>(`/businesses/${encodeURIComponent(orgId)}/credentials`);
+  }
+
+  createMerchantCredential(orgId: string, body: { name: string; expiresAt?: string }): Observable<MerchantCredential> {
+    return this.api.post<MerchantCredential>(`/businesses/${encodeURIComponent(orgId)}/credentials`, body);
+  }
+
+  deleteMerchantCredential(orgId: string, id: string): Observable<void> {
+    return this.api.delete<void>(`/businesses/${encodeURIComponent(orgId)}/credentials/${encodeURIComponent(id)}`);
+  }
+
+  listMerchantWebhooks(orgId: string): Observable<MerchantWebhookEndpoint[]> {
+    return this.api.get<MerchantWebhookEndpoint[]>(`/businesses/${encodeURIComponent(orgId)}/webhook-endpoints`);
+  }
+
+  registerMerchantWebhook(orgId: string, body: { url: string; eventTypes?: string }): Observable<MerchantWebhookEndpoint> {
+    return this.api.post<MerchantWebhookEndpoint>(`/businesses/${encodeURIComponent(orgId)}/webhook-endpoints`, body);
+  }
+
+  deleteMerchantWebhook(orgId: string, id: string): Observable<void> {
+    return this.api.delete<void>(`/businesses/${encodeURIComponent(orgId)}/webhook-endpoints/${encodeURIComponent(id)}`);
+  }
+
+  // ── Back-Office Admin Operations ──
+
+  adminSearchVirtualAccounts(params?: { organizationId?: string; q?: string; status?: string; page?: number; size?: number }): Observable<PageResponse<VirtualAccount>> {
+    return this.api.get<PageResponse<VirtualAccount>>('/admin/virtual-accounts', params);
+  }
+
+  adminSearchInboundEvents(params?: { provider?: string; q?: string; status?: string; page?: number; size?: number }): Observable<PageResponse<InboundPaymentEvent>> {
+    return this.api.get<PageResponse<InboundPaymentEvent>>('/admin/virtual-accounts/inbound-events', params);
+  }
+
+  adminSearchCollectionOrders(params?: { organizationId?: string; q?: string; status?: string; page?: number; size?: number }): Observable<PageResponse<CollectionOrder>> {
+    return this.api.get<PageResponse<CollectionOrder>>('/admin/collection-orders', params);
+  }
+
+  adminCompleteCollectionOrder(id: string): Observable<Settlement> {
+    return this.api.post<Settlement>(`/admin/collection-orders/${encodeURIComponent(id)}/complete`, {});
+  }
+
+  adminSearchSettlements(params?: { organizationId?: string; status?: string; page?: number; size?: number }): Observable<PageResponse<Settlement>> {
+    return this.api.get<PageResponse<Settlement>>('/admin/settlements', params);
+  }
+
+  adminRetrySettlement(id: string): Observable<Settlement> {
+    return this.api.post<Settlement>(`/admin/settlements/${encodeURIComponent(id)}/retry`, {});
   }
 }
 

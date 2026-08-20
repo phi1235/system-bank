@@ -39,24 +39,27 @@ import org.springframework.web.bind.annotation.RestController;
 public class AdminForensicCaseController {
   private final ForensicCaseQueryService queryService;
   private final ForensicCaseCommandService commandService;
+  private final ForensicCaseRequestMapper requestMapper;
 
   public AdminForensicCaseController(
       ForensicCaseQueryService queryService,
-      ForensicCaseCommandService commandService) {
+      ForensicCaseCommandService commandService,
+      ForensicCaseRequestMapper requestMapper) {
     this.queryService = queryService;
     this.commandService = commandService;
+    this.requestMapper = requestMapper;
   }
 
   @GetMapping
   public ApiResponse<PageResponse<ForensicCaseResponse>> search(
       @Valid @ModelAttribute ForensicCaseFilterRequest request) {
-    return ApiResponse.ok(queryService.search(ForensicCaseRequestMapper.toQuery(request)));
+    return ApiResponse.ok(queryService.search(requestMapper.toQuery(request)));
   }
 
   @PostMapping("/findByCondition")
   public ApiResponse<PageResponse<ForensicCaseResponse>> findByCondition(
       @Valid @RequestBody ForensicCaseFilterRequest request) {
-    return ApiResponse.ok(queryService.search(ForensicCaseRequestMapper.toQuery(request)));
+    return ApiResponse.ok(queryService.search(requestMapper.toQuery(request)));
   }
 
   @GetMapping("/{id}")

@@ -171,7 +171,7 @@ public class CardApprovalServiceImpl implements CardApprovalService {
   public CardResponse approve(UUID cardId, UUID staffId) {
     CardEntity card = requireRequested(cardId);
     String pan = CardNumberGenerator.generate();
-    Instant now = Instant.now(clock);
+    Instant now = Instant.now();
     card.setPanEncrypted(CryptoUtils.encrypt(pan, aesKey));
     card.setPanLast4(pan.substring(pan.length() - 4));
     card.setExpiresOn(LocalDate.now(clock.withZone(zone)).plusYears(validityYears));
@@ -196,7 +196,7 @@ public class CardApprovalServiceImpl implements CardApprovalService {
   @Transactional
   public CardResponse reject(UUID cardId, String reason, UUID staffId) {
     CardEntity card = requireRequested(cardId);
-    Instant now = Instant.now(clock);
+    Instant now = Instant.now();
     card.setStatus(CardStatus.REJECTED);
     card.setRejectReason(reason);
     card.setRejectedBy(staffId);

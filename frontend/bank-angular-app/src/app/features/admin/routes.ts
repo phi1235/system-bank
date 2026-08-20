@@ -103,6 +103,18 @@ export const ADMIN_ROUTES: Routes = [
         loadComponent: () => import('./users/users.component').then((m) => m.AdminUsersComponent),
       },
       {
+        path: 'virtual-accounts',
+        canActivate: [permissionGuard([PERMISSIONS.VA_OPERATIONS_VIEW])],
+        loadComponent: () =>
+          import('./virtual-accounts/admin-virtual-accounts.component').then((m) => m.AdminVirtualAccountsComponent),
+      },
+      {
+        path: 'settlements',
+        canActivate: [permissionGuard([PERMISSIONS.SETTLEMENT_VIEW])],
+        loadComponent: () =>
+          import('./settlements/admin-settlements.component').then((m) => m.AdminSettlementsComponent),
+      },
+      {
         path: 'notifications/sandbox',
         loadComponent: () => import('./notification-sandbox/notification-sandbox.component').then((m) => m.NotificationSandboxComponent),
       },

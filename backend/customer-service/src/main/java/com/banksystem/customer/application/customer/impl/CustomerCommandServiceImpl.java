@@ -1,4 +1,6 @@
 package com.banksystem.customer.application.customer.impl;
+
+import java.time.Instant;
 import com.banksystem.customer.application.customer.*;
 import com.banksystem.customer.application.support.*;
 import com.banksystem.customer.application.dashboard.*;
@@ -13,7 +15,6 @@ import com.banksystem.customer.api.dto.CustomerDtos.KycUpdateRequest;
 import com.banksystem.customer.api.dto.CustomerDtos.UpdateProfileRequest;
 import com.banksystem.customer.application.mapper.CustomerMapper;
 import com.banksystem.customer.application.security.CustomerCryptoService;
-import java.time.Instant;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.stereotype.Service;

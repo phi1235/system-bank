@@ -37,7 +37,7 @@ public class OutboxForensicCaseEventPublisher implements ForensicCaseEventPublis
         (eventType + ":" + forensicCase.getId() + ":" + forensicCase.getVersion())
             .getBytes(StandardCharsets.UTF_8)).toString());
     envelope.put("eventType", eventType);
-    envelope.put("occurredAt", Instant.now(clock).toString());
+    envelope.put("occurredAt", clock.instant().toString());
     envelope.put("data", data);
     outboxService.enqueue(
         "FORENSIC_CASE", eventType, forensicCase.getId(),

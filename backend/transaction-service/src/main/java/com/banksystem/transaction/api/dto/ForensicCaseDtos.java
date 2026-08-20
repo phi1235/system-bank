@@ -92,7 +92,7 @@ public final class ForensicCaseDtos {
       UUID transactionId,
       Instant since,
       @Min(0) Integer page,
-      @Min(1) @jakarta.validation.constraints.Max(100) Integer size) {}
+      @Min(1) @Max(100) Integer size) {}
 
   public record AcknowledgeForensicViolationRequest(
       @Min(0) long expectedVersion,

@@ -43,7 +43,8 @@ public class IdempotencyClaimService {
       return Optional.of(claim);
     }
 
-    Instant expiresAt = Instant.now().plus(ttl != null ? ttl : Duration.ofHours(24));
+    Instant now = Instant.now();
+    Instant expiresAt = now.plus(ttl != null ? ttl : Duration.ofHours(24));
     IdempotencyClaimEntity newClaim = new IdempotencyClaimEntity(
         userId, idempotencyKey, requestHash, "PENDING", expiresAt);
     repository.saveAndFlush(newClaim);
