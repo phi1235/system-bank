@@ -437,6 +437,48 @@ export interface TermDeposit {
   closedAt: string | null;
 }
 
+export interface AutoSweepProfile {
+  id: string;
+  sourceAccountId: string;
+  sourceAccountNumber: string;
+  productCode: string;
+  status: 'ENABLED' | 'PAUSED' | 'CLOSED' | string;
+  thresholdAmount: number;
+  minSweepAmount: number;
+  annualRateBps: number;
+  casaBalance: number;
+  availableBalance: number;
+  flexiblePrincipal: number;
+  accruedInterest: number;
+  totalLiquidity: number;
+  lastSweepBusinessDate: string | null;
+  version: number;
+  updatedAt: string;
+}
+
+export interface SweepProduct {
+  code: string;
+  currency: string;
+  annualRateBps: number;
+  minThreshold: number;
+  defaultThreshold: number;
+  minSweepAmount: number;
+  maxPositionAmount: number | null;
+}
+
+export interface AutoSweepOperation {
+  id: string;
+  operationType: 'SWEEP_IN' | 'SWEEP_OUT' | 'INTEREST_ACCRUAL' | string;
+  triggerType: 'EOD' | 'PAYMENT' | 'RECOVERY' | string;
+  amount: number;
+  annualRateBps: number | null;
+  businessDate: string;
+  paymentReference: string | null;
+  casaBalanceAfter: number;
+  positionBalanceAfter: number;
+  createdAt: string;
+}
+
 /** Admin funding summary over term deposits. */
 export interface DepositTotals {
   openCount: number;

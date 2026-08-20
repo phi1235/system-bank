@@ -13,7 +13,15 @@ import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { filter, forkJoin } from 'rxjs';
-import { Account, DepositProduct, DepositQuote, TermDeposit } from '../../../core/models/domain.model';
+import {
+  Account,
+  AutoSweepOperation,
+  AutoSweepProfile,
+  DepositProduct,
+  DepositQuote,
+  SweepProduct,
+  TermDeposit,
+} from '../../../core/models/domain.model';
 import { BankApiService } from '../../../core/services/bank-api.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { resolveHttpErrorMessage } from '../../../core/utils/http-error.util';
@@ -63,6 +71,14 @@ export class WealthComponent implements OnInit {
   products: DepositProduct[] = [];
   accounts: Account[] = [];
   deposits: TermDeposit[] = [];
+  autoSweeps: AutoSweepProfile[] = [];
+  sweepProducts: SweepProduct[] = [];
+  sweepOperations: AutoSweepOperation[] = [];
+  sweepAccountId = '';
+  sweepProductCode = '';
+  sweepThreshold: number | null = null;
+  sweepSaving = false;
+  sweepToggling = false;
 
   sourceAccountId = '';
   productCode = '';
@@ -96,6 +112,7 @@ export class WealthComponent implements OnInit {
           this.productCode = products[0].code;
         }
         this.loading = false;
+        this.loadAutoSweep();
       },
       error: (err) => {
         this.loading = false;
@@ -106,6 +123,114 @@ export class WealthComponent implements OnInit {
 
   get selectedProduct(): DepositProduct | undefined {
     return this.products.find((p) => p.code === this.productCode);
+  }
+
+  private loadAutoSweep(): void {
+    forkJoin({
+      autoSweeps: this.api.myAutoSweeps(),
+      sweepProducts: this.api.autoSweepProducts(),
+    }).subscribe({
+      next: ({ autoSweeps, sweepProducts }) => {
+        this.autoSweeps = autoSweeps;
+        this.sweepProducts = sweepProducts;
+        if (!this.sweepAccountId || !this.paymentAccounts.some((a) => a.id === this.sweepAccountId)) {
+          this.sweepAccountId = autoSweeps[0]?.sourceAccountId
+            || this.paymentAccounts[0]?.id
+            || '';
+        }
+        this.selectSweepAccount();
+      },
+      error: (err) => {
+        this.autoSweeps = [];
+        this.sweepProducts = [];
+        this.sweepOperations = [];
+        this.toast.error(resolveHttpErrorMessage(err, this.i18n));
+      },
+    });
+  }
+
+  get paymentAccounts(): Account[] {
+    return this.accounts.filter((a) => a.accountType === 'PAYMENT');
+  }
+
+  get selectedSweepProfile(): AutoSweepProfile | undefined {
+    return this.autoSweeps.find((p) => p.sourceAccountId === this.sweepAccountId);
+  }
+
+  get selectedSweepProduct(): SweepProduct | undefined {
+    return this.sweepProducts.find((product) => product.code === this.sweepProductCode);
+  }
+
+  get canSaveAutoSweep(): boolean {
+    const product = this.selectedSweepProduct;
+    return !!(
+      this.sweepAccountId
+      && product
+      && this.sweepThreshold !== null
+      && this.sweepThreshold >= product.minThreshold
+    );
+  }
+
+  selectSweepAccount(): void {
+    const profile = this.selectedSweepProfile;
+    if (profile) {
+      this.sweepProductCode = profile.productCode;
+      this.sweepThreshold = profile.thresholdAmount;
+      this.api.autoSweepOperations(profile.sourceAccountId).subscribe({
+        next: (items) => {
+          if (this.sweepAccountId === profile.sourceAccountId) this.sweepOperations = items;
+        },
+        error: (err) => {
+          this.sweepOperations = [];
+          this.toast.error(resolveHttpErrorMessage(err, this.i18n));
+        },
+      });
+    } else {
+      this.sweepOperations = [];
+      if (!this.sweepProductCode || !this.selectedSweepProduct) {
+        this.sweepProductCode = this.sweepProducts[0]?.code || '';
+      }
+      this.sweepThreshold = this.selectedSweepProduct?.defaultThreshold ?? null;
+    }
+  }
+
+  saveAutoSweep(): void {
+    if (!this.canSaveAutoSweep || this.sweepThreshold === null) {
+      return;
+    }
+    this.sweepSaving = true;
+    this.api.saveAutoSweep(
+      this.sweepAccountId,
+      this.sweepProductCode,
+      this.sweepThreshold,
+      this.selectedSweepProfile?.version,
+    ).subscribe({
+      next: () => {
+        this.sweepSaving = false;
+        this.toast.success(this.i18n.instant('CUSTOMER.AUTO_SWEEP_SAVED'));
+        this.load();
+      },
+      error: (err) => {
+        this.sweepSaving = false;
+        this.toast.error(resolveHttpErrorMessage(err, this.i18n));
+      },
+    });
+  }
+
+  toggleAutoSweep(): void {
+    const profile = this.selectedSweepProfile;
+    if (!profile || this.sweepToggling) return;
+    this.sweepToggling = true;
+    this.api.setAutoSweepEnabled(profile.sourceAccountId, profile.status !== 'ENABLED').subscribe({
+      next: () => {
+        this.sweepToggling = false;
+        this.load();
+      },
+      error: (err) => {
+        this.sweepToggling = false;
+        this.toast.error(resolveHttpErrorMessage(err, this.i18n));
+      },
+    });
   }
 
   get canQuote(): boolean {

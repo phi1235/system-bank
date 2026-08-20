@@ -28,10 +28,20 @@ public final class AccountDtos {
 
   public record MoneyCommand(
       @NotNull @DecimalMin("0.01") BigDecimal amount,
-      @NotBlank String referenceId,
-      String description,
-      String commandId
-  ) {}
+      @NotBlank @Size(max = 64) String referenceId,
+      @Size(max = 255) String description,
+      @Size(max = 160) String commandId,
+      Boolean allowAutoSweep
+  ) {
+    public MoneyCommand(
+        BigDecimal amount, String referenceId, String description, String commandId) {
+      this(amount, referenceId, description, commandId, false);
+    }
+
+    public boolean autoSweepAllowed() {
+      return Boolean.TRUE.equals(allowAutoSweep);
+    }
+  }
 
   public record MoneyResult(String ledgerEntryId, BigDecimal balanceAfter) {}
 

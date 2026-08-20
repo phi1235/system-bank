@@ -39,6 +39,14 @@ public class AccountEntity {
   @Column(nullable = false, precision = 19, scale = 2)
   private BigDecimal balance = BigDecimal.ZERO;
 
+  @Column(name = "booked_balance", nullable = false, precision = 19, scale = 2,
+      insertable = false, updatable = false)
+  private BigDecimal bookedBalance = BigDecimal.ZERO;
+
+  @Column(name = "available_balance", nullable = false, precision = 19, scale = 2,
+      insertable = false, updatable = false)
+  private BigDecimal availableBalance = BigDecimal.ZERO;
+
   @Column(nullable = false, length = 20)
   private String status = "ACTIVE";
 
@@ -94,6 +102,14 @@ public class AccountEntity {
 
   public void setBalance(BigDecimal balance) {
     this.balance = balance;
+  }
+
+  public BigDecimal getBookedBalance() {
+    return bookedBalance;
+  }
+
+  public BigDecimal getAvailableBalance() {
+    return availableBalance;
   }
 
   public String getStatus() {

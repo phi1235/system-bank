@@ -342,7 +342,8 @@ public class TransferSagaOrchestrator {
           order.getToAccountId(),
           order.getAmount(),
           revRef,
-          "Reverse dest " + order.getId());
+          "Reverse dest " + order.getId(),
+          false);
       step(order.getId(), "REVERSE_DEST", "SUCCESS", "ledger=" + rev.ledgerEntryId());
     } catch (Exception ex) {
       order.setStatus(TransferStatus.REVIEW_REQUIRED);
@@ -694,11 +695,18 @@ public class TransferSagaOrchestrator {
       desc = (desc == null || desc.isBlank() ? "Transfer" : desc)
           + " (fee " + fee.toPlainString() + ")";
     }
-    return callDebitAmount(accountId, debitTotal, "TX-DEBIT-" + order.getId(), desc);
+    return callDebitAmount(accountId, debitTotal, "TX-DEBIT-" + order.getId(), desc, true);
   }
 
-  private MoneyResult callDebitAmount(UUID accountId, BigDecimal amount, String referenceId, String description) {
-    MoneyResult result = accountGateway.debit(accountId, new MoneyCommand(amount, referenceId, description, referenceId));
+  private MoneyResult callDebitAmount(
+      UUID accountId,
+      BigDecimal amount,
+      String referenceId,
+      String description,
+      boolean allowAutoSweep) {
+    String commandId = referenceId + ":" + amount.stripTrailingZeros().toPlainString();
+    MoneyResult result = accountGateway.debit(
+        accountId, new MoneyCommand(amount, referenceId, description, commandId, allowAutoSweep));
     if (result == null) {
       throw new BusinessException("DEBIT_FAILED", "Debit failed");
     }
