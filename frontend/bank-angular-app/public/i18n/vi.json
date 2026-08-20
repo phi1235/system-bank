@@ -2237,6 +2237,7 @@
       "SPLIT_RULES": "Quy tắc chia tiền (Split)",
       "SETTLEMENTS": "Quyết toán & Payout",
       "DEVELOPER": "Nhà phát triển (API & Webhook)",
+      "OPEN_BANKING": "Open Banking (FAPI & ISO 20022)",
       "MEMBERS": "Thành viên tổ chức"
     },
     "DASHBOARD": {
@@ -2427,5 +2428,91 @@
     "SETTLEMENTS_TAB": "Danh sách Quyết toán",
     "RETRY_CONFIRM": "Xác nhận gửi lại lệnh giải ngân bị lỗi?",
     "APPROVE_COMPLETE": "Duyệt hoàn tất quyết toán"
+  },
+  "B2B_PORTAL": {
+    "TITLE": "Cổng Nhà phát triển Open Banking B2B",
+    "SUBTITLE": "Quản lý tích hợp Machine-to-Machine (M2M), chuẩn bảo mật FAPI 1.0/2.0 và thông điệp ISO 20022",
+    "BADGE_FAPI": "Chuẩn FAPI 1.0/2.0",
+    "BADGE_ISO20022": "Chuẩn ISO 20022",
+    "TABS": {
+      "APPS": "Ứng dụng & Khóa bảo mật",
+      "CONSENTS": "Ủy quyền Tài khoản (Consents)",
+      "SANDBOX": "Môi trường Thử nghiệm (Sandbox)",
+      "METRICS": "Giám sát & Nhật ký API"
+    },
+    "APPS": {
+      "SEARCH_PLACEHOLDER": "Tìm ứng dụng theo tên, Client ID, MST...",
+      "BTN_REGISTER_APP": "Đăng ký Ứng dụng Mới",
+      "TAX_CODE": "Mã số thuế",
+      "AUTH_METHOD": "Phương thức xác thực",
+      "RATE_LIMIT": "Hạn mức gọi API",
+      "CERT_THUMBPRINT": "Cert Thumbprint (mTLS/x5t)",
+      "WEBHOOK_URL": "Webhook Callback URL",
+      "GRANTED_SCOPES": "Quyền hạn được cấp (Scopes)",
+      "NO_APPS": "Chưa có ứng dụng B2B nào được đăng ký",
+      "NO_APPS_DESC": "Đăng ký ứng dụng ERP hoặc Fintech để nhận Client ID và tích hợp FAPI.",
+      "MODAL_CREATE_TITLE": "Đăng ký Ứng dụng B2B Mới",
+      "MODAL_EDIT_TITLE": "Cập nhật Ứng dụng B2B",
+      "CLIENT_ID": "Client ID",
+      "CLIENT_NAME": "Tên Ứng dụng / Doanh nghiệp",
+      "ALLOWED_SCOPES": "Danh sách Scopes phân quyền",
+      "PUBLIC_KEY_PEM": "Public Key PEM (Private Key JWT Auth)",
+      "WEBHOOK_SECRET": "Webhook Secret Key"
+    },
+    "CONSENTS": {
+      "BANNER_INFO": "Ủy quyền tài khoản cho phép ứng dụng B2B (MISA, SAP, Fintech) truy vấn số dư hoặc thực hiện thanh toán tự động trong hạn mức quy định.",
+      "BTN_GRANT_CONSENT": "Cấp quyền Tài khoản",
+      "COL_CLIENT_ID": "Ứng dụng (Client ID)",
+      "COL_ACCOUNT_NUMBER": "Số tài khoản CASA",
+      "COL_PERMISSIONS": "Quyền truy cập",
+      "COL_STATUS": "Trạng thái",
+      "COL_VALID_UNTIL": "Hiệu lực đến",
+      "BTN_REVOKE": "Thu hồi",
+      "NO_CONSENTS": "Chưa có ủy quyền tài khoản nào",
+      "NO_CONSENTS_DESC": "Chọn tài khoản và cấp quyền cho ứng dụng B2B để bắt đầu giao dịch.",
+      "MODAL_TITLE": "Cấp quyền Truy cập Tài khoản cho Ứng dụng",
+      "SELECT_APP": "Chọn Ứng dụng B2B",
+      "ACCOUNT_NUMBER": "Số tài khoản chỉ định",
+      "PERMISSIONS": "Quyền hạn (phân cách bằng dấu phẩy)",
+      "BTN_CONFIRM_GRANT": "Xác nhận cấp quyền"
+    },
+    "SANDBOX": {
+      "REQUEST_CONFIG": "Cấu hình Lệnh Gửi (Request)",
+      "FORMAT": "Định dạng",
+      "TARGET_CLIENT": "Ứng dụng giả lập (Client)",
+      "MESSAGE_TYPE": "Loại thông điệp ISO 20022",
+      "PAYLOAD_BODY": "Nội dung Thông điệp (Payload)",
+      "LOAD_SAMPLE": "Nạp mẫu chuẩn",
+      "BTN_SIMULATE": "Thực thi Giả lập",
+      "RESPONSE_RESULT": "Kết quả Phản hồi (Response)",
+      "RESPONSE_HINT": "Chọn loại thông điệp và nhấn \"Thực thi Giả lập\" để kiểm tra luồng xử lý và chữ ký FAPI thời gian thực.",
+      "EXECUTING": "Đang xử lý thông điệp ISO 20022..."
+    },
+    "METRICS": {
+      "TOTAL_CALLS": "Tổng lượt gọi API",
+      "SUCCESS_CALLS": "Thành công",
+      "AVG_LATENCY": "Độ trễ trung bình",
+      "SECURITY_AUDIT_TITLE": "Hệ thống Bảo mật Cấp Tài chính (FAPI 1.0 Advanced)",
+      "SECURITY_AUDIT_DESC": "Toàn bộ API Open Banking được bảo vệ bởi xác thực Private Key JWT, liên kết chứng chỉ số Certificate-Bound Token và chữ ký số phi đối xứng trên từng payload."
+    },
+    "MESSAGES": {
+      "LOAD_APPS_ERROR": "Không thể tải danh sách ứng dụng B2B",
+      "REQUIRED_FIELDS": "Vui lòng điền đầy đủ các thông tin bắt buộc",
+      "UPDATE_APP_SUCCESS": "Cập nhật thông tin ứng dụng B2B thành công!",
+      "CREATE_APP_SUCCESS": "Đăng ký ứng dụng B2B mới thành công!",
+      "SAVE_APP_ERROR": "Lưu thông tin ứng dụng thất bại",
+      "CONFIRM_DELETE_APP": "Bạn có chắc chắn muốn xóa ứng dụng {{name}}?",
+      "DELETE_APP_SUCCESS": "Xóa ứng dụng B2B thành công!",
+      "DELETE_APP_ERROR": "Xóa ứng dụng thất bại",
+      "LOAD_CONSENTS_ERROR": "Không thể tải danh sách ủy quyền tài khoản",
+      "GRANT_CONSENT_SUCCESS": "Cấp quyền truy cập tài khoản thành công!",
+      "SAVE_CONSENT_ERROR": "Cấp quyền tài khoản thất bại",
+      "REVOKE_CONSENT_SUCCESS": "Đã thu hồi quyền truy cập tài khoản",
+      "REVOKE_CONSENT_ERROR": "Thu hồi quyền truy cập thất bại",
+      "REQUIRED_PAYLOAD": "Vui lòng nhập nội dung thông điệp kiểm thử",
+      "SANDBOX_EXECUTE_SUCCESS": "Thực thi giả lập ISO 20022 thành công!",
+      "SANDBOX_EXECUTE_ERROR": "Thực thi giả lập thất bại",
+      "LOAD_METRICS_ERROR": "Không thể tải chỉ số giám sát API"
+    }
   }
 }

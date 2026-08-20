@@ -2237,6 +2237,7 @@
       "SPLIT_RULES": "Split Rules",
       "SETTLEMENTS": "Settlements & Payouts",
       "DEVELOPER": "Developer (API & Webhooks)",
+      "OPEN_BANKING": "Open Banking (FAPI & ISO 20022)",
       "MEMBERS": "Organization Members"
     },
     "DASHBOARD": {
@@ -2427,5 +2428,91 @@
     "SETTLEMENTS_TAB": "Settlement Journals",
     "RETRY_CONFIRM": "Retry disbursement for failed legs?",
     "APPROVE_COMPLETE": "Approve Settlement Completion"
+  },
+  "B2B_PORTAL": {
+    "TITLE": "Open Banking B2B Developer Portal",
+    "SUBTITLE": "Machine-to-Machine (M2M) integration management, FAPI 1.0/2.0 security standards, and ISO 20022 messaging",
+    "BADGE_FAPI": "FAPI 1.0/2.0 Compliant",
+    "BADGE_ISO20022": "ISO 20022 Standard",
+    "TABS": {
+      "APPS": "Apps & Security Keys",
+      "CONSENTS": "Account Access Consents",
+      "SANDBOX": "Interactive Sandbox & Tester",
+      "METRICS": "Live API Metrics & Audit Logs"
+    },
+    "APPS": {
+      "SEARCH_PLACEHOLDER": "Search app by name, Client ID, Tax code...",
+      "BTN_REGISTER_APP": "Register New B2B App",
+      "TAX_CODE": "Organization Tax Code",
+      "AUTH_METHOD": "Authentication Method",
+      "RATE_LIMIT": "API Rate Limit",
+      "CERT_THUMBPRINT": "Cert Thumbprint (mTLS/x5t)",
+      "WEBHOOK_URL": "Webhook Callback URL",
+      "GRANTED_SCOPES": "Granted Scopes",
+      "NO_APPS": "No B2B Client Applications Registered",
+      "NO_APPS_DESC": "Register your ERP or Fintech application to obtain Client ID and start FAPI integration.",
+      "MODAL_CREATE_TITLE": "Register New B2B Client Application",
+      "MODAL_EDIT_TITLE": "Update B2B Client Application",
+      "CLIENT_ID": "Client ID",
+      "CLIENT_NAME": "Application / Organization Name",
+      "ALLOWED_SCOPES": "Allowed OAuth2 Scopes",
+      "PUBLIC_KEY_PEM": "Public Key PEM (Private Key JWT Auth)",
+      "WEBHOOK_SECRET": "Webhook Secret Key"
+    },
+    "CONSENTS": {
+      "BANNER_INFO": "Account consents authorize B2B applications (MISA, SAP, Fintech) to query balances or initiate automated payouts within defined limits.",
+      "BTN_GRANT_CONSENT": "Grant Account Consent",
+      "COL_CLIENT_ID": "Client ID",
+      "COL_ACCOUNT_NUMBER": "CASA Account Number",
+      "COL_PERMISSIONS": "Permissions",
+      "COL_STATUS": "Status",
+      "COL_VALID_UNTIL": "Valid Until",
+      "BTN_REVOKE": "Revoke",
+      "NO_CONSENTS": "No Account Consents Active",
+      "NO_CONSENTS_DESC": "Grant access permissions for your CASA accounts to B2B apps to initiate transactions.",
+      "MODAL_TITLE": "Grant Account Access Consent",
+      "SELECT_APP": "Select B2B Application",
+      "ACCOUNT_NUMBER": "Designated Account Number",
+      "PERMISSIONS": "Permissions (comma-separated)",
+      "BTN_CONFIRM_GRANT": "Confirm Access Grant"
+    },
+    "SANDBOX": {
+      "REQUEST_CONFIG": "Request Configuration",
+      "FORMAT": "Format",
+      "TARGET_CLIENT": "Target Client App",
+      "MESSAGE_TYPE": "ISO 20022 Message Type",
+      "PAYLOAD_BODY": "Message Payload Body",
+      "LOAD_SAMPLE": "Load Sample Template",
+      "BTN_SIMULATE": "Run Simulation",
+      "RESPONSE_RESULT": "Response Result",
+      "RESPONSE_HINT": "Select message type and click \"Run Simulation\" to test ISO 20022 message processing and FAPI signatures in realtime.",
+      "EXECUTING": "Processing ISO 20022 message..."
+    },
+    "METRICS": {
+      "TOTAL_CALLS": "Total API Invocations",
+      "SUCCESS_CALLS": "Successful Calls",
+      "AVG_LATENCY": "Average Latency",
+      "SECURITY_AUDIT_TITLE": "Financial-grade Security Standard (FAPI 1.0 Advanced)",
+      "SECURITY_AUDIT_DESC": "All Open Banking API endpoints are strictly protected by Private Key JWT assertion, Certificate-Bound Access Tokens, and asymmetric digital payload signing."
+    },
+    "MESSAGES": {
+      "LOAD_APPS_ERROR": "Failed to load B2B applications",
+      "REQUIRED_FIELDS": "Please complete all mandatory fields",
+      "UPDATE_APP_SUCCESS": "B2B application updated successfully!",
+      "CREATE_APP_SUCCESS": "B2B application registered successfully!",
+      "SAVE_APP_ERROR": "Failed to save B2B application",
+      "CONFIRM_DELETE_APP": "Are you sure you want to delete application {{name}}?",
+      "DELETE_APP_SUCCESS": "B2B application deleted successfully!",
+      "DELETE_APP_ERROR": "Failed to delete application",
+      "LOAD_CONSENTS_ERROR": "Failed to load account consents",
+      "GRANT_CONSENT_SUCCESS": "Account consent granted successfully!",
+      "SAVE_CONSENT_ERROR": "Failed to grant account consent",
+      "REVOKE_CONSENT_SUCCESS": "Account consent revoked successfully!",
+      "REVOKE_CONSENT_ERROR": "Failed to revoke account consent",
+      "REQUIRED_PAYLOAD": "Please provide a valid test message payload",
+      "SANDBOX_EXECUTE_SUCCESS": "ISO 20022 message simulated successfully!",
+      "SANDBOX_EXECUTE_ERROR": "Simulation execution failed",
+      "LOAD_METRICS_ERROR": "Failed to load API traffic metrics"
+    }
   }
 }

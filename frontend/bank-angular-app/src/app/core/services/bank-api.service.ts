@@ -1336,6 +1336,95 @@ export class BankApiService {
   adminRetrySettlement(id: string): Observable<Settlement> {
     return this.api.post<Settlement>(`/admin/settlements/${encodeURIComponent(id)}/retry`, {});
   }
+
+  // ── Open Banking B2B Developer Portal ──
+
+  getB2bClients(params?: { q?: string; status?: string; page?: number; size?: number }): Observable<PageResponse<B2bClientApp>> {
+    return this.api.get<PageResponse<B2bClientApp>>('/b2b-portal/clients', params);
+  }
+
+  getB2bClient(clientId: string): Observable<B2bClientApp> {
+    return this.api.get<B2bClientApp>(`/b2b-portal/clients/${encodeURIComponent(clientId)}`);
+  }
+
+  createB2bClient(body: Partial<B2bClientApp>): Observable<B2bClientApp> {
+    return this.api.post<B2bClientApp>('/b2b-portal/clients', body);
+  }
+
+  updateB2bClient(clientId: string, body: Partial<B2bClientApp>): Observable<B2bClientApp> {
+    return this.api.put<B2bClientApp>(`/b2b-portal/clients/${encodeURIComponent(clientId)}`, body);
+  }
+
+  deleteB2bClient(clientId: string): Observable<void> {
+    return this.api.delete<void>(`/b2b-portal/clients/${encodeURIComponent(clientId)}`);
+  }
+
+  getB2bConsents(params?: { clientId?: string; status?: string; accountNumber?: string; page?: number; size?: number }): Observable<PageResponse<B2bConsent>> {
+    return this.api.get<PageResponse<B2bConsent>>('/b2b-portal/consents', params);
+  }
+
+  createB2bConsent(body: { clientId: string; accountNumber: string; permissions?: string; validUntil?: string }): Observable<B2bConsent> {
+    return this.api.post<B2bConsent>('/b2b-portal/consents', body);
+  }
+
+  revokeB2bConsent(consentId: string): Observable<B2bConsent> {
+    return this.api.delete<B2bConsent>(`/b2b-portal/consents/${encodeURIComponent(consentId)}`);
+  }
+
+  getB2bMetrics(): Observable<B2bMetric[]> {
+    return this.api.get<B2bMetric[]>('/b2b-portal/metrics');
+  }
+
+  executeB2bSandbox(body: { clientId: string; messageType: string; format?: string; payload: string }): Observable<B2bSandboxResponse> {
+    return this.api.post<B2bSandboxResponse>('/b2b-portal/sandbox/execute', body);
+  }
+}
+
+export interface B2bClientApp {
+  id: string;
+  clientId: string;
+  clientName: string;
+  organizationTaxCode: string;
+  status: string;
+  allowedGrantTypes: string;
+  allowedScopes: string;
+  tokenEndpointAuthMethod: string;
+  jwksUri?: string;
+  publicKeyPem?: string;
+  clientCertThumbprintSha256?: string;
+  webhookCallbackUrl?: string;
+  webhookSecret?: string;
+  rateLimitRpm: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface B2bConsent {
+  id: string;
+  clientId: string;
+  accountNumber: string;
+  customerId: string;
+  permissions: string;
+  status: string;
+  validUntil: string;
+  createdAt: string;
+}
+
+export interface B2bMetric {
+  clientId: string;
+  totalRequests: number;
+  successfulRequests: number;
+  failedRequests: number;
+  avgLatencyMs: number;
+  rateLimitRpm: number;
+}
+
+export interface B2bSandboxResponse {
+  messageId: string;
+  status: string;
+  responsePayload: string;
+  executionTimeMs: number;
+  fapiVerified: boolean;
 }
 
 export interface RbacRole {
