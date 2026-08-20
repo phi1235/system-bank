@@ -5,11 +5,8 @@ import com.banksystem.common.security.GatewayUser;
 import com.banksystem.common.security.RequireAnyPermission;
 import com.banksystem.common.security.SecurityHeaders;
 import com.banksystem.common.security.UserContext;
-import com.banksystem.transaction.application.gateway.AccountGateway;
 import com.banksystem.transaction.application.transfer.SandboxTopupGateService;
-import com.banksystem.transaction.infrastructure.feign.AccountClientDtos.AccountView;
-import com.banksystem.transaction.infrastructure.feign.AccountClientDtos.MoneyCommand;
-import com.banksystem.transaction.infrastructure.feign.AccountClientDtos.MoneyResult;
+import com.banksystem.transaction.application.transfer.SandboxTopupService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -44,13 +41,13 @@ public class SandboxTopupController {
   ) {}
 
   private final SandboxTopupGateService gateService;
-  private final AccountGateway accountGateway;
+  private final SandboxTopupService topupService;
 
   public SandboxTopupController(
       SandboxTopupGateService gateService,
-      AccountGateway accountGateway) {
+      SandboxTopupService topupService) {
     this.gateService = gateService;
-    this.accountGateway = accountGateway;
+    this.topupService = topupService;
   }
 
   @GetMapping("/config")
@@ -67,20 +64,13 @@ public class SandboxTopupController {
   })
   public ApiResponse<SandboxTopupResponse> topup(@Valid @RequestBody SandboxTopupRequest request) {
     GatewayUser user = UserContext.requireUser();
-    BigDecimal accumulated = gateService.validateAndAccumulate(user.userId(), request.amount());
-
-    AccountView account = accountGateway.getAccount(request.accountId());
-    String refId = "SANDBOX-TOPUP-" + UUID.randomUUID();
-    MoneyResult result = accountGateway.credit(
-        request.accountId(),
-        new MoneyCommand(request.amount(), refId, "Sandbox 1-Click Topup", refId));
-
-    BigDecimal remaining = SandboxTopupGateService.MAX_DAILY_QUOTA.subtract(accumulated);
+    SandboxTopupService.Result result = topupService.topup(
+        user.userId(), request.accountId(), request.amount());
     return ApiResponse.ok(new SandboxTopupResponse(
-        request.accountId(),
-        request.amount(),
-        result != null ? result.balanceAfter() : account.balance().add(request.amount()),
-        accumulated,
-        remaining.max(BigDecimal.ZERO)));
+        result.accountId(),
+        result.amount(),
+        result.balanceAfter(),
+        result.accumulatedToday(),
+        result.remainingQuotaToday()));
   }
 }

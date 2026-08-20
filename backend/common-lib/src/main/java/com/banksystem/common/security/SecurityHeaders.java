@@ -43,6 +43,25 @@ public final class SecurityHeaders {
   public static final String PERM_FORENSICS_AUDIT_VIEW = "forensics:audit:view";
   public static final String PERM_FORENSICS_ADMIN = "forensics:admin";
   public static final String PERM_NOTIFICATIONS_OPS_VIEW = "notifications:ops:view";
+  public static final String PERM_VA_OPERATIONS_VIEW = "va:operations:view";
+  public static final String PERM_VA_OPERATIONS_REVIEW = "va:operations:review";
+  public static final String PERM_SETTLEMENT_VIEW = "settlement:view";
+  public static final String PERM_SETTLEMENT_RETRY = "settlement:retry";
+  public static final String PERM_SETTLEMENT_APPROVE = "settlement:approve";
+  public static final String PERM_PAYOUT_VIEW = "payout:view";
+  public static final String PERM_PAYOUT_APPROVE = "payout:approve";
+
+  /* ── Business Portal (B2B Merchant) ── */
+  public static final String PERM_BUSINESS_DASHBOARD_VIEW = "business:dashboard:view";
+  public static final String PERM_BUSINESS_VA_VIEW = "business:va:view";
+  public static final String PERM_BUSINESS_VA_MANAGE = "business:va:manage";
+  public static final String PERM_BUSINESS_ORDERS_VIEW = "business:orders:view";
+  public static final String PERM_BUSINESS_ORDERS_MANAGE = "business:orders:manage";
+  public static final String PERM_BUSINESS_SETTLEMENTS_VIEW = "business:settlements:view";
+  public static final String PERM_BUSINESS_SETTLEMENTS_EXECUTE = "business:settlements:execute";
+  public static final String PERM_BUSINESS_SPLIT_VIEW = "business:split:view";
+  public static final String PERM_BUSINESS_SPLIT_MANAGE = "business:split:manage";
+  public static final String PERM_BUSINESS_CREDENTIALS_MANAGE = "business:credentials:manage";
 
   /* ── Internet Banking (customer portal) ── */
   public static final String PERM_IB_HOME_VIEW = "ib:home:view";

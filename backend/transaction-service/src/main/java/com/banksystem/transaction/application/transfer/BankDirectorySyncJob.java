@@ -120,7 +120,8 @@ public class BankDirectorySyncJob {
           bankEntity.setQrTransferSupported(qrTransferSupported);
           bankEntity.setUpdatedAt(now);
         } else {
-          bankEntity = new BankDirectoryEntity(UUID.randomUUID(), bin, code, shortName, fullName, logoUrl, true);
+          bankEntity = new BankDirectoryEntity(
+              UUID.randomUUID(), bin, code, shortName, fullName, logoUrl, true);
           bankEntity.setLastSyncedAt(now);
           bankEntity.setLastSyncStatus("SUCCESS");
           bankEntity.setLookupSupported(lookupSupported);
@@ -172,7 +173,8 @@ public class BankDirectorySyncJob {
     ProviderBankCapabilityEntity capability = capabilityRepository
         .findByProviderAndBankBin(provider, bankBin)
         .orElseGet(() -> new ProviderBankCapabilityEntity(
-            UUID.randomUUID(), provider, bankBin, inquirySupported, payoutSupported, "ACTIVE", source));
+            UUID.randomUUID(), provider, bankBin, inquirySupported, payoutSupported,
+            "ACTIVE", source));
     capability.setInquirySupported(inquirySupported);
     capability.setPayoutSupported(payoutSupported);
     capability.setStatus("ACTIVE");

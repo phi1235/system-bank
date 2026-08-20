@@ -39,6 +39,8 @@ public class GlobalExceptionHandler {
     if (code.equals("FORBIDDEN") || code.equals("ACCESS_DENIED")) return HttpStatus.FORBIDDEN;
     if (code.equals("UNAUTHORIZED")) return HttpStatus.UNAUTHORIZED;
     if (code.equals("CONFLICT") || code.endsWith("_CONFLICT")) return HttpStatus.CONFLICT;
+    if (code.equals("INTERNAL_ERROR") || code.equals("SECURITY_ERROR")) return HttpStatus.INTERNAL_SERVER_ERROR;
+    if (code.equals("SERVICE_UNAVAILABLE")) return HttpStatus.SERVICE_UNAVAILABLE;
     if (code.contains("INSUFFICIENT") || code.contains("LIMIT") || code.contains("FROZEN") || code.contains("LOCKED")) {
       return HttpStatus.UNPROCESSABLE_ENTITY;
     }

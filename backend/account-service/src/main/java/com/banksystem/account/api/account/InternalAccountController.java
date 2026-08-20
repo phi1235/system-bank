@@ -1,7 +1,7 @@
 package com.banksystem.account.api.account;
 
-import com.banksystem.account.api.dto.AccountDtos.AccountResponse;
 import com.banksystem.account.api.dto.AccountDtos.AccountOwnershipResponse;
+import com.banksystem.account.api.dto.AccountDtos.AccountResponse;
 import com.banksystem.account.api.dto.AccountDtos.AdjustmentRequestedEventRequest;
 import com.banksystem.account.api.dto.AccountDtos.CompensateCreditAgainstHoldCommand;
 import com.banksystem.account.api.dto.AccountDtos.CreateCorporateAccountRequest;

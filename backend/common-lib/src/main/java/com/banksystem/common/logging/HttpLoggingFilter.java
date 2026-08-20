@@ -37,6 +37,9 @@ public class HttpLoggingFilter extends OncePerRequestFilter {
 
   private static final Logger log = LoggerFactory.getLogger(HttpLoggingFilter.class);
 
+  public HttpLoggingFilter() {
+  }
+
   public static final String MDC_USER_ID = "userId";
   public static final String MDC_CLIENT_IP = "clientIp";
 
@@ -87,12 +90,12 @@ public class HttpLoggingFilter extends OncePerRequestFilter {
     String clientIp = UserContext.clientIp(request);
     MDC.put(MDC_CLIENT_IP, clientIp);
 
-    long startMs = System.currentTimeMillis();
+    long startNanos = System.nanoTime();
 
     try {
       filterChain.doFilter(wrappedRequest, wrappedResponse);
     } finally {
-      long durationMs = System.currentTimeMillis() - startMs;
+      long durationMs = (System.nanoTime() - startNanos) / 1_000_000L;
       processLogData(wrappedRequest, wrappedResponse, clientIp, durationMs);
       wrappedResponse.copyBodyToResponse();
       MDC.remove(MDC_USER_ID);

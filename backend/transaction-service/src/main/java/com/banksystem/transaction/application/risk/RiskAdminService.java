@@ -132,7 +132,8 @@ public class RiskAdminService {
     order.setUpdatedAt(Instant.now());
     transferRepository.save(order);
     auditRepository.save(AuditLogEntity.of(
-        actorId, "RISK_TRANSFER_APPROVE", "TRANSFER", transferId.toString(), ip, trim(note, 500)));
+        actorId, "RISK_TRANSFER_APPROVE", "TRANSFER", transferId.toString(), ip,
+        trim(note, 500)));
     return sagaOrchestrator.run(order);
   }
 
@@ -146,7 +147,8 @@ public class RiskAdminService {
     order.setUpdatedAt(Instant.now());
     transferRepository.save(order);
     auditRepository.save(AuditLogEntity.of(
-        actorId, "RISK_TRANSFER_REJECT", "TRANSFER", transferId.toString(), ip, trim(note, 500)));
+        actorId, "RISK_TRANSFER_REJECT", "TRANSFER", transferId.toString(), ip,
+        trim(note, 500)));
     return order;
   }
 

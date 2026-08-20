@@ -437,6 +437,48 @@ export interface TermDeposit {
   closedAt: string | null;
 }
 
+export interface AutoSweepProfile {
+  id: string;
+  sourceAccountId: string;
+  sourceAccountNumber: string;
+  productCode: string;
+  status: 'ENABLED' | 'PAUSED' | 'CLOSED' | string;
+  thresholdAmount: number;
+  minSweepAmount: number;
+  annualRateBps: number;
+  casaBalance: number;
+  availableBalance: number;
+  flexiblePrincipal: number;
+  accruedInterest: number;
+  totalLiquidity: number;
+  lastSweepBusinessDate: string | null;
+  version: number;
+  updatedAt: string;
+}
+
+export interface SweepProduct {
+  code: string;
+  currency: string;
+  annualRateBps: number;
+  minThreshold: number;
+  defaultThreshold: number;
+  minSweepAmount: number;
+  maxPositionAmount: number | null;
+}
+
+export interface AutoSweepOperation {
+  id: string;
+  operationType: 'SWEEP_IN' | 'SWEEP_OUT' | 'INTEREST_ACCRUAL' | string;
+  triggerType: 'EOD' | 'PAYMENT' | 'RECOVERY' | string;
+  amount: number;
+  annualRateBps: number | null;
+  businessDate: string;
+  paymentReference: string | null;
+  casaBalanceAfter: number;
+  positionBalanceAfter: number;
+  createdAt: string;
+}
+
 /** Admin funding summary over term deposits. */
 export interface DepositTotals {
   openCount: number;
@@ -979,3 +1021,185 @@ export interface ForceActionRequest {
   reason: string;
 }
 
+export interface BusinessOrganization {
+  id: string;
+  code: string;
+  name: string;
+  taxCode: string;
+  status: 'ACTIVE' | 'SUSPENDED' | 'INACTIVE';
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface BusinessMember {
+  id: string;
+  organizationId: string;
+  userId: string;
+  businessRole: 'BUSINESS_OWNER' | 'BUSINESS_FINANCE' | 'BUSINESS_OPERATOR' | 'BUSINESS_VIEWER';
+  status: 'ACTIVE' | 'SUSPENDED';
+  userEmail?: string;
+  userFullName?: string;
+  createdAt: string;
+}
+
+export interface BusinessMembership {
+  organization: BusinessOrganization;
+  businessRole: string;
+  permissions: string[];
+}
+
+export interface VirtualAccount {
+  id: string;
+  organizationId: string;
+  provider: string;
+  bankBin: string;
+  accountNumber: string;
+  parentAccountId?: string;
+  mode: 'SINGLE_USE' | 'FIXED_PAYER';
+  customerReference?: string;
+  status: 'ACTIVE' | 'INACTIVE' | 'CLOSED' | 'EXPIRED';
+  vietQrUrl: string;
+  activatedAt?: string;
+  expiresAt?: string;
+  createdAt: string;
+}
+
+export interface CollectionOrder {
+  id: string;
+  organizationId: string;
+  merchantOrderId: string;
+  virtualAccountId: string;
+  virtualAccountNumber: string;
+  bankBin: string;
+  vietQrUrl: string;
+  expectedAmount: number;
+  paidAmount: number;
+  currency: string;
+  status: 'PENDING' | 'PARTIAL' | 'PAID' | 'OVERPAID' | 'EXPIRED' | 'CANCELLED' | 'REVIEW';
+  customerReference?: string;
+  splitRuleSnapshot?: string;
+  expiresAt?: string;
+  paidAt?: string;
+  createdAt: string;
+}
+
+export interface InboundPaymentEvent {
+  id: string;
+  provider: string;
+  providerTransactionId: string;
+  virtualAccountNumber: string;
+  bankBin: string;
+  amount: number;
+  currency: string;
+  senderAccount?: string;
+  senderBankBin?: string;
+  senderName?: string;
+  referenceContent?: string;
+  status: 'RECEIVED' | 'MATCHED' | 'PROCESSED' | 'UNMATCHED' | 'MISMATCH' | 'DUPLICATE' | 'FAILED';
+  errorMessage?: string;
+  processedAt?: string;
+  createdAt: string;
+}
+
+export interface SplitLegItem {
+  id?: string;
+  beneficiaryType: 'PLATFORM' | 'SELLER_INTERNAL' | 'SELLER_EXTERNAL';
+  beneficiaryId?: string;
+  accountId?: string;
+  bankBin?: string;
+  accountNumber?: string;
+  beneficiaryName?: string;
+  splitType: 'PERCENTAGE' | 'FIXED_AMOUNT' | 'REMAINDER';
+  value: number;
+  priority: number;
+}
+
+export interface SplitRule {
+  id: string;
+  organizationId: string;
+  name: string;
+  status: string;
+  items: SplitLegItem[];
+  createdAt: string;
+}
+
+export interface SettlementLeg {
+  id: string;
+  beneficiaryType: 'PLATFORM' | 'SELLER_INTERNAL' | 'SELLER_EXTERNAL';
+  beneficiaryId?: string;
+  accountId?: string;
+  bankBin?: string;
+  accountNumber?: string;
+  beneficiaryName?: string;
+  amount: number;
+  currency: string;
+  legType: 'INTERNAL_CREDIT' | 'EXTERNAL_PAYOUT' | 'COMMISSION';
+  status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'RETRYING';
+  payoutId?: string;
+}
+
+export interface Settlement {
+  id: string;
+  organizationId: string;
+  collectionOrderId: string;
+  grossAmount: number;
+  platformCommission: number;
+  sellerNetAmount: number;
+  currency: string;
+  status: 'PENDING' | 'FUNDS_RESERVED' | 'PROCESSING' | 'COMPLETED' | 'PARTIALLY_COMPLETED' | 'RETRYING' | 'MANUAL_REVIEW' | 'REVERSED';
+  ledgerJournalId?: string;
+  failureReason?: string;
+  legs: SettlementLeg[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SettlementPreview {
+  grossAmount: number;
+  platformCommission: number;
+  sellerNetAmount: number;
+  legs: SettlementLeg[];
+}
+
+export interface MerchantCredential {
+  id: string;
+  keyId: string;
+  secretKey?: string;
+  name: string;
+  status: string;
+  expiresAt?: string;
+  lastUsedAt?: string;
+  createdAt: string;
+}
+
+export interface MerchantWebhookEndpoint {
+  id: string;
+  url: string;
+  eventTypes?: string;
+  secretKey?: string;
+  status: string;
+  createdAt: string;
+}
+
+export interface MerchantAccountConfig {
+  id: string;
+  organizationId: string;
+  collectionAccountId: string;
+  escrowAccountId: string;
+  commissionAccountId: string;
+  defaultCurrency: string;
+  status: string;
+  createdAt: string;
+}
+
+export interface BusinessDashboardSummary {
+  totalVirtualAccounts: number;
+  activeVirtualAccounts: number;
+  pendingOrdersCount: number;
+  paidOrdersCount: number;
+  reviewOrdersCount: number;
+  totalCollectedToday: number;
+  totalSettledToday: number;
+  pendingSettlementsCount: number;
+  autoMatchRate: number;
+}

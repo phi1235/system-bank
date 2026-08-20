@@ -1,5 +1,6 @@
 package com.banksystem.transaction.domain.forensics;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -27,5 +28,5 @@ public interface ForensicVerificationResultRepository
       @Param("severity") String severity,
       @Param("message") String message,
       @Param("evidenceJson") String evidenceJson,
-      @Param("evaluatedAt") java.time.Instant evaluatedAt);
+      @Param("evaluatedAt") Instant evaluatedAt);
 }

@@ -1,0 +1,112 @@
+<div class="dashboard-page">
+  <div class="page-header">
+    <div class="header-text">
+      <h1 class="page-title">{{ 'BUSINESS.DASHBOARD.TITLE' | translate }}</h1>
+      <p class="page-subtitle">{{ 'BUSINESS.DASHBOARD.SUB' | translate }}</p>
+    </div>
+    <div class="header-actions">
+      <a mat-flat-button color="primary" routerLink="/business/collection-orders">
+        <mat-icon>add</mat-icon>
+        {{ 'BUSINESS.DASHBOARD.NEW_ORDER' | translate }}
+      </a>
+      <a mat-stroked-button routerLink="/business/virtual-accounts">
+        <mat-icon>add_card</mat-icon>
+        {{ 'BUSINESS.DASHBOARD.NEW_VA' | translate }}
+      </a>
+    </div>
+  </div>
+
+  <!-- KPI Cards Grid -->
+  <div class="kpi-grid" *ngIf="summary">
+    <!-- Card 1: Today's Collection -->
+    <div class="kpi-card highlight">
+      <div class="kpi-icon money">
+        <mat-icon>payments</mat-icon>
+      </div>
+      <div class="kpi-content">
+        <span class="kpi-label">{{ 'BUSINESS.DASHBOARD.TOTAL_COLLECTED' | translate }}</span>
+        <span class="kpi-value">{{ summary.totalCollectedToday | number:'1.0-0' }} VND</span>
+      </div>
+    </div>
+
+    <!-- Card 2: Today's Settlement -->
+    <div class="kpi-card">
+      <div class="kpi-icon settlement">
+        <mat-icon>account_tree</mat-icon>
+      </div>
+      <div class="kpi-content">
+        <span class="kpi-label">{{ 'BUSINESS.DASHBOARD.TOTAL_SETTLED' | translate }}</span>
+        <span class="kpi-value">{{ summary.totalSettledToday | number:'1.0-0' }} VND</span>
+      </div>
+    </div>
+
+    <!-- Card 3: Active VAs -->
+    <div class="kpi-card">
+      <div class="kpi-icon va">
+        <mat-icon>account_balance</mat-icon>
+      </div>
+      <div class="kpi-content">
+        <span class="kpi-label">{{ 'BUSINESS.DASHBOARD.ACTIVE_VA' | translate }}</span>
+        <span class="kpi-value">{{ summary.activeVirtualAccounts }} / {{ summary.totalVirtualAccounts }}</span>
+      </div>
+    </div>
+
+    <!-- Card 4: Auto-match Rate -->
+    <div class="kpi-card">
+      <div class="kpi-icon rate">
+        <mat-icon>auto_mode</mat-icon>
+      </div>
+      <div class="kpi-content">
+        <span class="kpi-label">{{ 'BUSINESS.DASHBOARD.AUTO_MATCH_RATE' | translate }}</span>
+        <span class="kpi-value">{{ summary.autoMatchRate | number:'1.1-1' }}%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Status Summary Cards -->
+  <div class="summary-columns" *ngIf="summary">
+    <!-- Orders Breakdown -->
+    <div class="summary-card">
+      <div class="card-title">
+        <mat-icon>receipt_long</mat-icon>
+        <h3>{{ 'BUSINESS.NAV.COLLECTION_ORDERS' | translate }}</h3>
+      </div>
+      <div class="metric-row">
+        <span class="status-badge paid">{{ 'BUSINESS.ORDERS.STATUS_PAID' | translate }}</span>
+        <span class="metric-count">{{ summary.paidOrdersCount }}</span>
+      </div>
+      <div class="metric-row">
+        <span class="status-badge pending">{{ 'BUSINESS.ORDERS.STATUS_PENDING' | translate }}</span>
+        <span class="metric-count">{{ summary.pendingOrdersCount }}</span>
+      </div>
+      <div class="metric-row">
+        <span class="status-badge review">{{ 'BUSINESS.ORDERS.STATUS_REVIEW' | translate }}</span>
+        <span class="metric-count">{{ summary.reviewOrdersCount }}</span>
+      </div>
+      <div class="card-footer">
+        <a mat-button color="primary" routerLink="/business/collection-orders">
+          {{ 'BUSINESS.ORDERS.DETAILS_BTN' | translate }} &rarr;
+        </a>
+      </div>
+    </div>
+
+    <!-- Settlements Breakdown -->
+    <div class="summary-card">
+      <div class="card-title">
+        <mat-icon>account_tree</mat-icon>
+        <h3>{{ 'BUSINESS.NAV.SETTLEMENTS' | translate }}</h3>
+      </div>
+      <div class="metric-row">
+        <span class="status-badge pending">{{ 'BUSINESS.DASHBOARD.PENDING_SETTLEMENTS' | translate }}</span>
+        <span class="metric-count">{{ summary.pendingSettlementsCount }}</span>
+      </div>
+      <div class="quick-split-box">
+        <p>{{ 'BUSINESS.SPLIT.SUB' | translate }}</p>
+        <a mat-stroked-button color="primary" routerLink="/business/split-rules">
+          <mat-icon>calculate</mat-icon>
+          {{ 'BUSINESS.DASHBOARD.PREVIEW_SPLIT' | translate }}
+        </a>
+      </div>
+    </div>
+  </div>
+</div>

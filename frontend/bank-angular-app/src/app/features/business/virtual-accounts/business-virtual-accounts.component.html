@@ -1,0 +1,196 @@
+<div class="page-container">
+  <div class="page-header">
+    <div class="header-text">
+      <h1 class="page-title">{{ 'BUSINESS.VA.TITLE' | translate }}</h1>
+      <p class="page-subtitle">{{ 'BUSINESS.VA.SUB' | translate }}</p>
+    </div>
+    <button mat-flat-button color="primary" (click)="openProvisionModal()">
+      <mat-icon>add_card</mat-icon>
+      {{ 'BUSINESS.VA.PROVISION_BTN' | translate }}
+    </button>
+  </div>
+
+  <!-- Search & Filter Bar -->
+  <mat-card class="filter-card">
+    <div class="filter-row">
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>{{ 'COMMON.SEARCH' | translate }}</mat-label>
+        <input matInput [(ngModel)]="searchQuery" (keyup.enter)="onSearch()" [placeholder]="'BUSINESS.VA.SEARCH_PLACEHOLDER' | translate" />
+        <button mat-icon-button matSuffix (click)="onSearch()">
+          <mat-icon>search</mat-icon>
+        </button>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="status-field">
+        <mat-label>{{ 'BUSINESS.VA.STATUS' | translate }}</mat-label>
+        <mat-select [(ngModel)]="statusFilter" (selectionChange)="onSearch()">
+          <mat-option value="">{{ 'COMMON.ALL' | translate }}</mat-option>
+          <mat-option value="ACTIVE">{{ 'BUSINESS.VA.STATUS_ACTIVE' | translate }}</mat-option>
+          <mat-option value="CLOSED">{{ 'BUSINESS.VA.STATUS_CLOSED' | translate }}</mat-option>
+          <mat-option value="EXPIRED">{{ 'BUSINESS.VA.STATUS_EXPIRED' | translate }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+  </mat-card>
+
+  <!-- Virtual Accounts Table -->
+  <mat-card class="table-card">
+    <table mat-table [dataSource]="virtualAccounts" class="full-width-table">
+      <!-- Account Number Column -->
+      <ng-container matColumnDef="accountNumber">
+        <th mat-header-cell *matHeaderCellDef>{{ 'BUSINESS.VA.ACCOUNT_NO' | translate }}</th>
+        <td mat-cell *matCellDef="let va">
+          <span class="account-number-text">{{ va.accountNumber }}</span>
+        </td>
+      </ng-container>
+
+      <!-- Bank BIN Column -->
+      <ng-container matColumnDef="bankBin">
+        <th mat-header-cell *matHeaderCellDef>{{ 'BUSINESS.VA.BANK_BIN' | translate }}</th>
+        <td mat-cell *matCellDef="let va">{{ va.bankBin }}</td>
+      </ng-container>
+
+      <!-- Provider Column -->
+      <ng-container matColumnDef="provider">
+        <th mat-header-cell *matHeaderCellDef>{{ 'BUSINESS.VA.PROVIDER' | translate }}</th>
+        <td mat-cell *matCellDef="let va">
+          <span class="provider-badge">{{ va.provider }}</span>
+        </td>
+      </ng-container>
+
+      <!-- Mode Column -->
+      <ng-container matColumnDef="mode">
+        <th mat-header-cell *matHeaderCellDef>{{ 'BUSINESS.VA.MODE' | translate }}</th>
+        <td mat-cell *matCellDef="let va">
+          <span class="mode-badge" [class.fixed]="va.mode === 'FIXED_PAYER'">
+            {{ 'BUSINESS.VA.MODE_' + va.mode | translate }}
+          </span>
+        </td>
+      </ng-container>
+
+      <!-- Customer Reference Column -->
+      <ng-container matColumnDef="customerReference">
+        <th mat-header-cell *matHeaderCellDef>{{ 'BUSINESS.VA.CUSTOMER_REF' | translate }}</th>
+        <td mat-cell *matCellDef="let va">{{ va.customerReference || '—' }}</td>
+      </ng-container>
+
+      <!-- Status Column -->
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef>{{ 'BUSINESS.VA.STATUS' | translate }}</th>
+        <td mat-cell *matCellDef="let va">
+          <span class="status-badge" [ngClass]="va.status.toLowerCase()">
+            {{ 'BUSINESS.VA.STATUS_' + va.status | translate }}
+          </span>
+        </td>
+      </ng-container>
+
+      <!-- Created At Column -->
+      <ng-container matColumnDef="createdAt">
+        <th mat-header-cell *matHeaderCellDef>{{ 'BUSINESS.VA.CREATED_AT' | translate }}</th>
+        <td mat-cell *matCellDef="let va">{{ va.createdAt | date:'short' }}</td>
+      </ng-container>
+
+      <!-- Actions Column -->
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.ACTIONS' | translate }}</th>
+        <td mat-cell *matCellDef="let va">
+          <button mat-icon-button color="primary" (click)="openQrModal(va)" title="{{ 'BUSINESS.VA.QR_VIEW' | translate }}">
+            <mat-icon>qr_code</mat-icon>
+          </button>
+          <button mat-icon-button color="warn" *ngIf="va.status === 'ACTIVE'" (click)="closeVirtualAccount(va)" title="{{ 'BUSINESS.VA.CLOSE_BTN' | translate }}">
+            <mat-icon>block</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
+      <tr class="mat-row" *matNoDataRow>
+        <td class="mat-cell empty-cell" [attr.colspan]="displayedColumns.length">
+          {{ 'COMMON.NO_DATA' | translate }}
+        </td>
+      </tr>
+    </table>
+
+    <mat-paginator
+      [length]="totalElements"
+      [pageSize]="pageSize"
+      [pageIndex]="pageIndex"
+      [pageSizeOptions]="[10, 20, 50]"
+      (page)="onPageChange($event)"
+      showFirstLastButtons>
+    </mat-paginator>
+  </mat-card>
+</div>
+
+<!-- Modal Provision Virtual Account -->
+<div class="custom-modal-backdrop" *ngIf="showProvisionModal">
+  <div class="custom-modal-card">
+    <div class="modal-header">
+      <h3>{{ 'BUSINESS.VA.PROVISION_BTN' | translate }}</h3>
+      <button mat-icon-button (click)="closeProvisionModal()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+    <div class="modal-body">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>{{ 'BUSINESS.VA.MODE' | translate }}</mat-label>
+        <mat-select [(ngModel)]="provisionMode">
+          <mat-option value="SINGLE_USE">{{ 'BUSINESS.VA.MODE_SINGLE_USE' | translate }}</mat-option>
+          <mat-option value="FIXED_PAYER">{{ 'BUSINESS.VA.MODE_FIXED_PAYER' | translate }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>{{ 'BUSINESS.VA.PROVIDER' | translate }}</mat-label>
+        <mat-select [(ngModel)]="provisionProvider">
+          <mat-option value="MOCK">{{ 'BUSINESS.VA.PROVIDER_MOCK' | translate }}</mat-option>
+          <mat-option value="SEPAY">{{ 'BUSINESS.VA.PROVIDER_SEPAY' | translate }}</mat-option>
+          <mat-option value="NAPAS">{{ 'BUSINESS.VA.PROVIDER_NAPAS' | translate }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>{{ 'BUSINESS.VA.BANK_BIN' | translate }}</mat-label>
+        <input matInput [(ngModel)]="provisionBankBin" [placeholder]="'BUSINESS.VA.BANK_BIN_PLACEHOLDER' | translate" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width" *ngIf="provisionMode === 'FIXED_PAYER'">
+        <mat-label>{{ 'BUSINESS.VA.CUSTOMER_REF' | translate }}</mat-label>
+        <input matInput [(ngModel)]="provisionCustomerRef" [placeholder]="'BUSINESS.VA.CUSTOMER_REF_PLACEHOLDER' | translate" />
+      </mat-form-field>
+    </div>
+    <div class="modal-footer">
+      <button mat-button (click)="closeProvisionModal()">{{ 'COMMON.CANCEL' | translate }}</button>
+      <button mat-flat-button color="primary" [disabled]="provisioning" (click)="submitProvision()">
+        {{ 'COMMON.SAVE' | translate }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal QR Code Viewer -->
+<div class="custom-modal-backdrop" *ngIf="showQrModal && selectedVaForQr">
+  <div class="custom-modal-card qr-card">
+    <div class="modal-header">
+      <h3>{{ 'BUSINESS.VA.QR_VIEW' | translate }}</h3>
+      <button mat-icon-button (click)="closeQrModal()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+    <div class="modal-body text-center">
+      <div class="qr-image-wrapper">
+        <img [src]="selectedVaForQr.vietQrUrl" alt="VietQR" class="vietqr-img" />
+      </div>
+      <div class="qr-details">
+        <p><strong>{{ 'BUSINESS.VA.ACCOUNT_NO' | translate }}:</strong> {{ selectedVaForQr.accountNumber }}</p>
+        <p><strong>{{ 'BUSINESS.VA.BANK_BIN' | translate }}:</strong> {{ selectedVaForQr.bankBin }}</p>
+        <p><strong>{{ 'BUSINESS.VA.PROVIDER' | translate }}:</strong> {{ selectedVaForQr.provider }}</p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button mat-flat-button color="primary" (click)="closeQrModal()">{{ 'COMMON.CLOSE' | translate }}</button>
+    </div>
+  </div>
+</div>

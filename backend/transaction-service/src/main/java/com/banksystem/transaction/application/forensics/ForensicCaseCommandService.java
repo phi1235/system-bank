@@ -36,6 +36,8 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -283,7 +285,7 @@ public class ForensicCaseCommandService {
     ForensicCaseEntity entity = requireVersion(id, request.expectedVersion());
     List<Map<String, Object>> actions = parseActions(entity.getRemediationJson());
     Instant now = clock.instant();
-    Map<String, Object> action = new java.util.LinkedHashMap<>();
+    Map<String, Object> action = new LinkedHashMap<>();
     action.put("actionType", request.actionType().trim());
     action.put("referenceId", request.referenceId() == null ? null : request.referenceId().trim());
     action.put("description", request.description().trim());
@@ -306,15 +308,15 @@ public class ForensicCaseCommandService {
 
   @SuppressWarnings("unchecked")
   private List<Map<String, Object>> parseActions(String json) {
-    if (json == null || json.isBlank()) return new java.util.ArrayList<>();
+    if (json == null || json.isBlank()) return new ArrayList<>();
     Object parsed = jsonSupport.deserializeAny(json);
     if (parsed instanceof List<?> list) {
-      return new java.util.ArrayList<>(list.stream()
+      return new ArrayList<>(list.stream()
           .filter(item -> item instanceof Map)
           .map(item -> (Map<String, Object>) item)
           .toList());
     }
-    return new java.util.ArrayList<>();
+    return new ArrayList<>();
   }
 
   @Transactional

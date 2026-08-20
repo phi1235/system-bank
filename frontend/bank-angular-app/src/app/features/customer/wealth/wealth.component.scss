@@ -13,13 +13,63 @@
 
 .open-card,
 .rates-card,
-.table-card {
+.table-card,
+.auto-sweep-card {
   padding: 16px;
 
   h3 {
     margin: 0 0 12px;
     font-size: 15px;
   }
+}
+
+.auto-sweep-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.auto-sweep-form {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(220px, 1fr) auto auto;
+  gap: 12px;
+  align-items: center;
+  margin-top: 16px;
+}
+
+.sweep-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+
+  > div {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px;
+    border-radius: 8px;
+    background: rgba(0, 150, 136, 0.06);
+  }
+
+  span { color: rgba(0, 0, 0, 0.58); font-size: 12px; }
+}
+
+.sweep-history {
+  margin-top: 16px;
+
+  > div {
+    display: flex;
+    justify-content: space-between;
+    padding: 7px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 900px) {
+  .auto-sweep-form { grid-template-columns: 1fr; }
 }
 
 .full-width {

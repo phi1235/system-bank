@@ -22,6 +22,7 @@ public class LedgerJournalEntity {
   @Column(length = 255) private String description;
   @Column(name = "reversal_of_journal_id") private UUID reversalOfJournalId;
   @Column(name = "sequence_no", nullable = false) private int sequenceNo;
+  @Column(name = "request_hash", length = 64) private String requestHash;
   @Column(name = "created_at", nullable = false) private Instant createdAt;
   @Column(name = "posted_at") private Instant postedAt;
   @Version @Column(nullable = false) private long version;
@@ -58,6 +59,10 @@ public class LedgerJournalEntity {
     postedAt = now;
   }
 
+  public void markReversed() {
+    this.status = "REVERSED";
+  }
+
   public UUID getId() { return id; }
   public String getBusinessCommandId() { return businessCommandId; }
   public String getBusinessReference() { return businessReference; }
@@ -68,6 +73,8 @@ public class LedgerJournalEntity {
   public String getDescription() { return description; }
   public UUID getReversalOfJournalId() { return reversalOfJournalId; }
   public int getSequenceNo() { return sequenceNo; }
+  public String getRequestHash() { return requestHash; }
+  public void setRequestHash(String requestHash) { this.requestHash = requestHash; }
   public Instant getCreatedAt() { return createdAt; }
   public Instant getPostedAt() { return postedAt; }
   public long getVersion() { return version; }

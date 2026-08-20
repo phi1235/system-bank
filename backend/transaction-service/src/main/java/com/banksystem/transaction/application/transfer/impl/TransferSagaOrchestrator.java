@@ -342,7 +342,8 @@ public class TransferSagaOrchestrator {
           order.getToAccountId(),
           order.getAmount(),
           revRef,
-          "Reverse dest " + order.getId());
+          "Reverse dest " + order.getId(),
+          false);
       step(order.getId(), "REVERSE_DEST", "SUCCESS", "ledger=" + rev.ledgerEntryId());
     } catch (Exception ex) {
       order.setStatus(TransferStatus.REVIEW_REQUIRED);
@@ -571,7 +572,8 @@ public class TransferSagaOrchestrator {
     }
     TransferOrderEntity completed = completeExternal(order);
     manualReviewAuditLogRepository.save(new ManualReviewAuditLogEntity(
-        UUID.randomUUID(), orderId, adminUserId, "FORCE_SETTLE", reason != null ? reason : "Admin force settle"));
+        UUID.randomUUID(), orderId, adminUserId, "FORCE_SETTLE",
+        reason != null ? reason : "Admin force settle"));
     step(orderId, "ADMIN_FORCE_SETTLE", "SUCCESS", "Settled by admin " + adminUserId + ": " + reason);
     return completed;
   }
@@ -585,7 +587,8 @@ public class TransferSagaOrchestrator {
     }
     TransferOrderEntity refunded = compensateSourceOnly(order, formatReason("ADMIN_MANUAL_REFUND", reason));
     manualReviewAuditLogRepository.save(new ManualReviewAuditLogEntity(
-        UUID.randomUUID(), orderId, adminUserId, "FORCE_REFUND", reason != null ? reason : "Admin force refund"));
+        UUID.randomUUID(), orderId, adminUserId, "FORCE_REFUND",
+        reason != null ? reason : "Admin force refund"));
     step(orderId, "ADMIN_FORCE_REFUND", "SUCCESS", "Refunded by admin " + adminUserId + ": " + reason);
     return refunded;
   }
@@ -637,7 +640,8 @@ public class TransferSagaOrchestrator {
   protected void step(UUID transferId, String step, String status, String detail) {
     try {
       transactionTemplate.executeWithoutResult(
-          tx -> sagaStepLogRepository.save(SagaStepLogEntity.of(transferId, step, status, detail)));
+          tx -> sagaStepLogRepository.save(
+              SagaStepLogEntity.of(transferId, step, status, detail)));
     } catch (RuntimeException ex) {
       // Step history is diagnostic. It must never trigger or alter a money compensation path.
       log.error("Cannot persist saga step transfer={} step={} status={}: {}",
@@ -699,17 +703,24 @@ public class TransferSagaOrchestrator {
           accountId,
           order.getHoldId(),
           order.getBatchId(),
-          new MoneyCommand(debitTotal, "TX-DEBIT-" + order.getId(), desc, "TX-DEBIT-" + order.getId()));
+          new MoneyCommand(debitTotal, "TX-DEBIT-" + order.getId(), desc, "TX-DEBIT-" + order.getId(), false));
       if (result == null) {
         throw new BusinessException("DEBIT_HOLD_FAILED", "Debit against hold failed");
       }
       return result;
     }
-    return callDebitAmount(accountId, debitTotal, "TX-DEBIT-" + order.getId(), desc);
+    return callDebitAmount(accountId, debitTotal, "TX-DEBIT-" + order.getId(), desc, true);
   }
 
-  private MoneyResult callDebitAmount(UUID accountId, BigDecimal amount, String referenceId, String description) {
-    MoneyResult result = accountGateway.debit(accountId, new MoneyCommand(amount, referenceId, description, referenceId));
+  private MoneyResult callDebitAmount(
+      UUID accountId,
+      BigDecimal amount,
+      String referenceId,
+      String description,
+      boolean allowAutoSweep) {
+    String commandId = referenceId + ":" + amount.stripTrailingZeros().toPlainString();
+    MoneyResult result = accountGateway.debit(
+        accountId, new MoneyCommand(amount, referenceId, description, commandId, allowAutoSweep));
     if (result == null) {
       throw new BusinessException("DEBIT_FAILED", "Debit failed");
     }

@@ -30,6 +30,7 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -96,7 +97,7 @@ public class LedgerEvidenceQueryService {
       throw new BusinessException("INVALID_TEMPORAL_POINT", "Temporal point cannot be in the future");
     }
     var snapshot = requestedAt == null
-        ? java.util.Optional.<AccountTemporalSnapshotService.SnapshotState>empty()
+        ? Optional.<AccountTemporalSnapshotService.SnapshotState>empty()
         : temporalSnapshotService.nearest(accountId, at);
     BigDecimal balance = requestedAt == null
         ? account.getBalance()

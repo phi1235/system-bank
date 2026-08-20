@@ -1,16 +1,21 @@
 package com.banksystem.transaction.api.forensics;
 
+import java.time.Instant;
+
 import com.banksystem.transaction.api.dto.ForensicDtos.ForensicInvestigationFilterRequest;
 import com.banksystem.transaction.api.dto.ForensicDtos.EvidenceTimelineFilterRequest;
 import com.banksystem.transaction.application.forensics.EvidenceTimelineQuery;
 import com.banksystem.transaction.application.forensics.ForensicSearchQuery;
 import java.util.UUID;
+import org.springframework.stereotype.Component;
 
+@Component
 final class ForensicRequestMapper {
 
-  private ForensicRequestMapper() {}
+  ForensicRequestMapper() {
+  }
 
-  static ForensicSearchQuery toQuery(ForensicInvestigationFilterRequest request) {
+  ForensicSearchQuery toQuery(ForensicInvestigationFilterRequest request) {
     String q = request.q();
     UUID txUuid = parseUuid(request.transactionId());
     if (txUuid == null && request.transactionId() != null && !request.transactionId().isBlank()) {
@@ -33,7 +38,8 @@ final class ForensicRequestMapper {
         request.from(),
         request.to(),
         request.page(),
-        request.size());
+        request.size(),
+        Instant.now());
   }
 
   private static UUID parseUuid(String raw) {
@@ -45,7 +51,7 @@ final class ForensicRequestMapper {
     }
   }
 
-  static EvidenceTimelineQuery toQuery(EvidenceTimelineFilterRequest request) {
+  EvidenceTimelineQuery toQuery(EvidenceTimelineFilterRequest request) {
     return EvidenceTimelineQuery.of(request.source(), request.page(), request.size());
   }
 }

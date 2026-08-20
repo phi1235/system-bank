@@ -145,6 +145,14 @@ public class TransferQueryService {
   }
 
   @Transactional(readOnly = true)
+  public PageResponse<TransferResponse> manualReviewOrders(int page, int size) {
+    int safePage = Math.max(0, page);
+    int safeSize = Math.min(100, Math.max(1, size));
+    return mapPage(transferOrderRepository.findManualReviewOrders(
+        PageRequest.of(safePage, safeSize)));
+  }
+
+  @Transactional(readOnly = true)
   public PageResponse<TransferResponse> adminList(AdminTransferListQuery query) {
     Instant fromTs = query.from() != null ? query.from() : Instant.EPOCH;
     Instant toTs = query.to() != null ? query.to() : Instant.parse("9999-12-31T23:59:59.999999999Z");

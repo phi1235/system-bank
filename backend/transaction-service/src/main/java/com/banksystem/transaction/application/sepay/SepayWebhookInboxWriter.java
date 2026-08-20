@@ -20,7 +20,8 @@ public class SepayWebhookInboxWriter {
 
   private final SepayWebhookLogRepository webhookLogRepository;
 
-  public SepayWebhookInboxWriter(SepayWebhookLogRepository webhookLogRepository) {
+  public SepayWebhookInboxWriter(
+      SepayWebhookLogRepository webhookLogRepository) {
     this.webhookLogRepository = webhookLogRepository;
   }
 

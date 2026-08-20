@@ -1,0 +1,102 @@
+<div class="page-container">
+  <div class="page-header">
+    <div class="header-text">
+      <h1 class="page-title">{{ 'BUSINESS.MEMBERS.TITLE' | translate }}</h1>
+      <p class="page-subtitle">{{ 'BUSINESS.MEMBERS.SUB' | translate }}</p>
+    </div>
+    <button mat-flat-button color="primary" (click)="openAddModal()">
+      <mat-icon>person_add</mat-icon>
+      {{ 'BUSINESS.MEMBERS.ADD_MEMBER_BTN' | translate }}
+    </button>
+  </div>
+
+  <mat-card class="table-card">
+    <table mat-table [dataSource]="members" class="full-width-table">
+      <!-- User ID Column -->
+      <ng-container matColumnDef="userId">
+        <th mat-header-cell *matHeaderCellDef>{{ 'BUSINESS.MEMBERS.USER_ID' | translate }}</th>
+        <td mat-cell *matCellDef="let m">
+          <strong>{{ m.userFullName || m.userId }}</strong>
+          <div *ngIf="m.userEmail"><small class="text-muted">{{ m.userEmail }}</small></div>
+        </td>
+      </ng-container>
+
+      <!-- Role Column -->
+      <ng-container matColumnDef="businessRole">
+        <th mat-header-cell *matHeaderCellDef>{{ 'BUSINESS.MEMBERS.ROLE' | translate }}</th>
+        <td mat-cell *matCellDef="let m">
+          <span class="role-badge" [ngClass]="m.businessRole.toLowerCase()">
+            {{ 'BUSINESS.MEMBERS.ROLE_' + m.businessRole.replace('BUSINESS_', '') | translate }}
+          </span>
+        </td>
+      </ng-container>
+
+      <!-- Status Column -->
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef>{{ 'BUSINESS.MEMBERS.STATUS' | translate }}</th>
+        <td mat-cell *matCellDef="let m">
+          <span class="status-badge active">{{ m.status }}</span>
+        </td>
+      </ng-container>
+
+      <!-- Created At Column -->
+      <ng-container matColumnDef="createdAt">
+        <th mat-header-cell *matHeaderCellDef>{{ 'BUSINESS.VA.CREATED_AT' | translate }}</th>
+        <td mat-cell *matCellDef="let m">{{ m.createdAt | date:'short' }}</td>
+      </ng-container>
+
+      <!-- Actions Column -->
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef>{{ 'COMMON.ACTIONS' | translate }}</th>
+        <td mat-cell *matCellDef="let m">
+          <button mat-icon-button color="warn" *ngIf="m.businessRole !== 'BUSINESS_OWNER'" (click)="removeMember(m)" title="{{ 'BUSINESS.MEMBERS.REMOVE_BTN' | translate }}">
+            <mat-icon>person_remove</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
+      <tr class="mat-row" *matNoDataRow>
+        <td class="mat-cell empty-cell" [attr.colspan]="displayedColumns.length">
+          {{ 'COMMON.NO_DATA' | translate }}
+        </td>
+      </tr>
+    </table>
+  </mat-card>
+</div>
+
+<!-- Modal Add Member -->
+<div class="custom-modal-backdrop" *ngIf="showAddModal">
+  <div class="custom-modal-card">
+    <div class="modal-header">
+      <h3>{{ 'BUSINESS.MEMBERS.ADD_MEMBER_BTN' | translate }}</h3>
+      <button mat-icon-button (click)="closeAddModal()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+    <div class="modal-body">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>{{ 'BUSINESS.MEMBERS.USER_ID' | translate }}</mat-label>
+        <input matInput [(ngModel)]="newUserId" [placeholder]="'BUSINESS.MEMBERS.USER_ID_PLACEHOLDER' | translate" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>{{ 'BUSINESS.MEMBERS.ROLE' | translate }}</mat-label>
+        <mat-select [(ngModel)]="newRole">
+          <mat-option value="BUSINESS_OWNER">{{ 'BUSINESS.MEMBERS.ROLE_OWNER' | translate }}</mat-option>
+          <mat-option value="BUSINESS_FINANCE">{{ 'BUSINESS.MEMBERS.ROLE_FINANCE' | translate }}</mat-option>
+          <mat-option value="BUSINESS_OPERATOR">{{ 'BUSINESS.MEMBERS.ROLE_OPERATOR' | translate }}</mat-option>
+          <mat-option value="BUSINESS_VIEWER">{{ 'BUSINESS.MEMBERS.ROLE_VIEWER' | translate }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+    <div class="modal-footer">
+      <button mat-button (click)="closeAddModal()">{{ 'COMMON.CANCEL' | translate }}</button>
+      <button mat-flat-button color="primary" [disabled]="addingMember || !newUserId" (click)="submitAddMember()">
+        {{ 'COMMON.SAVE' | translate }}
+      </button>
+    </div>
+  </div>
+</div>

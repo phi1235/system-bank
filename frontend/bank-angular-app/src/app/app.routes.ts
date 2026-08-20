@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { roleGuard } from './core/guards/role.guard';
+import { BusinessShellComponent } from './layouts/business-shell/business-shell.component';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'auth/login' },
@@ -34,6 +35,13 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadChildren: () =>
       import('./features/corporate/corporate.routes').then((m) => m.CORPORATE_ROUTES),
+  },
+
+  {
+    path: 'business',
+    canActivate: [authGuard],
+    component: BusinessShellComponent,
+    loadChildren: () => import('./features/business/routes').then((m) => m.BUSINESS_ROUTES),
   },
 
   // ── Dev Sandbox — any authenticated user (customer OR staff), no role restriction ──

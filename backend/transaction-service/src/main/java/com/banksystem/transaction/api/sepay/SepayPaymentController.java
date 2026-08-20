@@ -7,8 +7,6 @@ import com.banksystem.transaction.api.dto.SepayDtos.SepayWebhookPayload;
 import com.banksystem.transaction.api.dto.SepayDtos.SepayWebhookResponse;
 import com.banksystem.transaction.api.dto.SepayDtos.TopUpOrderResponse;
 import com.banksystem.transaction.application.sepay.SepayService;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,11 +22,9 @@ import org.springframework.web.bind.annotation.RestController;
 public class SepayPaymentController {
 
   private final SepayService sepayService;
-  private final ObjectMapper objectMapper;
 
-  public SepayPaymentController(SepayService sepayService, ObjectMapper objectMapper) {
+  public SepayPaymentController(SepayService sepayService) {
     this.sepayService = sepayService;
-    this.objectMapper = objectMapper;
   }
 
   @PostMapping("/topup")
@@ -51,10 +47,6 @@ public class SepayPaymentController {
   public SepayWebhookResponse handleWebhook(
       @RequestHeader(value = "Authorization", required = false) String authHeader,
       @RequestBody SepayWebhookPayload payload) {
-    String rawJson = "";
-    try {
-      rawJson = objectMapper.writeValueAsString(payload);
-    } catch (JsonProcessingException ignored) {}
-    return sepayService.processWebhook(authHeader, payload, rawJson);
+    return sepayService.processWebhook(authHeader, payload);
   }
 }
