@@ -3,6 +3,7 @@ package com.banksystem.transaction.application.transfer;
 import com.banksystem.common.api.PageResponse;
 import com.banksystem.common.security.GatewayUser;
 import com.banksystem.transaction.api.dto.TransferDtos.AdminTransferFilterRequest;
+import com.banksystem.transaction.api.dto.TransferDtos.CorporatePayoutTransferRequest;
 import com.banksystem.transaction.api.dto.TransferDtos.MyTransferFilterRequest;
 import com.banksystem.transaction.api.dto.TransferDtos.TransferDetailResponse;
 import com.banksystem.transaction.api.dto.TransferDtos.TransferQuoteResponse;
@@ -20,4 +21,6 @@ public interface TransferService {
   Object adminTransfers(AdminTransferFilterRequest req);
   TransferResponse get(UUID id, GatewayUser user);
   TransferDetailResponse getDetail(UUID id, GatewayUser user);
+  TransferResponse executeCorporatePayout(CorporatePayoutTransferRequest req);
+  TransferResponse inquireCorporatePayout(UUID corporateId, UUID batchId, String idempotencyKey);
 }

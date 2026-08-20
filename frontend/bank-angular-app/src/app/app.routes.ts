@@ -29,6 +29,13 @@ export const routes: Routes = [
     loadChildren: () => import('./features/admin/routes').then((m) => m.ADMIN_ROUTES),
   },
 
+  {
+    path: 'corporate',
+    canActivate: [authGuard],
+    loadChildren: () =>
+      import('./features/corporate/corporate.routes').then((m) => m.CORPORATE_ROUTES),
+  },
+
   // ── Dev Sandbox — any authenticated user (customer OR staff), no role restriction ──
   {
     path: 'dev/sandbox',

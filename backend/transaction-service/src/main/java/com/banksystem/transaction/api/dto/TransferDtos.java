@@ -1,6 +1,7 @@
 package com.banksystem.transaction.api.dto;
 
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
@@ -22,6 +23,30 @@ public final class TransferDtos {
       String targetBankCode,
       String targetAccountName,
       String inquiryId
+  ) {}
+
+  public record CorporatePayoutTransferRequest(
+      @NotNull UUID corporateId,
+      @NotNull UUID batchId,
+      @NotNull UUID batchItemId,
+      @NotNull UUID holdId,
+      @NotNull UUID initiatedBy,
+      @Min(1) int executionVersion,
+      @NotBlank String idempotencyKey,
+      @NotNull UUID fromAccountId,
+      @NotBlank String toAccountNumber,
+      @NotNull @DecimalMin("0.01") BigDecimal amount,
+      String description,
+      String currency,
+      String transferType,
+      String targetBankCode,
+      String targetAccountName
+  ) {}
+
+  public record CorporatePayoutInquiryRequest(
+      @NotNull UUID corporateId,
+      @NotNull UUID batchId,
+      @NotBlank String idempotencyKey
   ) {}
 
   public record TransferResponse(

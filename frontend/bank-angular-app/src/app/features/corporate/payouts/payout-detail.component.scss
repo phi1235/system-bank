@@ -1,0 +1,88 @@
+    .detail-page { display: flex; flex-direction: column; gap: 1.5rem; }
+    .breadcrumb { font-size: 0.85rem; color: #64748b; margin-bottom: 0.25rem; a { color: #2563eb; text-decoration: none; } }
+    .page-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      h2 { margin: 0; font-size: 1.5rem; font-weight: 700; color: #0f172a; }
+      .actions { display: flex; gap: 0.75rem; }
+    }
+    .progress-card { background: #fff; padding: 1.25rem; border-radius: 12px; border: 1px solid #e2e8f0; }
+    .prog-header { display: flex; justify-content: space-between; align-items: center; }
+    .prog-title { display: flex; align-items: center; gap: 0.75rem; mat-icon { color: #2563eb; } }
+    .prog-stats { display: flex; gap: 1rem; font-size: 0.9rem; }
+    .spin { animation: spin 1s linear infinite; }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+    .info-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+    .info-card {
+      background: #fff;
+      padding: 1rem;
+      border-radius: 10px;
+      border: 1px solid #e2e8f0;
+      .lbl { font-size: 0.8rem; color: #64748b; font-weight: 600; }
+      .val { font-size: 1.15rem; font-weight: 700; margin-top: 0.25rem; }
+    }
+    .hash-val { font-family: monospace; font-size: 0.85rem; }
+    .workflow-card { background: #fff; border-radius: 12px; padding: 1.25rem; border: 1px solid #e2e8f0; h3 { margin: 0 0 1rem; } }
+    .wf-stepper { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
+    .wf-step {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      background: #f8fafc;
+      &.active { border-color: #2563eb; background: #eff6ff; }
+      &.approved { border-color: #16a34a; background: #f0fdf4; }
+      &.rejected { border-color: #dc2626; background: #fef2f2; }
+    }
+    .wf-circle {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #94a3b8;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.85rem;
+      mat-icon { font-size: 18px; width: 18px; height: 18px; }
+    }
+    .wf-step.approved .wf-circle { background: #16a34a; }
+    .wf-step.rejected .wf-circle { background: #dc2626; }
+    .wf-step.active .wf-circle { background: #2563eb; }
+    .wf-info { display: flex; flex-direction: column; font-size: 0.85rem; }
+    .auth-tag { font-size: 0.7rem; font-weight: 700; color: #475569; }
+    .actions-history {
+      margin-top: 1rem;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 1rem;
+      h4 { margin: 0 0 0.5rem; font-size: 0.95rem; }
+    }
+    .action-item { display: flex; gap: 1rem; align-items: center; font-size: 0.85rem; padding: 0.25rem 0; }
+    .act-badge { padding: 0.1rem 0.4rem; border-radius: 4px; font-weight: 700; font-size: 0.75rem; &[data-action="APPROVE"] { background: #dcfce7; color: #15803d; } &[data-action="REJECT"] { background: #fee2e2; color: #b91c1c; } }
+    .act-time { color: #94a3b8; margin-left: auto; font-size: 0.8rem; }
+    .table-card { background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; }
+    .table-header { padding: 1.25rem 1.5rem 0.5rem; h3 { margin: 0; font-size: 1.15rem; } }
+    .corp-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      th { background: #f8fafc; padding: 0.75rem 1rem; font-size: 0.85rem; color: #475569; border-bottom: 2px solid #e2e8f0; }
+      td { padding: 0.75rem 1rem; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; }
+    }
+    .font-bold { font-weight: 700; }
+    .error-text { color: #dc2626; font-size: 0.75rem; margin-top: 0.2rem; }
+    .status-chip {
+      padding: 0.2rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      background: #e2e8f0;
+      &[data-status="SUCCESS"] { background: #dcfce7; color: #15803d; }
+      &[data-status="FAILED_FINAL"], &[data-status="MANUAL_REVIEW"] { background: #fee2e2; color: #b91c1c; }
+      &[data-status="PROCESSING"], &[data-status="QUEUED"] { background: #e0e7ff; color: #4338ca; }
+    }

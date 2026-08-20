@@ -59,5 +59,19 @@ public final class SecurityHeaders {
   public static final String PERM_IB_SUPPORT_VIEW = "ib:support:view";
   public static final String PERM_IB_NOTIFICATIONS_VIEW = "ib:notifications:view";
 
+  /* ── Corporate Portal ── */
+  public static final String PERM_CORP_PORTAL_VIEW = "corp:portal:view";
+  public static final String PERM_CORP_PAYOUT_CREATE = "corp:payout:create";
+  public static final String PERM_CORP_PAYOUT_SUBMIT = "corp:payout:submit";
+  public static final String PERM_CORP_PAYOUT_APPROVE_CHECKER = "corp:payout:approve:checker";
+  public static final String PERM_CORP_PAYOUT_APPROVE_CFO = "corp:payout:approve:cfo";
+  public static final String PERM_CORP_PAYOUT_APPROVE_CHAIRMAN = "corp:payout:approve:chairman";
+  public static final String PERM_CORP_PAYOUT_CANCEL = "corp:payout:cancel";
+  public static final String PERM_CORP_PAYOUT_RETRY = "corp:payout:retry";
+  public static final String PERM_CORP_MATRIX_VIEW = "corp:matrix:view";
+  public static final String PERM_CORP_MATRIX_MANAGE = "corp:matrix:manage";
+  public static final String PERM_CORP_RECEIPT_DOWNLOAD = "corp:receipt:download";
+  public static final String PERM_CORP_AUDIT_VIEW = "corp:audit:view";
+
   private SecurityHeaders() {}
 }

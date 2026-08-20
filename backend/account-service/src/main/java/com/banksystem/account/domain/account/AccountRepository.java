@@ -22,6 +22,20 @@ public interface AccountRepository extends JpaRepository<AccountEntity, UUID> {
 
   List<AccountEntity> findByUserIdOrderByCreatedAtDesc(UUID userId);
 
+  List<AccountEntity> findByUserIdAndOwnerTypeOrderByCreatedAtDesc(UUID userId, String ownerType);
+  long countByUserIdAndOwnerType(UUID userId, String ownerType);
+
+  List<AccountEntity> findByOwnerTypeAndOwnerIdOrderByCreatedAtDesc(String ownerType, UUID ownerId);
+
+  Optional<AccountEntity> findByIdAndOwnerTypeAndOwnerId(UUID id, String ownerType, UUID ownerId);
+
+  Optional<AccountEntity> findByCreationCommandId(UUID creationCommandId);
+
+  @Query(
+      value = "SELECT pg_advisory_xact_lock(hashtextextended(CAST(:commandId AS text), 0))",
+      nativeQuery = true)
+  void acquireCreationCommandLock(@Param("commandId") String commandId);
+
   long countByUserId(UUID userId);
 
   long countByStatus(String status);
@@ -83,6 +97,14 @@ public interface AccountRepository extends JpaRepository<AccountEntity, UUID> {
       @Param("hasAccountId") boolean hasAccountId,
       @Param("accountId") UUID accountId,
       Pageable pageable);
+
+  @Modifying(clearAutomatically = true, flushAutomatically = true)
+  @Query(value = """
+      UPDATE accounts
+      SET balance = balance - :amount, updated_at = NOW()
+      WHERE id = :id AND status = 'ACTIVE' AND available_balance >= :amount
+      """, nativeQuery = true)
+  int debitIfAvailableSufficient(@Param("id") UUID id, @Param("amount") BigDecimal amount);
 
   @Modifying(clearAutomatically = true, flushAutomatically = true)
   @Query(value = """

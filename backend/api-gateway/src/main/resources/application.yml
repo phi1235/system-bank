@@ -100,6 +100,14 @@ spring:
           uri: lb://ACCOUNT-SERVICE
           predicates:
             - Path=/api/v1/admin/cards,/api/v1/admin/cards/**
+        - id: admin-routes-corporate
+          uri: lb://CORPORATE-SERVICE
+          predicates:
+            - Path=/api/v1/admin/corporates,/api/v1/admin/corporates/**
+        - id: corporate-service
+          uri: lb://CORPORATE-SERVICE
+          predicates:
+            - Path=/api/v1/corporations,/api/v1/corporations/**,/api/v1/approval-policies,/api/v1/approval-policies/**,/api/v1/payout-batches,/api/v1/payout-batches/**,/api/v1/approval-tasks,/api/v1/approval-tasks/**,/api/v1/corporate/**
         - id: admin-routes-transactions
           uri: lb://TRANSACTION-SERVICE
           predicates:

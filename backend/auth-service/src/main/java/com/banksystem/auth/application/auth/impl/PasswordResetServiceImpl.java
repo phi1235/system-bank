@@ -341,42 +341,38 @@ public class PasswordResetServiceImpl implements PasswordResetService {
   }
 
   private void postNotificationAsync(String channel, String delivery, String tempPassword, UserEntity user) {
+    if (notificationServiceUrl == null || notificationServiceUrl.isBlank()
+        || notificationApiKey == null || notificationApiKey.isBlank()) {
+      log.warn("Notification service URL or API key not configured, skipping password reset notification delivery");
+      return;
+    }
+
     String bodyMsg = "Mật khẩu tạm thời mới cấp cho tài khoản " + user.getUsername()
         + " là: " + tempPassword + ". Vui lòng sử dụng mật khẩu này để đăng nhập.";
     String json = String.format(
         "{\"channel\":\"%s\",\"recipient\":\"%s\",\"template\":\"PASSWORD_RESET\",\"status\":\"SENT\",\"body\":\"%s\",\"userId\":\"%s\",\"audience\":\"CUSTOMER\"}",
         channel, delivery, bodyMsg.replace("\"", "\\\""), user.getId());
-    String apiKeyValue = (notificationApiKey != null && !notificationApiKey.isBlank())
-        ? notificationApiKey : "56ae26d48fde6e69d3a6a09d2483bb4f9a93bcd0d9e15fbdb121be9630c05723";
-    String baseUrl = (notificationServiceUrl != null && !notificationServiceUrl.isBlank())
-        ? notificationServiceUrl : "http://bank-notification:8085";
+
+    String targetUrl = notificationServiceUrl.replaceAll("/+$", "") + "/internal/notifications";
 
     Thread t = new Thread(() -> {
-      String[] targets = {
-          baseUrl + "/internal/notifications",
-          "http://bank-notification:8085/internal/notifications",
-          "http://notification-service:8085/internal/notifications"
-      };
-      for (String url : targets) {
-        try {
-          HttpClient client = HttpClient.newHttpClient();
-          HttpRequest req = HttpRequest.newBuilder()
-              .uri(URI.create(url))
-              .header("Content-Type", "application/json")
-              .header("X-Internal-Api-Key", apiKeyValue)
-              .POST(HttpRequest.BodyPublishers.ofString(json))
-              .timeout(Duration.ofSeconds(5))
-              .build();
-          HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString());
-          if (resp.statusCode() == 200) {
-            log.info("Password reset notification log posted to {}", url);
-            break;
-          } else {
-            log.warn("Posting notification to {} returned status {} body {}", url, resp.statusCode(), resp.body());
-          }
-        } catch (Exception ex) {
-          log.warn("Failed posting notification log to {}: {}", url, ex.getMessage());
+      try {
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest req = HttpRequest.newBuilder()
+            .uri(URI.create(targetUrl))
+            .header("Content-Type", "application/json")
+            .header("X-Internal-Api-Key", notificationApiKey)
+            .POST(HttpRequest.BodyPublishers.ofString(json))
+            .timeout(Duration.ofSeconds(5))
+            .build();
+        HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString());
+        if (resp.statusCode() == 200) {
+          log.info("Password reset notification log posted to {}", targetUrl);
+        } else {
+          log.warn("Posting notification to {} returned status {} body {}", targetUrl, resp.statusCode(), resp.body());
         }
+      } catch (Exception ex) {
+        log.warn("Failed posting notification log to {}: {}", targetUrl, ex.getMessage());
       }
     });
     t.setDaemon(true);

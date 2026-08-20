@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 import org.springframework.format.annotation.DateTimeFormat;
 
 public final class AccountDtos {
@@ -14,9 +15,19 @@ public final class AccountDtos {
 
   public record OpenAccountRequest(String accountType) {}
 
+  public record CreateCorporateAccountRequest(
+      @NotNull UUID commandId,
+      @NotNull UUID corporateId,
+      @NotNull UUID createdByUserId,
+      String accountType,
+      String currency
+  ) {}
+
   public record AccountResponse(
       String id,
       String userId,
+      String ownerType,
+      String ownerId,
       String accountNumber,
       String accountType,
       String currency,
@@ -33,14 +44,35 @@ public final class AccountDtos {
       String commandId
   ) {}
 
+  public record DebitAgainstHoldCommand(
+      @NotNull UUID holdId,
+      @NotNull UUID batchId,
+      @NotNull MoneyCommand command
+  ) {}
+
+  public record CompensateCreditAgainstHoldCommand(
+      @NotNull UUID holdId,
+      @NotNull UUID batchId,
+      @NotNull MoneyCommand command
+  ) {}
+
+  public record AccountOwnershipResponse(
+      UUID id,
+      String accountNumber,
+      String ownerType,
+      UUID ownerId,
+      String status,
+      String currency
+  ) {}
+
   public record MoneyResult(String ledgerEntryId, BigDecimal balanceAfter) {}
 
   public record AdjustmentRequestedEventRequest(
-      @NotNull java.util.UUID eventId,
-      @NotNull java.util.UUID proposalId,
-      @NotNull java.util.UUID caseId,
+      @NotNull UUID eventId,
+      @NotNull UUID proposalId,
+      @NotNull UUID caseId,
       int cycle,
-      @NotNull java.util.UUID targetAccountId,
+      @NotNull UUID targetAccountId,
       @NotBlank String direction,
       @NotNull BigDecimal amount,
       String currency,

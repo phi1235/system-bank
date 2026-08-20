@@ -1,0 +1,52 @@
+    <div class="accounts-page">
+      <div class="page-title-row">
+        <div>
+          <h2>{{ 'CORPORATE.NAV_ACCOUNTS' | translate }}</h2>
+          <p class="subtitle">{{ 'CORPORATE.ACCOUNTS_SUB' | translate }}</p>
+        </div>
+        <div class="actions">
+          <button mat-flat-button color="primary" (click)="createAccount()">
+            <mat-icon>add</mat-icon>
+            {{ 'CORPORATE.OPEN_NEW_CORPORATE_ACCOUNT' | translate }}
+          </button>
+        </div>
+      </div>
+
+      <div class="accounts-grid" *ngIf="accounts.length > 0; else noAccounts">
+        <mat-card class="account-card" *ngFor="let acc of accounts">
+          <div class="acc-top">
+            <div class="acc-badge">
+              <mat-icon>account_balance</mat-icon>
+              <span>{{ acc.accountName || ('CORPORATE.DEFAULT_ACCOUNT_NAME' | translate) }}</span>
+            </div>
+            <span class="primary-badge" *ngIf="acc.isPrimary">{{ 'CORPORATE.PRIMARY_ACCOUNT' | translate }}</span>
+          </div>
+
+          <div class="acc-body">
+            <span class="acc-num">{{ acc.accountNumber }}</span>
+            <div class="balance-row">
+              <span class="lbl">{{ 'CORPORATE.AVAILABLE_BALANCE' | translate }}</span>
+              <span class="balance-val">{{ acc.balance | number }} {{ acc.currency }}</span>
+            </div>
+          </div>
+
+          <div class="acc-footer">
+            <span class="status-chip" [attr.data-status]="acc.status">{{ acc.status }}</span>
+            <span class="limit-info" *ngIf="acc.dailyPayoutLimit">
+              {{ 'CORPORATE.DAILY_LIMIT_LABEL' | translate: { amount: (acc.dailyPayoutLimit | number), currency: acc.currency } }}
+            </span>
+          </div>
+        </mat-card>
+      </div>
+
+      <ng-template #noAccounts>
+        <mat-card class="empty-card">
+          <mat-icon class="empty-icon">account_balance</mat-icon>
+          <h3>{{ 'CORPORATE.ACCOUNTS_EMPTY' | translate }}</h3>
+          <p>{{ 'CORPORATE.ACCOUNTS_EMPTY_DESC' | translate }}</p>
+          <button mat-flat-button color="primary" (click)="createAccount()">
+            {{ 'CORPORATE.OPEN_CORPORATE_ACCOUNT' | translate }}
+          </button>
+        </mat-card>
+      </ng-template>
+    </div>

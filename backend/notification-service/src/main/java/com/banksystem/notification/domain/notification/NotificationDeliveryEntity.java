@@ -14,6 +14,7 @@ public class NotificationDeliveryEntity {
   public static final String CHANNEL_EMAIL = "EMAIL";
   public static final String CHANNEL_SMS = "SMS";
   public static final String STATUS_PENDING = "PENDING";
+  public static final String STATUS_PROCESSING = "PROCESSING";
   public static final String STATUS_SENT = "SENT";
   public static final String STATUS_DEAD = "DEAD";
 
@@ -35,6 +36,12 @@ public class NotificationDeliveryEntity {
   @Column(nullable = false, columnDefinition = "TEXT")
   private String body;
 
+  @Column(name = "attachment_filename")
+  private String attachmentFilename;
+
+  @Column(name = "attachment_content")
+  private byte[] attachmentContent;
+
   @Column(nullable = false, length = 20)
   private String status;
 
@@ -55,6 +62,12 @@ public class NotificationDeliveryEntity {
 
   @Column(name = "sent_at")
   private Instant sentAt;
+
+  @Column(name = "claimed_by", length = 100)
+  private String claimedBy;
+
+  @Column(name = "lease_until")
+  private Instant leaseUntil;
 
   protected NotificationDeliveryEntity() {
   }
@@ -81,12 +94,19 @@ public class NotificationDeliveryEntity {
     return delivery;
   }
 
+  public void attach(String filename, byte[] content) {
+    attachmentFilename = filename;
+    attachmentContent = content;
+  }
+
   public void markSent(Instant now) {
     status = STATUS_SENT;
     attemptCount++;
     sentAt = now;
     updatedAt = now;
     lastError = null;
+    claimedBy = null;
+    leaseUntil = null;
   }
 
   public void markRetry(Instant now, Instant retryAt, String error) {
@@ -95,6 +115,8 @@ public class NotificationDeliveryEntity {
     nextAttemptAt = retryAt;
     updatedAt = now;
     lastError = error;
+    claimedBy = null;
+    leaseUntil = null;
   }
 
   public void markDead(Instant now, String error) {
@@ -102,6 +124,8 @@ public class NotificationDeliveryEntity {
     attemptCount++;
     updatedAt = now;
     lastError = error;
+    claimedBy = null;
+    leaseUntil = null;
   }
 
   public UUID getId() { return id; }
@@ -110,6 +134,8 @@ public class NotificationDeliveryEntity {
   public String getDestination() { return destination; }
   public String getSubject() { return subject; }
   public String getBody() { return body; }
+  public String getAttachmentFilename() { return attachmentFilename; }
+  public byte[] getAttachmentContent() { return attachmentContent; }
   public String getStatus() { return status; }
   public int getAttemptCount() { return attemptCount; }
   public Instant getNextAttemptAt() { return nextAttemptAt; }
@@ -117,4 +143,6 @@ public class NotificationDeliveryEntity {
   public Instant getCreatedAt() { return createdAt; }
   public Instant getUpdatedAt() { return updatedAt; }
   public Instant getSentAt() { return sentAt; }
+  public String getClaimedBy() { return claimedBy; }
+  public Instant getLeaseUntil() { return leaseUntil; }
 }

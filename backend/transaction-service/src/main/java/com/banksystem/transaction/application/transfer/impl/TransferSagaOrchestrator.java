@@ -694,6 +694,17 @@ public class TransferSagaOrchestrator {
       desc = (desc == null || desc.isBlank() ? "Transfer" : desc)
           + " (fee " + fee.toPlainString() + ")";
     }
+    if (order.getHoldId() != null) {
+      MoneyResult result = accountGateway.debitAgainstHold(
+          accountId,
+          order.getHoldId(),
+          order.getBatchId(),
+          new MoneyCommand(debitTotal, "TX-DEBIT-" + order.getId(), desc, "TX-DEBIT-" + order.getId()));
+      if (result == null) {
+        throw new BusinessException("DEBIT_HOLD_FAILED", "Debit against hold failed");
+      }
+      return result;
+    }
     return callDebitAmount(accountId, debitTotal, "TX-DEBIT-" + order.getId(), desc);
   }
 
@@ -714,9 +725,15 @@ public class TransferSagaOrchestrator {
   private MoneyResult callCreditTotal(UUID accountId, TransferOrderEntity order, String referenceId) {
     BigDecimal fee = order.getFeeAmount() == null ? BigDecimal.ZERO : order.getFeeAmount();
     BigDecimal total = order.getAmount().add(fee);
-    MoneyResult result = accountGateway.compensateCredit(
-        accountId,
-        new MoneyCommand(total, "TX-REFUND-" + order.getId(), "Compensation " + order.getId(), "TX-REFUND-" + order.getId()));
+    MoneyCommand compensation = new MoneyCommand(
+        total,
+        "TX-REFUND-" + order.getId(),
+        "Compensation " + order.getId(),
+        "TX-REFUND-" + order.getId());
+    MoneyResult result = order.getHoldId() == null
+        ? accountGateway.compensateCredit(accountId, compensation)
+        : accountGateway.compensateCreditAgainstHold(
+            accountId, order.getHoldId(), order.getBatchId(), compensation);
     if (result == null) {
       throw new BusinessException("COMPENSATION_CREDIT_FAILED", "Compensation credit failed");
     }

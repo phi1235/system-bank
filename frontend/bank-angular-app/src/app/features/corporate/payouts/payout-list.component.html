@@ -1,0 +1,72 @@
+    <div class="payout-list-page">
+      <div class="page-title-row">
+        <div>
+          <h2>{{ 'CORPORATE.PAYOUT_BATCHES_TITLE' | translate }}</h2>
+          <p class="subtitle">{{ 'CORPORATE.PAYOUT_BATCHES_SUB' | translate }}</p>
+        </div>
+        <div class="actions">
+          <a mat-stroked-button (click)="downloadTemplate()">
+            <mat-icon>file_download</mat-icon>
+            {{ 'CORPORATE.DOWNLOAD_EXCEL_TEMPLATE' | translate }}
+          </a>
+          <a mat-flat-button color="primary" routerLink="create">
+            <mat-icon>add</mat-icon>
+            {{ 'CORPORATE.CREATE_PAYOUT_BATCH' | translate }}
+          </a>
+        </div>
+      </div>
+
+      <mat-card class="table-card">
+        <div class="table-responsive">
+          <table class="corp-table">
+            <thead>
+              <tr>
+                <th>{{ 'CORPORATE.BATCH_NAME' | translate }}</th>
+                <th>{{ 'CORPORATE.SOURCE_ACCOUNT' | translate }}</th>
+                <th>{{ 'CORPORATE.TOTAL_ITEMS' | translate }}</th>
+                <th>{{ 'CORPORATE.SUCCESSFUL_ITEMS' | translate }}</th>
+                <th>{{ 'CORPORATE.TOTAL_AMOUNT' | translate }}</th>
+                <th>{{ 'COMMON.STATUS' | translate }}</th>
+                <th>{{ 'COMMON.CREATED_AT' | translate }}</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let b of batches">
+                <td class="font-bold">{{ b.batchName }}</td>
+                <td>{{ b.sourceAccountNumber }}</td>
+                <td>{{ b.totalItems }}</td>
+                <td>
+                  <span class="text-green-600 font-semibold" *ngIf="b.successfulItems > 0">{{ b.successfulItems }}</span>
+                  <span *ngIf="b.successfulItems === 0">-</span>
+                </td>
+                <td class="amount-cell">{{ b.totalAmount | number }} {{ b.currency }}</td>
+                <td>
+                  <span class="status-chip" [attr.data-status]="b.status">{{ b.status }}</span>
+                </td>
+                <td class="text-muted">{{ b.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+                <td>
+                  <a mat-stroked-button color="primary" [routerLink]="[b.id]">
+                    {{ 'COMMON.DETAILS' | translate }}
+                  </a>
+                </td>
+              </tr>
+              <tr *ngIf="batches.length === 0">
+                <td colspan="8" class="text-center py-8 text-slate-400">
+                  <mat-icon class="mb-2">inbox</mat-icon>
+                  <div>{{ 'CORPORATE.NO_BATCHES_YET' | translate }}</div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <mat-paginator
+          [length]="totalElements"
+          [pageSize]="pageSize"
+          [pageIndex]="pageIndex"
+          (page)="onPageChange($event)"
+          [pageSizeOptions]="[10, 20, 50]"
+        ></mat-paginator>
+      </mat-card>
+    </div>

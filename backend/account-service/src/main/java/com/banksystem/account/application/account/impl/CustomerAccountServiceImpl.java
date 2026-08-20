@@ -73,7 +73,7 @@ public class CustomerAccountServiceImpl implements CustomerAccountService {
 
   @Transactional
   public AccountResponse open(UUID userId, OpenAccountRequest req) {
-    if (accountRepository.countByUserId(userId) >= maxPerUser) {
+    if (accountRepository.countByUserIdAndOwnerType(userId, "INDIVIDUAL") >= maxPerUser) {
       throw new BusinessException("MAX_ACCOUNTS", "Maximum " + maxPerUser + " accounts per user");
     }
     String accountType = (req == null || req.accountType() == null || req.accountType().isBlank())
@@ -83,6 +83,8 @@ public class CustomerAccountServiceImpl implements CustomerAccountService {
     AccountEntity a = new AccountEntity();
     a.setId(UUID.randomUUID());
     a.setUserId(userId);
+    a.setOwnerType("INDIVIDUAL");
+    a.setOwnerId(userId);
     a.setAccountNumber(accountNumbers.next());
     a.setAccountType(accountType);
     a.setCurrency("VND");
@@ -99,10 +101,10 @@ public class CustomerAccountServiceImpl implements CustomerAccountService {
 
   @Transactional(readOnly = true)
   public List<AccountResponse> listMine(UUID userId) {
-    List<AccountResponse> accounts = accountRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
+    List<AccountResponse> accounts = accountRepository.findByUserIdAndOwnerTypeOrderByCreatedAtDesc(userId, "INDIVIDUAL").stream()
         .map(mapper::toResponse)
         .toList();
-    log.info("[ACCOUNT-LIST] Found {} accounts for userId=[{}]", accounts.size(), userId);
+    log.info("[ACCOUNT-LIST] Found {} personal accounts for userId=[{}]", accounts.size(), userId);
     return accounts;
   }
 

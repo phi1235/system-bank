@@ -2,17 +2,15 @@ package com.banksystem.notification.application.notification;
 
 import com.banksystem.notification.domain.notification.NotificationDeliveryEntity;
 import com.banksystem.notification.domain.notification.NotificationDeliveryRepository;
-import com.banksystem.notification.domain.notification.NotificationLogRepository;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
+import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class NotificationDeliveryWorker {
@@ -22,17 +20,18 @@ public class NotificationDeliveryWorker {
   private static final int MAX_BACKOFF_MULTIPLIER = 64;
 
   private final NotificationDeliveryRepository deliveryRepository;
-  private final NotificationLogRepository notificationRepository;
+  private final NotificationDeliveryStateService stateService;
   private final EmailSender emailSender;
   private final SmsSender smsSender;
   private final int batchSize;
   private final int maxAttempts;
   private final Duration initialBackoff;
   private final Clock clock;
+  private final String workerId = "NOTIFICATION-WORKER-" + UUID.randomUUID();
 
   public NotificationDeliveryWorker(
       NotificationDeliveryRepository deliveryRepository,
-      NotificationLogRepository notificationRepository,
+      NotificationDeliveryStateService stateService,
       EmailSender emailSender,
       SmsSender smsSender,
       @Value("${bank.notification.delivery-batch-size}") int batchSize,
@@ -40,7 +39,7 @@ public class NotificationDeliveryWorker {
       @Value("${bank.notification.delivery-initial-backoff}") Duration initialBackoff,
       Clock clock) {
     this.deliveryRepository = deliveryRepository;
-    this.notificationRepository = notificationRepository;
+    this.stateService = stateService;
     this.emailSender = emailSender;
     this.smsSender = smsSender;
     this.batchSize = batchSize;
@@ -50,49 +49,51 @@ public class NotificationDeliveryWorker {
   }
 
   @Scheduled(cron = "${bank.notification.delivery-cron}")
-  @Transactional
   public void deliverDue() {
     Instant now = clock.instant();
-    List<NotificationDeliveryEntity> deliveries =
-        deliveryRepository.findDueForUpdate(now, batchSize);
-    for (NotificationDeliveryEntity delivery : deliveries) {
-      deliver(delivery, now);
-    }
+    stateService.claim(now, batchSize, workerId, now.plusSeconds(60))
+        .forEach(id -> deliver(id, clock.instant()));
   }
 
-  private void deliver(NotificationDeliveryEntity delivery, Instant now) {
+  private void deliver(UUID deliveryId, Instant now) {
+    NotificationDeliveryEntity delivery = deliveryRepository.findById(deliveryId).orElse(null);
+    if (delivery == null) {
+      return;
+    }
     try {
       if (NotificationDeliveryEntity.CHANNEL_EMAIL.equals(delivery.getChannel())) {
-        emailSender.send(delivery.getDestination(), delivery.getSubject(), delivery.getBody());
+        if (delivery.getAttachmentContent() == null) {
+          emailSender.send(delivery.getDestination(), delivery.getSubject(), delivery.getBody());
+        } else {
+          emailSender.sendWithAttachment(
+              delivery.getDestination(),
+              delivery.getSubject(),
+              delivery.getBody(),
+              delivery.getAttachmentFilename(),
+              delivery.getAttachmentContent());
+        }
       } else if (NotificationDeliveryEntity.CHANNEL_SMS.equals(delivery.getChannel())) {
         smsSender.send(delivery.getDestination(), delivery.getSubject());
       } else {
         throw new IllegalStateException("Unsupported notification channel");
       }
-      delivery.markSent(now);
-      deliveryRepository.save(delivery);
-      if (deliveryRepository.countByEventIdAndStatusNot(
-          delivery.getEventId(), NotificationDeliveryEntity.STATUS_SENT) == 0) {
-        notificationRepository.updateStatusByEventId(delivery.getEventId(), "SENT");
-      }
+      stateService.markSent(deliveryId, now);
       log.info("[NOTIFICATION-SENT] Delivered notification [{}] EventId=[{}] Channel=[{}] Dest=[{}]",
           delivery.getId(), delivery.getEventId(), delivery.getChannel(), delivery.getDestination());
     } catch (RuntimeException exception) {
       String error = sanitizeError(exception);
       int nextAttempt = delivery.getAttemptCount() + 1;
-      if (nextAttempt >= maxAttempts) {
-        delivery.markDead(now, error);
-        notificationRepository.updateStatusByEventId(delivery.getEventId(), "DELIVERY_FAILED");
+      int multiplier = Math.min(1 << Math.min(nextAttempt - 1, 6), MAX_BACKOFF_MULTIPLIER);
+      Instant retryAt = now.plus(initialBackoff.multipliedBy(multiplier));
+      boolean dead = stateService.markFailed(
+          deliveryId, now, retryAt, error, maxAttempts);
+      if (dead) {
         log.error("[NOTIFICATION-DEAD] Notification delivery exhausted [{}] EventId=[{}] Channel=[{}] Error=[{}]",
             delivery.getId(), delivery.getEventId(), delivery.getChannel(), error);
       } else {
-        int multiplier = Math.min(1 << Math.min(nextAttempt - 1, 6), MAX_BACKOFF_MULTIPLIER);
-        delivery.markRetry(
-            now, now.plus(initialBackoff.multipliedBy(multiplier)), error);
         log.warn("[NOTIFICATION-RETRY] Retry scheduled for notification [{}] EventId=[{}] Channel=[{}] Attempt={}",
             delivery.getId(), delivery.getEventId(), delivery.getChannel(), nextAttempt);
       }
-      deliveryRepository.save(delivery);
     }
   }
 

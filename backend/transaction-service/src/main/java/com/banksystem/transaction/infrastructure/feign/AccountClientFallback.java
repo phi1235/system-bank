@@ -61,6 +61,15 @@ public class AccountClientFallback implements AccountClient {
   }
 
   @Override
+  public ApiResponse<MoneyResult> compensateCreditAgainstHold(
+      UUID id, AccountClientDtos.CompensateCreditAgainstHoldCommand command, String apiKey) {
+    throw new BusinessException(
+        "ACCOUNT_SERVICE_UNAVAILABLE",
+        "Unable to compensate corporate debit against hold as Account service is unavailable.",
+        HttpStatus.SERVICE_UNAVAILABLE);
+  }
+
+  @Override
   public ApiResponse<TransactionLedgerEvidenceView> transactionLedgerEvidence(
       UUID transactionId, String apiKey) {
     throw new BusinessException(
@@ -93,6 +102,15 @@ public class AccountClientFallback implements AccountClient {
     throw new BusinessException(
         "ACCOUNT_SERVICE_UNAVAILABLE",
         "Account remediation inbox service is temporarily unavailable.",
+        HttpStatus.SERVICE_UNAVAILABLE);
+  }
+
+  @Override
+  public ApiResponse<MoneyResult> debitAgainstHold(
+      UUID id, AccountClientDtos.DebitAgainstHoldCommand command, String apiKey) {
+    throw new BusinessException(
+        "ACCOUNT_SERVICE_UNAVAILABLE",
+        "Unable to process corporate debit against hold as Account service is unavailable.",
         HttpStatus.SERVICE_UNAVAILABLE);
   }
 }

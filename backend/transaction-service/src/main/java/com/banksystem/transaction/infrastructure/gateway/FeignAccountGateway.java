@@ -11,6 +11,8 @@ import java.util.UUID;
 import com.banksystem.transaction.infrastructure.feign.AccountClientDtos.AccountHoldView;
 import com.banksystem.transaction.infrastructure.feign.AccountClientDtos.AdjustmentRequestedEventRequest;
 import com.banksystem.transaction.infrastructure.feign.AccountClientDtos.CreateHoldCommand;
+import com.banksystem.transaction.infrastructure.feign.AccountClientDtos.CompensateCreditAgainstHoldCommand;
+import com.banksystem.transaction.infrastructure.feign.AccountClientDtos.DebitAgainstHoldCommand;
 
 import com.banksystem.common.exception.BusinessException;
 import org.springframework.beans.factory.annotation.Value;
@@ -57,6 +59,21 @@ public class FeignAccountGateway implements AccountGateway {
   }
 
   @Override
+  public MoneyResult debitAgainstHold(UUID accountId, UUID holdId, UUID batchId, MoneyCommand command) {
+    if (accountClient == null) {
+      throw new BusinessException("ACCOUNT_SERVICE_UNAVAILABLE", "AccountClient is unavailable", HttpStatus.SERVICE_UNAVAILABLE);
+    }
+    ApiResponse<MoneyResult> resp = accountClient.debitAgainstHold(
+        accountId,
+        new DebitAgainstHoldCommand(holdId, batchId, command),
+        internalApiKey);
+    if (resp == null || resp.data() == null) {
+      throw new BusinessException("ACCOUNT_HOLD_DEBIT_FAILED", "Failed to execute debitAgainstHold on account-service");
+    }
+    return resp.data();
+  }
+
+  @Override
   public MoneyResult credit(UUID accountId, MoneyCommand command) {
     if (accountClient == null) {
       throw new BusinessException("ACCOUNT_SERVICE_UNAVAILABLE", "AccountClient is unavailable", HttpStatus.SERVICE_UNAVAILABLE);
@@ -77,6 +94,23 @@ public class FeignAccountGateway implements AccountGateway {
         accountClient.compensateCredit(accountId, command, internalApiKey);
     if (resp == null || resp.data() == null) {
       throw new BusinessException("ACCOUNT_REMEDIATION_FAILED", "Failed to execute compensate credit on account-service");
+    }
+    return resp.data();
+  }
+
+  @Override
+  public MoneyResult compensateCreditAgainstHold(
+      UUID accountId, UUID holdId, UUID batchId, MoneyCommand command) {
+    if (accountClient == null) {
+      throw new BusinessException("ACCOUNT_SERVICE_UNAVAILABLE", "AccountClient is unavailable", HttpStatus.SERVICE_UNAVAILABLE);
+    }
+    ApiResponse<MoneyResult> resp = accountClient.compensateCreditAgainstHold(
+        accountId,
+        new CompensateCreditAgainstHoldCommand(
+            holdId, batchId, command),
+        internalApiKey);
+    if (resp == null || resp.data() == null) {
+      throw new BusinessException("ACCOUNT_HOLD_COMPENSATION_FAILED", "Failed to compensate debit against hold");
     }
     return resp.data();
   }

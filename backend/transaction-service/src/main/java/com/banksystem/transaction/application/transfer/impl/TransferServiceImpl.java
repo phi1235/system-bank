@@ -4,6 +4,7 @@ import com.banksystem.common.api.PageResponse;
 import com.banksystem.common.exception.BusinessException;
 import com.banksystem.common.security.GatewayUser;
 import com.banksystem.transaction.api.dto.TransferDtos.AdminTransferFilterRequest;
+import com.banksystem.transaction.api.dto.TransferDtos.CorporatePayoutTransferRequest;
 import com.banksystem.transaction.api.dto.TransferDtos.MyTransferFilterRequest;
 import com.banksystem.transaction.api.dto.TransferDtos.TransferDetailResponse;
 import com.banksystem.transaction.api.dto.TransferDtos.TransferQuoteResponse;
@@ -27,10 +28,12 @@ import com.banksystem.transaction.domain.transfer.TransferStatus;
 import com.banksystem.transaction.infrastructure.feign.AccountClientDtos.AccountView;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Objects;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @Service
@@ -100,6 +103,9 @@ public class TransferServiceImpl implements TransferService {
     BigDecimal feeAmount = transferFeePolicy.calculate(req.amount());
 
     AccountView from = loadAccount(req.fromAccountId());
+    if (from.isCorporate()) {
+      throw new BusinessException("CORPORATE_ACCOUNT_RESTRICTED", "Corporate accounts cannot be used for individual transfers. Please use Corporate Portal.");
+    }
     if (!from.userIdUuid().equals(user.userId()) && !user.hasPermission("transactions:list:view")) {
       throw new BusinessException("FORBIDDEN", "Source account is not yours");
     }
@@ -237,6 +243,141 @@ public class TransferServiceImpl implements TransferService {
 
   public TransferDetailResponse getDetail(UUID id, GatewayUser user) {
     return queryService.getDetail(id, user);
+  }
+
+  public TransferResponse executeCorporatePayout(CorporatePayoutTransferRequest req) {
+    if (req.idempotencyKey() == null || req.idempotencyKey().isBlank()) {
+      throw new BusinessException("IDEMPOTENCY_REQUIRED", "Idempotency-Key is required");
+    }
+    if (req.amount() == null || req.amount().compareTo(BigDecimal.ZERO) <= 0) {
+      throw new BusinessException("INVALID_AMOUNT", "Amount must be positive");
+    }
+
+    var existing = transferOrderRepository.findByIdempotencyKey(req.idempotencyKey());
+    if (existing.isPresent()) {
+      requireSameCorporatePayoutRequest(existing.get(), req);
+      return mapper.toResponse(existing.get());
+    }
+
+    AccountView from = loadAccount(req.fromAccountId());
+    if (!from.isCorporate()) {
+      throw new BusinessException("NOT_CORPORATE_ACCOUNT", "Source account is not a corporate account");
+    }
+    if (from.ownerId() == null || !from.ownerIdUuid().equals(req.corporateId())) {
+      throw new BusinessException("UNAUTHORIZED_CORPORATE_ACCOUNT", "Source account does not belong to specified corporation");
+    }
+    if (!"ACTIVE".equals(from.status())) {
+      throw new BusinessException("ACCOUNT_FROZEN", "Source corporate account is not active");
+    }
+
+    boolean interbank = "INTERBANK".equalsIgnoreCase(req.transferType());
+    AccountView to = null;
+    String targetBankCode = interbank ? req.targetBankCode() : "SYSTEM_BANK";
+    String targetAccountName = req.targetAccountName();
+    if (!interbank) {
+      to = loadByNumber(req.toAccountNumber());
+      if (from.idUuid().equals(to.idUuid())) {
+        throw new BusinessException("SAME_ACCOUNT", "Cannot transfer to the same account");
+      }
+      if (!"ACTIVE".equals(to.status())) {
+        throw new BusinessException("ACCOUNT_FROZEN", "Destination account is not active");
+      }
+      if (targetAccountName == null || targetAccountName.isBlank()) {
+        targetAccountName = "TK KH (" + lastFour(to.accountNumber()) + ")";
+      }
+    }
+
+    TransferOrderEntity order = new TransferOrderEntity();
+    order.setId(UUID.randomUUID());
+    order.setIdempotencyKey(req.idempotencyKey());
+    order.setUserId(req.initiatedBy());
+    order.setCorporateId(req.corporateId());
+    order.setBatchId(req.batchId());
+    order.setBatchItemId(req.batchItemId());
+    order.setHoldId(req.holdId());
+    order.setInitiatedBy(req.initiatedBy());
+    order.setExecutionVersion(req.executionVersion() > 0 ? req.executionVersion() : 1);
+    order.setFromAccountId(from.idUuid());
+    order.setToAccountId(to == null ? null : to.idUuid());
+    order.setToAccountNumber(req.toAccountNumber().trim());
+    order.setTransferType(interbank ? "INTERBANK" : "INTERNAL");
+    order.setTargetBankCode(targetBankCode);
+    order.setTargetAccountName(targetAccountName != null ? targetAccountName : "BENEFICIARY");
+    order.setAmount(req.amount());
+    order.setFeeAmount(BigDecimal.ZERO);
+    order.setTotalDebit(req.amount());
+    order.setBankBin(interbank ? "970400" : "970499");
+    order.setRecipientName(targetAccountName != null ? targetAccountName : "BENEFICIARY");
+    order.setCurrency(req.currency() == null || req.currency().isBlank() ? "VND" : req.currency());
+    order.setDescription(req.description());
+    order.setRequestFingerprint("CORP|" + req.batchId() + "|" + req.batchItemId() + "|" + req.amount().toPlainString());
+    order.setStatus(TransferStatus.PENDING);
+    order.setCreatedAt(Instant.now());
+    order.setUpdatedAt(Instant.now());
+
+    TransferOrderEntity pendingOrder = order;
+    try {
+      order = transactionTemplate.execute(status -> {
+        TransferOrderEntity saved = transferOrderRepository.saveAndFlush(pendingOrder);
+        auditLogRepository.save(AuditLogEntity.of(
+            req.initiatedBy(), "CORP_PAYOUT_TRANSFER", "TRANSFER", saved.getId().toString(), "127.0.0.1",
+            "corpId=" + req.corporateId() + ",batchId=" + req.batchId() + ",amount=" + req.amount()));
+        return saved;
+      });
+    } catch (RuntimeException createFailure) {
+      var concurrentWinner = transferOrderRepository.findByIdempotencyKey(req.idempotencyKey());
+      if (concurrentWinner.isPresent()) {
+        requireSameCorporatePayoutRequest(concurrentWinner.get(), req);
+        return mapper.toResponse(concurrentWinner.get());
+      }
+      throw createFailure;
+    }
+
+    log.info("[CORP-TRANSFER-SAGA] Starting saga execution for corporate transfer order [{}] Batch=[{}] Item=[{}]",
+        order.getId(), req.batchId(), req.batchItemId());
+    TransferOrderEntity result = sagaOrchestrator.run(order);
+    return mapper.toResponse(result);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public TransferResponse inquireCorporatePayout(UUID corporateId, UUID batchId, String idempotencyKey) {
+    TransferOrderEntity order = transferOrderRepository.findByIdempotencyKey(idempotencyKey)
+        .orElseThrow(() -> new BusinessException("TRANSFER_NOT_FOUND", "Corporate payout transfer not found"));
+    if (!corporateId.equals(order.getCorporateId()) || !batchId.equals(order.getBatchId())) {
+      throw new BusinessException("TRANSFER_NOT_FOUND", "Corporate payout transfer not found");
+    }
+    return mapper.toResponse(order);
+  }
+
+  private void requireSameCorporatePayoutRequest(
+      TransferOrderEntity order,
+      CorporatePayoutTransferRequest request) {
+    String requestedAccount = request.toAccountNumber() == null
+        ? null
+        : request.toAccountNumber().trim();
+    String requestedCurrency = request.currency() == null || request.currency().isBlank()
+        ? "VND"
+        : request.currency().trim().toUpperCase();
+    boolean sameAmount = order.getAmount() != null
+        && request.amount() != null
+        && order.getAmount().compareTo(request.amount()) == 0;
+    boolean sameCurrency = order.getCurrency() != null
+        && order.getCurrency().equalsIgnoreCase(requestedCurrency);
+
+    if (!Objects.equals(order.getCorporateId(), request.corporateId())
+        || !Objects.equals(order.getBatchId(), request.batchId())
+        || !Objects.equals(order.getBatchItemId(), request.batchItemId())
+        || !Objects.equals(order.getHoldId(), request.holdId())
+        || !Objects.equals(order.getFromAccountId(), request.fromAccountId())
+        || !Objects.equals(order.getToAccountNumber(), requestedAccount)
+        || order.getExecutionVersion() != request.executionVersion()
+        || !sameAmount
+        || !sameCurrency) {
+      throw new BusinessException(
+          "IDEMPOTENCY_CONFLICT",
+          "Idempotency key was already used with a different corporate payout payload");
+    }
   }
 
   private AccountView loadAccount(UUID id) {

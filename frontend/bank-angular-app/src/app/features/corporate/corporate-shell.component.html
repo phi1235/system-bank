@@ -1,0 +1,58 @@
+    <div class="corporate-shell">
+      <header class="corp-header">
+        <div class="brand-area">
+          <a routerLink="/customer/home" class="back-link">
+            <mat-icon>arrow_back</mat-icon>
+          </a>
+          <div class="logo">
+            <mat-icon class="corp-icon">business</mat-icon>
+            <div>
+              <span class="corp-title">{{ 'CORPORATE.PORTAL_TITLE' | translate }}</span>
+              <span class="corp-sub">{{ selectedCorp?.companyName || ('CORPORATE.SELECT_CORP' | translate) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="corp-selector" *ngIf="corporations.length > 0">
+          <mat-form-field appearance="outline" density="compact">
+            <mat-select [(ngModel)]="selectedCorpId" (selectionChange)="onCorpChange($event.value)">
+              <mat-option *ngFor="let c of corporations" [value]="c.id">
+                {{ c.companyName }} ({{ c.taxId }})
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <nav class="corp-nav">
+          <a routerLink="dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: false }">
+            <mat-icon>dashboard</mat-icon>
+            {{ 'CORPORATE.NAV_DASHBOARD' | translate }}
+          </a>
+          <a routerLink="approvals" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: false }">
+            <mat-icon>task_alt</mat-icon>
+            {{ 'CORPORATE.NAV_APPROVALS' | translate }}
+            <span class="badge" *ngIf="inboxCount > 0">{{ inboxCount }}</span>
+          </a>
+          <a routerLink="payouts" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: false }">
+            <mat-icon>receipt_long</mat-icon>
+            {{ 'CORPORATE.NAV_PAYOUTS' | translate }}
+          </a>
+          <a routerLink="matrix" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: false }">
+            <mat-icon>account_tree</mat-icon>
+            {{ 'CORPORATE.NAV_MATRIX' | translate }}
+          </a>
+          <a routerLink="accounts" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: false }">
+            <mat-icon>account_balance</mat-icon>
+            {{ 'CORPORATE.NAV_ACCOUNTS' | translate }}
+          </a>
+          <a routerLink="receipts" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: false }">
+            <mat-icon>cloud_download</mat-icon>
+            {{ 'CORPORATE.NAV_RECEIPTS' | translate }}
+          </a>
+        </nav>
+      </header>
+
+      <main class="corp-body">
+        <router-outlet></router-outlet>
+      </main>
+    </div>

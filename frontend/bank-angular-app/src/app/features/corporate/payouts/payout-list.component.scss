@@ -1,0 +1,37 @@
+    .payout-list-page { display: flex; flex-direction: column; gap: 1.5rem; }
+    .page-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      h2 { margin: 0; font-size: 1.5rem; font-weight: 700; color: #0f172a; }
+      .subtitle { margin: 0.25rem 0 0; color: #64748b; font-size: 0.95rem; }
+      .actions { display: flex; gap: 0.75rem; }
+    }
+    .table-card { background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; }
+    .corp-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      th { background: #f8fafc; padding: 0.85rem 1rem; font-size: 0.85rem; color: #475569; border-bottom: 2px solid #e2e8f0; }
+      td { padding: 0.85rem 1rem; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; }
+      tr:hover td { background: #f8fafc; }
+    }
+    .font-bold { font-weight: 600; color: #0f172a; }
+    .amount-cell { font-weight: 700; color: #0f172a; }
+    .text-muted { color: #64748b; font-size: 0.85rem; }
+    .status-chip {
+      padding: 0.2rem 0.6rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      background: #e2e8f0;
+      color: #334155;
+      &[data-status="COMPLETED"] { background: #dcfce7; color: #15803d; }
+      &[data-status="PROCESSING"], &[data-status="RESERVING_FUNDS"] { background: #e0e7ff; color: #4338ca; }
+      &[data-status="PENDING_APPROVAL"] { background: #fef3c7; color: #b45309; }
+      &[data-status="APPROVED"] { background: #ccfbf1; color: #0f766e; }
+      &[data-status="FAILED"], &[data-status="VALIDATION_FAILED"], &[data-status="REJECTED"] { background: #fee2e2; color: #b91c1c; }
+      &[data-status="PARTIALLY_COMPLETED"] { background: #ffedd5; color: #c2410c; }
+    }
+    .text-center { text-align: center; }

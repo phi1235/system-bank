@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 @FeignClient(
     name = "TRANSACTION-SERVICE",
     contextId = "transactionRemediationClient",
-    url = "${bank.feign.transaction-url:http://localhost:8082}")
+    url = "${bank.feign.transaction-url:}")
 public interface TransactionRemediationClient {
 
   public record RemediationPostedEventRequest(
