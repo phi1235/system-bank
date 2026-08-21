@@ -11,7 +11,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { Subject, takeUntil } from 'rxjs';
-import { VirtualAccount } from '../../../core/models/domain.model';
+import { BankItem, VirtualAccount } from '../../../core/models/domain.model';
 import { BankApiService } from '../../../core/services/bank-api.service';
 import { BusinessContextService } from '../../../core/services/business-context.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -44,6 +44,8 @@ export class BusinessVirtualAccountsComponent implements OnInit, OnDestroy {
 
   displayedColumns: string[] = ['accountNumber', 'bankBin', 'provider', 'mode', 'customerReference', 'status', 'createdAt', 'actions'];
   virtualAccounts: VirtualAccount[] = [];
+  banks: BankItem[] = [];
+  bankMap = new Map<string, BankItem>();
   totalElements = 0;
   pageIndex = 0;
   pageSize = 10;
@@ -54,9 +56,18 @@ export class BusinessVirtualAccountsComponent implements OnInit, OnDestroy {
   // Modal Provision
   showProvisionModal = false;
   provisionMode = 'SINGLE_USE';
-  provisionProvider = 'MOCK';
+  provisionProvider = 'SEPAY';
   provisionBankBin = '970422';
+
+  get canManageVa(): boolean {
+    return this.businessContext.hasPermission('va:manage') || this.businessContext.hasPermission('va:create');
+  }
+
+  get canCloseVa(): boolean {
+    return this.businessContext.hasPermission('va:close') || this.businessContext.hasPermission('va:manage');
+  }
   provisionCustomerRef = '';
+  provisionDisplayName = '';
   provisioning = false;
 
   // Modal QR View
@@ -64,9 +75,48 @@ export class BusinessVirtualAccountsComponent implements OnInit, OnDestroy {
   selectedVaForQr: VirtualAccount | null = null;
 
   ngOnInit(): void {
+    this.loadBanks();
     this.businessContext.selectedOrg$.pipe(takeUntil(this.destroy$)).subscribe(() => {
       this.loadVirtualAccounts();
     });
+  }
+
+  loadBanks(): void {
+    this.api.listBanks().subscribe({
+      next: (res) => {
+        this.banks = res || [];
+        this.bankMap.clear();
+        this.banks.forEach((b) => {
+          if (b.bin) this.bankMap.set(b.bin, b);
+          if (b.bankCode) this.bankMap.set(b.bankCode, b);
+        });
+        if (!this.provisionBankBin && this.banks.length > 0) {
+          this.provisionBankBin = this.banks[0].bin;
+        }
+      },
+      error: (err) => {
+        console.error('Failed to load banks directory from backend API', err);
+      },
+    });
+  }
+
+
+
+  getBank(binOrCode?: string): BankItem | undefined {
+    if (!binOrCode) return undefined;
+    return this.bankMap.get(binOrCode);
+  }
+
+  getBankName(binOrCode?: string): string {
+    if (!binOrCode) return '';
+    const b = this.getBank(binOrCode);
+    return b ? b.shortName : binOrCode;
+  }
+
+  getBankLogo(binOrCode?: string): string {
+    if (!binOrCode) return '';
+    const b = this.getBank(binOrCode);
+    return b?.logoUrl || '';
   }
 
   ngOnDestroy(): void {
@@ -83,13 +133,10 @@ export class BusinessVirtualAccountsComponent implements OnInit, OnDestroy {
       .listVirtualAccounts(orgId, {
         q: this.searchQuery.trim() || undefined,
         status: this.statusFilter || undefined,
-        page: this.pageIndex,
-        size: this.pageSize,
       })
       .subscribe({
         next: (res) => {
-          this.virtualAccounts = res.items || [];
-          this.totalElements = res.totalElements || 0;
+          this.virtualAccounts = res || [];
           this.loading = false;
         },
         error: () => {
@@ -99,22 +146,22 @@ export class BusinessVirtualAccountsComponent implements OnInit, OnDestroy {
   }
 
   onSearch(): void {
-    this.pageIndex = 0;
-    this.loadVirtualAccounts();
-  }
-
-  onPageChange(event: PageEvent): void {
-    this.pageIndex = event.pageIndex;
-    this.pageSize = event.pageSize;
     this.loadVirtualAccounts();
   }
 
   openProvisionModal(): void {
     this.provisionMode = 'SINGLE_USE';
-    this.provisionProvider = 'MOCK';
+    this.provisionProvider = 'SEPAY';
     this.provisionBankBin = '970422';
     this.provisionCustomerRef = '';
+    this.provisionDisplayName = '';
     this.showProvisionModal = true;
+  }
+
+  onProviderChange(): void {
+    if (this.provisionProvider === 'SEPAY') {
+      this.provisionBankBin = '970422'; // Default MB Bank for SePay
+    }
   }
 
   closeProvisionModal(): void {
@@ -132,6 +179,7 @@ export class BusinessVirtualAccountsComponent implements OnInit, OnDestroy {
         bankBin: this.provisionBankBin,
         mode: this.provisionMode,
         customerReference: this.provisionCustomerRef.trim() || undefined,
+        displayName: this.provisionDisplayName.trim() || undefined,
       })
       .subscribe({
         next: () => {
@@ -153,6 +201,7 @@ export class BusinessVirtualAccountsComponent implements OnInit, OnDestroy {
   }
 
   closeQrModal(): void {
+
     this.showQrModal = false;
     this.selectedVaForQr = null;
   }
@@ -173,4 +222,13 @@ export class BusinessVirtualAccountsComponent implements OnInit, OnDestroy {
       },
     });
   }
+
+  copyAccountNumber(accountNumber: string): void {
+    if (!accountNumber) return;
+    navigator.clipboard.writeText(accountNumber).then(() => {
+      this.toast.success(this.i18n.instant('TOAST.COPIED'));
+    });
+  }
 }
+
+

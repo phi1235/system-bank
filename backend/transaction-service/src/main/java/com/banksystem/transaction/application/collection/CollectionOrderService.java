@@ -19,6 +19,7 @@ import com.banksystem.transaction.domain.settlement.SettlementStatus;
 import com.banksystem.transaction.domain.virtualaccount.VirtualAccountEntity;
 import com.banksystem.transaction.domain.virtualaccount.VirtualAccountMode;
 import com.banksystem.transaction.domain.virtualaccount.VirtualAccountRepository;
+import com.banksystem.transaction.domain.virtualaccount.VirtualAccountStatus;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -158,34 +159,66 @@ public class CollectionOrderService {
   }
 
   @Transactional(readOnly = true)
+  public List<CollectionOrderResponse> searchList(UUID organizationId, String q, CollectionOrderStatus status) {
+    String trimmedQ = (q != null && !q.isBlank()) ? q.trim() : "";
+    boolean hasOrgId = organizationId != null;
+    boolean hasQ = (q != null && !q.isBlank());
+    boolean hasStatus = status != null;
+    return collectionOrderRepository.searchList(
+        hasOrgId, organizationId != null ? organizationId : UUID.randomUUID(),
+        hasQ, trimmedQ,
+        hasStatus, status != null ? status : CollectionOrderStatus.PENDING
+    ).stream()
+        .map(this::toResponse)
+        .toList();
+  }
+
+  @Transactional(readOnly = true)
   public Page<CollectionOrderResponse> search(CollectionOrderSearchQuery query) {
     PageRequest pageable = PageRequest.of(query.page(), query.size());
-    return collectionOrderRepository.search(query.organizationId(), query.q(), query.status(), pageable)
-        .map(this::toResponse);
+    String trimmedQ = (query.q() != null && !query.q().isBlank()) ? query.q().trim() : "";
+    boolean hasOrgId = query.organizationId() != null;
+    boolean hasQ = (query.q() != null && !query.q().isBlank());
+    boolean hasStatus = query.status() != null;
+    return collectionOrderRepository.search(
+        hasOrgId, query.organizationId() != null ? query.organizationId() : UUID.randomUUID(),
+        hasQ, trimmedQ,
+        hasStatus, query.status() != null ? query.status() : CollectionOrderStatus.PENDING,
+        pageable
+    ).map(this::toResponse);
   }
 
   @Transactional(readOnly = true)
   public Page<CollectionOrderResponse> search(UUID organizationId, String q, CollectionOrderStatus status, Pageable pageable) {
-    return collectionOrderRepository.search(organizationId, q, status, pageable).map(this::toResponse);
+    String trimmedQ = (q != null && !q.isBlank()) ? q.trim() : "";
+    boolean hasOrgId = organizationId != null;
+    boolean hasQ = (q != null && !q.isBlank());
+    boolean hasStatus = status != null;
+    return collectionOrderRepository.search(
+        hasOrgId, organizationId != null ? organizationId : UUID.randomUUID(),
+        hasQ, trimmedQ,
+        hasStatus, status != null ? status : CollectionOrderStatus.PENDING,
+        pageable
+    ).map(this::toResponse);
   }
 
   @Transactional(readOnly = true)
   public BusinessDashboardSummaryResponse getDashboardSummary(UUID organizationId) {
-    long totalVAs = virtualAccountRepository.count();
-    long activeVAs = virtualAccountRepository.search(organizationId, null, null, Pageable.unpaged()).getTotalElements();
+    long totalVAs = virtualAccountRepository.countByOrganizationId(organizationId);
+    long activeVAs = virtualAccountRepository.countByOrganizationIdAndStatus(organizationId, VirtualAccountStatus.ACTIVE);
     long pendingOrders = collectionOrderRepository.countByOrganizationIdAndStatus(organizationId, CollectionOrderStatus.PENDING);
     long paidOrders = collectionOrderRepository.countByOrganizationIdAndStatus(organizationId, CollectionOrderStatus.PAID);
     long reviewOrders = collectionOrderRepository.countByOrganizationIdAndStatus(organizationId, CollectionOrderStatus.REVIEW);
     long pendingSettlements = settlementRepository.countByOrganizationIdAndStatus(organizationId, SettlementStatus.LEDGER_PENDING);
 
-    List<CollectionOrderEntity> paidList = collectionOrderRepository.search(organizationId, null, CollectionOrderStatus.PAID, Pageable.unpaged()).getContent();
-    BigDecimal totalCollected = paidList.stream().map(CollectionOrderEntity::getPaidAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+    BigDecimal totalCollected = collectionOrderRepository.sumPaidAmountByOrganizationIdAndStatus(organizationId, CollectionOrderStatus.PAID);
+    if (totalCollected == null) totalCollected = BigDecimal.ZERO;
 
-    List<SettlementEntity> settledList = settlementRepository.search(organizationId, SettlementStatus.COMPLETED, Pageable.unpaged()).getContent();
-    BigDecimal totalSettled = settledList.stream().map(SettlementEntity::getGrossAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+    BigDecimal totalSettled = settlementRepository.sumGrossAmountByOrganizationIdAndStatus(organizationId, SettlementStatus.COMPLETED);
+    if (totalSettled == null) totalSettled = BigDecimal.ZERO;
 
     long totalInbound = inboundPaymentEventRepository.count();
-    long processedInbound = inboundPaymentEventRepository.search(null, null, InboundPaymentStatus.PROCESSED, Pageable.unpaged()).getTotalElements();
+    long processedInbound = inboundPaymentEventRepository.countByStatus(InboundPaymentStatus.PROCESSED);
     double autoMatchRate = totalInbound > 0 ? ((double) processedInbound / totalInbound) * 100.0 : 100.0;
 
     return new BusinessDashboardSummaryResponse(

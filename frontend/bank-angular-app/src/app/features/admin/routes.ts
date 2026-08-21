@@ -115,9 +115,16 @@ export const ADMIN_ROUTES: Routes = [
           import('./settlements/admin-settlements.component').then((m) => m.AdminSettlementsComponent),
       },
       {
+        path: 'business-kyc',
+        canActivate: [permissionGuard([PERMISSIONS.CUSTOMERS_LIST_VIEW])],
+        loadComponent: () =>
+          import('./business-kyc/admin-business-kyc.component').then((m) => m.AdminBusinessKycComponent),
+      },
+      {
         path: 'notifications/sandbox',
         loadComponent: () => import('./notification-sandbox/notification-sandbox.component').then((m) => m.NotificationSandboxComponent),
       },
     ],
   },
 ];
+

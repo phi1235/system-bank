@@ -1,25 +1,21 @@
 package com.banksystem.transaction.api.virtualaccount;
 
 import com.banksystem.common.api.ApiResponse;
-import com.banksystem.common.api.PageResponse;
-import com.banksystem.common.security.GatewayUser;
-import com.banksystem.common.security.UserContext;
 import com.banksystem.transaction.api.dto.VirtualAccountDtos.ProvisionVirtualAccountRequest;
-import com.banksystem.transaction.api.dto.VirtualAccountDtos.VirtualAccountFilterRequest;
 import com.banksystem.transaction.api.dto.VirtualAccountDtos.VirtualAccountResponse;
-import com.banksystem.transaction.application.virtualaccount.VirtualAccountSearchQuery;
 import com.banksystem.transaction.application.virtualaccount.VirtualAccountService;
+import com.banksystem.transaction.domain.virtualaccount.VirtualAccountStatus;
 import com.banksystem.transaction.infrastructure.security.RequireBusinessPermission;
 import jakarta.validation.Valid;
+import java.util.List;
 import java.util.UUID;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -44,12 +40,11 @@ public class BusinessVirtualAccountController {
 
   @GetMapping
   @RequireBusinessPermission(value = "business:va:view", businessIdParam = "businessId")
-  public ApiResponse<PageResponse<VirtualAccountResponse>> search(
+  public ApiResponse<List<VirtualAccountResponse>> search(
       @PathVariable UUID businessId,
-      @Valid @ModelAttribute VirtualAccountFilterRequest req) {
-    VirtualAccountSearchQuery query = VirtualAccountSearchQuery.of(businessId, req);
-    Page<VirtualAccountResponse> result = virtualAccountService.search(query);
-    return ApiResponse.ok(PageResponse.from(result));
+      @RequestParam(required = false) String q,
+      @RequestParam(required = false) VirtualAccountStatus status) {
+    return ApiResponse.ok(virtualAccountService.searchList(businessId, q, status));
   }
 
   @GetMapping("/{id}")

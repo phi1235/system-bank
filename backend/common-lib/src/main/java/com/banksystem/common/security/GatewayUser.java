@@ -26,6 +26,9 @@ public record GatewayUser(UUID userId, List<String> roles, List<String> permissi
     if (hasRole("ADMIN") || hasRole("SUPER_ADMIN")) {
       return true;
     }
+    if (hasRole(permission)) {
+      return true;
+    }
     return permissions.stream()
         .anyMatch(p -> p.equalsIgnoreCase(permission) || "*".equals(p));
   }

@@ -9,9 +9,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { Subject, takeUntil } from 'rxjs';
-import { SettlementPreview, SplitLegItem, SplitRule } from '../../../core/models/domain.model';
+import { BankItem, SettlementPreview, SplitLegItem, SplitRule } from '../../../core/models/domain.model';
 import { BankApiService } from '../../../core/services/bank-api.service';
 import { BusinessContextService } from '../../../core/services/business-context.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -30,6 +31,7 @@ import { ToastService } from '../../../core/services/toast.service';
     MatInputModule,
     MatSelectModule,
     MatDividerModule,
+    MatTooltipModule,
     TranslateModule,
   ],
   templateUrl: './business-split-rules.component.html',
@@ -43,6 +45,8 @@ export class BusinessSplitRulesComponent implements OnInit, OnDestroy {
   private readonly destroy$ = new Subject<void>();
 
   splitRules: SplitRule[] = [];
+  banks: BankItem[] = [];
+  bankMap = new Map<string, BankItem>();
   loading = false;
 
   // Create Split Rule Modal
@@ -51,6 +55,10 @@ export class BusinessSplitRulesComponent implements OnInit, OnDestroy {
   newRuleItems: SplitLegItem[] = [];
   creatingRule = false;
 
+  get canManageSplit(): boolean {
+    return this.businessContext.hasPermission('split:manage') || this.businessContext.hasPermission('split:create');
+  }
+
   // Split Preview Tool
   previewGrossAmount = 1000000;
   previewSelectedRuleId = '';
@@ -58,9 +66,34 @@ export class BusinessSplitRulesComponent implements OnInit, OnDestroy {
   calculatingPreview = false;
 
   ngOnInit(): void {
+    this.loadBanks();
     this.businessContext.selectedOrg$.pipe(takeUntil(this.destroy$)).subscribe(() => {
       this.loadRules();
     });
+  }
+
+  loadBanks(): void {
+    this.api.listBanks().subscribe({
+      next: (res) => {
+        this.banks = res || [];
+        this.bankMap.clear();
+        this.banks.forEach((b) => {
+          if (b.bin) this.bankMap.set(b.bin, b);
+          if (b.bankCode) this.bankMap.set(b.bankCode, b);
+        });
+      },
+    });
+  }
+
+  getBank(binOrCode?: string): BankItem | undefined {
+    if (!binOrCode) return undefined;
+    return this.bankMap.get(binOrCode);
+  }
+
+  getBankName(binOrCode?: string): string {
+    if (!binOrCode) return '';
+    const b = this.getBank(binOrCode);
+    return b ? b.shortName : binOrCode;
   }
 
   ngOnDestroy(): void {

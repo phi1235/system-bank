@@ -24,17 +24,44 @@ public interface VirtualAccountRepository extends JpaRepository<VirtualAccountEn
 
   @Query("""
       SELECT va FROM VirtualAccountEntity va
-      WHERE (:orgId IS NULL OR va.organizationId = :orgId)
-        AND (:q IS NULL OR LOWER(va.accountNumber) LIKE LOWER(CONCAT('%', :q, '%'))
-             OR LOWER(va.customerReference) LIKE LOWER(CONCAT('%', :q, '%')))
-        AND (:status IS NULL OR va.status = :status)
+      WHERE (:hasOrgId = false OR va.organizationId = :orgId)
+        AND (:hasQ = false OR (
+            LOWER(va.accountNumber) LIKE LOWER(CONCAT('%', :q, '%'))
+            OR (va.customerReference IS NOT NULL AND LOWER(va.customerReference) LIKE LOWER(CONCAT('%', :q, '%')))
+        ))
+        AND (:hasStatus = false OR va.status = :status)
+      ORDER BY va.createdAt DESC
+      """)
+  List<VirtualAccountEntity> searchList(
+      @Param("hasOrgId") boolean hasOrgId,
+      @Param("orgId") UUID orgId,
+      @Param("hasQ") boolean hasQ,
+      @Param("q") String q,
+      @Param("hasStatus") boolean hasStatus,
+      @Param("status") VirtualAccountStatus status);
+
+  @Query("""
+      SELECT va FROM VirtualAccountEntity va
+      WHERE (:hasOrgId = false OR va.organizationId = :orgId)
+        AND (:hasQ = false OR (
+            LOWER(va.accountNumber) LIKE LOWER(CONCAT('%', :q, '%'))
+            OR (va.customerReference IS NOT NULL AND LOWER(va.customerReference) LIKE LOWER(CONCAT('%', :q, '%')))
+        ))
+        AND (:hasStatus = false OR va.status = :status)
       ORDER BY va.createdAt DESC
       """)
   Page<VirtualAccountEntity> search(
+      @Param("hasOrgId") boolean hasOrgId,
       @Param("orgId") UUID orgId,
+      @Param("hasQ") boolean hasQ,
       @Param("q") String q,
+      @Param("hasStatus") boolean hasStatus,
       @Param("status") VirtualAccountStatus status,
       Pageable pageable);
 
   boolean existsByProviderAndBankBinAndAccountNumber(String provider, String bankBin, String accountNumber);
+
+  long countByOrganizationId(UUID organizationId);
+
+  long countByOrganizationIdAndStatus(UUID organizationId, VirtualAccountStatus status);
 }

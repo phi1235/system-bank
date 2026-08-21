@@ -4,7 +4,7 @@
       <h1 class="page-title">{{ 'BUSINESS.SPLIT.TITLE' | translate }}</h1>
       <p class="page-subtitle">{{ 'BUSINESS.SPLIT.SUB' | translate }}</p>
     </div>
-    <button mat-flat-button color="primary" (click)="openCreateModal()">
+    <button *ngIf="canManageSplit" mat-flat-button color="primary" (click)="openCreateModal()">
       <mat-icon>add</mat-icon>
       {{ 'BUSINESS.SPLIT.CREATE_RULE_BTN' | translate }}
     </button>
@@ -26,7 +26,7 @@
         <mat-form-field appearance="outline" class="rule-select">
           <mat-label>{{ 'BUSINESS.SPLIT.TITLE' | translate }}</mat-label>
           <mat-select [(ngModel)]="previewSelectedRuleId">
-            <mat-option value="">{{ 'COMMON.DEFAULT' | translate }}</mat-option>
+            <mat-option value="">{{ 'BUSINESS.SPLIT_RULES.DEFAULT_SPLIT' | translate }}</mat-option>
             <mat-option *ngFor="let r of splitRules" [value]="r.id">{{ r.name }}</mat-option>
           </mat-select>
         </mat-form-field>
@@ -93,7 +93,10 @@
 <div class="custom-modal-backdrop" *ngIf="showCreateModal">
   <div class="custom-modal-card large-modal">
     <div class="modal-header">
-      <h3>{{ 'BUSINESS.SPLIT.CREATE_RULE_BTN' | translate }}</h3>
+      <div class="modal-header-title">
+        <mat-icon color="primary">call_split</mat-icon>
+        <h3>{{ 'BUSINESS.SPLIT.CREATE_RULE_BTN' | translate }}</h3>
+      </div>
       <button mat-icon-button (click)="closeCreateModal()">
         <mat-icon>close</mat-icon>
       </button>
@@ -105,7 +108,10 @@
       </mat-form-field>
 
       <div class="legs-editor-header">
-        <h4>{{ 'BUSINESS.SPLIT.ITEMS_TITLE' | translate }}</h4>
+        <div class="header-desc">
+          <h4>{{ 'BUSINESS.SPLIT.ITEMS_TITLE' | translate }}</h4>
+          <span class="sub-desc">{{ 'BUSINESS.SPLIT.SUB' | translate }}</span>
+        </div>
         <button mat-stroked-button color="primary" (click)="addLeg()">
           <mat-icon>add</mat-icon>
           {{ 'BUSINESS.SPLIT.ADD_LEG' | translate }}
@@ -113,48 +119,86 @@
       </div>
 
       <div class="legs-editor-list">
-        <div class="leg-editor-row" *ngFor="let leg of newRuleItems; let i = index">
-          <mat-form-field appearance="outline" class="field-type">
-            <mat-label>{{ 'BUSINESS.SPLIT.BENEFICIARY_TYPE' | translate }}</mat-label>
-            <mat-select [(ngModel)]="leg.beneficiaryType">
-              <mat-option value="PLATFORM">{{ 'BUSINESS.SPLIT.TYPE_PLATFORM' | translate }}</mat-option>
-              <mat-option value="SELLER_INTERNAL">{{ 'BUSINESS.SPLIT.TYPE_SELLER_INTERNAL' | translate }}</mat-option>
-              <mat-option value="SELLER_EXTERNAL">{{ 'BUSINESS.SPLIT.TYPE_SELLER_EXTERNAL' | translate }}</mat-option>
-            </mat-select>
-          </mat-form-field>
+        <div class="leg-card-item" *ngFor="let leg of newRuleItems; let i = index">
+          <div class="leg-card-header">
+            <div class="leg-card-index">
+              <span class="index-badge">#{{ i + 1 }}</span>
+              <span class="leg-title">{{ 'BUSINESS.SPLIT.BENEFICIARY_ITEM' | translate: { index: i + 1 } }}</span>
+            </div>
+            <button mat-icon-button color="warn" class="btn-remove-leg" (click)="removeLeg(i)" *ngIf="newRuleItems.length > 1" [matTooltip]="'COMMON.DELETE' | translate">
+              <mat-icon>delete_outline</mat-icon>
+            </button>
+          </div>
 
-          <mat-form-field appearance="outline" class="field-name">
-            <mat-label>{{ 'BUSINESS.SPLIT.BENEFICIARY_NAME' | translate }}</mat-label>
-            <input matInput [(ngModel)]="leg.beneficiaryName" />
-          </mat-form-field>
+          <div class="leg-fields-grid">
+            <div class="grid-row">
+              <mat-form-field appearance="outline" class="field-item">
+                <mat-label>{{ 'BUSINESS.SPLIT.BENEFICIARY_TYPE' | translate }}</mat-label>
+                <mat-select [(ngModel)]="leg.beneficiaryType">
+                  <mat-option value="PLATFORM">{{ 'BUSINESS.SPLIT.TYPE_PLATFORM' | translate }}</mat-option>
+                  <mat-option value="SELLER_INTERNAL">{{ 'BUSINESS.SPLIT.TYPE_SELLER_INTERNAL' | translate }}</mat-option>
+                  <mat-option value="SELLER_EXTERNAL">{{ 'BUSINESS.SPLIT.TYPE_SELLER_EXTERNAL' | translate }}</mat-option>
+                </mat-select>
+              </mat-form-field>
 
-          <mat-form-field appearance="outline" class="field-split-type">
-            <mat-label>{{ 'BUSINESS.SPLIT.SPLIT_TYPE' | translate }}</mat-label>
-            <mat-select [(ngModel)]="leg.splitType">
-              <mat-option value="PERCENTAGE">{{ 'BUSINESS.SPLIT.TYPE_PERCENTAGE' | translate }}</mat-option>
-              <mat-option value="FIXED_AMOUNT">{{ 'BUSINESS.SPLIT.TYPE_FIXED_AMOUNT' | translate }}</mat-option>
-              <mat-option value="REMAINDER">{{ 'BUSINESS.SPLIT.TYPE_REMAINDER' | translate }}</mat-option>
-            </mat-select>
-          </mat-form-field>
+              <mat-form-field appearance="outline" class="field-item">
+                <mat-label>{{ 'BUSINESS.SPLIT.BENEFICIARY_NAME' | translate }}</mat-label>
+                <input matInput [(ngModel)]="leg.beneficiaryName" [placeholder]="'BUSINESS.SPLIT.BENEFICIARY_NAME_PLACEHOLDER' | translate" />
+              </mat-form-field>
+            </div>
 
-          <mat-form-field appearance="outline" class="field-value" *ngIf="leg.splitType !== 'REMAINDER'">
-            <mat-label>{{ 'BUSINESS.SPLIT.VALUE' | translate }}</mat-label>
-            <input matInput type="number" [(ngModel)]="leg.value" />
-          </mat-form-field>
+            <div class="grid-row">
+              <mat-form-field appearance="outline" class="field-item">
+                <mat-label>{{ 'BUSINESS.SPLIT.SPLIT_TYPE' | translate }}</mat-label>
+                <mat-select [(ngModel)]="leg.splitType">
+                  <mat-option value="PERCENTAGE">{{ 'BUSINESS.SPLIT.TYPE_PERCENTAGE' | translate }}</mat-option>
+                  <mat-option value="FIXED_AMOUNT">{{ 'BUSINESS.SPLIT.TYPE_FIXED_AMOUNT' | translate }}</mat-option>
+                  <mat-option value="REMAINDER">{{ 'BUSINESS.SPLIT.TYPE_REMAINDER' | translate }}</mat-option>
+                </mat-select>
+              </mat-form-field>
 
-          <mat-form-field appearance="outline" class="field-bank" *ngIf="leg.beneficiaryType === 'SELLER_EXTERNAL'">
-            <mat-label>{{ 'BUSINESS.SPLIT.BANK_BIN' | translate }}</mat-label>
-            <input matInput [(ngModel)]="leg.bankBin" [placeholder]="'BUSINESS.SPLIT.BANK_BIN_PLACEHOLDER' | translate" />
-          </mat-form-field>
+              <mat-form-field appearance="outline" class="field-item" *ngIf="leg.splitType !== 'REMAINDER'">
+                <mat-label>{{ 'BUSINESS.SPLIT.VALUE' | translate }}</mat-label>
+                <input matInput type="number" [(ngModel)]="leg.value" [placeholder]="leg.splitType === 'PERCENTAGE' ? '0 - 100 (%)' : 'VND'" />
+                <span matSuffix *ngIf="leg.splitType === 'PERCENTAGE'">%</span>
+                <span matSuffix *ngIf="leg.splitType === 'FIXED_AMOUNT'">VND</span>
+              </mat-form-field>
 
-          <mat-form-field appearance="outline" class="field-acc" *ngIf="leg.beneficiaryType === 'SELLER_EXTERNAL'">
-            <mat-label>{{ 'BUSINESS.SPLIT.ACCOUNT_NO' | translate }}</mat-label>
-            <input matInput [(ngModel)]="leg.accountNumber" />
-          </mat-form-field>
+              <div class="field-item remainder-info-box" *ngIf="leg.splitType === 'REMAINDER'">
+                <mat-icon color="primary">info</mat-icon>
+                <span>{{ 'BUSINESS.SPLIT.REMAINDER_EXPLAIN' | translate }}</span>
+              </div>
+            </div>
 
-          <button mat-icon-button color="warn" (click)="removeLeg(i)" *ngIf="newRuleItems.length > 1">
-            <mat-icon>remove_circle</mat-icon>
-          </button>
+            <div class="grid-row" *ngIf="leg.beneficiaryType === 'SELLER_EXTERNAL'">
+              <mat-form-field appearance="outline" class="field-item">
+                <mat-label>{{ 'BUSINESS.SPLIT.BANK_BIN' | translate }}</mat-label>
+                <mat-select [(ngModel)]="leg.bankBin">
+                  <mat-select-trigger>
+                    <div class="selected-bank-display" *ngIf="getBank(leg.bankBin) as b">
+                      <img [src]="b.logoUrl" class="bank-logo-xs" *ngIf="b.logoUrl" (error)="$any($event.target).style.display='none'" alt="" />
+                      <span class="bank-title-bold">{{ b.shortName }}</span>
+                    </div>
+                  </mat-select-trigger>
+                  <mat-option *ngFor="let b of banks" [value]="b.bin">
+                    <div class="bank-option-item">
+                      <img [src]="b.logoUrl" class="bank-logo-sm" *ngIf="b.logoUrl" (error)="$any($event.target).style.display='none'" alt="" />
+                      <div class="bank-option-texts">
+                        <span class="bank-name-main">{{ b.shortName }}</span>
+                        <span class="bank-name-sub">{{ b.fullName }}</span>
+                      </div>
+                    </div>
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="field-item">
+                <mat-label>{{ 'BUSINESS.SPLIT.ACCOUNT_NO' | translate }}</mat-label>
+                <input matInput [(ngModel)]="leg.accountNumber" [placeholder]="'BUSINESS.SPLIT_RULES.ACCOUNT_NUMBER_PLACEHOLDER' | translate" />
+              </mat-form-field>
+
+            </div>
+          </div>
         </div>
       </div>
     </div>

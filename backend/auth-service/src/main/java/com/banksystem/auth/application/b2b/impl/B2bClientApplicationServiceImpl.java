@@ -9,6 +9,7 @@ import com.banksystem.auth.domain.b2b.B2bClientApplicationEntity;
 import com.banksystem.auth.domain.b2b.B2bClientApplicationRepository;
 import com.banksystem.common.exception.BusinessException;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -26,9 +27,29 @@ public class B2bClientApplicationServiceImpl implements B2bClientApplicationServ
 
   @Override
   @Transactional(readOnly = true)
+  public List<B2bClientResponse> listClients(String status, String q) {
+    String trimmedQ = (q != null && !q.isBlank()) ? q.trim() : "";
+    boolean hasStatus = (status != null && !status.isBlank());
+    boolean hasQ = (q != null && !q.isBlank());
+    return repository.searchClientsList(
+        hasStatus, hasStatus ? status : "",
+        hasQ, trimmedQ
+    ).stream()
+        .map(this::toResponse)
+        .toList();
+  }
+
+  @Override
+  @Transactional(readOnly = true)
   public Page<B2bClientResponse> listClients(B2bClientSearchQuery query) {
-    return repository.searchClients(query.status(), query.q(), query.toPageable())
-        .map(this::toResponse);
+    String trimmedQ = (query.q() != null && !query.q().isBlank()) ? query.q().trim() : "";
+    boolean hasStatus = (query.status() != null && !query.status().isBlank());
+    boolean hasQ = (query.q() != null && !query.q().isBlank());
+    return repository.searchClients(
+        hasStatus, hasStatus ? query.status() : "",
+        hasQ, trimmedQ,
+        query.toPageable()
+    ).map(this::toResponse);
   }
 
   @Override

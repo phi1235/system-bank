@@ -1,0 +1,333 @@
+<div class="page-container">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-text">
+      <h1 class="page-title">{{ 'B2B.ROLES.PAGE_TITLE' | translate }}</h1>
+      <p class="page-subtitle">{{ 'B2B.ROLES.PAGE_SUBTITLE' | translate }}</p>
+    </div>
+    <button *ngIf="canManageRoles" mat-flat-button color="primary" class="btn-create" (click)="openCreateModal()">
+      <mat-icon>add</mat-icon>
+      {{ 'B2B.ROLES.BTN_CREATE' | translate }}
+    </button>
+  </div>
+
+  <!-- Search & Toolbar -->
+  <div class="toolbar-card">
+    <div class="search-box">
+      <mat-icon class="search-icon">search</mat-icon>
+      <input
+        type="text"
+        [(ngModel)]="searchTerm"
+        (input)="applyFilter()"
+        [placeholder]="'B2B.ROLES.SEARCH_PLACEHOLDER' | translate"
+        class="search-input"
+      />
+      <button *ngIf="searchTerm" mat-icon-button class="clear-btn" (click)="searchTerm = ''; applyFilter()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+    <div class="count-badge">
+      <span>{{ filteredRoles.length }} {{ 'B2B.ROLES.PAGE_TITLE' | translate | lowercase }}</span>
+    </div>
+  </div>
+
+  <!-- Error Alert -->
+  <div *ngIf="error" class="alert alert-danger">
+    <mat-icon>error_outline</mat-icon>
+    <span>{{ error }}</span>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <span>{{ 'B2B.ROLES.LOADING' | translate }}</span>
+  </div>
+
+  <!-- Table Card -->
+  <mat-card class="table-card" *ngIf="!loading">
+    <table mat-table [dataSource]="filteredRoles" class="full-width-table">
+      <!-- Role Code Column -->
+      <ng-container matColumnDef="code">
+        <th mat-header-cell *matHeaderCellDef class="col-code">{{ 'B2B.ROLES.COL_CODE' | translate }}</th>
+        <td mat-cell *matCellDef="let r" class="col-code">
+          <span class="role-code-pill">{{ r.code }}</span>
+        </td>
+      </ng-container>
+
+      <!-- Role Name Column -->
+      <ng-container matColumnDef="displayName">
+        <th mat-header-cell *matHeaderCellDef class="col-name">{{ 'B2B.ROLES.COL_NAME' | translate }}</th>
+        <td mat-cell *matCellDef="let r" class="col-name">
+          <div class="role-name-cell">
+            <span class="name-text">{{ r.displayName }}</span>
+          </div>
+        </td>
+      </ng-container>
+
+      <!-- Role Type Column -->
+      <ng-container matColumnDef="type">
+        <th mat-header-cell *matHeaderCellDef class="col-type">{{ 'B2B.ROLES.COL_TYPE' | translate }}</th>
+        <td mat-cell *matCellDef="let r" class="col-type">
+          <span *ngIf="r.ownerRole" class="badge-role badge-owner">
+            <mat-icon class="mini-icon">verified_user</mat-icon>
+            {{ 'B2B.ROLES.BADGE_OWNER' | translate }}
+          </span>
+          <span *ngIf="r.defaultRole && !r.ownerRole" class="badge-role badge-default">
+            {{ 'B2B.ROLES.BADGE_DEFAULT' | translate }}
+          </span>
+          <span *ngIf="!r.ownerRole && !r.defaultRole" class="badge-role badge-custom">
+            Chức vụ tạo thêm
+          </span>
+        </td>
+      </ng-container>
+
+      <!-- Permissions Column -->
+      <ng-container matColumnDef="permissions">
+        <th mat-header-cell *matHeaderCellDef class="col-perms">{{ 'B2B.ROLES.COL_PERMISSIONS' | translate }}</th>
+        <td mat-cell *matCellDef="let r" class="col-perms">
+          <div class="perms-tag-list">
+            <span *ngFor="let p of (r.permissions || []) | slice:0:3" class="perm-tag">
+              {{ getFriendlyPermLabel($any(p)) }}
+            </span>
+            <span
+              *ngIf="(r.permissions || []).length > 3"
+              class="perm-tag perm-more"
+              [matTooltip]="'• ' + getFriendlyTooltipPerms(r.permissions)"
+              matTooltipClass="multiline-tooltip"
+            >
+              +{{ (r.permissions || []).length - 3 }} {{ 'B2B.ROLES.MORE' | translate }}
+            </span>
+            <span *ngIf="!r.permissions || r.permissions.length === 0" class="no-perms-text">
+              0 {{ 'B2B.ROLES.COL_PERMISSIONS' | translate | lowercase }}
+            </span>
+          </div>
+        </td>
+      </ng-container>
+
+      <!-- Description Column -->
+      <ng-container matColumnDef="description">
+        <th mat-header-cell *matHeaderCellDef class="col-desc">{{ 'B2B.ROLES.COL_DESC' | translate }}</th>
+        <td mat-cell *matCellDef="let r" class="col-desc">
+          <span class="desc-text">{{ r.description || ('B2B.ROLES.NO_DESCRIPTION' | translate) }}</span>
+        </td>
+      </ng-container>
+
+      <!-- Created At Column -->
+      <ng-container matColumnDef="createdAt">
+        <th mat-header-cell *matHeaderCellDef class="col-date">{{ 'B2B.ROLES.COL_CREATED_AT' | translate }}</th>
+        <td mat-cell *matCellDef="let r" class="col-date">
+          {{ r.createdAt | date:'dd/MM/yyyy HH:mm' }}
+        </td>
+      </ng-container>
+
+      <!-- Actions Column -->
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef class="col-actions">{{ 'B2B.ROLES.COL_ACTIONS' | translate }}</th>
+        <td mat-cell *matCellDef="let r" class="col-actions">
+          <div class="action-buttons" *ngIf="!r.ownerRole && canManageRoles">
+            <button mat-icon-button color="primary" (click)="openEditModal(r)" [matTooltip]="'B2B.ROLES.BTN_EDIT' | translate">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button
+              mat-icon-button
+              color="warn"
+              *ngIf="!r.defaultRole"
+              (click)="deleteRole(r)"
+              [matTooltip]="'B2B.ROLES.BTN_DELETE' | translate"
+            >
+              <mat-icon>delete_outline</mat-icon>
+            </button>
+          </div>
+          <span *ngIf="r.ownerRole || !canManageRoles" class="lock-icon" [matTooltip]="'B2B.ROLES.BADGE_OWNER' | translate">
+            <mat-icon>lock</mat-icon>
+          </span>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="table-data-row"></tr>
+
+      <!-- Empty State -->
+      <tr class="mat-row" *matNoDataRow>
+        <td class="mat-cell empty-cell" [attr.colspan]="displayedColumns.length">
+          <div class="empty-state-content">
+            <mat-icon class="empty-icon">admin_panel_settings</mat-icon>
+            <h3>{{ 'B2B.ROLES.EMPTY_TITLE' | translate }}</h3>
+            <p>{{ 'B2B.ROLES.EMPTY_DESC' | translate }}</p>
+          </div>
+        </td>
+      </tr>
+    </table>
+  </mat-card>
+</div>
+
+<!-- Create / Edit Modal with Matrix CRUD Table -->
+<div *ngIf="showModal" class="custom-modal-backdrop">
+  <div class="custom-modal-card matrix-modal-card">
+    <!-- Modal Header -->
+    <div class="modal-header">
+      <div class="modal-title-group">
+        <mat-icon class="modal-title-icon">{{ isEditing ? 'edit' : 'add_moderator' }}</mat-icon>
+        <div>
+          <h3>{{ (isEditing ? 'B2B.ROLES.MODAL_EDIT_TITLE' : 'B2B.ROLES.MODAL_CREATE_TITLE') | translate }}</h3>
+          <p class="modal-subtitle">{{ 'B2B.RBAC.MATRIX_HINT' | translate }}</p>
+        </div>
+      </div>
+      <button mat-icon-button (click)="closeModal()" class="close-btn">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <!-- Modal Body -->
+    <div class="modal-body matrix-modal-body">
+      <!-- Role Meta Info -->
+      <div class="role-meta-grid">
+        <div class="form-row" *ngIf="!isEditing">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ 'B2B.ROLES.FIELD_CODE' | translate }} *</mat-label>
+            <input
+              matInput
+              [(ngModel)]="roleForm.code"
+              [placeholder]="'B2B.ROLES.PLACEHOLDER_CODE' | translate"
+              style="text-transform: uppercase;"
+            />
+            <mat-hint>{{ 'B2B.ROLES.FIELD_CODE_HINT' | translate }}</mat-hint>
+          </mat-form-field>
+        </div>
+
+        <div class="form-row" [class.span-all]="isEditing">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ 'B2B.ROLES.FIELD_NAME' | translate }} *</mat-label>
+            <input
+              matInput
+              [(ngModel)]="roleForm.displayName"
+              [placeholder]="'B2B.ROLES.PLACEHOLDER_NAME' | translate"
+            />
+          </mat-form-field>
+        </div>
+
+        <div class="form-row span-all">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ 'B2B.ROLES.FIELD_DESC' | translate }}</mat-label>
+            <input
+              matInput
+              [(ngModel)]="roleForm.description"
+              [placeholder]="'B2B.ROLES.PLACEHOLDER_DESC' | translate"
+            />
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- Matrix Permission Table Section -->
+      <div class="matrix-section">
+        <div class="matrix-section-header">
+          <div class="header-left-title">
+            <mat-icon class="sec-icon">tune</mat-icon>
+            <span class="sec-title">{{ 'B2B.RBAC.MATRIX_TITLE' | translate }}</span>
+          </div>
+          <div class="matrix-stats-badge">
+            <span class="count-highlight">{{ roleForm.permissions.length }}</span>
+            <span class="count-total">/ {{ getTotalMatrixPerms() }} {{ 'B2B.RBAC.GRANTED_COUNT' | translate }}</span>
+          </div>
+        </div>
+
+        <!-- Continuous RBAC Matrix Table -->
+        <div class="matrix-table-wrapper">
+          <table class="rbac-matrix-table">
+            <thead>
+              <tr>
+                <th class="col-feature-title">{{ 'B2B.RBAC.COL_FEATURE' | translate }}</th>
+                <th *ngFor="let act of actionCols" class="col-action-title">
+                  <div class="act-header-cell">
+                    <mat-icon class="act-icon">{{ act.icon }}</mat-icon>
+                    <span>{{ act.labelKey | translate }}</span>
+                  </div>
+                </th>
+                <th class="col-all-title">{{ 'B2B.RBAC.ACT_ALL' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <ng-container *ngFor="let mod of modules">
+                <!-- Module Section Header Row -->
+                <tr class="module-group-row">
+                  <td [attr.colspan]="actionCols.length + 2" class="module-group-cell">
+                    <div class="module-group-bar">
+                      <div class="module-info">
+                        <mat-icon class="module-icon">{{ mod.icon }}</mat-icon>
+                        <span class="module-name">{{ mod.nameKey | translate }}</span>
+                        <span class="module-count-badge" [class.active]="getModuleGrantedPerms(mod) > 0">
+                          {{ getModuleGrantedPerms(mod) }}/{{ getModuleTotalPerms(mod) }}
+                        </span>
+                      </div>
+                      <label class="module-select-all-label">
+                        <mat-checkbox
+                          color="primary"
+                          [checked]="moduleAllChecked(mod)"
+                          [indeterminate]="moduleSomeChecked(mod)"
+                          (change)="toggleModuleAll(mod, $event.checked)"
+                        >
+                          <span class="select-all-text">{{ 'B2B.RBAC.SELECT_ALL_MODULE' | translate }}</span>
+                        </mat-checkbox>
+                      </label>
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- Feature Rows under this Module -->
+                <tr *ngFor="let feat of mod.features" class="feature-matrix-row">
+                  <!-- Feature Name -->
+                  <td class="col-feature-cell">
+                    <span class="feature-label">{{ feat.nameKey | translate }}</span>
+                  </td>
+
+                  <!-- Action Checkboxes (View, Create, Manage, Delete, Approve) -->
+                  <td *ngFor="let act of actionCols" class="col-action-cell">
+                    <ng-container *ngIf="featureHasAction(feat, act.key); else notApplicable">
+                      <mat-checkbox
+                        color="primary"
+                        [checked]="hasPerm(featureActionPerm(feat, act.key))"
+                        (change)="togglePerm(featureActionPerm(feat, act.key))"
+                        [matTooltip]="getFriendlyPermLabel(featureActionPerm(feat, act.key))"
+                      ></mat-checkbox>
+                    </ng-container>
+                    <ng-template #notApplicable>
+                      <span class="na-dash">—</span>
+                    </ng-template>
+                  </td>
+
+                  <!-- Row All Checkbox -->
+                  <td class="col-all-cell">
+                    <mat-checkbox
+                      color="primary"
+                      [checked]="featureAllChecked(feat)"
+                      [indeterminate]="featureSomeChecked(feat)"
+                      (change)="toggleFeatureAll(feat, $event.checked)"
+                      [matTooltip]="'B2B.RBAC.ACT_ALL' | translate"
+                    ></mat-checkbox>
+                  </td>
+                </tr>
+              </ng-container>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Footer -->
+    <div class="modal-footer">
+      <button mat-stroked-button (click)="closeModal()" [disabled]="saving">
+        {{ 'COMMON.CANCEL' | translate }}
+      </button>
+      <button
+        mat-flat-button
+        color="primary"
+        [disabled]="saving || !roleForm.displayName.trim() || (!isEditing && !roleForm.code.trim())"
+        (click)="saveRole()"
+      >
+        <mat-icon *ngIf="!saving">check</mat-icon>
+        <span *ngIf="saving" class="spinner-sm"></span>
+        {{ 'COMMON.SAVE' | translate }}
+      </button>
+    </div>
+  </div>
+</div>

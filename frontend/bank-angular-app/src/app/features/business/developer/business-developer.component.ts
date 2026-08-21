@@ -85,6 +85,9 @@ export class BusinessDeveloperComponent implements OnInit, OnDestroy {
         if (cfg) {
           this.collectionAccountId = cfg.collectionAccountId || '';
           this.escrowAccountId = cfg.escrowAccountId || '';
+        } else {
+          this.collectionAccountId = '';
+          this.escrowAccountId = '';
         }
       },
       error: () => {},

@@ -73,6 +73,13 @@ export const CUSTOMER_ROUTES: Routes = [
         canActivate: [permissionGuard([PERMISSIONS.IB_SUPPORT_VIEW])],
         loadComponent: () => import('./support/support.component').then((m) => m.CustomerSupportComponent),
       },
+      {
+        path: 'business-register',
+        canActivate: [permissionGuard([PERMISSIONS.IB_HOME_VIEW])],
+        loadComponent: () =>
+          import('./business-registration/business-registration.component').then((m) => m.BusinessRegistrationComponent),
+      },
     ],
   },
 ];
+

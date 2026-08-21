@@ -9,7 +9,7 @@ html {
         tertiary: mat.$cyan-palette,
       ),
       typography: 'Plus Jakarta Sans',
-      density: 0,
+      density: -1,
     )
   );
 }
@@ -577,9 +577,32 @@ mat-card {
 .mat-mdc-form-field {
   display: inline-flex;
   vertical-align: middle;
-  
+  --mat-form-field-container-height: 42px;
+  --mdc-outlined-text-field-container-height: 42px;
+
   .mat-mdc-text-field-wrapper {
     background-color: var(--color-surface) !important;
+  }
+
+  &.mat-form-field-appearance-outline {
+    .mat-mdc-form-field-flex {
+      min-height: 42px;
+      align-items: center;
+    }
+
+    .mat-mdc-form-field-infix {
+      min-height: 42px;
+      padding-top: 8px !important;
+      padding-bottom: 8px !important;
+      box-sizing: border-box;
+    }
+  }
+
+  .mat-mdc-form-field-icon-prefix,
+  .mat-mdc-form-field-icon-suffix {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 }
 
@@ -671,6 +694,7 @@ code {
     box-shadow: 0 12px 32px -4px rgba(15, 23, 42, 0.18), 0 4px 12px rgba(15, 23, 42, 0.08) !important;
     padding: 6px !important;
     max-height: 340px !important;
+    min-width: max(100%, 280px) !important;
 
     .mat-mdc-option {
       border-radius: 8px !important;
@@ -728,6 +752,74 @@ code {
       mat-icon {
         color: #10b981 !important;
       }
+    }
+  }
+}
+
+/* Reusable Bank Select Dropdown Styles */
+.selected-bank-display {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+
+  .bank-logo-xs {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+
+  .bank-title-bold {
+    font-weight: 700;
+    color: #0f172a;
+    font-size: 0.88rem;
+  }
+
+  .bank-bin-tag {
+    font-size: 0.75rem;
+    color: #64748b;
+    font-family: monospace;
+  }
+}
+
+.bank-option-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 0;
+  width: 100%;
+
+  .bank-logo-sm {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    border-radius: 6px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 2px;
+    flex-shrink: 0;
+  }
+
+  .bank-option-texts {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.25;
+    overflow: hidden;
+
+    .bank-name-main {
+      font-weight: 700;
+      color: #0f172a;
+      font-size: 0.88rem;
+    }
+
+    .bank-name-sub {
+      font-size: 0.72rem;
+      color: #64748b;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
   }
 }

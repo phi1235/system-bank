@@ -1,0 +1,163 @@
+<div class="registration-container">
+  <!-- Top Banner / Title -->
+  <div class="banner-card">
+    <div class="banner-content">
+      <div class="banner-icon">
+        <span class="icon">🏢</span>
+      </div>
+      <div class="banner-text">
+        <h1 class="title">{{ 'CUSTOMER.BUSINESS_REG.PAGE_TITLE' | translate }}</h1>
+        <p class="subtitle">{{ 'CUSTOMER.BUSINESS_REG.PAGE_SUBTITLE' | translate }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Existing Organizations Section if any -->
+  <div *ngIf="existingOrgs.length > 0" class="existing-orgs-section">
+    <h3 class="section-title">{{ 'CUSTOMER.BUSINESS_REG.MY_BUSINESSES' | translate }}</h3>
+    <div class="orgs-grid">
+      <div *ngFor="let org of existingOrgs" class="org-status-card">
+        <div class="org-card-header">
+          <span class="org-name">{{ org.name || org.legalName }}</span>
+          <span class="status-badge" [ngClass]="(org.kycStatus || 'APPROVED').toLowerCase()">
+            {{ 'CUSTOMER.BUSINESS_REG.STATUS_' + (org.kycStatus || 'APPROVED') | translate }}
+          </span>
+        </div>
+        <div class="org-card-body">
+          <p><strong>{{ 'CUSTOMER.BUSINESS_REG.TAX_CODE' | translate }}:</strong> {{ org.taxCode || org.taxNumber }}</p>
+          <p><strong>{{ 'CUSTOMER.BUSINESS_REG.ROLE' | translate }}:</strong> {{ org.userRole || 'OWNER' }}</p>
+          <p *ngIf="org.kycStatus === 'REJECTED' && org.kycRejectReason" class="text-danger">
+            <strong>{{ 'CUSTOMER.BUSINESS_REG.REJECT_REASON' | translate }}:</strong> {{ org.kycRejectReason }}
+          </p>
+        </div>
+        <div class="org-card-footer">
+          <button
+            *ngIf="org.kycStatus !== 'REJECTED'"
+            class="btn btn-primary btn-sm"
+            (click)="goToB2bPortal(org.id)"
+          >
+            {{ 'CUSTOMER.BUSINESS_REG.BTN_GO_PORTAL' | translate }} →
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success Submission Banner -->
+  <div *ngIf="successRegisteredOrg" class="success-banner">
+    <div class="success-icon">✓</div>
+    <div class="success-details">
+      <h3>{{ 'CUSTOMER.BUSINESS_REG.SUCCESS_TITLE' | translate }}</h3>
+      <p>{{ 'CUSTOMER.BUSINESS_REG.SUCCESS_DESC' | translate : { name: successRegisteredOrg.name } }}</p>
+      <button class="btn btn-outline btn-sm" (click)="goToB2bPortal(successRegisteredOrg.id)">
+        {{ 'CUSTOMER.BUSINESS_REG.BTN_EXPLORE_PORTAL' | translate }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Registration Form Card -->
+  <div *ngIf="!successRegisteredOrg" class="form-card">
+    <h3 class="form-title">{{ 'CUSTOMER.BUSINESS_REG.FORM_TITLE' | translate }}</h3>
+    <p class="form-subtitle">{{ 'CUSTOMER.BUSINESS_REG.FORM_SUBTITLE' | translate }}</p>
+
+    <div *ngIf="error" class="alert alert-danger">
+      {{ error }}
+    </div>
+
+    <form (ngSubmit)="submitRegistration()">
+      <div class="form-grid">
+        <div class="form-group full-width">
+          <label class="form-label">{{ 'CUSTOMER.BUSINESS_REG.FIELD_LEGAL_NAME' | translate }} *</label>
+          <input
+            type="text"
+            class="form-control"
+            [(ngModel)]="form.legalName"
+            name="legalName"
+            required
+            [placeholder]="'CUSTOMER.BUSINESS_REG.LEGAL_NAME_PLACEHOLDER' | translate"
+          />
+
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">{{ 'CUSTOMER.BUSINESS_REG.FIELD_TAX_NUMBER' | translate }} *</label>
+          <input
+            type="text"
+            class="form-control"
+            [(ngModel)]="form.taxNumber"
+            name="taxNumber"
+            required
+            [placeholder]="'CUSTOMER.BUSINESS_REG.TAX_NUMBER_PLACEHOLDER' | translate"
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">{{ 'CUSTOMER.BUSINESS_REG.FIELD_REPRESENTATIVE' | translate }}</label>
+          <input
+            type="text"
+            class="form-control"
+            [(ngModel)]="form.representativeName"
+            name="representativeName"
+            [placeholder]="'CUSTOMER.BUSINESS_REG.REPRESENTATIVE_PLACEHOLDER' | translate"
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">{{ 'CUSTOMER.BUSINESS_REG.FIELD_PHONE' | translate }}</label>
+          <input
+            type="text"
+            class="form-control"
+            [(ngModel)]="form.contactPhone"
+            name="contactPhone"
+            [placeholder]="'CUSTOMER.BUSINESS_REG.PHONE_PLACEHOLDER' | translate"
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">{{ 'CUSTOMER.BUSINESS_REG.FIELD_EMAIL' | translate }}</label>
+          <input
+            type="email"
+            class="form-control"
+            [(ngModel)]="form.contactEmail"
+            name="contactEmail"
+            [placeholder]="'CUSTOMER.BUSINESS_REG.EMAIL_PLACEHOLDER' | translate"
+          />
+        </div>
+
+        <div class="form-group full-width">
+          <label class="form-label">{{ 'CUSTOMER.BUSINESS_REG.FIELD_ADDRESS' | translate }}</label>
+          <input
+            type="text"
+            class="form-control"
+            [(ngModel)]="form.address"
+            name="address"
+            [placeholder]="'CUSTOMER.BUSINESS_REG.ADDRESS_PLACEHOLDER' | translate"
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">{{ 'CUSTOMER.BUSINESS_REG.FIELD_INDUSTRY' | translate }}</label>
+          <input
+            type="text"
+            class="form-control"
+            [(ngModel)]="form.industry"
+            name="industry"
+            [placeholder]="'CUSTOMER.BUSINESS_REG.INDUSTRY_PLACEHOLDER' | translate"
+          />
+        </div>
+
+      </div>
+
+      <div class="form-actions">
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="submitting || !form.legalName.trim() || !form.taxNumber.trim()"
+        >
+          <span *ngIf="submitting" class="spinner-sm"></span>
+          {{ 'CUSTOMER.BUSINESS_REG.BTN_SUBMIT' | translate }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

@@ -47,62 +47,83 @@
           </div>
         </div>
 
-        <div class="apps-grid" *ngIf="!loadingApps && apps.length > 0">
-          <mat-card *ngFor="let app of apps" class="app-card">
-            <mat-card-header>
-              <div class="app-avatar" mat-card-avatar>
-                <mat-icon>business_center</mat-icon>
-              </div>
-              <mat-card-title>{{ app.clientName }}</mat-card-title>
-              <mat-card-subtitle>ID: <code>{{ app.clientId }}</code></mat-card-subtitle>
-            </mat-card-header>
+        <div class="table-container" *ngIf="!loadingApps && apps.length > 0">
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>{{ 'B2B_PORTAL.APPS.COL_APP_INFO' | translate }}</th>
+                <th>{{ 'B2B_PORTAL.APPS.COL_AUTH_METHOD' | translate }}</th>
+                <th>{{ 'B2B_PORTAL.APPS.COL_RATE_LIMIT' | translate }}</th>
+                <th>{{ 'B2B_PORTAL.APPS.COL_SCOPES' | translate }}</th>
+                <th>{{ 'B2B_PORTAL.APPS.COL_STATUS' | translate }}</th>
+                <th class="text-right">{{ 'COMMON.ACTIONS' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let app of apps">
+                <!-- App info: Name, Client ID, Tax code -->
+                <td>
+                  <div class="app-info-cell">
+                    <div class="app-avatar-sm">
+                      <mat-icon>business_center</mat-icon>
+                    </div>
+                    <div class="app-info-texts">
+                      <span class="app-name-link" (click)="openDetailModal(app)">{{ app.clientName }}</span>
+                      <div class="app-sub-meta">
+                        <code class="client-id-badge">ID: {{ app.clientId }}</code>
+                        <span class="tax-code-text" *ngIf="app.organizationTaxCode">MST: {{ app.organizationTaxCode }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </td>
 
-            <mat-card-content class="app-card-body">
-              <div class="info-row">
-                <span class="info-label">{{ 'B2B_PORTAL.APPS.TAX_CODE' | translate }}:</span>
-                <span class="info-value font-medium">{{ app.organizationTaxCode }}</span>
-              </div>
-              <div class="info-row">
-                <span class="info-label">{{ 'B2B_PORTAL.APPS.AUTH_METHOD' | translate }}:</span>
-                <span class="info-value badge-pill">{{ app.tokenEndpointAuthMethod }}</span>
-              </div>
-              <div class="info-row">
-                <span class="info-label">{{ 'B2B_PORTAL.APPS.RATE_LIMIT' | translate }}:</span>
-                <span class="info-value font-mono">{{ app.rateLimitRpm }} RPM</span>
-              </div>
-              <div class="info-row" *ngIf="app.clientCertThumbprintSha256">
-                <span class="info-label">{{ 'B2B_PORTAL.APPS.CERT_THUMBPRINT' | translate }}:</span>
-                <span class="info-value font-mono text-truncate" [matTooltip]="app.clientCertThumbprintSha256">{{ app.clientCertThumbprintSha256 | slice:0:16 }}...</span>
-              </div>
-              <div class="info-row" *ngIf="app.webhookCallbackUrl">
-                <span class="info-label">{{ 'B2B_PORTAL.APPS.WEBHOOK_URL' | translate }}:</span>
-                <span class="info-value text-truncate" [matTooltip]="app.webhookCallbackUrl">{{ app.webhookCallbackUrl }}</span>
-              </div>
+                <!-- Auth Method -->
+                <td>
+                  <span class="auth-badge">
+                    <mat-icon class="auth-icon">verified_user</mat-icon>
+                    {{ getAuthMethodLabel(app.tokenEndpointAuthMethod) }}
+                  </span>
+                </td>
 
-              <div class="scopes-box">
-                <span class="scopes-title">{{ 'B2B_PORTAL.APPS.GRANTED_SCOPES' | translate }}:</span>
-                <div class="scopes-list">
-                  <span *ngFor="let sc of app.allowedScopes.split(' ')" class="scope-tag">{{ sc }}</span>
-                </div>
-              </div>
-            </mat-card-content>
+                <!-- Rate Limit -->
+                <td>
+                  <span class="font-mono font-bold">{{ app.rateLimitRpm }} RPM</span>
+                </td>
 
-            <mat-divider></mat-divider>
+                <!-- Scopes Summary -->
+                <td>
+                  <div class="scopes-summary-cell" [matTooltip]="app.allowedScopes">
+                    <span class="scope-count-badge">
+                      <mat-icon>admin_panel_settings</mat-icon>
+                      {{ 'B2B_PORTAL.APPS.SCOPES_COUNT' | translate:{ count: getScopeList(app.allowedScopes).length } }}
+                    </span>
+                  </div>
+                </td>
 
-            <mat-card-actions class="app-card-actions">
-              <span class="status-indicator" [class.status-active]="app.status === 'ACTIVE'">
-                <span class="dot"></span> {{ app.status }}
-              </span>
-              <div class="btn-group">
-                <button mat-icon-button color="primary" (click)="openEditAppModal(app)" [matTooltip]="'COMMON.EDIT' | translate">
-                  <mat-icon>edit</mat-icon>
-                </button>
-                <button mat-icon-button color="warn" (click)="deleteApp(app)" [matTooltip]="'COMMON.DELETE' | translate">
-                  <mat-icon>delete</mat-icon>
-                </button>
-              </div>
-            </mat-card-actions>
-          </mat-card>
+                <!-- Status -->
+                <td>
+                  <span class="status-indicator" [class.status-active]="app.status === 'ACTIVE'">
+                    <span class="dot"></span> {{ app.status }}
+                  </span>
+                </td>
+
+                <!-- Actions -->
+                <td class="text-right">
+                  <div class="table-actions-group">
+                    <button mat-icon-button color="primary" (click)="openDetailModal(app)" [matTooltip]="'B2B_PORTAL.APPS.BTN_VIEW_DETAIL' | translate">
+                      <mat-icon>visibility</mat-icon>
+                    </button>
+                    <button mat-icon-button (click)="openEditAppModal(app)" [matTooltip]="'COMMON.EDIT' | translate">
+                      <mat-icon>edit</mat-icon>
+                    </button>
+                    <button mat-icon-button color="warn" (click)="deleteApp(app)" [matTooltip]="'COMMON.DELETE' | translate">
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
 
         <div *ngIf="loadingApps" class="loading-state">
@@ -165,17 +186,19 @@
                 <td class="font-mono font-medium">{{ c.accountNumber }}</td>
                 <td>
                   <div class="permissions-chips">
-                    <span *ngFor="let perm of c.permissions.split(',')" class="perm-chip">{{ perm.trim() }}</span>
+                    <span *ngFor="let perm of getConsentPermList(c.permissions)" class="perm-chip">
+                      {{ getConsentPermLabel(perm) }}
+                    </span>
                   </div>
                 </td>
                 <td>
-                  <span class="status-badge" [class.badge-active]="c.status === 'AUTHORISED'" [class.badge-revoked]="c.status !== 'AUTHORISED'">
-                    {{ c.status }}
+                  <span class="status-indicator" [class.status-active]="c.status === 'AUTHORISED'">
+                    <span class="dot"></span> {{ c.status }}
                   </span>
                 </td>
-                <td class="font-mono">{{ c.validUntil | date:'dd/MM/yyyy HH:mm' }}</td>
+                <td class="text-muted">{{ c.validUntil | date:'dd/MM/yyyy HH:mm' }}</td>
                 <td>
-                  <button *ngIf="c.status === 'AUTHORISED'" mat-stroked-button color="warn" size="small" (click)="revokeConsent(c)">
+                  <button mat-button color="warn" *ngIf="c.status === 'AUTHORISED'" (click)="revokeConsent(c)">
                     <mat-icon>block</mat-icon>
                     {{ 'B2B_PORTAL.CONSENTS.BTN_REVOKE' | translate }}
                   </button>
@@ -191,9 +214,13 @@
         </div>
 
         <div *ngIf="!loadingConsents && consents.length === 0" class="empty-state">
-          <mat-icon>gpp_bad</mat-icon>
+          <mat-icon>verified</mat-icon>
           <h3>{{ 'B2B_PORTAL.CONSENTS.NO_CONSENTS' | translate }}</h3>
           <p>{{ 'B2B_PORTAL.CONSENTS.NO_CONSENTS_DESC' | translate }}</p>
+          <button mat-flat-button color="primary" (click)="openGrantConsentModal()">
+            <mat-icon>lock_open</mat-icon>
+            {{ 'B2B_PORTAL.CONSENTS.BTN_GRANT_CONSENT' | translate }}
+          </button>
         </div>
       </div>
     </mat-tab>
@@ -201,83 +228,79 @@
     <!-- TAB 3: Interactive ISO 20022 Sandbox -->
     <mat-tab>
       <ng-template mat-tab-label>
-        <mat-icon class="tab-icon">terminal</mat-icon>
+        <mat-icon class="tab-icon">science</mat-icon>
         {{ 'B2B_PORTAL.TABS.SANDBOX' | translate }}
       </ng-template>
 
       <div class="tab-content">
-        <div class="sandbox-layout">
-          <!-- Request Panel -->
+        <div class="sandbox-grid">
+          <!-- Request Builder Panel -->
           <div class="sandbox-panel">
             <div class="panel-header">
               <h3>{{ 'B2B_PORTAL.SANDBOX.REQUEST_CONFIG' | translate }}</h3>
               <div class="format-toggle">
-                <span class="format-label">{{ 'B2B_PORTAL.SANDBOX.FORMAT' | translate }}:</span>
-                <button mat-button [class.btn-active-format]="sandboxFormat === 'JSON'" (click)="sandboxFormat = 'JSON'">JSON</button>
-                <button mat-button [class.btn-active-format]="sandboxFormat === 'XML'" (click)="sandboxFormat = 'XML'">XML</button>
+                <span>{{ 'B2B_PORTAL.SANDBOX.FORMAT' | translate }}:</span>
+                <span class="badge-format">{{ sandboxFormat }}</span>
               </div>
             </div>
-
             <div class="panel-body">
-              <div class="form-row">
-                <mat-form-field appearance="outline" class="flex-1">
+              <div class="form-grid">
+                <mat-form-field appearance="outline">
                   <mat-label>{{ 'B2B_PORTAL.SANDBOX.TARGET_CLIENT' | translate }}</mat-label>
                   <mat-select [(ngModel)]="sandboxClientId">
                     <mat-option *ngFor="let app of apps" [value]="app.clientId">{{ app.clientName }} ({{ app.clientId }})</mat-option>
                   </mat-select>
                 </mat-form-field>
 
-                <mat-form-field appearance="outline" class="flex-1">
+                <mat-form-field appearance="outline">
                   <mat-label>{{ 'B2B_PORTAL.SANDBOX.MESSAGE_TYPE' | translate }}</mat-label>
                   <mat-select [(ngModel)]="sandboxMessageType" (selectionChange)="loadSandboxTemplate()">
-                    <mat-option value="pain.001">pain.001 (Customer Credit Transfer)</mat-option>
-                    <mat-option value="camt.053">camt.053 (Bank-to-Customer Statement)</mat-option>
+                    <mat-option value="pain.001">pain.001 (Khởi tạo Lệnh Chuyển tiền)</mat-option>
+                    <mat-option value="pain.002">pain.002 (Báo cáo Trạng thái Lệnh)</mat-option>
+                    <mat-option value="camt.053">camt.053 (Sao kê Tài khoản Cuối ngày)</mat-option>
                   </mat-select>
                 </mat-form-field>
               </div>
 
-              <div class="payload-editor-header">
-                <span>{{ 'B2B_PORTAL.SANDBOX.PAYLOAD_BODY' | translate }}</span>
-                <button mat-button color="primary" (click)="loadSandboxTemplate()">
-                  <mat-icon>auto_fix_high</mat-icon>
-                  {{ 'B2B_PORTAL.SANDBOX.LOAD_SAMPLE' | translate }}
-                </button>
+              <div class="payload-editor-wrapper">
+                <div class="editor-header">
+                  <span>{{ 'B2B_PORTAL.SANDBOX.PAYLOAD_BODY' | translate }}</span>
+                  <button mat-button color="primary" (click)="loadSandboxTemplate()">
+                    <mat-icon>restore</mat-icon>
+                    {{ 'B2B_PORTAL.SANDBOX.LOAD_SAMPLE' | translate }}
+                  </button>
+                </div>
+                <textarea matInput [(ngModel)]="sandboxPayload" rows="10" class="code-editor"></textarea>
               </div>
 
-              <textarea [(ngModel)]="sandboxPayload" class="code-editor" rows="14" spellcheck="false"></textarea>
-
-              <div class="panel-footer">
+              <div class="sandbox-actions">
                 <button mat-flat-button color="primary" class="btn-execute" [disabled]="executingSandbox" (click)="runSandbox()">
-                  <mat-icon *ngIf="!executingSandbox">play_arrow</mat-icon>
-                  <mat-spinner *ngIf="executingSandbox" diameter="20"></mat-spinner>
+                  <mat-icon>play_arrow</mat-icon>
                   {{ 'B2B_PORTAL.SANDBOX.BTN_SIMULATE' | translate }}
                 </button>
               </div>
             </div>
           </div>
 
-          <!-- Response Panel -->
+          <!-- Live Response Panel -->
           <div class="sandbox-panel">
             <div class="panel-header">
               <h3>{{ 'B2B_PORTAL.SANDBOX.RESPONSE_RESULT' | translate }}</h3>
-              <div *ngIf="sandboxResponse" class="meta-tags">
-                <span class="status-tag status-success">{{ sandboxResponse.status }}</span>
-                <span class="latency-tag"><mat-icon>timer</mat-icon> {{ sandboxResponse.executionTimeMs }} ms</span>
-                <span class="fapi-tag" *ngIf="sandboxResponse.fapiVerified"><mat-icon>shield</mat-icon> FAPI Validated</span>
+              <div class="response-status" *ngIf="sandboxResponse">
+                <span class="status-pill" [class.success]="sandboxResponse.status === 'PROCESSED'" [class.failed]="sandboxResponse.status !== 'PROCESSED'">
+                  {{ sandboxResponse.status }} ({{ sandboxResponse.executionTimeMs }}ms)
+                </span>
               </div>
             </div>
-
             <div class="panel-body">
               <div *ngIf="!sandboxResponse && !executingSandbox" class="response-placeholder">
                 <mat-icon>send</mat-icon>
                 <p>{{ 'B2B_PORTAL.SANDBOX.RESPONSE_HINT' | translate }}</p>
               </div>
-
               <div *ngIf="executingSandbox" class="loading-state">
                 <mat-spinner diameter="40"></mat-spinner>
                 <p>{{ 'B2B_PORTAL.SANDBOX.EXECUTING' | translate }}</p>
               </div>
-
               <pre *ngIf="sandboxResponse" class="code-viewer">{{ sandboxResponse.responsePayload }}</pre>
             </div>
           </div>
@@ -326,7 +349,6 @@
       </div>
     </mat-tab>
   </mat-tab-group>
-</div>
 
 <!-- Modal Create/Edit App -->
 <div class="custom-modal-backdrop" *ngIf="showAppModal">
@@ -346,12 +368,12 @@
 
         <mat-form-field appearance="outline">
           <mat-label>{{ 'B2B_PORTAL.APPS.CLIENT_NAME' | translate }}</mat-label>
-          <input matInput [(ngModel)]="appForm.clientName" />
+          <input matInput [(ngModel)]="appForm.clientName" placeholder="Ví dụ: MISA SME & AMIS Enterprise ERP" />
         </mat-form-field>
 
         <mat-form-field appearance="outline">
           <mat-label>{{ 'B2B_PORTAL.APPS.TAX_CODE' | translate }}</mat-label>
-          <input matInput [(ngModel)]="appForm.organizationTaxCode" />
+          <input matInput [(ngModel)]="appForm.organizationTaxCode" placeholder="0101243150" />
         </mat-form-field>
 
         <mat-form-field appearance="outline">
@@ -361,13 +383,67 @@
       </div>
 
       <mat-form-field appearance="outline" class="full-width">
-        <mat-label>{{ 'B2B_PORTAL.APPS.ALLOWED_SCOPES' | translate }}</mat-label>
-        <input matInput [(ngModel)]="appForm.allowedScopes" />
+        <mat-label>{{ 'B2B_PORTAL.APPS.AUTH_METHOD' | translate }}</mat-label>
+        <mat-select [(ngModel)]="appForm.tokenEndpointAuthMethod">
+          <mat-option value="private_key_jwt">{{ 'B2B_PORTAL.AUTH_METHODS.private_key_jwt' | translate }}</mat-option>
+          <mat-option value="tls_client_auth">{{ 'B2B_PORTAL.AUTH_METHODS.tls_client_auth' | translate }}</mat-option>
+          <mat-option value="client_secret_post">{{ 'B2B_PORTAL.AUTH_METHODS.client_secret_post' | translate }}</mat-option>
+        </mat-select>
       </mat-form-field>
+
+      <!-- Visual Scope Selector (Compact 2-Column Grid) -->
+      <div class="scope-selector-section">
+        <div class="scope-section-header">
+          <mat-icon color="primary">admin_panel_settings</mat-icon>
+          <span class="section-label-bold">{{ 'B2B_PORTAL.APPS.ALLOWED_SCOPES' | translate }}</span>
+        </div>
+
+        <div class="scope-groups-2col-layout">
+          <!-- Nhóm AIS: Dữ liệu Tài khoản -->
+          <div class="scope-group-block">
+            <div class="scope-group-header">
+              <mat-icon class="group-icon ais">account_balance</mat-icon>
+              <span>{{ 'B2B_PORTAL.SCOPES.GROUP_AIS' | translate }}</span>
+            </div>
+            <div class="scope-compact-list">
+              <ng-container *ngFor="let s of availableScopes">
+                <div class="scope-compact-card" *ngIf="s.category === 'AIS'" [class.checked]="selectedScopesMap[s.key]" (click)="selectedScopesMap[s.key] = !selectedScopesMap[s.key]">
+                  <mat-checkbox [(ngModel)]="selectedScopesMap[s.key]" (click)="$event.stopPropagation()"></mat-checkbox>
+                  <mat-icon class="scope-compact-icon">{{ s.icon }}</mat-icon>
+                  <div class="scope-compact-info">
+                    <span class="scope-title-text">{{ s.nameKey | translate }}</span>
+                    <span class="scope-desc-text">{{ s.descKey | translate }}</span>
+                  </div>
+                </div>
+              </ng-container>
+            </div>
+          </div>
+
+          <!-- Nhóm PIS: Thanh toán & Chi trả -->
+          <div class="scope-group-block">
+            <div class="scope-group-header">
+              <mat-icon class="group-icon pis">payments</mat-icon>
+              <span>{{ 'B2B_PORTAL.SCOPES.GROUP_PIS' | translate }}</span>
+            </div>
+            <div class="scope-compact-list">
+              <ng-container *ngFor="let s of availableScopes">
+                <div class="scope-compact-card" *ngIf="s.category === 'PIS'" [class.checked]="selectedScopesMap[s.key]" (click)="selectedScopesMap[s.key] = !selectedScopesMap[s.key]">
+                  <mat-checkbox [(ngModel)]="selectedScopesMap[s.key]" (click)="$event.stopPropagation()"></mat-checkbox>
+                  <mat-icon class="scope-compact-icon">{{ s.icon }}</mat-icon>
+                  <div class="scope-compact-info">
+                    <span class="scope-title-text">{{ s.nameKey | translate }}</span>
+                    <span class="scope-desc-text">{{ s.descKey | translate }}</span>
+                  </div>
+                </div>
+              </ng-container>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <mat-form-field appearance="outline" class="full-width">
         <mat-label>{{ 'B2B_PORTAL.APPS.PUBLIC_KEY_PEM' | translate }}</mat-label>
-        <textarea matInput [(ngModel)]="appForm.publicKeyPem" rows="5" class="font-mono text-small" placeholder="-----BEGIN PUBLIC KEY----- ... -----END PUBLIC KEY-----"></textarea>
+        <textarea matInput [(ngModel)]="appForm.publicKeyPem" rows="4" class="font-mono text-small" placeholder="-----BEGIN PUBLIC KEY----- ... -----END PUBLIC KEY-----"></textarea>
       </mat-form-field>
 
       <div class="form-grid">
@@ -394,7 +470,7 @@
 
 <!-- Modal Grant Consent -->
 <div class="custom-modal-backdrop" *ngIf="showConsentModal">
-  <div class="custom-modal-card">
+  <div class="custom-modal-card modal-large">
     <div class="modal-header">
       <h3>{{ 'B2B_PORTAL.CONSENTS.MODAL_TITLE' | translate }}</h3>
       <button mat-icon-button (click)="closeConsentModal()">
@@ -402,22 +478,37 @@
       </button>
     </div>
     <div class="modal-body">
-      <mat-form-field appearance="outline" class="full-width">
-        <mat-label>{{ 'B2B_PORTAL.CONSENTS.SELECT_APP' | translate }}</mat-label>
-        <mat-select [(ngModel)]="consentForm.clientId">
-          <mat-option *ngFor="let app of apps" [value]="app.clientId">{{ app.clientName }} ({{ app.clientId }})</mat-option>
-        </mat-select>
-      </mat-form-field>
+      <div class="form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'B2B_PORTAL.CONSENTS.SELECT_APP' | translate }}</mat-label>
+          <mat-select [(ngModel)]="consentForm.clientId">
+            <mat-option *ngFor="let app of apps" [value]="app.clientId">{{ app.clientName }} ({{ app.clientId }})</mat-option>
+          </mat-select>
+        </mat-form-field>
 
-      <mat-form-field appearance="outline" class="full-width">
-        <mat-label>{{ 'B2B_PORTAL.CONSENTS.ACCOUNT_NUMBER' | translate }}</mat-label>
-        <input matInput [(ngModel)]="consentForm.accountNumber" placeholder="10987654321" />
-      </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'B2B_PORTAL.CONSENTS.ACCOUNT_NUMBER' | translate }}</mat-label>
+          <input matInput [(ngModel)]="consentForm.accountNumber" placeholder="10987654321" />
+        </mat-form-field>
+      </div>
 
-      <mat-form-field appearance="outline" class="full-width">
-        <mat-label>{{ 'B2B_PORTAL.CONSENTS.PERMISSIONS' | translate }}</mat-label>
-        <input matInput [(ngModel)]="consentForm.permissions" />
-      </mat-form-field>
+      <!-- Visual Consent Permissions Selector -->
+      <div class="scope-selector-section">
+        <div class="scope-section-header">
+          <mat-icon color="accent">lock_person</mat-icon>
+          <span class="section-label-bold">{{ 'B2B_PORTAL.CONSENTS.COL_PERMISSIONS' | translate }}</span>
+        </div>
+        <div class="consent-compact-grid">
+          <div class="scope-compact-card" *ngFor="let p of availableConsentPerms" [class.checked]="selectedConsentPermsMap[p.key]" (click)="selectedConsentPermsMap[p.key] = !selectedConsentPermsMap[p.key]">
+            <mat-checkbox [(ngModel)]="selectedConsentPermsMap[p.key]" (click)="$event.stopPropagation()"></mat-checkbox>
+            <mat-icon class="scope-compact-icon">{{ p.icon }}</mat-icon>
+            <div class="scope-compact-info">
+              <span class="scope-title-text">{{ p.nameKey | translate }}</span>
+              <span class="scope-desc-text">{{ p.descKey | translate }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="modal-footer">
       <button mat-button (click)="closeConsentModal()">{{ 'COMMON.CANCEL' | translate }}</button>
@@ -427,4 +518,118 @@
       </button>
     </div>
   </div>
+</div>
+
+<!-- Modal App Detail View -->
+<div class="custom-modal-backdrop" *ngIf="showDetailModal && selectedAppForDetail">
+  <div class="custom-modal-card modal-large modal-detail-view">
+    <div class="modal-header">
+      <div class="detail-header-titles">
+        <div class="app-avatar-sm">
+          <mat-icon>business_center</mat-icon>
+        </div>
+        <div>
+          <h3>{{ selectedAppForDetail.clientName }}</h3>
+          <div class="detail-subtitle">
+            <code class="client-id-badge">ID: {{ selectedAppForDetail.clientId }}</code>
+            <span class="status-indicator" [class.status-active]="selectedAppForDetail.status === 'ACTIVE'">
+              <span class="dot"></span> {{ selectedAppForDetail.status }}
+            </span>
+          </div>
+        </div>
+      </div>
+      <button mat-icon-button (click)="closeDetailModal()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <!-- Section 1: Basic & Integration Info -->
+      <div class="detail-section">
+        <h4 class="section-title">
+          <mat-icon>info</mat-icon>
+          {{ 'B2B_PORTAL.APPS.SECTION_BASIC_INFO' | translate }}
+        </h4>
+        <div class="detail-grid">
+          <div class="detail-item">
+            <span class="detail-lbl">{{ 'B2B_PORTAL.APPS.TAX_CODE' | translate }}</span>
+            <span class="detail-val font-medium">{{ selectedAppForDetail.organizationTaxCode }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-lbl">{{ 'B2B_PORTAL.APPS.AUTH_METHOD' | translate }}</span>
+            <span class="detail-val">
+              <span class="auth-badge">
+                <mat-icon class="auth-icon">verified_user</mat-icon>
+                {{ getAuthMethodLabel(selectedAppForDetail.tokenEndpointAuthMethod) }}
+              </span>
+            </span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-lbl">{{ 'B2B_PORTAL.APPS.RATE_LIMIT' | translate }}</span>
+            <span class="detail-val font-mono font-bold">{{ selectedAppForDetail.rateLimitRpm }} RPM SLA</span>
+          </div>
+          <div class="detail-item" *ngIf="selectedAppForDetail.webhookCallbackUrl">
+            <span class="detail-lbl">{{ 'B2B_PORTAL.APPS.WEBHOOK_URL' | translate }}</span>
+            <span class="detail-val font-mono text-truncate" [matTooltip]="selectedAppForDetail.webhookCallbackUrl">{{ selectedAppForDetail.webhookCallbackUrl }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 2: Security Credentials & Keys -->
+      <div class="detail-section" *ngIf="selectedAppForDetail.clientCertThumbprintSha256 || selectedAppForDetail.publicKeyPem">
+        <h4 class="section-title">
+          <mat-icon>vpn_key</mat-icon>
+          {{ 'B2B_PORTAL.APPS.SECTION_SECURITY_KEYS' | translate }}
+        </h4>
+        <div class="detail-grid" *ngIf="selectedAppForDetail.clientCertThumbprintSha256">
+          <div class="detail-item full-span">
+            <span class="detail-lbl">{{ 'B2B_PORTAL.APPS.CERT_THUMBPRINT' | translate }}</span>
+            <div class="copyable-code-row">
+              <code class="font-mono text-small">{{ selectedAppForDetail.clientCertThumbprintSha256 }}</code>
+              <button mat-icon-button (click)="copyText(selectedAppForDetail.clientCertThumbprintSha256)" [matTooltip]="'B2B_PORTAL.APPS.BTN_COPY' | translate">
+                <mat-icon>content_copy</mat-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="key-box" *ngIf="selectedAppForDetail.publicKeyPem">
+          <div class="key-box-header">
+            <span>{{ 'B2B_PORTAL.APPS.PUBLIC_KEY_PEM' | translate }}</span>
+            <button mat-button color="primary" (click)="copyText(selectedAppForDetail.publicKeyPem)">
+              <mat-icon>content_copy</mat-icon>
+              {{ 'B2B_PORTAL.APPS.BTN_COPY' | translate }}
+            </button>
+          </div>
+          <pre class="key-pem-code">{{ selectedAppForDetail.publicKeyPem }}</pre>
+        </div>
+      </div>
+
+      <!-- Section 3: Granted Scopes -->
+      <div class="detail-section">
+        <h4 class="section-title">
+          <mat-icon>admin_panel_settings</mat-icon>
+          {{ 'B2B_PORTAL.APPS.SECTION_SCOPES' | translate }} ({{ getScopeList(selectedAppForDetail.allowedScopes).length }})
+        </h4>
+        <div class="scopes-detail-grid">
+          <div *ngFor="let sc of getScopeList(selectedAppForDetail.allowedScopes)" class="scope-detail-card" [attr.data-cat]="getScopeCategory(sc)">
+            <div class="scope-card-header">
+              <mat-icon class="scope-item-icon">{{ getScopeIcon(sc) }}</mat-icon>
+              <span class="scope-item-title">{{ getScopeLabel(sc) }}</span>
+            </div>
+            <p class="scope-item-desc" *ngIf="getScopeMeta(sc) as meta">{{ meta.descKey | translate }}</p>
+            <code class="scope-item-code">{{ sc }}</code>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button mat-button (click)="closeDetailModal()">{{ 'COMMON.CLOSE' | translate }}</button>
+      <button mat-flat-button color="primary" (click)="closeDetailModal(); openEditAppModal(selectedAppForDetail)">
+        <mat-icon>edit</mat-icon>
+        {{ 'COMMON.EDIT' | translate }}
+      </button>
+    </div>
+  </div>
+</div>
 </div>

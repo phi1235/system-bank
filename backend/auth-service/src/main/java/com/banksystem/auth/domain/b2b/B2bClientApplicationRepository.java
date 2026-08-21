@@ -1,5 +1,6 @@
 package com.banksystem.auth.domain.b2b;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
@@ -17,12 +18,25 @@ public interface B2bClientApplicationRepository extends JpaRepository<B2bClientA
   boolean existsByClientId(String clientId);
 
   @Query("SELECT c FROM B2bClientApplicationEntity c WHERE " +
-         "(:status IS NULL OR c.status = :status) AND " +
-         "(:q IS NULL OR LOWER(c.clientId) LIKE LOWER(CONCAT('%', :q, '%')) " +
+         "(:hasStatus = false OR c.status = :status) AND " +
+         "(:hasQ = false OR LOWER(c.clientId) LIKE LOWER(CONCAT('%', :q, '%')) " +
+         "OR LOWER(c.clientName) LIKE LOWER(CONCAT('%', :q, '%')) " +
+         "OR LOWER(c.organizationTaxCode) LIKE LOWER(CONCAT('%', :q, '%')))")
+  List<B2bClientApplicationEntity> searchClientsList(
+      @Param("hasStatus") boolean hasStatus,
+      @Param("status") String status,
+      @Param("hasQ") boolean hasQ,
+      @Param("q") String q);
+
+  @Query("SELECT c FROM B2bClientApplicationEntity c WHERE " +
+         "(:hasStatus = false OR c.status = :status) AND " +
+         "(:hasQ = false OR LOWER(c.clientId) LIKE LOWER(CONCAT('%', :q, '%')) " +
          "OR LOWER(c.clientName) LIKE LOWER(CONCAT('%', :q, '%')) " +
          "OR LOWER(c.organizationTaxCode) LIKE LOWER(CONCAT('%', :q, '%')))")
   Page<B2bClientApplicationEntity> searchClients(
+      @Param("hasStatus") boolean hasStatus,
       @Param("status") String status,
+      @Param("hasQ") boolean hasQ,
       @Param("q") String q,
       Pageable pageable);
 }

@@ -4,6 +4,8 @@ server:
 spring:
   application:
     name: api-gateway
+  profiles:
+    default: local
   data:
     redis:
       host: ${REDIS_HOST}
@@ -61,7 +63,7 @@ spring:
         - id: auth-service-businesses
           uri: lb://AUTH-SERVICE
           predicates:
-            - Path=/api/v1/businesses,/api/v1/businesses/*,/api/v1/businesses/*/members,/api/v1/businesses/*/members/**,/api/v1/businesses/*/my-membership
+            - Path=/api/v1/businesses,/api/v1/businesses/register,/api/v1/businesses/permissions,/api/v1/businesses/permissions/**,/api/v1/businesses/*,/api/v1/businesses/*/members,/api/v1/businesses/*/members/**,/api/v1/businesses/*/roles,/api/v1/businesses/*/roles/**,/api/v1/businesses/*/my-membership
         - id: transaction-service-businesses
           uri: lb://TRANSACTION-SERVICE
           predicates:
@@ -100,10 +102,15 @@ spring:
           uri: lb://AUTH-SERVICE
           predicates:
             - Path=/api/v1/admin/rbac/**
+        - id: admin-routes-businesses
+          uri: lb://AUTH-SERVICE
+          predicates:
+            - Path=/api/v1/admin/businesses,/api/v1/admin/businesses/**
         - id: admin-routes-password-reset
           uri: lb://AUTH-SERVICE
           predicates:
             - Path=/api/v1/admin/password-reset/**,/api/v1/admin/users/**
+
         - id: admin-routes-dashboard
           uri: lb://CUSTOMER-SERVICE
           predicates:

@@ -13,9 +13,11 @@ import com.banksystem.account.domain.ledger.LedgerJournalEntity;
 import com.banksystem.account.domain.ledger.LedgerJournalRepository;
 import com.banksystem.common.exception.BusinessException;
 import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
+
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -170,7 +172,8 @@ public class AccountHoldService {
         ORDER BY expires_at
         FOR UPDATE SKIP LOCKED
         LIMIT ?
-        """, UUID.class, now, expiryBatchSize);
+        """, UUID.class, Timestamp.from(now), expiryBatchSize);
+
     int expired = 0;
     for (UUID id : ids) {
       AccountHoldEntity hold = require(id);

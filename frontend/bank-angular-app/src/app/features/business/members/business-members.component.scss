@@ -35,6 +35,40 @@
     width: 100%;
   }
 
+  .member-user-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+
+    .member-avatar {
+      font-size: 28px;
+      width: 28px;
+      height: 28px;
+      color: #3b82f6;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .member-user-info {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.25;
+
+      .member-name {
+        font-weight: 700;
+        color: #0f172a;
+        font-size: 0.9rem;
+      }
+
+      .member-email {
+        font-size: 0.76rem;
+        color: #64748b;
+      }
+    }
+  }
+
   .text-muted {
     color: #64748b;
     font-size: 0.75rem;

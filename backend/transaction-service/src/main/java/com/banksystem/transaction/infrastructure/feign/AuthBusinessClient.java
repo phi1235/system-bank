@@ -12,16 +12,18 @@ import org.springframework.web.bind.annotation.RequestParam;
 @FeignClient(
     name = "AUTH-SERVICE",
     contextId = "authBusinessClient",
-    url = "${bank.feign.auth-url}",
-    configuration = AuthBusinessClientConfig.class
+    url = "${bank.feign.auth-url}"
 )
+
+
 public interface AuthBusinessClient {
 
   @GetMapping("/internal/businesses/{businessId}/members/{userId}/verify")
   ApiResponse<BusinessMembershipView> verifyMembership(
       @PathVariable("businessId") UUID businessId,
       @PathVariable("userId") UUID userId,
-      @RequestParam(value = "permission", required = false) String permission);
+      @RequestParam(value = "permission", required = false) String permission,
+      @RequestHeader("X-Internal-Api-Key") String apiKey);
 
   record BusinessMembershipView(
       boolean valid,

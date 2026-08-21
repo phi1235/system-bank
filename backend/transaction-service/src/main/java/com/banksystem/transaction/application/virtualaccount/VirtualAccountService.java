@@ -70,13 +70,14 @@ public class VirtualAccountService {
         request.parentAccountId(),
         request.mode(),
         request.customerReference(),
+        request.displayName(),
         request.expiresAt(),
         now
     );
     virtualAccountRepository.save(entity);
 
-    log.info("[VA-SERVICE] Created VA id={}, num={}, provider={}, org={}",
-        entity.getId(), entity.getAccountNumber(), entity.getProvider(), organizationId);
+    log.info("[VA-SERVICE] Created VA id={}, num={}, provider={}, org={}, displayName={}",
+        entity.getId(), entity.getAccountNumber(), entity.getProvider(), organizationId, entity.getDisplayName());
 
     return toResponse(entity);
   }
@@ -111,19 +112,57 @@ public class VirtualAccountService {
   }
 
   @Transactional(readOnly = true)
+  public List<VirtualAccountResponse> searchList(UUID organizationId, String q, VirtualAccountStatus status) {
+    String trimmedQ = (q != null && !q.isBlank()) ? q.trim() : "";
+    boolean hasOrgId = organizationId != null;
+    boolean hasQ = (q != null && !q.isBlank());
+    boolean hasStatus = status != null;
+    return virtualAccountRepository.searchList(
+        hasOrgId, organizationId != null ? organizationId : UUID.randomUUID(),
+        hasQ, trimmedQ,
+        hasStatus, status != null ? status : VirtualAccountStatus.ACTIVE
+    ).stream()
+        .map(this::toResponse)
+        .toList();
+  }
+
+  @Transactional(readOnly = true)
   public Page<VirtualAccountResponse> search(VirtualAccountSearchQuery query) {
     PageRequest pageable = PageRequest.of(query.page(), query.size());
-    return virtualAccountRepository.search(query.organizationId(), query.q(), query.status(), pageable)
-        .map(this::toResponse);
+    String trimmedQ = (query.q() != null && !query.q().isBlank()) ? query.q().trim() : "";
+    boolean hasOrgId = query.organizationId() != null;
+    boolean hasQ = (query.q() != null && !query.q().isBlank());
+    boolean hasStatus = query.status() != null;
+    return virtualAccountRepository.search(
+        hasOrgId, query.organizationId() != null ? query.organizationId() : UUID.randomUUID(),
+        hasQ, trimmedQ,
+        hasStatus, query.status() != null ? query.status() : VirtualAccountStatus.ACTIVE,
+        pageable
+    ).map(this::toResponse);
   }
 
   @Transactional(readOnly = true)
   public Page<VirtualAccountResponse> search(UUID organizationId, String q, VirtualAccountStatus status, Pageable pageable) {
-    return virtualAccountRepository.search(organizationId, q, status, pageable).map(this::toResponse);
+    String trimmedQ = (q != null && !q.isBlank()) ? q.trim() : "";
+    boolean hasOrgId = organizationId != null;
+    boolean hasQ = (q != null && !q.isBlank());
+    boolean hasStatus = status != null;
+    return virtualAccountRepository.search(
+        hasOrgId, organizationId != null ? organizationId : UUID.randomUUID(),
+        hasQ, trimmedQ,
+        hasStatus, status != null ? status : VirtualAccountStatus.ACTIVE,
+        pageable
+    ).map(this::toResponse);
   }
 
   public VirtualAccountResponse toResponse(VirtualAccountEntity va) {
-    String qrUrl = String.format("https://img.vietqr.io/image/%s-%s-compact2.png", va.getBankBin(), va.getAccountNumber());
+    String qrUrl;
+    if (va.getDisplayName() != null && !va.getDisplayName().isBlank()) {
+      String encodedName = java.net.URLEncoder.encode(va.getDisplayName(), java.nio.charset.StandardCharsets.UTF_8);
+      qrUrl = String.format("https://img.vietqr.io/image/%s-%s-compact2.png?accountName=%s", va.getBankBin(), va.getAccountNumber(), encodedName);
+    } else {
+      qrUrl = String.format("https://img.vietqr.io/image/%s-%s-compact2.png", va.getBankBin(), va.getAccountNumber());
+    }
     return new VirtualAccountResponse(
         va.getId(),
         va.getOrganizationId(),
@@ -133,6 +172,7 @@ public class VirtualAccountService {
         va.getParentAccountId(),
         va.getMode(),
         va.getCustomerReference(),
+        va.getDisplayName(),
         va.getStatus(),
         qrUrl,
         va.getActivatedAt(),
@@ -141,3 +181,4 @@ public class VirtualAccountService {
     );
   }
 }
+

@@ -3,6 +3,8 @@
 INSERT INTO accounts (
   id,
   user_id,
+  owner_type,
+  owner_id,
   account_number,
   account_type,
   currency,
@@ -12,6 +14,8 @@ INSERT INTO accounts (
   updated_at
 ) VALUES (
   'b0000000-0000-0000-0000-000000000001',
+  '${system-user-id}',
+  'INDIVIDUAL',
   '${system-user-id}',
   '999900000001',
   'INTERNAL',
@@ -25,6 +29,8 @@ INSERT INTO accounts (
 INSERT INTO accounts (
   id,
   user_id,
+  owner_type,
+  owner_id,
   account_number,
   account_type,
   currency,
@@ -34,6 +40,8 @@ INSERT INTO accounts (
   updated_at
 ) VALUES (
   'b0000000-0000-0000-0000-000000000002',
+  '${system-user-id}',
+  'INDIVIDUAL',
   '${system-user-id}',
   '999900000002',
   'INTERNAL',

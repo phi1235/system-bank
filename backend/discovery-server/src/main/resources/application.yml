@@ -4,6 +4,8 @@ server:
 spring:
   application:
     name: discovery-server
+  profiles:
+    default: local
 
 eureka:
   instance:

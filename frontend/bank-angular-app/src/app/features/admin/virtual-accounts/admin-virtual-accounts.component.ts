@@ -82,23 +82,15 @@ export class AdminVirtualAccountsComponent implements OnInit {
       .adminSearchInboundEvents({
         q: this.eventsSearch.trim() || undefined,
         status: this.eventsStatus || undefined,
-        page: this.eventsPage,
-        size: this.eventsSize,
       })
       .subscribe({
         next: (res) => {
-          this.events = res.items || [];
-          this.eventsTotal = res.totalElements || 0;
+          this.events = res || [];
+          this.eventsTotal = this.events.length;
           this.eventsLoading = false;
         },
         error: () => (this.eventsLoading = false),
       });
-  }
-
-  onEventsPage(e: PageEvent): void {
-    this.eventsPage = e.pageIndex;
-    this.eventsSize = e.pageSize;
-    this.loadEvents();
   }
 
   loadVas(): void {
@@ -107,23 +99,15 @@ export class AdminVirtualAccountsComponent implements OnInit {
       .adminSearchVirtualAccounts({
         q: this.vasSearch.trim() || undefined,
         status: this.vasStatus || undefined,
-        page: this.vasPage,
-        size: this.vasSize,
       })
       .subscribe({
         next: (res) => {
-          this.vas = res.items || [];
-          this.vasTotal = res.totalElements || 0;
+          this.vas = res || [];
+          this.vasTotal = this.vas.length;
           this.vasLoading = false;
         },
         error: () => (this.vasLoading = false),
       });
-  }
-
-  onVasPage(e: PageEvent): void {
-    this.vasPage = e.pageIndex;
-    this.vasSize = e.pageSize;
-    this.loadVas();
   }
 
   loadOrders(): void {
@@ -132,23 +116,15 @@ export class AdminVirtualAccountsComponent implements OnInit {
       .adminSearchCollectionOrders({
         q: this.ordersSearch.trim() || undefined,
         status: this.ordersStatus || undefined,
-        page: this.ordersPage,
-        size: this.ordersSize,
       })
       .subscribe({
         next: (res) => {
-          this.orders = res.items || [];
-          this.ordersTotal = res.totalElements || 0;
+          this.orders = res || [];
+          this.ordersTotal = this.orders.length;
           this.ordersLoading = false;
         },
         error: () => (this.ordersLoading = false),
       });
-  }
-
-  onOrdersPage(e: PageEvent): void {
-    this.ordersPage = e.pageIndex;
-    this.ordersSize = e.pageSize;
-    this.loadOrders();
   }
 
   adminCompleteOrder(order: CollectionOrder): void {

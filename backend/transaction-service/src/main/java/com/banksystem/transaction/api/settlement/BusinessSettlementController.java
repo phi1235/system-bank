@@ -1,26 +1,24 @@
 package com.banksystem.transaction.api.settlement;
 
 import com.banksystem.common.api.ApiResponse;
-import com.banksystem.common.api.PageResponse;
 import com.banksystem.common.security.GatewayUser;
 import com.banksystem.common.security.UserContext;
-import com.banksystem.transaction.api.dto.SettlementDtos.SettlementFilterRequest;
 import com.banksystem.transaction.api.dto.SettlementDtos.SettlementPreviewRequest;
 import com.banksystem.transaction.api.dto.SettlementDtos.SettlementPreviewResponse;
 import com.banksystem.transaction.api.dto.SettlementDtos.SettlementResponse;
 import com.banksystem.transaction.application.settlement.SettlementOrchestrator;
-import com.banksystem.transaction.application.settlement.SettlementSearchQuery;
 import com.banksystem.transaction.application.settlement.SplitRuleService;
+import com.banksystem.transaction.domain.settlement.SettlementStatus;
 import com.banksystem.transaction.infrastructure.security.RequireBusinessPermission;
 import jakarta.validation.Valid;
+import java.util.List;
 import java.util.UUID;
-import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -39,12 +37,10 @@ public class BusinessSettlementController {
 
   @GetMapping
   @RequireBusinessPermission(value = "business:settlements:view", businessIdParam = "businessId")
-  public ApiResponse<PageResponse<SettlementResponse>> search(
+  public ApiResponse<List<SettlementResponse>> search(
       @PathVariable UUID businessId,
-      @Valid @ModelAttribute SettlementFilterRequest req) {
-    SettlementSearchQuery query = SettlementSearchQuery.of(businessId, req);
-    Page<SettlementResponse> result = settlementOrchestrator.search(query);
-    return ApiResponse.ok(PageResponse.from(result));
+      @RequestParam(required = false) SettlementStatus status) {
+    return ApiResponse.ok(settlementOrchestrator.searchList(businessId, status));
   }
 
   @GetMapping("/{id}")

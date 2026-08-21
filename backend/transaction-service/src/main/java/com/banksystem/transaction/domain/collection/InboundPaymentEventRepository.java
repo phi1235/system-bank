@@ -21,18 +21,44 @@ public interface InboundPaymentEventRepository extends JpaRepository<InboundPaym
 
   @Query("""
       SELECT e FROM InboundPaymentEventEntity e
-      WHERE (:provider IS NULL OR e.provider = :provider)
-        AND (:q IS NULL OR LOWER(e.virtualAccountNumber) LIKE LOWER(CONCAT('%', :q, '%'))
-             OR LOWER(e.providerTransactionId) LIKE LOWER(CONCAT('%', :q, '%'))
-             OR LOWER(e.referenceContent) LIKE LOWER(CONCAT('%', :q, '%')))
-        AND (:status IS NULL OR e.status = :status)
+      WHERE (:hasProvider = false OR e.provider = :provider)
+        AND (:hasQ = false OR (
+            LOWER(e.virtualAccountNumber) LIKE LOWER(CONCAT('%', :q, '%'))
+            OR (e.providerTransactionId IS NOT NULL AND LOWER(e.providerTransactionId) LIKE LOWER(CONCAT('%', :q, '%')))
+            OR (e.referenceContent IS NOT NULL AND LOWER(e.referenceContent) LIKE LOWER(CONCAT('%', :q, '%')))
+        ))
+        AND (:hasStatus = false OR e.status = :status)
+      ORDER BY e.createdAt DESC
+      """)
+  List<InboundPaymentEventEntity> searchList(
+      @Param("hasProvider") boolean hasProvider,
+      @Param("provider") String provider,
+      @Param("hasQ") boolean hasQ,
+      @Param("q") String q,
+      @Param("hasStatus") boolean hasStatus,
+      @Param("status") InboundPaymentStatus status);
+
+  @Query("""
+      SELECT e FROM InboundPaymentEventEntity e
+      WHERE (:hasProvider = false OR e.provider = :provider)
+        AND (:hasQ = false OR (
+            LOWER(e.virtualAccountNumber) LIKE LOWER(CONCAT('%', :q, '%'))
+            OR (e.providerTransactionId IS NOT NULL AND LOWER(e.providerTransactionId) LIKE LOWER(CONCAT('%', :q, '%')))
+            OR (e.referenceContent IS NOT NULL AND LOWER(e.referenceContent) LIKE LOWER(CONCAT('%', :q, '%')))
+        ))
+        AND (:hasStatus = false OR e.status = :status)
       ORDER BY e.createdAt DESC
       """)
   Page<InboundPaymentEventEntity> search(
+      @Param("hasProvider") boolean hasProvider,
       @Param("provider") String provider,
+      @Param("hasQ") boolean hasQ,
       @Param("q") String q,
+      @Param("hasStatus") boolean hasStatus,
       @Param("status") InboundPaymentStatus status,
       Pageable pageable);
+
+  long countByStatus(InboundPaymentStatus status);
 
   List<InboundPaymentEventEntity> findByStatusAndCreatedAtBefore(InboundPaymentStatus status, Instant cutoff);
 

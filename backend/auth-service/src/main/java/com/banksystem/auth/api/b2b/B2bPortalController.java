@@ -22,17 +22,16 @@ import com.banksystem.common.security.UserContext;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -58,13 +57,14 @@ public class B2bPortalController {
   /* ── B2B Client Applications ── */
 
   @GetMapping("/clients")
-  public ApiResponse<Page<B2bClientResponse>> listClients(@Valid @ModelAttribute B2bClientFilterRequest req) {
+  public ApiResponse<List<B2bClientResponse>> listClients(
+      @RequestParam(required = false) String status,
+      @RequestParam(required = false) String q) {
     UserContext.requireAnyPermission(
         SecurityHeaders.PERM_B2B_OPENBANKING_APPS_VIEW,
         SecurityHeaders.PERM_BUSINESS_DASHBOARD_VIEW,
         "ADMIN", "BUSINESS_OWNER", "BUSINESS_FINANCE", "BUSINESS_OPERATOR");
-    B2bClientSearchQuery query = B2bClientSearchQuery.of(req);
-    return ApiResponse.ok(clientService.listClients(query));
+    return ApiResponse.ok(clientService.listClients(status, q));
   }
 
   @GetMapping("/clients/{clientId}")
@@ -107,13 +107,16 @@ public class B2bPortalController {
   /* ── B2B Account Consents ── */
 
   @GetMapping("/consents")
-  public ApiResponse<Page<B2bConsentResponse>> listConsents(@Valid @ModelAttribute B2bConsentFilterRequest req) {
+  public ApiResponse<List<B2bConsentResponse>> listConsents(
+      @RequestParam(required = false) String clientId,
+      @RequestParam(required = false) UUID customerId,
+      @RequestParam(required = false) String status,
+      @RequestParam(required = false) String accountNumber) {
     UserContext.requireAnyPermission(
         SecurityHeaders.PERM_B2B_OPENBANKING_CONSENTS_VIEW,
         SecurityHeaders.PERM_BUSINESS_DASHBOARD_VIEW,
         "ADMIN", "BUSINESS_OWNER", "BUSINESS_FINANCE", "BUSINESS_OPERATOR");
-    B2bConsentSearchQuery query = B2bConsentSearchQuery.of(req);
-    return ApiResponse.ok(consentService.listConsents(query));
+    return ApiResponse.ok(consentService.listConsents(clientId, customerId, status, accountNumber));
   }
 
   @PostMapping("/consents")

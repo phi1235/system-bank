@@ -4,7 +4,11 @@ import com.banksystem.auth.api.dto.BusinessDtos.AddBusinessMemberRequest;
 import com.banksystem.auth.api.dto.BusinessDtos.BusinessMemberResponse;
 import com.banksystem.auth.api.dto.BusinessDtos.BusinessMembershipVerifyResponse;
 import com.banksystem.auth.api.dto.BusinessDtos.BusinessOrganizationResponse;
+import com.banksystem.auth.api.dto.BusinessDtos.BusinessPermissionMatrixResponse;
 import com.banksystem.auth.api.dto.BusinessDtos.CreateBusinessOrganizationRequest;
+import com.banksystem.auth.api.dto.BusinessDtos.CustomRoleRequest;
+import com.banksystem.auth.api.dto.BusinessDtos.CustomRoleResponse;
+import com.banksystem.auth.api.dto.BusinessDtos.RegisterBusinessRequest;
 import com.banksystem.auth.api.dto.BusinessDtos.UpdateBusinessMemberRequest;
 import com.banksystem.auth.application.business.BusinessOrganizationService;
 import com.banksystem.common.api.ApiResponse;
@@ -19,6 +23,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -34,6 +39,14 @@ public class BusinessController {
     this.organizationService = organizationService;
   }
 
+  @PostMapping("/register")
+  @ResponseStatus(HttpStatus.CREATED)
+  public ApiResponse<BusinessOrganizationResponse> registerBusiness(
+      @Valid @RequestBody RegisterBusinessRequest request) {
+    GatewayUser user = UserContext.requireUser();
+    return ApiResponse.ok(organizationService.registerBusiness(user.userId(), request));
+  }
+
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
   public ApiResponse<BusinessOrganizationResponse> createOrganization(
@@ -46,6 +59,16 @@ public class BusinessController {
   public ApiResponse<List<BusinessOrganizationResponse>> listMyOrganizations() {
     GatewayUser user = UserContext.requireUser();
     return ApiResponse.ok(organizationService.listUserOrganizations(user.userId()));
+  }
+
+  @GetMapping("/permissions")
+  public ApiResponse<List<String>> listAvailablePermissions() {
+    return ApiResponse.ok(organizationService.listAvailablePermissions());
+  }
+
+  @GetMapping("/permissions/matrix")
+  public ApiResponse<BusinessPermissionMatrixResponse> listPermissionMatrix() {
+    return ApiResponse.ok(organizationService.getPermissionMatrix());
   }
 
   @GetMapping("/{businessId}")
@@ -92,4 +115,41 @@ public class BusinessController {
     GatewayUser user = UserContext.requireUser();
     return ApiResponse.ok(organizationService.getMyMembership(businessId, user.userId()));
   }
+
+  // --- Dynamic Custom Roles Endpoints ---
+
+  @GetMapping("/{businessId}/roles")
+  public ApiResponse<List<CustomRoleResponse>> listCustomRoles(@PathVariable UUID businessId) {
+    GatewayUser user = UserContext.requireUser();
+    return ApiResponse.ok(organizationService.listCustomRoles(businessId, user.userId()));
+  }
+
+  @PostMapping("/{businessId}/roles")
+  @ResponseStatus(HttpStatus.CREATED)
+  public ApiResponse<CustomRoleResponse> createCustomRole(
+      @PathVariable UUID businessId,
+      @Valid @RequestBody CustomRoleRequest request) {
+    GatewayUser user = UserContext.requireUser();
+    return ApiResponse.ok(organizationService.createCustomRole(businessId, user.userId(), request));
+  }
+
+  @PutMapping("/{businessId}/roles/{roleId}")
+  public ApiResponse<CustomRoleResponse> updateCustomRole(
+      @PathVariable UUID businessId,
+      @PathVariable UUID roleId,
+      @Valid @RequestBody CustomRoleRequest request) {
+    GatewayUser user = UserContext.requireUser();
+    return ApiResponse.ok(organizationService.updateCustomRole(businessId, roleId, user.userId(), request));
+  }
+
+  @DeleteMapping("/{businessId}/roles/{roleId}")
+  public ApiResponse<Void> deleteCustomRole(
+      @PathVariable UUID businessId,
+      @PathVariable UUID roleId) {
+    GatewayUser user = UserContext.requireUser();
+    organizationService.deleteCustomRole(businessId, roleId, user.userId());
+    return ApiResponse.ok(null);
+  }
 }
+
+
