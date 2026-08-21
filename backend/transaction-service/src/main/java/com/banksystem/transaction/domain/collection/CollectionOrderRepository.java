@@ -1,6 +1,7 @@
 package com.banksystem.transaction.domain.collection;
 
 import jakarta.persistence.LockModeType;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -29,17 +30,45 @@ public interface CollectionOrderRepository extends JpaRepository<CollectionOrder
 
   @Query("""
       SELECT o FROM CollectionOrderEntity o
-      WHERE (:orgId IS NULL OR o.organizationId = :orgId)
-        AND (:q IS NULL OR LOWER(o.merchantOrderId) LIKE LOWER(CONCAT('%', :q, '%'))
-             OR LOWER(o.customerReference) LIKE LOWER(CONCAT('%', :q, '%')))
-        AND (:status IS NULL OR o.status = :status)
+      WHERE (:hasOrgId = false OR o.organizationId = :orgId)
+        AND (:hasQ = false OR (
+            LOWER(o.merchantOrderId) LIKE LOWER(CONCAT('%', :q, '%'))
+            OR (o.customerReference IS NOT NULL AND LOWER(o.customerReference) LIKE LOWER(CONCAT('%', :q, '%')))
+        ))
+        AND (:hasStatus = false OR o.status = :status)
+      ORDER BY o.createdAt DESC
+      """)
+  List<CollectionOrderEntity> searchList(
+      @Param("hasOrgId") boolean hasOrgId,
+      @Param("orgId") UUID orgId,
+      @Param("hasQ") boolean hasQ,
+      @Param("q") String q,
+      @Param("hasStatus") boolean hasStatus,
+      @Param("status") CollectionOrderStatus status);
+
+  @Query("""
+      SELECT o FROM CollectionOrderEntity o
+      WHERE (:hasOrgId = false OR o.organizationId = :orgId)
+        AND (:hasQ = false OR (
+            LOWER(o.merchantOrderId) LIKE LOWER(CONCAT('%', :q, '%'))
+            OR (o.customerReference IS NOT NULL AND LOWER(o.customerReference) LIKE LOWER(CONCAT('%', :q, '%')))
+        ))
+        AND (:hasStatus = false OR o.status = :status)
       ORDER BY o.createdAt DESC
       """)
   Page<CollectionOrderEntity> search(
+      @Param("hasOrgId") boolean hasOrgId,
       @Param("orgId") UUID orgId,
+      @Param("hasQ") boolean hasQ,
       @Param("q") String q,
+      @Param("hasStatus") boolean hasStatus,
       @Param("status") CollectionOrderStatus status,
       Pageable pageable);
 
   long countByOrganizationIdAndStatus(UUID organizationId, CollectionOrderStatus status);
+
+  @Query("SELECT COALESCE(SUM(o.paidAmount), 0) FROM CollectionOrderEntity o WHERE o.organizationId = :orgId AND o.status = :status")
+  BigDecimal sumPaidAmountByOrganizationIdAndStatus(
+      @Param("orgId") UUID orgId,
+      @Param("status") CollectionOrderStatus status);
 }

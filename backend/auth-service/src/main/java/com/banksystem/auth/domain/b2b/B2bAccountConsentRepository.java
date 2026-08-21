@@ -22,14 +22,33 @@ public interface B2bAccountConsentRepository extends JpaRepository<B2bAccountCon
   Optional<B2bAccountConsentEntity> findByClientIdAndAccountNumberAndStatus(String clientId, String accountNumber, String status);
 
   @Query("SELECT c FROM B2bAccountConsentEntity c WHERE " +
-         "(:clientId IS NULL OR c.clientId = :clientId) AND " +
-         "(:customerId IS NULL OR c.customerId = :customerId) AND " +
-         "(:status IS NULL OR c.status = :status) AND " +
-         "(:accountNumber IS NULL OR c.accountNumber LIKE CONCAT('%', :accountNumber, '%'))")
-  Page<B2bAccountConsentEntity> searchConsents(
+         "(:hasClientId = false OR c.clientId = :clientId) AND " +
+         "(:hasCustomerId = false OR c.customerId = :customerId) AND " +
+         "(:hasStatus = false OR c.status = :status) AND " +
+         "(:hasAccountNumber = false OR c.accountNumber LIKE CONCAT('%', :accountNumber, '%'))")
+  List<B2bAccountConsentEntity> searchConsentsList(
+      @Param("hasClientId") boolean hasClientId,
       @Param("clientId") String clientId,
+      @Param("hasCustomerId") boolean hasCustomerId,
       @Param("customerId") UUID customerId,
+      @Param("hasStatus") boolean hasStatus,
       @Param("status") String status,
+      @Param("hasAccountNumber") boolean hasAccountNumber,
+      @Param("accountNumber") String accountNumber);
+
+  @Query("SELECT c FROM B2bAccountConsentEntity c WHERE " +
+         "(:hasClientId = false OR c.clientId = :clientId) AND " +
+         "(:hasCustomerId = false OR c.customerId = :customerId) AND " +
+         "(:hasStatus = false OR c.status = :status) AND " +
+         "(:hasAccountNumber = false OR c.accountNumber LIKE CONCAT('%', :accountNumber, '%'))")
+  Page<B2bAccountConsentEntity> searchConsents(
+      @Param("hasClientId") boolean hasClientId,
+      @Param("clientId") String clientId,
+      @Param("hasCustomerId") boolean hasCustomerId,
+      @Param("customerId") UUID customerId,
+      @Param("hasStatus") boolean hasStatus,
+      @Param("status") String status,
+      @Param("hasAccountNumber") boolean hasAccountNumber,
       @Param("accountNumber") String accountNumber,
       Pageable pageable);
 }

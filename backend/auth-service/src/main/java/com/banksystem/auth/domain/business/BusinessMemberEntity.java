@@ -23,6 +23,9 @@ public class BusinessMemberEntity {
   @Column(name = "business_role", nullable = false, length = 50)
   private String businessRole;
 
+  @Column(name = "custom_role_id")
+  private UUID customRoleId;
+
   @Column(nullable = false, length = 30)
   private String status = "ACTIVE";
 
@@ -48,6 +51,12 @@ public class BusinessMemberEntity {
     return entity;
   }
 
+  public static BusinessMemberEntity createWithCustomRole(UUID organizationId, UUID userId, UUID customRoleId, String businessRole, Instant now) {
+    BusinessMemberEntity entity = create(organizationId, userId, businessRole, now);
+    entity.customRoleId = customRoleId;
+    return entity;
+  }
+
   public UUID getId() { return id; }
   public void setId(UUID id) { this.id = id; }
   public UUID getOrganizationId() { return organizationId; }
@@ -56,6 +65,8 @@ public class BusinessMemberEntity {
   public void setUserId(UUID userId) { this.userId = userId; }
   public String getBusinessRole() { return businessRole; }
   public void setBusinessRole(String businessRole) { this.businessRole = businessRole; }
+  public UUID getCustomRoleId() { return customRoleId; }
+  public void setCustomRoleId(UUID customRoleId) { this.customRoleId = customRoleId; }
   public String getStatus() { return status; }
   public void setStatus(String status) { this.status = status; }
   public Instant getJoinedAt() { return joinedAt; }
@@ -65,3 +76,4 @@ public class BusinessMemberEntity {
   public Instant getUpdatedAt() { return updatedAt; }
   public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
 }
+

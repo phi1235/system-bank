@@ -4,7 +4,7 @@
       <h1 class="page-title">{{ 'BUSINESS.ORDERS.TITLE' | translate }}</h1>
       <p class="page-subtitle">{{ 'BUSINESS.ORDERS.SUB' | translate }}</p>
     </div>
-    <button mat-flat-button color="primary" (click)="openCreateModal()">
+    <button *ngIf="canCreateOrder" mat-flat-button color="primary" (click)="openCreateModal()">
       <mat-icon>add</mat-icon>
       {{ 'BUSINESS.ORDERS.CREATE_BTN' | translate }}
     </button>
@@ -117,15 +117,6 @@
         </td>
       </tr>
     </table>
-
-    <mat-paginator
-      [length]="totalElements"
-      [pageSize]="pageSize"
-      [pageIndex]="pageIndex"
-      [pageSizeOptions]="[10, 20, 50]"
-      (page)="onPageChange($event)"
-      showFirstLastButtons>
-    </mat-paginator>
   </mat-card>
 </div>
 

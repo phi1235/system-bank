@@ -13,14 +13,25 @@
           </div>
         </div>
 
-        <div class="corp-selector" *ngIf="corporations.length > 0">
-          <mat-form-field appearance="outline" density="compact">
+        <div class="corp-selector">
+          <mat-form-field appearance="outline" density="compact" *ngIf="corporations.length > 0; else noCorpHeader">
             <mat-select [(ngModel)]="selectedCorpId" (selectionChange)="onCorpChange($event.value)">
               <mat-option *ngFor="let c of corporations" [value]="c.id">
                 {{ c.companyName }} ({{ c.taxId }})
               </mat-option>
+              <mat-divider></mat-divider>
+              <mat-option value="__CREATE_NEW__">
+                <mat-icon>add_business</mat-icon>
+                {{ 'CORPORATE.CREATE_CORP' | translate }}
+              </mat-option>
             </mat-select>
           </mat-form-field>
+          <ng-template #noCorpHeader>
+            <button mat-stroked-button color="primary" (click)="openCreateCorpModal()">
+              <mat-icon>add_business</mat-icon>
+              {{ 'CORPORATE.CREATE_CORP' | translate }}
+            </button>
+          </ng-template>
         </div>
 
         <nav class="corp-nav">
@@ -55,4 +66,49 @@
       <main class="corp-body">
         <router-outlet></router-outlet>
       </main>
+
+      <!-- Modal: Tạo doanh nghiệp mới -->
+      <div class="modal-backdrop" *ngIf="showCreateCorpModal" (click)="closeCreateCorpModal()">
+        <div class="modal-card" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h3>{{ 'CORPORATE.CREATE_CORP_TITLE' | translate }}</h3>
+            <button mat-icon-button (click)="closeCreateCorpModal()">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+          <div class="modal-body">
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>{{ 'CORPORATE.TAX_ID' | translate }} *</mat-label>
+              <input matInput [(ngModel)]="newTaxId" placeholder="VD: 0101234567" required />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>{{ 'CORPORATE.COMPANY_NAME' | translate }} *</mat-label>
+              <input matInput [(ngModel)]="newCompanyName" placeholder="VD: Công ty Cổ phần ABC" required />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>{{ 'CORPORATE.SHORT_NAME' | translate }}</mat-label>
+              <input matInput [(ngModel)]="newShortName" placeholder="VD: ABC Corp" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>{{ 'CORPORATE.CONTACT_EMAIL' | translate }}</mat-label>
+              <input matInput type="email" [(ngModel)]="newContactEmail" placeholder="contact@abc.vn" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>{{ 'CORPORATE.CONTACT_PHONE' | translate }}</mat-label>
+              <input matInput [(ngModel)]="newContactPhone" placeholder="0901234567" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>{{ 'CORPORATE.ADDRESS' | translate }}</mat-label>
+              <input matInput [(ngModel)]="newAddress" placeholder="Số 1 Đại Cồ Việt, Hà Nội" />
+            </mat-form-field>
+          </div>
+          <div class="modal-footer">
+            <button mat-button (click)="closeCreateCorpModal()">{{ 'COMMON.CANCEL' | translate }}</button>
+            <button mat-flat-button color="primary" [disabled]="creatingCorp" (click)="submitCreateCorp()">
+              <mat-icon *ngIf="creatingCorp">hourglass_empty</mat-icon>
+              {{ 'COMMON.SAVE' | translate }}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>

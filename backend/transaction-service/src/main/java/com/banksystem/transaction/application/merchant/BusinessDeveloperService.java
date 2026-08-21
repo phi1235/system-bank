@@ -74,8 +74,9 @@ public class BusinessDeveloperService {
 
   @Transactional(readOnly = true)
   public MerchantAccountResponse getMerchantAccount(UUID businessId) {
-    return toAccountResponse(accountRepository.findByOrganizationId(businessId).orElseThrow(() ->
-        new BusinessException("MERCHANT_NOT_CONFIGURED", "Merchant account configuration not found")));
+    return accountRepository.findByOrganizationId(businessId)
+        .map(this::toAccountResponse)
+        .orElse(null);
   }
 
   public MerchantAccountResponse configureMerchantAccount(

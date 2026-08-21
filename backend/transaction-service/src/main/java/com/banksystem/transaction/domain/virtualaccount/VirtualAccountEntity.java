@@ -48,6 +48,9 @@ public class VirtualAccountEntity {
   @Column(name = "expires_at")
   private Instant expiresAt;
 
+  @Column(name = "display_name", length = 100)
+  private String displayName;
+
   @Column(name = "created_at", nullable = false)
   private Instant createdAt;
 
@@ -62,6 +65,7 @@ public class VirtualAccountEntity {
       UUID parentAccountId,
       VirtualAccountMode mode,
       String customerReference,
+      String displayName,
       Instant expiresAt,
       Instant now) {
     VirtualAccountEntity entity = new VirtualAccountEntity();
@@ -73,6 +77,7 @@ public class VirtualAccountEntity {
     entity.parentAccountId = parentAccountId;
     entity.mode = mode;
     entity.customerReference = customerReference;
+    entity.displayName = displayName;
     entity.status = VirtualAccountStatus.ACTIVE;
     entity.activatedAt = now;
     entity.expiresAt = expiresAt;
@@ -83,6 +88,9 @@ public class VirtualAccountEntity {
 
   public UUID getId() { return id; }
   public void setId(UUID id) { this.id = id; }
+  public String getDisplayName() { return displayName; }
+  public void setDisplayName(String displayName) { this.displayName = displayName; }
+
   public UUID getOrganizationId() { return organizationId; }
   public void setOrganizationId(UUID organizationId) { this.organizationId = organizationId; }
   public String getProvider() { return provider; }

@@ -33,6 +33,10 @@
                 <mat-icon matListItemIcon>badge</mat-icon>
                 <span matListItemTitle>{{ 'NAV.ADMIN_CUSTOMERS' | translate }}</span>
               </a>
+              <a mat-list-item routerLink="/admin/business-kyc" routerLinkActive="active">
+                <mat-icon matListItemIcon>domain_verification</mat-icon>
+                <span matListItemTitle>{{ 'NAV.ADMIN_BUSINESS_KYC' | translate }}</span>
+              </a>
             }
             @if (canSupportTickets$ | async) {
               <a mat-list-item routerLink="/admin/support-tickets" routerLinkActive="active">
@@ -42,6 +46,7 @@
             }
           </div>
         }
+
 
         <!-- 2. SẢN PHẨM & DỊCH VỤ -->
         <div class="nav-category-header" (click)="toggleCategory('products')" [class.expanded]="expandedCategories['products']">

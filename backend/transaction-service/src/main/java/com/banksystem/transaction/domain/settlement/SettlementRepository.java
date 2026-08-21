@@ -1,6 +1,7 @@
 package com.banksystem.transaction.domain.settlement;
 
 import jakarta.persistence.LockModeType;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -29,14 +30,33 @@ public interface SettlementRepository extends JpaRepository<SettlementEntity, UU
 
   @Query("""
       SELECT s FROM SettlementEntity s
-      WHERE (:orgId IS NULL OR s.organizationId = :orgId)
-        AND (:status IS NULL OR s.status = :status)
+      WHERE (:hasOrgId = false OR s.organizationId = :orgId)
+        AND (:hasStatus = false OR s.status = :status)
+      ORDER BY s.createdAt DESC
+      """)
+  List<SettlementEntity> searchList(
+      @Param("hasOrgId") boolean hasOrgId,
+      @Param("orgId") UUID orgId,
+      @Param("hasStatus") boolean hasStatus,
+      @Param("status") SettlementStatus status);
+
+  @Query("""
+      SELECT s FROM SettlementEntity s
+      WHERE (:hasOrgId = false OR s.organizationId = :orgId)
+        AND (:hasStatus = false OR s.status = :status)
       ORDER BY s.createdAt DESC
       """)
   Page<SettlementEntity> search(
+      @Param("hasOrgId") boolean hasOrgId,
       @Param("orgId") UUID orgId,
+      @Param("hasStatus") boolean hasStatus,
       @Param("status") SettlementStatus status,
       Pageable pageable);
 
   long countByOrganizationIdAndStatus(UUID organizationId, SettlementStatus status);
+
+  @Query("SELECT COALESCE(SUM(s.grossAmount), 0) FROM SettlementEntity s WHERE s.organizationId = :orgId AND s.status = :status")
+  BigDecimal sumGrossAmountByOrganizationIdAndStatus(
+      @Param("orgId") UUID orgId,
+      @Param("status") SettlementStatus status);
 }

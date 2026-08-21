@@ -53,14 +53,37 @@ public class SettlementOrchestrator {
     return settlementFacade.getSettlement(organizationId, settlementId);
   }
 
+  public List<SettlementResponse> searchList(UUID organizationId, SettlementStatus status) {
+    boolean hasOrgId = organizationId != null;
+    boolean hasStatus = status != null;
+    return settlementRepository.searchList(
+        hasOrgId, organizationId != null ? organizationId : UUID.randomUUID(),
+        hasStatus, status != null ? status : SettlementStatus.COMPLETED
+    ).stream()
+        .map(this::toResponse)
+        .toList();
+  }
+
   public Page<SettlementResponse> search(SettlementSearchQuery query) {
     PageRequest pageable = PageRequest.of(query.page(), query.size());
-    Page<SettlementEntity> page = settlementRepository.search(query.organizationId(), query.status(), pageable);
+    boolean hasOrgId = query.organizationId() != null;
+    boolean hasStatus = query.status() != null;
+    Page<SettlementEntity> page = settlementRepository.search(
+        hasOrgId, query.organizationId() != null ? query.organizationId() : UUID.randomUUID(),
+        hasStatus, query.status() != null ? query.status() : SettlementStatus.COMPLETED,
+        pageable
+    );
     return page.map(this::toResponse);
   }
 
   public Page<SettlementResponse> search(UUID organizationId, SettlementStatus status, Pageable pageable) {
-    Page<SettlementEntity> page = settlementRepository.search(organizationId, status, pageable);
+    boolean hasOrgId = organizationId != null;
+    boolean hasStatus = status != null;
+    Page<SettlementEntity> page = settlementRepository.search(
+        hasOrgId, organizationId != null ? organizationId : UUID.randomUUID(),
+        hasStatus, status != null ? status : SettlementStatus.COMPLETED,
+        pageable
+    );
     return page.map(this::toResponse);
   }
 

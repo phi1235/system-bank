@@ -82,8 +82,6 @@
         <td class="mat-cell empty-cell" [attr.colspan]="displayedColumns.length">{{ 'COMMON.NO_DATA' | translate }}</td>
       </tr>
     </table>
-
-    <mat-paginator [length]="totalElements" [pageSize]="pageSize" [pageIndex]="pageIndex" [pageSizeOptions]="[10, 20, 50]" (page)="onPageChange($event)" showFirstLastButtons></mat-paginator>
   </mat-card>
 </div>
 

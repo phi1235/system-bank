@@ -15,8 +15,21 @@ public final class VirtualAccountDtos {
       UUID parentAccountId,
       @NotNull VirtualAccountMode mode,
       String customerReference,
+      String displayName,
       Instant expiresAt
-  ) {}
+  ) {
+    public ProvisionVirtualAccountRequest(
+        String provider,
+        String bankBin,
+        UUID parentAccountId,
+        VirtualAccountMode mode,
+        String customerReference,
+        Instant expiresAt
+    ) {
+      this(provider, bankBin, parentAccountId, mode, customerReference, null, expiresAt);
+    }
+  }
+
 
   public record VirtualAccountResponse(
       UUID id,
@@ -27,12 +40,14 @@ public final class VirtualAccountDtos {
       UUID parentAccountId,
       VirtualAccountMode mode,
       String customerReference,
+      String displayName,
       VirtualAccountStatus status,
       String vietQrUrl,
       Instant activatedAt,
       Instant expiresAt,
       Instant createdAt
   ) {}
+
 
   public record VirtualAccountFilterRequest(
       String q,

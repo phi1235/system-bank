@@ -42,6 +42,7 @@ export class BusinessMembersComponent implements OnInit, OnDestroy {
 
   displayedColumns: string[] = ['userId', 'businessRole', 'status', 'createdAt', 'actions'];
   members: BusinessMember[] = [];
+  customRoles: { code: string; displayName: string }[] = [];
   loading = false;
 
   // Add Member Modal
@@ -53,12 +54,41 @@ export class BusinessMembersComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.businessContext.selectedOrg$.pipe(takeUntil(this.destroy$)).subscribe(() => {
       this.loadMembers();
+      this.loadCustomRoles();
     });
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  loadCustomRoles(): void {
+    const orgId = this.businessContext.getSelectedOrgId();
+    if (!orgId) return;
+
+    this.api.listCustomRoles(orgId).subscribe({
+      next: (roles) => {
+        if (roles && roles.length > 0) {
+          this.customRoles = roles.map((r) => ({ code: r.code, displayName: r.displayName }));
+        } else {
+          this.customRoles = [
+            { code: 'BUSINESS_OWNER', displayName: this.i18n.instant('BUSINESS.MEMBERS.ROLE_OWNER') },
+            { code: 'BUSINESS_FINANCE', displayName: this.i18n.instant('BUSINESS.MEMBERS.ROLE_FINANCE') },
+            { code: 'BUSINESS_OPERATOR', displayName: this.i18n.instant('BUSINESS.MEMBERS.ROLE_OPERATOR') },
+            { code: 'BUSINESS_VIEWER', displayName: this.i18n.instant('BUSINESS.MEMBERS.ROLE_VIEWER') },
+          ];
+        }
+      },
+      error: () => {
+        this.customRoles = [
+          { code: 'BUSINESS_OWNER', displayName: this.i18n.instant('BUSINESS.MEMBERS.ROLE_OWNER') },
+          { code: 'BUSINESS_FINANCE', displayName: this.i18n.instant('BUSINESS.MEMBERS.ROLE_FINANCE') },
+          { code: 'BUSINESS_OPERATOR', displayName: this.i18n.instant('BUSINESS.MEMBERS.ROLE_OPERATOR') },
+          { code: 'BUSINESS_VIEWER', displayName: this.i18n.instant('BUSINESS.MEMBERS.ROLE_VIEWER') },
+        ];
+      },
+    });
   }
 
   loadMembers(): void {
@@ -79,13 +109,14 @@ export class BusinessMembersComponent implements OnInit, OnDestroy {
 
   openAddModal(): void {
     this.newUserId = '';
-    this.newRole = 'BUSINESS_OPERATOR';
+    this.newRole = this.customRoles.length > 0 ? this.customRoles[0].code : 'BUSINESS_OPERATOR';
     this.showAddModal = true;
   }
 
   closeAddModal(): void {
     this.showAddModal = false;
   }
+
 
   submitAddMember(): void {
     const orgId = this.businessContext.getSelectedOrgId();
@@ -99,7 +130,7 @@ export class BusinessMembersComponent implements OnInit, OnDestroy {
     this.addingMember = true;
     this.api
       .addBusinessMember(orgId, {
-        userId: this.newUserId.trim(),
+        userIdentifier: this.newUserId.trim(),
         role: this.newRole,
       })
       .subscribe({

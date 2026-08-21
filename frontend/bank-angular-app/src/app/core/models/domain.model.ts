@@ -1025,27 +1025,130 @@ export interface BusinessOrganization {
   id: string;
   code: string;
   name: string;
+  legalName?: string;
   taxCode: string;
+  taxNumber?: string;
   status: 'ACTIVE' | 'SUSPENDED' | 'INACTIVE';
+  kycStatus?: 'PENDING_KYC' | 'APPROVED' | 'REJECTED';
+  shortName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  address?: string;
+  representativeName?: string;
+  industry?: string;
+  businessLicenseUrl?: string;
+  idCardUrl?: string;
+  kycRejectReason?: string;
+  userRole?: string;
   createdAt: string;
   updatedAt?: string;
+}
+
+export interface RegisterBusinessRequest {
+  legalName: string;
+  taxNumber: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  address?: string;
+  representativeName?: string;
+  industry?: string;
+}
+
+export interface AdminBusinessKycItem {
+  id: string;
+  code: string;
+  legalName: string;
+  taxNumber: string;
+  status: string;
+  kycStatus: 'PENDING_KYC' | 'APPROVED' | 'REJECTED';
+  contactEmail?: string;
+  contactPhone?: string;
+  address?: string;
+  representativeName?: string;
+  industry?: string;
+  businessLicenseUrl?: string;
+  idCardUrl?: string;
+  kycRejectReason?: string;
+  kycReviewedBy?: string;
+  kycReviewedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminKycReviewRequest {
+  action: 'APPROVE' | 'REJECT';
+  rejectReason?: string;
+}
+
+export interface CustomRoleItem {
+  id: string;
+  code: string;
+  displayName: string;
+  description?: string;
+  ownerRole: boolean;
+  defaultRole: boolean;
+  permissions: string[];
+  createdAt: string;
+}
+
+export interface CustomRoleRequest {
+  code: string;
+  displayName: string;
+  description?: string;
+  permissions: string[];
 }
 
 export interface BusinessMember {
   id: string;
   organizationId: string;
   userId: string;
-  businessRole: 'BUSINESS_OWNER' | 'BUSINESS_FINANCE' | 'BUSINESS_OPERATOR' | 'BUSINESS_VIEWER';
+  username?: string;
+  email?: string;
+  businessRole: string;
+  roleDisplayName?: string;
+  customRoleId?: string;
   status: 'ACTIVE' | 'SUSPENDED';
   userEmail?: string;
   userFullName?: string;
-  createdAt: string;
+  joinedAt?: string;
+  createdAt?: string;
 }
 
 export interface BusinessMembership {
-  organization: BusinessOrganization;
+  organization?: BusinessOrganization;
+  organizationId?: string;
+  userId?: string;
   businessRole: string;
+  roleDisplayName?: string;
+  status?: string;
+  valid?: boolean;
   permissions: string[];
+}
+
+export interface BusinessPermissionActionDto {
+  key: 'view' | 'create' | 'manage' | 'delete' | 'approve' | string;
+  labelKey: string;
+  icon: string;
+}
+
+export interface BusinessPermissionFeatureDto {
+  id: string;
+  name: string;
+  nameKey: string;
+  actions: { [key: string]: string };
+}
+
+export interface BusinessPermissionModuleDto {
+  id: string;
+  name: string;
+  nameKey: string;
+  icon: string;
+  features: BusinessPermissionFeatureDto[];
+}
+
+export interface BusinessPermissionMatrixResponse {
+  actionColumns: BusinessPermissionActionDto[];
+  modules: BusinessPermissionModuleDto[];
 }
 
 export interface VirtualAccount {
@@ -1057,6 +1160,7 @@ export interface VirtualAccount {
   parentAccountId?: string;
   mode: 'SINGLE_USE' | 'FIXED_PAYER';
   customerReference?: string;
+  displayName?: string;
   status: 'ACTIVE' | 'INACTIVE' | 'CLOSED' | 'EXPIRED';
   vietQrUrl: string;
   activatedAt?: string;
@@ -1064,7 +1168,18 @@ export interface VirtualAccount {
   createdAt: string;
 }
 
+export interface ProvisionVirtualAccountRequest {
+  provider?: string;
+  bankBin?: string;
+  parentAccountId?: string;
+  mode: 'SINGLE_USE' | 'FIXED_PAYER';
+  customerReference?: string;
+  displayName?: string;
+  expiresAt?: string;
+}
+
 export interface CollectionOrder {
+
   id: string;
   organizationId: string;
   merchantOrderId: string;

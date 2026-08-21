@@ -20,6 +20,7 @@ import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.DefaultParameterNameDiscoverer;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.ExpressionParser;
@@ -34,9 +35,13 @@ public class RequireBusinessPermissionAspect {
   private static final Logger log = LoggerFactory.getLogger(RequireBusinessPermissionAspect.class);
 
   private static final Set<String> SENSITIVE_PERMISSIONS = Set.of(
-      "business:credentials:manage",
+      "business:members:manage",
+      "business:roles:manage",
+      "business:va:manage",
+      "business:orders:manage",
+      "business:split:manage",
       "business:settlements:execute",
-      "settlement:approve",
+      "payout:execute",
       "payout:approve"
   );
 
@@ -46,6 +51,9 @@ public class RequireBusinessPermissionAspect {
   private final ExpressionParser expressionParser = new SpelExpressionParser();
   private final DefaultParameterNameDiscoverer parameterNameDiscoverer = new DefaultParameterNameDiscoverer();
   private final Map<String, CacheEntry> readMembershipCache = new ConcurrentHashMap<>();
+
+  @Value("${bank.internal.auth-api-key:${bank.internal.api-key:}}")
+  private String authApiKey;
 
   public RequireBusinessPermissionAspect(AuthBusinessClient authBusinessClient) {
     this.authBusinessClient = authBusinessClient;
@@ -60,6 +68,10 @@ public class RequireBusinessPermissionAspect {
     if (businessId == null) {
       log.error("[B2B-AUTH] Could not resolve businessId from param {}", annotation.businessIdParam());
       throw new BusinessException("FORBIDDEN", "Missing organization ID in request context");
+    }
+
+    if (user.hasRole("ADMIN") || user.hasRole("SUPER_ADMIN")) {
+      return joinPoint.proceed();
     }
 
     boolean isSensitive = SENSITIVE_PERMISSIONS.contains(requiredPermission);
@@ -80,7 +92,7 @@ public class RequireBusinessPermissionAspect {
     boolean allowed = false;
     try {
       ApiResponse<BusinessMembershipView> resp = authBusinessClient.verifyMembership(
-          businessId, user.userId(), requiredPermission
+          businessId, user.userId(), requiredPermission, authApiKey
       );
       if (resp != null && resp.data() != null) {
         BusinessMembershipView view = resp.data();

@@ -83,13 +83,11 @@ export class BusinessSettlementsComponent implements OnInit, OnDestroy {
     this.api
       .listSettlements(orgId, {
         status: this.statusFilter || undefined,
-        page: this.pageIndex,
-        size: this.pageSize,
       })
       .subscribe({
         next: (res) => {
-          this.settlements = res.items || [];
-          this.totalElements = res.totalElements || 0;
+          this.settlements = res || [];
+          this.totalElements = this.settlements.length;
           this.loading = false;
         },
         error: () => {
@@ -99,13 +97,6 @@ export class BusinessSettlementsComponent implements OnInit, OnDestroy {
   }
 
   onFilterChange(): void {
-    this.pageIndex = 0;
-    this.loadSettlements();
-  }
-
-  onPageChange(event: PageEvent): void {
-    this.pageIndex = event.pageIndex;
-    this.pageSize = event.pageSize;
     this.loadSettlements();
   }
 

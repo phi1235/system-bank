@@ -28,8 +28,23 @@
       @if (canSupport$ | async) {
         <a routerLink="/customer/support" routerLinkActive="active">{{ 'NAV.SUPPORT' | translate }}</a>
       }
-      <a routerLink="/corporate" routerLinkActive="active">{{ 'NAV.CORPORATE' | translate }}</a>
+      <button mat-button class="nav-dropdown-btn" [matMenuTriggerFor]="bizNavMenu">
+        <span>{{ 'NAV.BUSINESS_GROUP' | translate }}</span>
+        <mat-icon class="dropdown-icon">arrow_drop_down</mat-icon>
+      </button>
+      <mat-menu #bizNavMenu="matMenu">
+        <a mat-menu-item routerLink="/customer/business-register">
+          <mat-icon>app_registration</mat-icon>
+          <span>{{ 'NAV.BUSINESS_REGISTER_SHORT' | translate }}</span>
+        </a>
+        <a mat-menu-item routerLink="/business/dashboard">
+          <mat-icon>storefront</mat-icon>
+          <span>{{ 'NAV.BUSINESS_PORTAL_SHORT' | translate }}</span>
+        </a>
+      </mat-menu>
     </nav>
+
+
     <div class="header-actions">
       <app-lang-switcher />
       @if (canNotifications$ | async) {

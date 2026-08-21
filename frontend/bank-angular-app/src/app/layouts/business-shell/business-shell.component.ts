@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule } from '@angular/material/dialog';
@@ -64,9 +64,20 @@ export class BusinessShellComponent implements OnInit, OnDestroy {
   newOrgName = '';
   newOrgTaxCode = '';
   creatingOrg = false;
+  isSidebarCollapsed = false;
+
+  toggleSidebar(): void {
+    this.isSidebarCollapsed = !this.isSidebarCollapsed;
+  }
+
+
+  private readonly cdr = inject(ChangeDetectorRef);
 
   ngOnInit(): void {
     this.businessContext.loadOrganizations().pipe(takeUntil(this.destroy$)).subscribe();
+    this.businessContext.membership$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+      this.cdr.markForCheck();
+    });
   }
 
   ngOnDestroy(): void {
@@ -77,7 +88,7 @@ export class BusinessShellComponent implements OnInit, OnDestroy {
   onOrgChange(orgId: string): void {
     const org = this.businessContext.organizations().find((o) => o.id === orgId);
     if (org) {
-      this.businessContext.selectOrganization(org);
+      this.businessContext.selectOrganization(org).subscribe();
     }
   }
 
@@ -97,10 +108,11 @@ export class BusinessShellComponent implements OnInit, OnDestroy {
       this.toast.error(this.i18n.instant('VALIDATION.REQUIRED'));
       return;
     }
+    const sanitizedCode = this.newOrgCode.trim().toUpperCase().replace(/\s+/g, '_');
     this.creatingOrg = true;
     this.api
       .registerOrganization({
-        code: this.newOrgCode.trim().toUpperCase(),
+        code: sanitizedCode,
         name: this.newOrgName.trim(),
         taxCode: this.newOrgTaxCode.trim() || undefined,
       })
@@ -110,17 +122,49 @@ export class BusinessShellComponent implements OnInit, OnDestroy {
           this.showCreateOrgModal = false;
           this.toast.success(this.i18n.instant('TOAST.SUCCESS'));
           this.businessContext.loadOrganizations().subscribe(() => {
-            this.businessContext.selectOrganization(org);
+            this.businessContext.selectOrganization(org).subscribe();
           });
         },
         error: (err) => {
           this.creatingOrg = false;
-          this.toast.error(err?.error?.error?.message || this.i18n.instant('TOAST.ERROR'));
+          const msg =
+            err?.error?.error?.message ||
+            err?.error?.message ||
+            (err?.error?.errors ? Object.values(err.error.errors).join(', ') : null) ||
+            this.i18n.instant('TOAST.ERROR');
+          this.toast.error(msg);
         },
       });
   }
 
+  hasPermission(perm: string): boolean {
+    return this.businessContext.hasPermission(perm);
+  }
+
+  isGroupVisible(group: string): boolean {
+    switch (group) {
+      case 'overview':
+        return true;
+      case 'collection':
+        return this.hasPermission('va:view') || this.hasPermission('va:create') || this.hasPermission('va:manage') ||
+               this.hasPermission('collection:view') || this.hasPermission('collection:create');
+      case 'payout':
+        return this.hasPermission('split:view') || this.hasPermission('split:create') || this.hasPermission('split:manage') ||
+               this.hasPermission('transfer:view') || this.hasPermission('transfer:create') || this.hasPermission('transfer:approve') ||
+               this.hasPermission('batch:create') || this.hasPermission('batch:approve');
+      case 'integration':
+        return this.hasPermission('developer:view') || this.hasPermission('developer:create') || this.hasPermission('developer:manage') ||
+               this.hasPermission('openbanking:view') || this.hasPermission('openbanking:create') || this.hasPermission('openbanking:manage');
+      case 'organization':
+        return this.hasPermission('org:members') || this.hasPermission('org:members:view') ||
+               this.hasPermission('org:roles') || this.hasPermission('org:roles:view');
+      default:
+        return true;
+    }
+  }
+
   logout(): void {
+    this.businessContext.clear();
     this.store.dispatch(AuthActions.logout());
   }
 }

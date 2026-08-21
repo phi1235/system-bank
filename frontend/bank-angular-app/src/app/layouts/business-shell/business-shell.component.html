@@ -1,26 +1,36 @@
 <div class="business-layout">
-  <!-- Top Navigation Header -->
+  <!-- Top Header -->
   <header class="business-header">
     <div class="header-left">
+      <button mat-icon-button class="sidebar-toggle-btn" (click)="toggleSidebar()" [title]="(isSidebarCollapsed ? 'BUSINESS.EXPAND_SIDEBAR' : 'BUSINESS.COLLAPSE_SIDEBAR') | translate">
+        <mat-icon>{{ isSidebarCollapsed ? 'menu_open' : 'menu' }}</mat-icon>
+      </button>
+
       <a routerLink="/business/dashboard" class="brand-link">
         <div class="brand-logo">
           <mat-icon>business</mat-icon>
         </div>
         <div class="brand-text">
           <span class="brand-title">{{ 'BUSINESS.PORTAL_TITLE' | translate }}</span>
-          <span class="brand-badge" *ngIf="selectedOrg$ | async as org">{{ org.name }} ({{ org.code }})</span>
         </div>
       </a>
 
-      <!-- Org Switcher Dropdown -->
+      <!-- Org Switcher Dropdown Button -->
       <div class="org-switcher" *ngIf="businessContext.organizations().length > 0">
-        <mat-form-field appearance="outline" class="compact-select">
-          <mat-select [value]="(selectedOrg$ | async)?.id" (selectionChange)="onOrgChange($event.value)">
-            <mat-option *ngFor="let org of businessContext.organizations()" [value]="org.id">
-              {{ org.name }} ({{ org.code }})
-            </mat-option>
-          </mat-select>
-        </mat-form-field>
+        <button mat-button [matMenuTriggerFor]="orgDropdownMenu" class="org-selector-btn">
+          <mat-icon class="org-icon">domain</mat-icon>
+          <span class="org-name-text">{{ (selectedOrg$ | async)?.name }} ({{ (selectedOrg$ | async)?.code }})</span>
+          <mat-icon class="arrow-icon">expand_more</mat-icon>
+        </button>
+        <mat-menu #orgDropdownMenu="matMenu" class="org-custom-dropdown">
+          <button mat-menu-item *ngFor="let org of businessContext.organizations()" (click)="onOrgChange(org.id)" [class.active-org]="org.id === (selectedOrg$ | async)?.id">
+            <mat-icon [color]="org.id === (selectedOrg$ | async)?.id ? 'primary' : ''">
+              {{ org.id === (selectedOrg$ | async)?.id ? 'check_circle' : 'domain' }}
+            </mat-icon>
+            <span class="org-item-name">{{ org.name }}</span>
+            <span class="org-item-code">({{ org.code }})</span>
+          </button>
+        </mat-menu>
       </div>
 
       <button mat-stroked-button color="primary" class="btn-create-org" (click)="openCreateOrgModal()">
@@ -29,19 +39,20 @@
       </button>
     </div>
 
+
     <div class="header-right">
       <app-lang-switcher></app-lang-switcher>
       <app-notification-bell mode="customer"></app-notification-bell>
 
       <button mat-button [matMenuTriggerFor]="userMenu" class="user-profile-btn">
-        <div class="avatar-circle">
-          <mat-icon>account_circle</mat-icon>
+        <div class="user-btn-content">
+          <mat-icon class="avatar-icon">account_circle</mat-icon>
+          <div class="user-info-text">
+            <span class="username">{{ username$ | async }}</span>
+            <span class="user-role" *ngIf="membership$ | async as mem">{{ mem.roleDisplayName || ('BUSINESS.MEMBERS.ROLE_' + mem.businessRole.replace('BUSINESS_', '') | translate) }}</span>
+          </div>
+          <mat-icon class="dropdown-arrow">expand_more</mat-icon>
         </div>
-        <div class="user-info-text">
-          <span class="username">{{ username$ | async }}</span>
-          <span class="user-role" *ngIf="membership$ | async as mem">{{ 'BUSINESS.MEMBERS.ROLE_' + mem.businessRole.replace('BUSINESS_', '') | translate }}</span>
-        </div>
-        <mat-icon class="dropdown-arrow">arrow_drop_down</mat-icon>
       </button>
 
       <mat-menu #userMenu="matMenu" class="user-dropdown-menu">
@@ -49,11 +60,11 @@
           <mat-icon>person</mat-icon>
           <span>{{ 'NAV.PERSONAL_BANKING' | translate }}</span>
         </a>
-        <a mat-menu-item routerLink="/business/members">
+        <a mat-menu-item routerLink="/business/members" *ngIf="hasPermission('org:members') || hasPermission('org:members:view')">
           <mat-icon>group</mat-icon>
           <span>{{ 'BUSINESS.NAV.MEMBERS' | translate }}</span>
         </a>
-        <a mat-menu-item routerLink="/business/developer">
+        <a mat-menu-item routerLink="/business/developer" *ngIf="hasPermission('developer:manage') || hasPermission('developer:view')">
           <mat-icon>code</mat-icon>
           <span>{{ 'BUSINESS.NAV.DEVELOPER' | translate }}</span>
         </a>
@@ -66,61 +77,165 @@
     </div>
   </header>
 
-  <!-- Secondary Business Sub-nav Toolbar -->
-  <nav class="business-nav-toolbar">
-    <div class="nav-container">
-      <a routerLink="/business/dashboard" routerLinkActive="active" class="nav-item">
-        <mat-icon>dashboard</mat-icon>
-        <span>{{ 'BUSINESS.NAV.DASHBOARD' | translate }}</span>
-      </a>
-      <a routerLink="/business/virtual-accounts" routerLinkActive="active" class="nav-item">
-        <mat-icon>account_balance</mat-icon>
-        <span>{{ 'BUSINESS.NAV.VIRTUAL_ACCOUNTS' | translate }}</span>
-      </a>
-      <a routerLink="/business/collection-orders" routerLinkActive="active" class="nav-item">
-        <mat-icon>receipt_long</mat-icon>
-        <span>{{ 'BUSINESS.NAV.COLLECTION_ORDERS' | translate }}</span>
-      </a>
-      <a routerLink="/business/split-rules" routerLinkActive="active" class="nav-item">
-        <mat-icon>call_split</mat-icon>
-        <span>{{ 'BUSINESS.NAV.SPLIT_RULES' | translate }}</span>
-      </a>
-      <a routerLink="/business/settlements" routerLinkActive="active" class="nav-item">
-        <mat-icon>account_tree</mat-icon>
-        <span>{{ 'BUSINESS.NAV.SETTLEMENTS' | translate }}</span>
-      </a>
-      <a routerLink="/business/developer" routerLinkActive="active" class="nav-item">
-        <mat-icon>terminal</mat-icon>
-        <span>{{ 'BUSINESS.NAV.DEVELOPER' | translate }}</span>
-      </a>
-      <a routerLink="/business/open-banking" routerLinkActive="active" class="nav-item">
-        <mat-icon>api</mat-icon>
-        <span>{{ 'BUSINESS.NAV.OPEN_BANKING' | translate }}</span>
-      </a>
-      <a routerLink="/business/members" routerLinkActive="active" class="nav-item">
-        <mat-icon>badge</mat-icon>
-        <span>{{ 'BUSINESS.NAV.MEMBERS' | translate }}</span>
-      </a>
-    </div>
-  </nav>
+  <!-- Body with Sidebar and Main Content Canvas -->
+  <div class="business-body-wrapper">
+    <!-- Left Navigation Sidebar -->
+    <aside class="business-sidebar" [class.collapsed]="isSidebarCollapsed">
+      <div class="sidebar-scroll-content">
+        <!-- Group: Tổng quan -->
+        <div class="nav-group" *ngIf="isGroupVisible('overview')">
+          <div class="nav-group-header" *ngIf="!isSidebarCollapsed">
+            <span>{{ 'BUSINESS.NAV_GROUP.OVERVIEW' | translate }}</span>
+          </div>
+          <a routerLink="/business/dashboard" routerLinkActive="active" class="nav-link" [title]="'BUSINESS.NAV.DASHBOARD' | translate">
+            <mat-icon class="nav-icon">dashboard</mat-icon>
+            <span class="nav-label" *ngIf="!isSidebarCollapsed">{{ 'BUSINESS.NAV.DASHBOARD' | translate }}</span>
+          </a>
+        </div>
 
-  <!-- Main Content Body -->
-  <main class="business-main-content">
-    <ng-container *ngIf="selectedOrg$ | async; else noOrgSelected">
-      <router-outlet></router-outlet>
-    </ng-container>
+        <!-- Group: Thu hộ & Điểm bán -->
+        <div class="nav-group" *ngIf="isGroupVisible('collection')">
+          <div class="nav-group-header" *ngIf="!isSidebarCollapsed">
+            <span>{{ 'BUSINESS.NAV_GROUP.COLLECTION' | translate }}</span>
+          </div>
+          <a
+            *ngIf="hasPermission('va:view') || hasPermission('va:create') || hasPermission('va:manage')"
+            routerLink="/business/virtual-accounts"
+            routerLinkActive="active"
+            class="nav-link"
+            [title]="'BUSINESS.NAV.VIRTUAL_ACCOUNTS' | translate"
+          >
+            <mat-icon class="nav-icon">account_balance</mat-icon>
+            <span class="nav-label" *ngIf="!isSidebarCollapsed">{{ 'BUSINESS.NAV.VIRTUAL_ACCOUNTS' | translate }}</span>
+          </a>
+          <a
+            *ngIf="hasPermission('collection:view') || hasPermission('collection:create') || hasPermission('collection:edit')"
+            routerLink="/business/collection-orders"
+            routerLinkActive="active"
+            class="nav-link"
+            [title]="'BUSINESS.NAV.COLLECTION_ORDERS' | translate"
+          >
+            <mat-icon class="nav-icon">receipt_long</mat-icon>
+            <span class="nav-label" *ngIf="!isSidebarCollapsed">{{ 'BUSINESS.NAV.COLLECTION_ORDERS' | translate }}</span>
+          </a>
+        </div>
 
-    <ng-template #noOrgSelected>
-      <div class="no-org-container">
-        <mat-icon class="large-icon">domain_disabled</mat-icon>
-        <h2>{{ 'BUSINESS.NO_ORGS' | translate }}</h2>
-        <button mat-flat-button color="primary" (click)="openCreateOrgModal()">
-          <mat-icon>add_business</mat-icon>
-          {{ 'BUSINESS.CREATE_ORG' | translate }}
+        <!-- Group: Chi tiền & Đối tác -->
+        <div class="nav-group" *ngIf="isGroupVisible('payout')">
+          <div class="nav-group-header" *ngIf="!isSidebarCollapsed">
+            <span>{{ 'BUSINESS.NAV_GROUP.PAYOUT' | translate }}</span>
+          </div>
+          <a
+            *ngIf="hasPermission('split:view') || hasPermission('split:create') || hasPermission('split:manage')"
+            routerLink="/business/split-rules"
+            routerLinkActive="active"
+            class="nav-link"
+            [title]="'BUSINESS.NAV.SPLIT_RULES' | translate"
+          >
+            <mat-icon class="nav-icon">call_split</mat-icon>
+            <span class="nav-label" *ngIf="!isSidebarCollapsed">{{ 'BUSINESS.NAV.SPLIT_RULES' | translate }}</span>
+          </a>
+          <a
+            *ngIf="hasPermission('transfer:view') || hasPermission('transfer:create') || hasPermission('transfer:approve') || hasPermission('batch:create') || hasPermission('batch:approve')"
+            routerLink="/business/settlements"
+            routerLinkActive="active"
+            class="nav-link"
+            [title]="'BUSINESS.NAV.SETTLEMENTS' | translate"
+          >
+            <mat-icon class="nav-icon">account_tree</mat-icon>
+            <span class="nav-label" *ngIf="!isSidebarCollapsed">{{ 'BUSINESS.NAV.SETTLEMENTS' | translate }}</span>
+          </a>
+        </div>
+
+        <!-- Group: Kết nối & Kỹ thuật -->
+        <div class="nav-group" *ngIf="isGroupVisible('integration')">
+          <div class="nav-group-header" *ngIf="!isSidebarCollapsed">
+            <span>{{ 'BUSINESS.NAV_GROUP.INTEGRATION' | translate }}</span>
+          </div>
+          <a
+            *ngIf="hasPermission('developer:view') || hasPermission('developer:create') || hasPermission('developer:manage')"
+            routerLink="/business/developer"
+            routerLinkActive="active"
+            class="nav-link"
+            [title]="'BUSINESS.NAV.DEVELOPER' | translate"
+          >
+            <mat-icon class="nav-icon">terminal</mat-icon>
+            <span class="nav-label" *ngIf="!isSidebarCollapsed">{{ 'BUSINESS.NAV.DEVELOPER' | translate }}</span>
+          </a>
+          <a
+            *ngIf="hasPermission('openbanking:view') || hasPermission('openbanking:create') || hasPermission('openbanking:manage')"
+            routerLink="/business/open-banking"
+            routerLinkActive="active"
+            class="nav-link"
+            [title]="'BUSINESS.NAV.OPEN_BANKING' | translate"
+          >
+            <mat-icon class="nav-icon">api</mat-icon>
+            <span class="nav-label" *ngIf="!isSidebarCollapsed">{{ 'BUSINESS.NAV.OPEN_BANKING' | translate }}</span>
+          </a>
+        </div>
+
+        <!-- Group: Tổ chức & Phân quyền -->
+        <div class="nav-group" *ngIf="isGroupVisible('organization')">
+          <div class="nav-group-header" *ngIf="!isSidebarCollapsed">
+            <span>{{ 'BUSINESS.NAV_GROUP.ORGANIZATION' | translate }}</span>
+          </div>
+          <a
+            *ngIf="hasPermission('org:members') || hasPermission('org:members:view')"
+            routerLink="/business/members"
+            routerLinkActive="active"
+            class="nav-link"
+            [title]="'BUSINESS.NAV.MEMBERS' | translate"
+          >
+            <mat-icon class="nav-icon">badge</mat-icon>
+            <span class="nav-label" *ngIf="!isSidebarCollapsed">{{ 'BUSINESS.NAV.MEMBERS' | translate }}</span>
+          </a>
+          <a
+            *ngIf="hasPermission('org:roles') || hasPermission('org:roles:view')"
+            routerLink="/business/roles"
+            routerLinkActive="active"
+            class="nav-link"
+            [title]="'BUSINESS.NAV.ROLES' | translate"
+          >
+            <mat-icon class="nav-icon">admin_panel_settings</mat-icon>
+            <span class="nav-label" *ngIf="!isSidebarCollapsed">{{ 'BUSINESS.NAV.ROLES' | translate }}</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Bottom Sidebar Collapse Trigger -->
+      <div class="sidebar-bottom-action">
+        <button mat-button class="btn-collapse" (click)="toggleSidebar()">
+          <mat-icon>{{ isSidebarCollapsed ? 'chevron_right' : 'chevron_left' }}</mat-icon>
+          <span *ngIf="!isSidebarCollapsed">{{ 'BUSINESS.COLLAPSE_SIDEBAR' | translate }}</span>
         </button>
       </div>
-    </ng-template>
-  </main>
+    </aside>
+
+    <!-- Main Content Canvas -->
+    <main class="business-main-content">
+      <ng-container *ngIf="selectedOrg$ | async as org; else noOrgSelected">
+        <div class="kyc-pending-banner" *ngIf="org.kycStatus === 'PENDING_KYC'">
+          <mat-icon class="banner-icon">hourglass_top</mat-icon>
+          <div class="banner-text">
+            <strong>{{ 'BUSINESS.KYC_PENDING_TITLE' | translate }}</strong>
+            <span>{{ 'BUSINESS.KYC_PENDING_DESC' | translate }}</span>
+          </div>
+        </div>
+        <router-outlet></router-outlet>
+      </ng-container>
+
+      <ng-template #noOrgSelected>
+        <div class="no-org-container">
+          <mat-icon class="large-icon">domain_disabled</mat-icon>
+          <h2>{{ 'BUSINESS.NO_ORGS' | translate }}</h2>
+          <button mat-flat-button color="primary" (click)="openCreateOrgModal()">
+            <mat-icon>add_business</mat-icon>
+            {{ 'BUSINESS.CREATE_ORG' | translate }}
+          </button>
+        </div>
+      </ng-template>
+    </main>
+  </div>
 </div>
 
 <!-- Modal Create Organization -->

@@ -72,10 +72,17 @@ export class BusinessCollectionOrdersComponent implements OnInit, OnDestroy {
   showQrModal = false;
   selectedOrderForQr: CollectionOrder | null = null;
 
+  get canCreateOrder(): boolean {
+    return this.businessContext.hasPermission('collection:create') || this.businessContext.hasPermission('collection:manage') ||
+           this.businessContext.hasPermission('orders:create') || this.businessContext.hasPermission('orders:manage');
+  }
+
   ngOnInit(): void {
     this.businessContext.selectedOrg$.pipe(takeUntil(this.destroy$)).subscribe(() => {
       this.loadOrders();
-      this.loadSplitRules();
+      if (this.businessContext.hasPermission('split:view') || this.businessContext.hasPermission('split:manage')) {
+        this.loadSplitRules();
+      }
     });
   }
 
@@ -93,13 +100,11 @@ export class BusinessCollectionOrdersComponent implements OnInit, OnDestroy {
       .listCollectionOrders(orgId, {
         q: this.searchQuery.trim() || undefined,
         status: this.statusFilter || undefined,
-        page: this.pageIndex,
-        size: this.pageSize,
       })
       .subscribe({
         next: (res) => {
-          this.orders = res.items || [];
-          this.totalElements = res.totalElements || 0;
+          this.orders = res || [];
+          this.totalElements = this.orders.length;
           this.loading = false;
         },
         error: () => {
@@ -118,7 +123,6 @@ export class BusinessCollectionOrdersComponent implements OnInit, OnDestroy {
   }
 
   onSearch(): void {
-    this.pageIndex = 0;
     this.loadOrders();
   }
 

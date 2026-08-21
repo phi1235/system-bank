@@ -1,22 +1,19 @@
 package com.banksystem.transaction.api.virtualaccount;
 
 import com.banksystem.common.api.ApiResponse;
-import com.banksystem.common.api.PageResponse;
 import com.banksystem.common.security.RequirePermission;
 import com.banksystem.common.security.SecurityHeaders;
 import com.banksystem.transaction.api.dto.CollectionDtos.InboundPaymentEventResponse;
-import com.banksystem.transaction.api.dto.CollectionDtos.InboundPaymentFilterRequest;
-import com.banksystem.transaction.api.dto.VirtualAccountDtos.AdminVirtualAccountFilterRequest;
 import com.banksystem.transaction.api.dto.VirtualAccountDtos.VirtualAccountResponse;
 import com.banksystem.transaction.application.collection.InboundPaymentQueryService;
-import com.banksystem.transaction.application.collection.InboundPaymentSearchQuery;
-import com.banksystem.transaction.application.virtualaccount.VirtualAccountSearchQuery;
 import com.banksystem.transaction.application.virtualaccount.VirtualAccountService;
-import jakarta.validation.Valid;
-import org.springframework.data.domain.Page;
+import com.banksystem.transaction.domain.collection.InboundPaymentStatus;
+import com.banksystem.transaction.domain.virtualaccount.VirtualAccountStatus;
+import java.util.List;
+import java.util.UUID;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -35,19 +32,19 @@ public class AdminVirtualAccountController {
 
   @GetMapping
   @RequirePermission(SecurityHeaders.PERM_VA_OPERATIONS_VIEW)
-  public ApiResponse<PageResponse<VirtualAccountResponse>> searchVirtualAccounts(
-      @Valid @ModelAttribute AdminVirtualAccountFilterRequest req) {
-    VirtualAccountSearchQuery query = VirtualAccountSearchQuery.of(req);
-    Page<VirtualAccountResponse> result = virtualAccountService.search(query);
-    return ApiResponse.ok(PageResponse.from(result));
+  public ApiResponse<List<VirtualAccountResponse>> searchVirtualAccounts(
+      @RequestParam(required = false) UUID organizationId,
+      @RequestParam(required = false) String q,
+      @RequestParam(required = false) VirtualAccountStatus status) {
+    return ApiResponse.ok(virtualAccountService.searchList(organizationId, q, status));
   }
 
   @GetMapping("/inbound-events")
   @RequirePermission(SecurityHeaders.PERM_VA_OPERATIONS_VIEW)
-  public ApiResponse<PageResponse<InboundPaymentEventResponse>> searchInboundEvents(
-      @Valid @ModelAttribute InboundPaymentFilterRequest req) {
-    InboundPaymentSearchQuery query = InboundPaymentSearchQuery.of(req);
-    Page<InboundPaymentEventResponse> result = inboundPaymentQueryService.search(query);
-    return ApiResponse.ok(PageResponse.from(result));
+  public ApiResponse<List<InboundPaymentEventResponse>> searchInboundEvents(
+      @RequestParam(required = false) String provider,
+      @RequestParam(required = false) String q,
+      @RequestParam(required = false) InboundPaymentStatus status) {
+    return ApiResponse.ok(inboundPaymentQueryService.searchList(provider, q, status));
   }
 }

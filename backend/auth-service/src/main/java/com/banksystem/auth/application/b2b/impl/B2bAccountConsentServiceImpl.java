@@ -9,6 +9,7 @@ import com.banksystem.auth.domain.b2b.B2bAccountConsentRepository;
 import com.banksystem.auth.domain.b2b.B2bClientApplicationRepository;
 import com.banksystem.common.exception.BusinessException;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
@@ -31,12 +32,33 @@ public class B2bAccountConsentServiceImpl implements B2bAccountConsentService {
 
   @Override
   @Transactional(readOnly = true)
+  public List<B2bConsentResponse> listConsents(String clientId, UUID customerId, String status, String accountNumber) {
+    boolean hasClientId = (clientId != null && !clientId.isBlank());
+    boolean hasCustomerId = customerId != null;
+    boolean hasStatus = (status != null && !status.isBlank());
+    boolean hasAccountNumber = (accountNumber != null && !accountNumber.isBlank());
+    return consentRepository.searchConsentsList(
+        hasClientId, hasClientId ? clientId : "",
+        hasCustomerId, customerId != null ? customerId : UUID.randomUUID(),
+        hasStatus, hasStatus ? status : "",
+        hasAccountNumber, hasAccountNumber ? accountNumber : ""
+    ).stream()
+        .map(this::toResponse)
+        .toList();
+  }
+
+  @Override
+  @Transactional(readOnly = true)
   public Page<B2bConsentResponse> listConsents(B2bConsentSearchQuery query) {
+    boolean hasClientId = (query.clientId() != null && !query.clientId().isBlank());
+    boolean hasCustomerId = query.customerId() != null;
+    boolean hasStatus = (query.status() != null && !query.status().isBlank());
+    boolean hasAccountNumber = (query.accountNumber() != null && !query.accountNumber().isBlank());
     return consentRepository.searchConsents(
-        query.clientId(),
-        query.customerId(),
-        query.status(),
-        query.accountNumber(),
+        hasClientId, hasClientId ? query.clientId() : "",
+        hasCustomerId, query.customerId() != null ? query.customerId() : UUID.randomUUID(),
+        hasStatus, hasStatus ? query.status() : "",
+        hasAccountNumber, hasAccountNumber ? query.accountNumber() : "",
         query.toPageable()
     ).map(this::toResponse);
   }

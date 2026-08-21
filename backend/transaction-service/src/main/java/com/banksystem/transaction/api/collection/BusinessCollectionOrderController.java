@@ -1,30 +1,27 @@
 package com.banksystem.transaction.api.collection;
 
 import com.banksystem.common.api.ApiResponse;
-import com.banksystem.common.api.PageResponse;
 import com.banksystem.common.security.GatewayUser;
 import com.banksystem.common.security.UserContext;
-import com.banksystem.transaction.api.dto.CollectionDtos.CollectionOrderFilterRequest;
 import com.banksystem.transaction.api.dto.CollectionDtos.CollectionOrderResponse;
 import com.banksystem.transaction.api.dto.CollectionDtos.CreateCollectionOrderRequest;
 import com.banksystem.transaction.api.dto.MerchantDtos.BusinessDashboardSummaryResponse;
 import com.banksystem.transaction.api.dto.SettlementDtos.SettlementResponse;
-import com.banksystem.transaction.application.collection.CollectionOrderSearchQuery;
 import com.banksystem.transaction.application.collection.CollectionOrderService;
 import com.banksystem.transaction.application.settlement.SettlementOrchestrator;
 import com.banksystem.transaction.domain.collection.CollectionOrderStatus;
 import com.banksystem.transaction.infrastructure.security.RequireBusinessPermission;
 import jakarta.validation.Valid;
+import java.util.List;
 import java.util.UUID;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -54,12 +51,11 @@ public class BusinessCollectionOrderController {
 
   @GetMapping("/collection-orders")
   @RequireBusinessPermission(value = "business:orders:view", businessIdParam = "businessId")
-  public ApiResponse<PageResponse<CollectionOrderResponse>> searchOrders(
+  public ApiResponse<List<CollectionOrderResponse>> searchOrders(
       @PathVariable UUID businessId,
-      @Valid @ModelAttribute CollectionOrderFilterRequest req) {
-    CollectionOrderSearchQuery query = CollectionOrderSearchQuery.of(businessId, req);
-    Page<CollectionOrderResponse> result = collectionOrderService.search(query);
-    return ApiResponse.ok(PageResponse.from(result));
+      @RequestParam(required = false) String q,
+      @RequestParam(required = false) CollectionOrderStatus status) {
+    return ApiResponse.ok(collectionOrderService.searchList(businessId, q, status));
   }
 
   @GetMapping("/collection-orders/{id}")

@@ -1,25 +1,22 @@
 package com.banksystem.transaction.api.collection;
 
 import com.banksystem.common.api.ApiResponse;
-import com.banksystem.common.api.PageResponse;
 import com.banksystem.common.security.GatewayUser;
 import com.banksystem.common.security.RequirePermission;
 import com.banksystem.common.security.SecurityHeaders;
 import com.banksystem.common.security.UserContext;
-import com.banksystem.transaction.api.dto.CollectionDtos.AdminCollectionOrderFilterRequest;
 import com.banksystem.transaction.api.dto.CollectionDtos.CollectionOrderResponse;
 import com.banksystem.transaction.api.dto.SettlementDtos.SettlementResponse;
-import com.banksystem.transaction.application.collection.CollectionOrderSearchQuery;
 import com.banksystem.transaction.application.collection.CollectionOrderService;
 import com.banksystem.transaction.application.settlement.SettlementOrchestrator;
-import jakarta.validation.Valid;
+import com.banksystem.transaction.domain.collection.CollectionOrderStatus;
+import java.util.List;
 import java.util.UUID;
-import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -38,11 +35,11 @@ public class AdminCollectionOrderController {
 
   @GetMapping
   @RequirePermission(SecurityHeaders.PERM_VA_OPERATIONS_VIEW)
-  public ApiResponse<PageResponse<CollectionOrderResponse>> searchOrders(
-      @Valid @ModelAttribute AdminCollectionOrderFilterRequest req) {
-    CollectionOrderSearchQuery query = CollectionOrderSearchQuery.of(req);
-    Page<CollectionOrderResponse> result = collectionOrderService.search(query);
-    return ApiResponse.ok(PageResponse.from(result));
+  public ApiResponse<List<CollectionOrderResponse>> searchOrders(
+      @RequestParam(required = false) UUID organizationId,
+      @RequestParam(required = false) String q,
+      @RequestParam(required = false) CollectionOrderStatus status) {
+    return ApiResponse.ok(collectionOrderService.searchList(organizationId, q, status));
   }
 
   @GetMapping("/{id}")

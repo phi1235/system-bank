@@ -1,0 +1,208 @@
+<div class="admin-kyc-container">
+  <!-- Header -->
+  <div class="header-section">
+    <div>
+      <h2 class="title">{{ 'ADMIN.BUSINESS_KYC.PAGE_TITLE' | translate }}</h2>
+      <p class="subtitle">{{ 'ADMIN.BUSINESS_KYC.PAGE_SUBTITLE' | translate }}</p>
+    </div>
+    <!-- Filter Tabs -->
+    <div class="filter-tabs">
+      <button
+        class="filter-tab"
+        [class.active]="statusFilter === 'PENDING_KYC'"
+        (click)="onFilterChange('PENDING_KYC')"
+      >
+        {{ 'ADMIN.BUSINESS_KYC.TAB_PENDING' | translate }}
+      </button>
+      <button
+        class="filter-tab"
+        [class.active]="statusFilter === 'APPROVED'"
+        (click)="onFilterChange('APPROVED')"
+      >
+        {{ 'ADMIN.BUSINESS_KYC.TAB_APPROVED' | translate }}
+      </button>
+      <button
+        class="filter-tab"
+        [class.active]="statusFilter === 'REJECTED'"
+        (click)="onFilterChange('REJECTED')"
+      >
+        {{ 'ADMIN.BUSINESS_KYC.TAB_REJECTED' | translate }}
+      </button>
+      <button
+        class="filter-tab"
+        [class.active]="statusFilter === ''"
+        (click)="onFilterChange('')"
+      >
+        {{ 'ADMIN.BUSINESS_KYC.TAB_ALL' | translate }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Alerts -->
+  <div *ngIf="successMessage" class="alert alert-success">
+    {{ successMessage }}
+  </div>
+  <div *ngIf="error" class="alert alert-danger">
+    {{ error }}
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <span>{{ 'ADMIN.BUSINESS_KYC.LOADING' | translate }}</span>
+  </div>
+
+  <!-- Table -->
+  <div *ngIf="!loading" class="table-card">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>{{ 'ADMIN.BUSINESS_KYC.TH_ORG' | translate }}</th>
+          <th>{{ 'ADMIN.BUSINESS_KYC.TH_TAX' | translate }}</th>
+          <th>{{ 'ADMIN.BUSINESS_KYC.TH_REPRESENTATIVE' | translate }}</th>
+          <th>{{ 'ADMIN.BUSINESS_KYC.TH_CONTACT' | translate }}</th>
+          <th>{{ 'ADMIN.BUSINESS_KYC.TH_STATUS' | translate }}</th>
+          <th>{{ 'ADMIN.BUSINESS_KYC.TH_DATE' | translate }}</th>
+          <th>{{ 'COMMON.ACTIONS' | translate }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let biz of businesses">
+          <td>
+            <div class="biz-info">
+              <span class="biz-name">{{ biz.legalName }}</span>
+              <span class="biz-code">{{ biz.code }}</span>
+            </div>
+          </td>
+          <td>
+            <span class="tax-code">{{ biz.taxNumber || '-' }}</span>
+          </td>
+          <td>{{ biz.representativeName || '-' }}</td>
+          <td>
+            <div class="contact-info">
+              <span *ngIf="biz.contactEmail">{{ biz.contactEmail }}</span>
+              <span *ngIf="biz.contactPhone">{{ biz.contactPhone }}</span>
+              <span *ngIf="!biz.contactEmail && !biz.contactPhone">-</span>
+            </div>
+          </td>
+          <td>
+            <span class="status-badge" [ngClass]="biz.kycStatus.toLowerCase()">
+              {{ 'ADMIN.BUSINESS_KYC.STATUS_' + biz.kycStatus | translate }}
+            </span>
+          </td>
+          <td>{{ biz.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
+          <td>
+            <button
+              class="btn btn-sm btn-primary"
+              (click)="openReviewModal(biz)"
+            >
+              {{ (biz.kycStatus === 'PENDING_KYC' ? 'ADMIN.BUSINESS_KYC.BTN_REVIEW' : 'ADMIN.BUSINESS_KYC.BTN_DETAILS') | translate }}
+            </button>
+          </td>
+        </tr>
+
+        <tr *ngIf="businesses.length === 0">
+          <td colspan="7" class="empty-cell">
+            {{ 'COMMON.NO_DATA' | translate }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Review / Detail Modal -->
+  <div *ngIf="showReviewModal && selectedBusiness" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>{{ 'ADMIN.BUSINESS_KYC.MODAL_TITLE' | translate }}</h3>
+        <button class="btn-close" (click)="closeReviewModal()">✕</button>
+      </div>
+
+
+      <div class="modal-body">
+        <!-- Business Details Grid -->
+        <div class="details-grid">
+          <div class="detail-item">
+            <span class="detail-label">{{ 'ADMIN.BUSINESS_KYC.FIELD_LEGAL_NAME' | translate }}:</span>
+            <span class="detail-val font-bold">{{ selectedBusiness.legalName }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">{{ 'ADMIN.BUSINESS_KYC.FIELD_CODE' | translate }}:</span>
+            <span class="detail-val font-mono">{{ selectedBusiness.code }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">{{ 'ADMIN.BUSINESS_KYC.FIELD_TAX_NUMBER' | translate }}:</span>
+            <span class="detail-val font-bold">{{ selectedBusiness.taxNumber }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">{{ 'ADMIN.BUSINESS_KYC.FIELD_REPRESENTATIVE' | translate }}:</span>
+            <span class="detail-val">{{ selectedBusiness.representativeName || '-' }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">{{ 'ADMIN.BUSINESS_KYC.FIELD_PHONE' | translate }}:</span>
+            <span class="detail-val">{{ selectedBusiness.contactPhone || '-' }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">{{ 'ADMIN.BUSINESS_KYC.FIELD_EMAIL' | translate }}:</span>
+            <span class="detail-val">{{ selectedBusiness.contactEmail || '-' }}</span>
+          </div>
+          <div class="detail-item full-width">
+            <span class="detail-label">{{ 'ADMIN.BUSINESS_KYC.FIELD_ADDRESS' | translate }}:</span>
+            <span class="detail-val">{{ selectedBusiness.address || '-' }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">{{ 'ADMIN.BUSINESS_KYC.FIELD_INDUSTRY' | translate }}:</span>
+            <span class="detail-val">{{ selectedBusiness.industry || '-' }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">{{ 'ADMIN.BUSINESS_KYC.FIELD_KYC_STATUS' | translate }}:</span>
+            <span class="status-badge" [ngClass]="selectedBusiness.kycStatus.toLowerCase()">
+              {{ 'ADMIN.BUSINESS_KYC.STATUS_' + selectedBusiness.kycStatus | translate }}
+            </span>
+          </div>
+          <div class="detail-item full-width" *ngIf="selectedBusiness.kycRejectReason">
+            <span class="detail-label">{{ 'ADMIN.BUSINESS_KYC.FIELD_REJECT_REASON' | translate }}:</span>
+            <span class="detail-val text-danger">{{ selectedBusiness.kycRejectReason }}</span>
+          </div>
+        </div>
+
+        <!-- Reject Reason Input (only if pending) -->
+        <div class="form-group" *ngIf="selectedBusiness.kycStatus === 'PENDING_KYC'">
+          <label class="form-label">{{ 'ADMIN.BUSINESS_KYC.FIELD_REASON_LABEL' | translate }}</label>
+          <textarea
+            class="form-control"
+            rows="2"
+            [(ngModel)]="rejectReason"
+            [placeholder]="'ADMIN.BUSINESS_KYC.REASON_PLACEHOLDER' | translate"
+          ></textarea>
+
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-outline" (click)="closeReviewModal()">
+          {{ 'COMMON.CANCEL' | translate }}
+        </button>
+
+        <ng-container *ngIf="selectedBusiness.kycStatus === 'PENDING_KYC'">
+          <button
+            class="btn btn-danger"
+            [disabled]="submitting"
+            (click)="submitReview('REJECT')"
+          >
+            <span *ngIf="submitting" class="spinner-sm"></span>
+            {{ 'ADMIN.BUSINESS_KYC.BTN_REJECT' | translate }}
+          </button>
+          <button
+            class="btn btn-success"
+            [disabled]="submitting"
+            (click)="submitReview('APPROVE')"
+          >
+            <span *ngIf="submitting" class="spinner-sm"></span>
+            {{ 'ADMIN.BUSINESS_KYC.BTN_APPROVE' | translate }}
+          </button>
+        </ng-container>
+      </div>
+    </div>
+  </div>
+</div>

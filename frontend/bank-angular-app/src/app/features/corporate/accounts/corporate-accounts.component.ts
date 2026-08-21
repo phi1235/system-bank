@@ -47,18 +47,38 @@ export class CorporateAccountsComponent implements OnInit {
   }
 
   loadAccounts() {
+    this.corporateId = localStorage.getItem('selected_corp_id') || '';
+    if (!this.corporateId) {
+      this.accounts = [];
+      return;
+    }
     this.api.getAccounts(this.corporateId).subscribe({
       next: (list) => (this.accounts = list),
+      error: () => (this.accounts = []),
     });
   }
 
   createAccount() {
+    this.corporateId = localStorage.getItem('selected_corp_id') || this.corporateId;
+    if (!this.corporateId) {
+      this.toast.error(
+        this.translate.instant('CORPORATE.SELECT_CORP_FIRST') ||
+          'Vui lòng đăng ký hoặc chọn doanh nghiệp trước khi mở tài khoản.'
+      );
+      return;
+    }
     this.api.createAndLinkAccount(this.corporateId, 'PAYMENT', 'VND').subscribe({
       next: (acc) => {
         this.toast.success(this.translate.instant('CORPORATE.ACCOUNT_CREATED', { accountNumber: acc.accountNumber }));
         this.loadAccounts();
       },
-      error: (err) => this.toast.error(err.message || this.translate.instant('CORPORATE.ACCOUNT_CREATE_ERROR')),
+      error: (err) =>
+        this.toast.error(
+          err?.error?.error?.message ||
+            err?.error?.message ||
+            err.message ||
+            this.translate.instant('CORPORATE.ACCOUNT_CREATE_ERROR')
+        ),
     });
   }
 }

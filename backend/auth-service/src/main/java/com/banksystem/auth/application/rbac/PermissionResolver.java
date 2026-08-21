@@ -1,13 +1,10 @@
 package com.banksystem.auth.application.rbac;
-import static com.banksystem.auth.api.dto.AuthDtos.*;
-import static com.banksystem.auth.api.dto.PasswordResetDtos.*;
-import static com.banksystem.auth.api.dto.RbacDtos.*;
-import com.banksystem.auth.application.auth.*;
-import com.banksystem.auth.application.rbac.*;
-import com.banksystem.auth.domain.auth.*;
-import com.banksystem.auth.domain.rbac.*;
-import com.banksystem.auth.api.dto.*;
 
+import com.banksystem.auth.domain.auth.UserEntity;
+import com.banksystem.auth.domain.business.BusinessMemberEntity;
+import com.banksystem.auth.domain.business.BusinessMemberRepository;
+import com.banksystem.auth.domain.rbac.RolePermissionRepository;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import org.springframework.stereotype.Component;
@@ -17,14 +14,29 @@ import org.springframework.transaction.annotation.Transactional;
 public class PermissionResolver {
 
   private final RolePermissionRepository rolePermissionRepository;
+  private final BusinessMemberRepository businessMemberRepository;
 
-  public PermissionResolver(RolePermissionRepository rolePermissionRepository) {
+  public PermissionResolver(
+      RolePermissionRepository rolePermissionRepository,
+      BusinessMemberRepository businessMemberRepository) {
     this.rolePermissionRepository = rolePermissionRepository;
+    this.businessMemberRepository = businessMemberRepository;
   }
 
   @Transactional(readOnly = true)
   public List<String> resolvePermissions(UserEntity user) {
-    return resolvePermissions(user.roleList());
+    if (user == null) {
+      return List.of();
+    }
+    List<String> combinedRoles = new ArrayList<>(user.roleList());
+    if (user.getId() != null) {
+      List<String> businessRoles = businessMemberRepository.findByUserId(user.getId()).stream()
+          .filter(m -> "ACTIVE".equalsIgnoreCase(m.getStatus()))
+          .map(BusinessMemberEntity::getBusinessRole)
+          .toList();
+      combinedRoles.addAll(businessRoles);
+    }
+    return resolvePermissions(combinedRoles);
   }
 
   @Transactional(readOnly = true)

@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { PageResponse } from '../models/api.model';
 import {
   Account,
@@ -75,7 +75,14 @@ import {
   MerchantWebhookEndpoint,
   MerchantAccountConfig,
   BusinessDashboardSummary,
+  RegisterBusinessRequest,
+  AdminBusinessKycItem,
+  AdminKycReviewRequest,
+  CustomRoleItem,
+  CustomRoleRequest,
+  BusinessPermissionMatrixResponse,
 } from '../models/domain.model';
+
 import { ApiService } from './api.service';
 import { DashboardKpis } from '../../features/admin/dashboard/dashboard.component';
 
@@ -1155,18 +1162,82 @@ export class BankApiService {
   // ── B2B Organizations & Members (Auth Service via Gateway) ──
 
   listMyOrganizations(): Observable<BusinessOrganization[]> {
-    return this.api.get<BusinessOrganization[]>('/businesses');
+    return this.api.get<any[]>('/businesses').pipe(
+      map((list) =>
+        (list || []).map((res) => ({
+          ...res,
+          name: res.name || res.legalName || '',
+          taxCode: res.taxCode || res.taxNumber || '',
+        }))
+      )
+    );
   }
 
   registerOrganization(body: { code: string; name: string; taxCode?: string }): Observable<BusinessOrganization> {
-    return this.api.post<BusinessOrganization>('/businesses', body);
+    const payload = {
+      code: body.code,
+      name: body.name,
+      legalName: body.name,
+      taxCode: body.taxCode,
+      taxNumber: body.taxCode,
+    };
+    return this.api.post<any>('/businesses', payload).pipe(
+      map((res) => ({
+        ...res,
+        name: res.name || res.legalName || body.name,
+        taxCode: res.taxCode || res.taxNumber || body.taxCode || '',
+      }))
+    );
+  }
+
+  registerBusiness(body: RegisterBusinessRequest): Observable<BusinessOrganization> {
+    return this.api.post<any>('/businesses/register', body).pipe(
+      map((res) => ({
+        ...res,
+        name: res.name || res.legalName || body.legalName,
+        taxCode: res.taxCode || res.taxNumber || body.taxNumber || '',
+      }))
+    );
+  }
+
+  listAdminBusinesses(kycStatus?: string): Observable<AdminBusinessKycItem[]> {
+    const params = kycStatus ? { kycStatus } : undefined;
+    return this.api.get<AdminBusinessKycItem[]>('/admin/businesses', params);
+  }
+
+  reviewBusinessKyc(businessId: string, body: AdminKycReviewRequest): Observable<BusinessOrganization> {
+    return this.api.put<BusinessOrganization>(`/admin/businesses/${encodeURIComponent(businessId)}/review`, body);
+  }
+
+  listCustomRoles(orgId: string): Observable<CustomRoleItem[]> {
+    return this.api.get<CustomRoleItem[]>(`/businesses/${encodeURIComponent(orgId)}/roles`);
+  }
+
+  createCustomRole(orgId: string, body: CustomRoleRequest): Observable<CustomRoleItem> {
+    return this.api.post<CustomRoleItem>(`/businesses/${encodeURIComponent(orgId)}/roles`, body);
+  }
+
+  updateCustomRole(orgId: string, roleId: string, body: CustomRoleRequest): Observable<CustomRoleItem> {
+    return this.api.put<CustomRoleItem>(`/businesses/${encodeURIComponent(orgId)}/roles/${encodeURIComponent(roleId)}`, body);
+  }
+
+  deleteCustomRole(orgId: string, roleId: string): Observable<void> {
+    return this.api.delete<void>(`/businesses/${encodeURIComponent(orgId)}/roles/${encodeURIComponent(roleId)}`);
+  }
+
+  listAvailablePermissions(): Observable<string[]> {
+    return this.api.get<string[]>('/businesses/permissions');
+  }
+
+  getBusinessPermissionMatrix(): Observable<BusinessPermissionMatrixResponse> {
+    return this.api.get<BusinessPermissionMatrixResponse>('/businesses/permissions/matrix');
   }
 
   listBusinessMembers(orgId: string): Observable<BusinessMember[]> {
     return this.api.get<BusinessMember[]>(`/businesses/${encodeURIComponent(orgId)}/members`);
   }
 
-  addBusinessMember(orgId: string, body: { userId: string; role: string }): Observable<BusinessMember> {
+  addBusinessMember(orgId: string, body: { userIdentifier?: string; username?: string; userId?: string; role: string; businessRole?: string }): Observable<BusinessMember> {
     return this.api.post<BusinessMember>(`/businesses/${encodeURIComponent(orgId)}/members`, body);
   }
 
@@ -1186,8 +1257,8 @@ export class BankApiService {
 
   // ── B2B Virtual Accounts ──
 
-  listVirtualAccounts(orgId: string, params?: { q?: string; status?: string; page?: number; size?: number }): Observable<PageResponse<VirtualAccount>> {
-    return this.api.get<PageResponse<VirtualAccount>>(`/businesses/${encodeURIComponent(orgId)}/virtual-accounts`, params);
+  listVirtualAccounts(orgId: string, params?: { q?: string; status?: string }): Observable<VirtualAccount[]> {
+    return this.api.get<VirtualAccount[]>(`/businesses/${encodeURIComponent(orgId)}/virtual-accounts`, params);
   }
 
   provisionVirtualAccount(orgId: string, body: {
@@ -1196,6 +1267,7 @@ export class BankApiService {
     parentAccountId?: string;
     mode: string;
     customerReference?: string;
+    displayName?: string;
     expiresAt?: string;
   }): Observable<VirtualAccount> {
     return this.api.post<VirtualAccount>(`/businesses/${encodeURIComponent(orgId)}/virtual-accounts`, body);
@@ -1209,10 +1281,11 @@ export class BankApiService {
     return this.api.post<void>(`/businesses/${encodeURIComponent(orgId)}/virtual-accounts/${encodeURIComponent(id)}/close`, {});
   }
 
+
   // ── B2B Collection Orders ──
 
-  listCollectionOrders(orgId: string, params?: { q?: string; status?: string; page?: number; size?: number }): Observable<PageResponse<CollectionOrder>> {
-    return this.api.get<PageResponse<CollectionOrder>>(`/businesses/${encodeURIComponent(orgId)}/collection-orders`, params);
+  listCollectionOrders(orgId: string, params?: { q?: string; status?: string }): Observable<CollectionOrder[]> {
+    return this.api.get<CollectionOrder[]>(`/businesses/${encodeURIComponent(orgId)}/collection-orders`, params);
   }
 
   createCollectionOrder(orgId: string, body: {
@@ -1261,8 +1334,8 @@ export class BankApiService {
 
   // ── B2B Settlements ──
 
-  listSettlements(orgId: string, params?: { status?: string; page?: number; size?: number }): Observable<PageResponse<Settlement>> {
-    return this.api.get<PageResponse<Settlement>>(`/businesses/${encodeURIComponent(orgId)}/settlements`, params);
+  listSettlements(orgId: string, params?: { status?: string }): Observable<Settlement[]> {
+    return this.api.get<Settlement[]>(`/businesses/${encodeURIComponent(orgId)}/settlements`, params);
   }
 
   getSettlement(orgId: string, id: string): Observable<Settlement> {
@@ -1313,24 +1386,24 @@ export class BankApiService {
 
   // ── Back-Office Admin Operations ──
 
-  adminSearchVirtualAccounts(params?: { organizationId?: string; q?: string; status?: string; page?: number; size?: number }): Observable<PageResponse<VirtualAccount>> {
-    return this.api.get<PageResponse<VirtualAccount>>('/admin/virtual-accounts', params);
+  adminSearchVirtualAccounts(params?: { organizationId?: string; q?: string; status?: string }): Observable<VirtualAccount[]> {
+    return this.api.get<VirtualAccount[]>('/admin/virtual-accounts', params);
   }
 
-  adminSearchInboundEvents(params?: { provider?: string; q?: string; status?: string; page?: number; size?: number }): Observable<PageResponse<InboundPaymentEvent>> {
-    return this.api.get<PageResponse<InboundPaymentEvent>>('/admin/virtual-accounts/inbound-events', params);
+  adminSearchInboundEvents(params?: { provider?: string; q?: string; status?: string }): Observable<InboundPaymentEvent[]> {
+    return this.api.get<InboundPaymentEvent[]>('/admin/virtual-accounts/inbound-events', params);
   }
 
-  adminSearchCollectionOrders(params?: { organizationId?: string; q?: string; status?: string; page?: number; size?: number }): Observable<PageResponse<CollectionOrder>> {
-    return this.api.get<PageResponse<CollectionOrder>>('/admin/collection-orders', params);
+  adminSearchCollectionOrders(params?: { organizationId?: string; q?: string; status?: string }): Observable<CollectionOrder[]> {
+    return this.api.get<CollectionOrder[]>('/admin/collection-orders', params);
   }
 
   adminCompleteCollectionOrder(id: string): Observable<Settlement> {
     return this.api.post<Settlement>(`/admin/collection-orders/${encodeURIComponent(id)}/complete`, {});
   }
 
-  adminSearchSettlements(params?: { organizationId?: string; status?: string; page?: number; size?: number }): Observable<PageResponse<Settlement>> {
-    return this.api.get<PageResponse<Settlement>>('/admin/settlements', params);
+  adminSearchSettlements(params?: { organizationId?: string; status?: string }): Observable<Settlement[]> {
+    return this.api.get<Settlement[]>('/admin/settlements', params);
   }
 
   adminRetrySettlement(id: string): Observable<Settlement> {
@@ -1339,8 +1412,8 @@ export class BankApiService {
 
   // ── Open Banking B2B Developer Portal ──
 
-  getB2bClients(params?: { q?: string; status?: string; page?: number; size?: number }): Observable<PageResponse<B2bClientApp>> {
-    return this.api.get<PageResponse<B2bClientApp>>('/b2b-portal/clients', params);
+  getB2bClients(params?: { q?: string; status?: string }): Observable<B2bClientApp[]> {
+    return this.api.get<B2bClientApp[]>('/b2b-portal/clients', params);
   }
 
   getB2bClient(clientId: string): Observable<B2bClientApp> {
@@ -1359,8 +1432,8 @@ export class BankApiService {
     return this.api.delete<void>(`/b2b-portal/clients/${encodeURIComponent(clientId)}`);
   }
 
-  getB2bConsents(params?: { clientId?: string; status?: string; accountNumber?: string; page?: number; size?: number }): Observable<PageResponse<B2bConsent>> {
-    return this.api.get<PageResponse<B2bConsent>>('/b2b-portal/consents', params);
+  getB2bConsents(params?: { clientId?: string; status?: string; accountNumber?: string }): Observable<B2bConsent[]> {
+    return this.api.get<B2bConsent[]>('/b2b-portal/consents', params);
   }
 
   createB2bConsent(body: { clientId: string; accountNumber: string; permissions?: string; validUntil?: string }): Observable<B2bConsent> {
